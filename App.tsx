@@ -483,11 +483,21 @@ const InternalApp: React.FC = () => {
   };
 
   const executeLogout = async () => {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.error("Logout error:", e);
+    }
+    
+    // Force clear local storage to prevent auto-login bug
+    const theme = localStorage.getItem('theme');
+    localStorage.clear();
+    if (theme) localStorage.setItem('theme', theme);
+    
     setIsAuthenticated(false);
     setCurrentUser(null);
     setIsLogoutModalOpen(false);
-    navigate('/login');
+    navigate('/login', { replace: true });
   };
 
   const refreshUserProfile = async () => {
