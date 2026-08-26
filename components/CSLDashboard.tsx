@@ -101,20 +101,22 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-12 font-sans">
       {/* Hero Welcome Banner */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 p-8 text-white shadow-xl">
-        <div className="absolute -right-10 -top-10 h-64 w-64 rounded-full bg-indigo-500/10 blur-3xl" />
-        <div className="absolute right-40 -bottom-10 h-48 w-48 rounded-full bg-blue-500/10 blur-2xl" />
+      <div className="relative overflow-hidden rounded-2xl p-8 text-white shadow-xl"
+           style={{ background: 'linear-gradient(160deg, #0B1A35 0%, #0D2145 50%, #0a1830 100%)' }}>
+        <div className="absolute -right-10 -top-10 h-64 w-64 rounded-full bg-white/5 blur-3xl" />
+        <div className="absolute right-40 -bottom-10 h-48 w-48 rounded-full bg-[#C9A84C]/10 blur-2xl" />
 
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-indigo-200 backdrop-blur-md">
+            <div className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-bold tracking-wide uppercase backdrop-blur-md border border-white/10"
+                 style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#C9A84C' }}>
               <ShieldCheck className="h-3.5 w-3.5" />
               <span>Corporate Secretary & Legal ERP</span>
             </div>
             <h1 className="text-3xl font-extrabold tracking-tight md:text-4xl text-white">
               Welcome back, {firstName}!
             </h1>
-            <p className="text-sm text-slate-300 max-w-xl">
+            <p className="text-sm text-white/70 max-w-xl font-medium">
               Overview of organizational legal requests, compliance routines, document repository, and department budget.
             </p>
           </div>
@@ -122,7 +124,8 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
           <div className="flex flex-wrap gap-3">
             <Button
               onClick={() => onNavigate('csl-create-request')}
-              className="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs h-10 px-5 shadow-lg shadow-indigo-600/30 rounded-xl"
+              className="font-bold text-xs h-10 px-5 shadow-lg rounded-xl transition-all hover:scale-105"
+              style={{ backgroundColor: '#C9A84C', color: '#0B1A35' }}
             >
               <Plus className="h-4 w-4 mr-2" />
               Create Request
@@ -140,104 +143,57 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
 
       {/* KPI Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        <div 
-          onClick={() => onNavigate('csl-all-requests')}
-          className="group cursor-pointer rounded-2xl border border-border/40 bg-card p-5 shadow-sm transition-all duration-200 hover:shadow-md hover:border-indigo-500/30"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Active Requests</span>
-            <div className="rounded-xl bg-indigo-50 dark:bg-indigo-950/40 p-2.5 text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform">
-              <Kanban className="h-5 w-5" />
+        {[
+          { label: 'Active Requests', value: stats.activeRequests, icon: Kanban, sub1: 'Live', sub2: 'Requests currently processing', color: '#0B1A35', route: 'csl-all-requests' },
+          { label: 'Routines Due', value: stats.routinesDue, icon: Calendar, sub1: 'Action needed', sub2: 'Upcoming compliance & reports', color: '#C9A84C', route: 'routine-monitoring' },
+          { label: 'SLA Fulfillment', value: `${slaPercentage}%`, icon: Clock, sub1: 'On track', sub2: 'Based on completed vs total', color: '#0B1A35', route: 'reports-sla' },
+          { label: 'Documents Vault', value: stats.totalDocuments, icon: FolderOpen, sub1: 'Agreements & Legal', sub2: 'Safely stored in system', color: '#C9A84C', route: 'documents-all' },
+        ].map((kpi, i) => (
+          <div key={i} onClick={() => onNavigate(kpi.route)}
+            className="group cursor-pointer rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900 p-5 shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-1 hover:border-slate-300"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-500 dark:text-slate-400">{kpi.label}</span>
+              <div className="rounded-xl p-2.5 group-hover:scale-110 transition-transform" style={{ backgroundColor: `${kpi.color}15`, color: kpi.color }}>
+                <kpi.icon className="h-5 w-5" />
+              </div>
             </div>
-          </div>
-          <div className="mt-4 flex items-baseline gap-2">
-            <span className="text-3xl font-black text-foreground">{stats.activeRequests}</span>
-            <span className="text-xs font-semibold text-emerald-600 flex items-center">
-              <TrendingUp className="h-3 w-3 mr-0.5" /> Live
-            </span>
-          </div>
-          <p className="mt-1 text-xs text-muted-foreground">Requests currently processing</p>
-        </div>
-
-        <div 
-          onClick={() => onNavigate('routine-monitoring')}
-          className="group cursor-pointer rounded-2xl border border-border/40 bg-card p-5 shadow-sm transition-all duration-200 hover:shadow-md hover:border-amber-500/30"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Routines Due</span>
-            <div className="rounded-xl bg-amber-50 dark:bg-amber-950/40 p-2.5 text-amber-600 dark:text-amber-400 group-hover:scale-110 transition-transform">
-              <Calendar className="h-5 w-5" />
+            <div className="mt-4 flex items-baseline gap-2">
+              <span className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">{kpi.value}</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider flex items-center" style={{ color: kpi.color }}>
+                {i % 2 === 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : <AlertTriangle className="h-3 w-3 mr-1" />} {kpi.sub1}
+              </span>
             </div>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 font-medium">{kpi.sub2}</p>
           </div>
-          <div className="mt-4 flex items-baseline gap-2">
-            <span className="text-3xl font-black text-foreground">{stats.routinesDue}</span>
-            <span className="text-xs font-semibold text-amber-600 flex items-center">
-              <AlertTriangle className="h-3 w-3 mr-0.5" /> Action needed
-            </span>
-          </div>
-          <p className="mt-1 text-xs text-muted-foreground">Upcoming compliance & reports</p>
-        </div>
-
-        <div 
-          onClick={() => onNavigate('reports-sla')}
-          className="group cursor-pointer rounded-2xl border border-border/40 bg-card p-5 shadow-sm transition-all duration-200 hover:shadow-md hover:border-emerald-500/30"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">SLA Fulfillment</span>
-            <div className="rounded-xl bg-emerald-50 dark:bg-emerald-950/40 p-2.5 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform">
-              <Clock className="h-5 w-5" />
-            </div>
-          </div>
-          <div className="mt-4 flex items-baseline gap-2">
-            <span className="text-3xl font-black text-foreground">{slaPercentage}%</span>
-            <span className="text-xs font-semibold text-emerald-600 flex items-center">
-              <CheckCircle2 className="h-3 w-3 mr-0.5" /> On track
-            </span>
-          </div>
-          <p className="mt-1 text-xs text-muted-foreground">Based on completed vs total</p>
-        </div>
-
-        <div 
-          onClick={() => onNavigate('documents-all')}
-          className="group cursor-pointer rounded-2xl border border-border/40 bg-card p-5 shadow-sm transition-all duration-200 hover:shadow-md hover:border-blue-500/30"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Documents Vault</span>
-            <div className="rounded-xl bg-blue-50 dark:bg-blue-950/40 p-2.5 text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform">
-              <FolderOpen className="h-5 w-5" />
-            </div>
-          </div>
-          <div className="mt-4 flex items-baseline gap-2">
-            <span className="text-3xl font-black text-foreground">{stats.totalDocuments}</span>
-            <span className="text-xs font-semibold text-blue-600 font-mono">Agreements & Legal</span>
-          </div>
-          <p className="mt-1 text-xs text-muted-foreground">Safely stored in system</p>
-        </div>
+        ))}
       </div>
 
       {/* Quick Access Modules Grid */}
       <div className="space-y-4">
-        <h2 className="text-lg font-extrabold tracking-tight text-foreground">CSL Modules Quick Access</h2>
+        <h2 className="text-lg font-extrabold tracking-tight text-slate-900 dark:text-white">CSL Modules Quick Access</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           {[
-            { id: 'csl-requests', label: 'Ticketing / Request', icon: Kanban, color: 'text-indigo-600 bg-indigo-50 dark:bg-indigo-950/30', route: 'csl-all-requests' },
-            { id: 'routine', label: 'Routine Activity', icon: Calendar, color: 'text-amber-600 bg-amber-50 dark:bg-amber-950/30', route: 'routine-monitoring' },
-            { id: 'documents', label: 'Documents Vault', icon: FolderOpen, color: 'text-blue-600 bg-blue-50 dark:bg-blue-950/30', route: 'documents-all' },
-            { id: 'budget', label: 'Budget & Cost', icon: Wallet, color: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30', route: 'budget-plan' },
-            { id: 'directory', label: 'Phone Directory', icon: PhoneCall, color: 'text-violet-600 bg-violet-50 dark:bg-violet-950/30', route: 'directory-all' },
-            { id: 'reports', label: 'Reports & SLA', icon: TrendingUp, color: 'text-rose-600 bg-rose-50 dark:bg-rose-950/30', route: 'reports-sla' },
-          ].map((item) => {
+            { id: 'csl-requests', label: 'Ticketing / Request', icon: Kanban, route: 'csl-all-requests' },
+            { id: 'routine', label: 'Routine Activity', icon: Calendar, route: 'routine-monitoring' },
+            { id: 'documents', label: 'Documents Vault', icon: FolderOpen, route: 'documents-all' },
+            { id: 'budget', label: 'Budget & Cost', icon: Wallet, route: 'budget-plan' },
+            { id: 'directory', label: 'Phone Directory', icon: PhoneCall, route: 'directory-all' },
+            { id: 'reports', label: 'Reports & SLA', icon: TrendingUp, route: 'reports-sla' },
+          ].map((item, i) => {
             const Icon = item.icon;
+            const isGold = i % 2 === 1;
+            const color = isGold ? '#C9A84C' : '#0B1A35';
             return (
               <button
                 key={item.id}
                 onClick={() => onNavigate(item.route)}
-                className="flex flex-col items-center justify-center p-5 rounded-2xl border border-border/40 bg-card hover:bg-muted/40 transition-all duration-200 group text-center"
+                className="flex flex-col items-center justify-center p-5 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-all duration-200 group text-center"
               >
-                <div className={`p-3 rounded-2xl ${item.color} mb-3 group-hover:scale-110 transition-transform`}>
+                <div className={`p-3 rounded-2xl mb-3 group-hover:scale-110 transition-transform`} style={{ backgroundColor: `${color}10`, color }}>
                   <Icon className="h-6 w-6" />
                 </div>
-                <span className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">
+                <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
                   {item.label}
                 </span>
               </button>
@@ -251,36 +207,38 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
         {/* Recent Requests Summary */}
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-extrabold tracking-tight text-foreground">Recent Legal Requests</h2>
+            <h2 className="text-lg font-extrabold tracking-tight text-slate-900 dark:text-white">Recent Legal Requests</h2>
             <Button 
               variant="ghost" 
               size="sm" 
               onClick={() => onNavigate('csl-all-requests')} 
-              className="text-xs font-bold text-indigo-600 hover:text-indigo-700"
+              className="text-xs font-bold hover:bg-slate-100 dark:hover:bg-zinc-800"
+              style={{ color: '#0B1A35' }}
             >
               View All <ArrowUpRight className="h-3.5 w-3.5 ml-1" />
             </Button>
           </div>
 
-          <div className="rounded-2xl border border-border/40 bg-card overflow-hidden shadow-sm">
-            <div className="divide-y divide-border/20">
+          <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900 overflow-hidden shadow-sm">
+            <div className="divide-y divide-slate-100 dark:divide-white/5">
               {recentRequests.length > 0 ? (
                 recentRequests.map((req, idx) => (
-                  <div key={idx} className="p-4 hover:bg-muted/30 transition-colors flex items-center justify-between gap-4">
+                  <div key={idx} className="p-5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors flex items-center justify-between gap-4">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono font-bold text-indigo-600">{req.request_number}</span>
-                        <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                        <span className="text-xs font-mono font-bold" style={{ color: '#0B1A35' }}>{req.request_number}</span>
+                        <span className="text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-white/10">
                           {req.department || req.company || 'General'}
                         </span>
                       </div>
-                      <p className="text-sm font-bold text-foreground">{req.description || 'Tanpa deskripsi'}</p>
-                      <p className="text-xs text-muted-foreground">PIC: {req.assigned_pic_name || 'Belum di-assign'} • {new Date(req.created_at).toLocaleDateString('id-ID')}</p>
+                      <p className="text-sm font-bold text-slate-900 dark:text-white">{req.description || 'Tanpa deskripsi'}</p>
+                      <p className="text-xs font-medium text-slate-500 dark:text-slate-400">PIC: {req.assigned_pic_name || 'Belum di-assign'} • {new Date(req.created_at).toLocaleDateString('id-ID')}</p>
                     </div>
                     <div>
-                      <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-lg ${
-                        ['COMPLETED', 'CLOSED'].includes(req.status) ? 'bg-emerald-100 text-emerald-700' :
-                        ['PROCESSING', 'RESPONDED'].includes(req.status) ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'
+                      <span className={`text-[9px] font-black uppercase px-3 py-1 rounded-md border ${
+                        ['COMPLETED', 'CLOSED'].includes(req.status) ? 'bg-[#0B1A35]/10 text-[#0B1A35] border-[#0B1A35]/20' :
+                        ['PROCESSING', 'RESPONDED'].includes(req.status) ? 'bg-[#C9A84C]/10 text-[#C9A84C] border-[#C9A84C]/20' : 
+                        'bg-slate-100 text-slate-600 border-slate-200 dark:bg-white/5 dark:text-slate-300 dark:border-white/10'
                       }`}>
                         {req.status.replace(/_/g, ' ')}
                       </span>
@@ -288,7 +246,7 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
                   </div>
                 ))
               ) : (
-                <div className="p-6 text-center text-sm text-muted-foreground">Belum ada request baru.</div>
+                <div className="p-6 text-center text-sm font-medium text-slate-500">Belum ada request baru.</div>
               )}
             </div>
           </div>
@@ -297,35 +255,38 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
         {/* Routines & Compliance Alerts */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-extrabold tracking-tight text-foreground">Upcoming Routines</h2>
+            <h2 className="text-lg font-extrabold tracking-tight text-slate-900 dark:text-white">Upcoming Routines</h2>
             <Button 
               variant="ghost" 
               size="sm" 
               onClick={() => onNavigate('routine-monitoring')} 
-              className="text-xs font-bold text-indigo-600 hover:text-indigo-700"
+              className="text-xs font-bold hover:bg-slate-100 dark:hover:bg-zinc-800"
+              style={{ color: '#C9A84C' }}
             >
               Monitor <ArrowUpRight className="h-3.5 w-3.5 ml-1" />
             </Button>
           </div>
 
-          <div className="rounded-2xl border border-border/40 bg-card p-4 space-y-3 shadow-sm">
+          <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900 p-5 space-y-3 shadow-sm">
             {upcomingRoutines.map((routine, idx) => (
-              <div key={idx} className="p-3 rounded-xl border border-border/20 bg-muted/20 space-y-2">
+              <div key={idx} className="p-3.5 rounded-xl border border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-zinc-800/50 space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-foreground">{routine.title}</span>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
-                    routine.priority === 'High' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-700'
+                  <span className="text-xs font-bold text-slate-900 dark:text-white">{routine.title}</span>
+                  <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border ${
+                    routine.priority === 'High' ? 'bg-red-50 text-red-600 border-red-200 dark:bg-red-500/10 dark:border-red-500/20' : 
+                    'bg-slate-100 text-slate-600 border-slate-200 dark:bg-white/5 dark:text-slate-300 dark:border-white/10'
                   }`}>
                     {routine.due_date ? new Date(routine.due_date).toLocaleDateString() : 'No date'}
                   </span>
                 </div>
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>Status: <strong className="text-foreground">{routine.status?.replace(/_/g, ' ')}</strong></span>
+                <div className="flex items-center justify-between text-xs font-medium text-slate-500">
+                  <span>Status: <strong className="text-slate-900 dark:text-white">{routine.status?.replace(/_/g, ' ')}</strong></span>
                   <Button 
                     variant="link" 
                     size="sm" 
                     onClick={() => onNavigate('routine-monitoring')}
-                    className="h-auto p-0 text-indigo-600 text-xs font-bold"
+                    className="h-auto p-0 text-xs font-bold hover:opacity-80"
+                    style={{ color: '#0B1A35' }}
                   >
                     Details &rarr;
                   </Button>
