@@ -1,16 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { AlertCircle, CheckCircle2, Loader2, Mail, Lock, Eye, EyeOff, Sun, Moon, User, UserPlus, LogIn } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AlertCircle, CheckCircle2, Loader2, Mail, Lock, Eye, EyeOff, User, UserPlus, LogIn, Shield, Globe } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
-import { useLanguage } from '../translations';
 import { sendPasswordResetNotificationEmail } from '../utils/EmailSystemUtils';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface LoginPageProps {
     onLogin: (email: string) => void;
@@ -31,33 +24,19 @@ type Mode = 'login' | 'register' | 'reset';
 
 export const LoginPage: React.FC<LoginPageProps> = ({
     onLogin,
-    appName = 'CSL-LINK',
+    appName = 'CSL System',
     logoUrl = '/image/logo.png',
-    primaryColor = '#0a2558'
 }) => {
-    const { t } = useLanguage();
     const [mode, setMode] = useState<Mode>('login');
     const [identifier, setIdentifier] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [fullName, setFullName] = useState('');
     const [showPassword, setShowPassword] = useState(false);
+    const [rememberMe, setRememberMe] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [successMsg, setSuccessMsg] = useState('');
-    const [isDark, setIsDark] = useState(false);
-
-    useEffect(() => {
-        const savedTheme = localStorage.getItem('theme');
-        if (savedTheme === 'dark') { setIsDark(true); document.documentElement.classList.add('dark'); }
-    }, []);
-
-    const toggleTheme = () => {
-        const next = !isDark;
-        setIsDark(next);
-        if (next) { document.documentElement.classList.add('dark'); localStorage.setItem('theme', 'dark'); }
-        else { document.documentElement.classList.remove('dark'); localStorage.setItem('theme', 'light'); }
-    };
 
     const switchMode = (m: Mode) => { setMode(m); setError(''); setSuccessMsg(''); };
 
@@ -68,13 +47,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({
             let finalEmail = identifier.trim();
             if (!finalEmail.includes('@')) {
                 const { data: ud } = await supabase.from('user_accounts').select('email').eq('username', finalEmail.toLowerCase()).maybeSingle();
-                if (!ud) throw new Error('Identity not recognized.');
+                if (!ud) throw new Error('Identitas tidak ditemukan.');
                 finalEmail = ud.email;
             }
             const { data, error: authErr } = await supabase.auth.signInWithPassword({ email: finalEmail, password });
             if (authErr) throw authErr;
             if (data.session?.user?.email) onLogin(data.session.user.email);
-        } catch (err: any) { setError(err.message || 'Access denied.'); }
+        } catch (err: any) { setError(err.message || 'Login gagal. Periksa email dan password Anda.'); }
         finally { setIsLoading(false); }
     };
 
@@ -83,7 +62,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
         setError(''); setSuccessMsg('');
         const email = identifier.trim().toLowerCase();
         if (!isAllowedDomain(email)) {
-            setError(`Pendaftaran hanya untuk domain perusahaan: ${ALLOWED_DOMAINS.map(d => '@' + d).join(' & ')}`);
+            setError(`Pendaftaran hanya untuk domain: ${ALLOWED_DOMAINS.map(d => '@' + d).join(' & ')}`);
             return;
         }
         if (!fullName.trim()) { setError('Nama lengkap wajib diisi.'); return; }
@@ -96,7 +75,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                 options: { data: { full_name: fullName.trim() } }
             });
             if (signUpErr) throw signUpErr;
-            setSuccessMsg('Pendaftaran berhasil! Cek email Anda untuk konfirmasi, lalu silakan login.');
+            setSuccessMsg('Pendaftaran berhasil! Cek email Anda untuk konfirmasi.');
             switchMode('login');
             setIdentifier(email);
             setPassword(''); setFullName(''); setConfirmPassword('');
@@ -128,219 +107,291 @@ export const LoginPage: React.FC<LoginPageProps> = ({
         } catch (err: any) { setError(err.message || 'Google login gagal.'); setIsLoading(false); }
     };
 
-    const titles: Record<Mode, string> = { login: 'Sign In', register: 'Buat Akun', reset: 'Reset Password' };
-    const descs: Record<Mode, string> = {
-        login: 'Selamat datang! Masukkan kredensial untuk mengakses sistem.',
-        register: `Hanya email domain ${ALLOWED_DOMAINS.map(d => '@' + d).join(' & ')} yang diizinkan.`,
-        reset: 'Masukkan email Anda untuk menerima link reset password.',
-    };
+    // ─── Gold accent colour used throughout ────────────────────────────
+    const GOLD = '#C9A84C';
 
     return (
-        <div className="h-screen w-full bg-background text-foreground flex font-sans overflow-hidden">
-            {/* Left Hero */}
-            <div className="hidden lg:flex w-[45%] relative overflow-hidden flex-col justify-between p-24">
-                <div className="absolute inset-0" style={{ backgroundColor: primaryColor }}>
-                    <motion.img initial={{ scale: 1.1, opacity: 0 }} animate={{ scale: 1, opacity: 0.6 }} transition={{ duration: 2 }}
-                        src="/image/bg.jpeg" alt="" className="w-full h-full object-cover mix-blend-multiply" />
-                    <div className="absolute inset-0" style={{ background: `linear-gradient(to bottom right, ${primaryColor}66, ${primaryColor}E6)` }} />
-                    <motion.div animate={{ opacity: [0.1, 0.2, 0.1] }} transition={{ duration: 10, repeat: Infinity }}
-                        className="absolute top-0 right-0 w-[500px] h-[500px] bg-white/5 rounded-full blur-[120px]" />
-                </div>
-                <div className="relative z-10 h-full flex flex-col justify-between">
-                    <div>
-                        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8 }} className="mb-16">
-                            <img src={logoUrl} alt="Logo" className="w-28 h-28 object-contain filter drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)]" />
-                        </motion.div>
-                        <motion.h1 initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, delay: 0.2 }}
-                            className="text-5xl lg:text-6xl font-black text-white tracking-tighter mb-4">
-                            <span className="block opacity-40 text-xl tracking-widest font-medium mb-1 uppercase">Welcome to</span>
-                            <span className="bg-clip-text text-transparent bg-gradient-to-br from-white via-white to-white/60 uppercase">{appName}</span>
-                        </motion.h1>
-                        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 0.8 }} transition={{ duration: 1, delay: 0.7 }}
-                            className="text-white text-base leading-relaxed font-medium max-w-lg mt-6">
-                            Empowering your professional workflow with integrated management tools — designed for growth and operational excellence.
-                        </motion.p>
-                        <div className="flex gap-6 mt-10">
-                            {[{ e: '⚡', l: 'Performance', v: 'High Speed' }, { e: '🛡️', l: 'Protection', v: 'Deep Security' }].map((b, i) => (
-                                <motion.div key={i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 + i * 0.1 }}
-                                    className="bg-white/[0.03] backdrop-blur-3xl px-5 py-4 rounded-xl border border-white/10 flex items-center gap-3">
-                                    <span className="text-2xl">{b.e}</span>
-                                    <div>
-                                        <div className="text-[9px] text-white/40 font-medium">{b.l}</div>
-                                        <div className="text-[11px] font-bold text-white">{b.v}</div>
-                                    </div>
-                                </motion.div>
-                            ))}
+        <div className="min-h-screen w-full flex font-sans overflow-hidden" style={{ fontFamily: "'Inter', sans-serif" }}>
+
+            {/* ══════════ LEFT PANEL ══════════ */}
+            <div className="hidden lg:flex w-[48%] relative flex-col justify-between overflow-hidden"
+                style={{ background: 'linear-gradient(160deg, #0B1A35 0%, #0D2145 50%, #0a1830 100%)' }}>
+
+                {/* Background building image */}
+                <img
+                    src="/image/bg.jpeg"
+                    alt=""
+                    className="absolute inset-0 w-full h-full object-cover opacity-25 mix-blend-luminosity"
+                />
+
+                {/* Gold top accent */}
+                <div className="absolute top-0 left-0 right-0 h-[3px]" style={{ background: `linear-gradient(90deg, transparent, ${GOLD}, transparent)` }} />
+
+                {/* Content */}
+                <div className="relative z-10 flex flex-col h-full p-10 xl:p-14">
+                    {/* Logo + Brand */}
+                    <div className="flex items-center gap-4 mb-auto">
+                        <div className="flex flex-col">
+                            <div className="flex items-center gap-3">
+                                <span className="text-4xl font-black text-white tracking-tight">CSL</span>
+                                <div className="w-px h-10" style={{ background: GOLD }} />
+                                <div className="flex flex-col text-[10px] font-bold tracking-widest uppercase leading-tight" style={{ color: `${GOLD}CC` }}>
+                                    <span>Corporate</span>
+                                    <span>Secretary</span>
+                                    <span>Legal</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div className="opacity-20">
-                        <p className="text-[9px] font-medium text-white">© 2026 CSL-LINK — Create IT Dev Gesit</p>
+
+                    {/* Main hero copy */}
+                    <div className="mt-auto mb-16">
+                        <h1 className="text-5xl xl:text-6xl font-black text-white leading-tight tracking-tight mb-6">
+                            Integrity.<br />
+                            Compliance.<br />
+                            <span style={{ color: GOLD }}>Legal Excellence.</span>
+                        </h1>
+                        {/* Gold underline */}
+                        <div className="w-12 h-[3px] rounded-full mb-6" style={{ background: GOLD }} />
+                        <p className="text-sm text-white/60 leading-relaxed max-w-sm">
+                            CSL System terintegrasi untuk mendukung tata kelola perusahaan yang baik, manajemen dokumen hukum, dan kepatuhan secara berkelanjutan.
+                        </p>
+                    </div>
+
+                    {/* Feature pills */}
+                    <div className="grid grid-cols-3 gap-4 mb-10">
+                        {[
+                            { icon: '⚖️', title: 'Governance & Compliance', desc: 'Kelola kepatuhan dan kebijakan perusahaan' },
+                            { icon: '📄', title: 'Legal Document Management', desc: 'Kelola dokumen hukum secara terstruktur' },
+                            { icon: '🏢', title: 'Corporate Action & Disclosure', desc: 'Kelola aksi korporasi dan keterbukaan informasi' },
+                        ].map((f, i) => (
+                            <div key={i} className="flex flex-col items-center text-center p-3 rounded-xl gap-2"
+                                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                                <span className="text-2xl">{f.icon}</span>
+                                <p className="text-[11px] font-bold text-white leading-tight">{f.title}</p>
+                                <p className="text-[9px] text-white/40 leading-tight">{f.desc}</p>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Bottom security badge */}
+                    <div className="flex items-center gap-2.5" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                        <Shield size={13} />
+                        <span className="text-[11px] font-medium">Keamanan data terjamin dengan standar enterprise grade</span>
                     </div>
                 </div>
+
+                {/* Gold triangle accent top-right */}
+                <div className="absolute top-0 right-0 w-0 h-0"
+                    style={{
+                        borderTop: `80px solid ${GOLD}`,
+                        borderLeft: '80px solid transparent',
+                    }} />
             </div>
 
-            {/* Right Form */}
-            <div className="flex-1 flex flex-col items-center justify-center p-6 lg:p-20 bg-background/50 relative overflow-y-auto">
-                <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                    <motion.div animate={{ x: [0, 40, 0], y: [0, 20, 0] }} transition={{ duration: 20, repeat: Infinity }}
-                        className="absolute top-20 -right-20 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px]" />
+            {/* ══════════ RIGHT PANEL ══════════ */}
+            <div className="flex-1 flex flex-col bg-white relative overflow-y-auto">
+
+                {/* Top bar */}
+                <div className="flex justify-end items-center px-8 py-5">
+                    <button className="flex items-center gap-2 text-xs font-semibold text-slate-600 border border-slate-200 rounded-lg px-3 py-2 hover:bg-slate-50 transition-colors">
+                        <Globe size={14} />
+                        Bahasa Indonesia
+                        <span className="text-slate-400">▾</span>
+                    </button>
                 </div>
 
-                <Button variant="ghost" size="icon" onClick={toggleTheme} className="absolute top-6 right-6 z-50 border border-slate-200/50 dark:border-white/10">
-                    {isDark ? <Sun size={18} /> : <Moon size={18} />}
-                </Button>
+                {/* Form area */}
+                <div className="flex-1 flex flex-col justify-center items-center px-8 py-6">
+                    <div className="w-full max-w-[420px]">
 
-                <div className="w-full max-w-[440px] z-10">
-                    <AnimatePresence mode="wait">
-                        <motion.div key={mode} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.3 }}>
-                            <Card className="border border-slate-200 dark:border-white/5 bg-white/70 dark:bg-zinc-900/70 backdrop-blur-3xl shadow-2xl rounded-2xl overflow-hidden">
-                                <CardHeader className="pt-8 px-8 pb-5">
-                                    {/* Mobile logo */}
-                                    <div className="lg:hidden flex flex-col items-center mb-6 gap-3">
-                                        <img src={logoUrl} alt="Logo" className="w-16 h-16 object-contain" />
-                                        <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tighter uppercase">{appName}</h2>
+                        {/* Mobile logo */}
+                        <div className="lg:hidden flex items-center gap-3 mb-8">
+                            <img src={logoUrl} alt="Logo" className="w-10 h-10 object-contain" />
+                            <span className="text-xl font-black text-slate-900">CSL System</span>
+                        </div>
+
+                        {/* Heading */}
+                        <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: GOLD }}>
+                            {mode === 'login' ? 'Selamat Datang' : mode === 'register' ? 'Buat Akun Baru' : 'Reset Password'}
+                        </p>
+                        <h2 className="text-3xl font-black text-slate-900 mb-1 tracking-tight">
+                            {mode === 'login' ? 'Login ke CSL System' : mode === 'register' ? 'Daftar Akun' : 'Lupa Password?'}
+                        </h2>
+                        <p className="text-sm text-slate-400 mb-8">
+                            {mode === 'login'
+                                ? 'Silakan masuk menggunakan akun Anda untuk mengakses sistem.'
+                                : mode === 'register'
+                                    ? `Hanya email domain ${ALLOWED_DOMAINS.map(d => '@' + d).join(' & ')} yang diizinkan.`
+                                    : 'Masukkan email Anda untuk menerima link reset password.'}
+                        </p>
+
+                        {/* Alerts */}
+                        {error && (
+                            <div className="flex items-start gap-2.5 mb-5 p-3.5 rounded-xl bg-red-50 border border-red-100">
+                                <AlertCircle size={15} className="text-red-500 shrink-0 mt-0.5" />
+                                <p className="text-xs font-semibold text-red-700">{error}</p>
+                            </div>
+                        )}
+                        {successMsg && (
+                            <div className="flex items-start gap-2.5 mb-5 p-3.5 rounded-xl bg-emerald-50 border border-emerald-100">
+                                <CheckCircle2 size={15} className="text-emerald-600 shrink-0 mt-0.5" />
+                                <p className="text-xs font-semibold text-emerald-700">{successMsg}</p>
+                            </div>
+                        )}
+
+                        {/* Form */}
+                        <form onSubmit={mode === 'login' ? handleLogin : mode === 'register' ? handleRegister : handleReset}
+                            className="space-y-4">
+
+                            {mode === 'register' && (
+                                <div>
+                                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Nama Lengkap</label>
+                                    <div className="relative">
+                                        <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                                        <input
+                                            className="w-full h-12 pl-10 pr-4 rounded-xl border border-slate-200 text-sm text-slate-800 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 transition-all"
+                                            style={{ focusRingColor: GOLD } as any}
+                                            onFocus={e => e.target.style.borderColor = GOLD}
+                                            onBlur={e => e.target.style.borderColor = ''}
+                                            placeholder="Nama lengkap Anda"
+                                            value={fullName} onChange={e => setFullName(e.target.value)} required />
                                     </div>
-                                    <CardTitle className="text-2xl font-black tracking-tighter">
-                                        <span className="bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-300">
-                                            {titles[mode]}
-                                        </span>
-                                    </CardTitle>
-                                    <CardDescription className="text-xs font-medium text-slate-500 dark:text-zinc-400 mt-1 leading-relaxed">
-                                        {descs[mode]}
-                                    </CardDescription>
-                                </CardHeader>
+                                </div>
+                            )}
 
-                                <CardContent className="px-8 pb-5">
-                                    {error && (
-                                        <Alert variant="destructive" className="mb-5 bg-rose-500/10 border-rose-500/20 rounded-xl">
-                                            <AlertCircle className="h-4 w-4" />
-                                            <AlertDescription className="text-[11px] font-semibold ml-1">{error}</AlertDescription>
-                                        </Alert>
-                                    )}
-                                    {successMsg && (
-                                        <Alert className="mb-5 bg-emerald-500/10 border-emerald-500/20 rounded-xl">
-                                            <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                                            <AlertDescription className="text-[11px] font-semibold ml-1 text-emerald-700 dark:text-emerald-400">{successMsg}</AlertDescription>
-                                        </Alert>
-                                    )}
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                                    {mode === 'login' ? 'Email atau Username' : 'Email Perusahaan'}
+                                </label>
+                                <div className="relative">
+                                    <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                                    <input
+                                        className="w-full h-12 pl-10 pr-4 rounded-xl border border-slate-200 text-sm text-slate-800 bg-white placeholder-slate-400 focus:outline-none transition-all"
+                                        onFocus={e => e.target.style.borderColor = GOLD}
+                                        onBlur={e => e.target.style.borderColor = '#e2e8f0'}
+                                        style={{ borderColor: '#e2e8f0' }}
+                                        placeholder={mode === 'register' ? 'nama@gesit.co.id' : 'Masukkan email atau username'}
+                                        type={mode === 'register' ? 'email' : 'text'}
+                                        value={identifier} onChange={e => setIdentifier(e.target.value)} required />
+                                </div>
+                            </div>
 
-                                    <form onSubmit={mode === 'login' ? handleLogin : mode === 'register' ? handleRegister : handleReset} className="space-y-4">
-                                        {mode === 'register' && (
-                                            <div className="space-y-1.5">
-                                                <Label className="text-[10px] font-semibold text-slate-400 ml-1">Nama Lengkap</Label>
-                                                <div className="relative">
-                                                    <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                                                    <Input className="h-11 pl-10 rounded-xl text-sm font-medium bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10"
-                                                        placeholder="Nama lengkap Anda" value={fullName} onChange={e => setFullName(e.target.value)} required />
-                                                </div>
+                            {mode !== 'reset' && (
+                                <div>
+                                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Password</label>
+                                    <div className="relative">
+                                        <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                                        <input
+                                            className="w-full h-12 pl-10 pr-11 rounded-xl border border-slate-200 text-sm text-slate-800 bg-white placeholder-slate-400 focus:outline-none transition-all"
+                                            onFocus={e => e.target.style.borderColor = GOLD}
+                                            onBlur={e => e.target.style.borderColor = '#e2e8f0'}
+                                            style={{ borderColor: '#e2e8f0' }}
+                                            placeholder="Masukkan password"
+                                            type={showPassword ? 'text' : 'password'}
+                                            value={password} onChange={e => setPassword(e.target.value)} required />
+                                        <button type="button"
+                                            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors"
+                                            onClick={() => setShowPassword(!showPassword)}>
+                                            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {mode === 'register' && (
+                                <div>
+                                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Konfirmasi Password</label>
+                                    <div className="relative">
+                                        <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                                        <input
+                                            className="w-full h-12 pl-10 pr-4 rounded-xl border border-slate-200 text-sm text-slate-800 bg-white placeholder-slate-400 focus:outline-none transition-all"
+                                            onFocus={e => e.target.style.borderColor = GOLD}
+                                            onBlur={e => e.target.style.borderColor = '#e2e8f0'}
+                                            style={{ borderColor: '#e2e8f0' }}
+                                            placeholder="Ulangi password"
+                                            type={showPassword ? 'text' : 'password'}
+                                            value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required />
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Remember + Forgot */}
+                            {mode === 'login' && (
+                                <div className="flex items-center justify-between">
+                                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                                        <div className="relative">
+                                            <input type="checkbox" className="sr-only" checked={rememberMe} onChange={e => setRememberMe(e.target.checked)} />
+                                            <div className="w-4 h-4 rounded flex items-center justify-center transition-all"
+                                                style={{ background: rememberMe ? '#0B1A35' : 'white', border: rememberMe ? 'none' : '1.5px solid #cbd5e1' }}>
+                                                {rememberMe && <svg viewBox="0 0 10 8" className="w-2.5 h-2 fill-white"><path d="M1 4l2.5 2.5L9 1" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" /></svg>}
                                             </div>
-                                        )}
-
-                                        <div className="space-y-1.5">
-                                            <Label className="text-[10px] font-semibold text-slate-400 ml-1">
-                                                {mode === 'login' ? 'Email atau Username' : 'Email Perusahaan'}
-                                            </Label>
-                                            <div className="relative">
-                                                <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                                                <Input className="h-11 pl-10 rounded-xl text-sm font-medium bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10"
-                                                    placeholder={mode === 'register' ? 'nama@gesit.co.id' : 'Email atau username'}
-                                                    type={mode === 'register' ? 'email' : 'text'}
-                                                    value={identifier} onChange={e => setIdentifier(e.target.value)} required />
-                                            </div>
-                                            {mode === 'register' && (
-                                                <p className="text-[10px] text-slate-400 ml-1">Domain yang diizinkan: {ALLOWED_DOMAINS.map(d => '@' + d).join(', ')}</p>
-                                            )}
                                         </div>
+                                        <span className="text-xs font-semibold text-slate-600">Ingat saya</span>
+                                    </label>
+                                    <button type="button" onClick={() => switchMode('reset')}
+                                        className="text-xs font-semibold transition-colors hover:opacity-80"
+                                        style={{ color: GOLD }}>
+                                        Lupa password?
+                                    </button>
+                                </div>
+                            )}
 
-                                        {mode !== 'reset' && (
-                                            <div className="space-y-1.5">
-                                                <Label className="text-[10px] font-semibold text-slate-400 ml-1">Password</Label>
-                                                <div className="relative">
-                                                    <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                                                    <Input className="h-11 pl-10 pr-11 rounded-xl text-sm font-medium bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10"
-                                                        placeholder={mode === 'register' ? 'Min. 8 karakter' : 'Password'}
-                                                        type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} required />
-                                                    <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors"
-                                                        onClick={() => setShowPassword(!showPassword)}>
-                                                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        )}
+                            {/* Submit */}
+                            <button
+                                type="submit"
+                                disabled={isLoading}
+                                className="w-full h-12 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-60 mt-2"
+                                style={{ background: '#0B1A35' }}>
+                                {isLoading
+                                    ? <Loader2 size={18} className="animate-spin" />
+                                    : mode === 'login' ? 'Masuk' : mode === 'register' ? 'Buat Akun' : 'Kirim Link Reset'}
+                            </button>
+                        </form>
 
-                                        {mode === 'register' && (
-                                            <div className="space-y-1.5">
-                                                <Label className="text-[10px] font-semibold text-slate-400 ml-1">Konfirmasi Password</Label>
-                                                <div className="relative">
-                                                    <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                                                    <Input className="h-11 pl-10 rounded-xl text-sm font-medium bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10"
-                                                        placeholder="Ulangi password" type={showPassword ? 'text' : 'password'}
-                                                        value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required />
-                                                </div>
-                                            </div>
-                                        )}
+                        {/* Mode switcher links */}
+                        <div className="flex items-center justify-center gap-4 mt-5 text-[11px] font-semibold text-slate-400">
+                            {mode !== 'login' && (
+                                <button onClick={() => switchMode('login')} className="flex items-center gap-1 hover:text-slate-700 transition-colors">
+                                    <LogIn size={11} /> Login
+                                </button>
+                            )}
+                            {mode !== 'register' && (
+                                <button onClick={() => switchMode('register')} className="flex items-center gap-1 hover:text-slate-700 transition-colors">
+                                    <UserPlus size={11} /> Daftar Akun
+                                </button>
+                            )}
+                        </div>
 
-                                        <Button type="submit" disabled={isLoading} className="w-full h-11 font-bold text-sm tracking-tight mt-2" style={{ backgroundColor: primaryColor }}>
-                                            {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> :
-                                                mode === 'login' ? 'Sign In' : mode === 'register' ? 'Buat Akun' : 'Kirim Link Reset'}
-                                        </Button>
-                                    </form>
+                        {/* Google login */}
+                        {mode === 'login' && (
+                            <div className="mt-6">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className="h-px flex-1 bg-slate-100" />
+                                    <span className="text-[11px] font-medium text-slate-400">atau masuk dengan</span>
+                                    <div className="h-px flex-1 bg-slate-100" />
+                                </div>
+                                <button
+                                    onClick={handleGoogleLogin}
+                                    disabled={isLoading}
+                                    className="w-full h-12 rounded-xl border border-slate-200 flex items-center justify-center gap-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-all disabled:opacity-60">
+                                    <svg className="w-5 h-5" viewBox="0 0 24 24">
+                                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+                                        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                                        <path d="M5.84 14.1c-.22-.66-.35-1.36-.35-2.1s.13-1.44.35-2.1V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l3.66-2.84z" fill="#FBBC05" />
+                                        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 6.18l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+                                    </svg>
+                                    Masuk dengan Google
+                                </button>
+                            </div>
+                        )}
 
-                                    {/* Mode switcher */}
-                                    <div className="mt-5 flex items-center justify-center gap-4 text-[11px] font-semibold">
-                                        {mode !== 'login' && (
-                                            <button onClick={() => switchMode('login')} className="flex items-center gap-1.5 text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
-                                                <LogIn size={12} /> Sign In
-                                            </button>
-                                        )}
-                                        {mode !== 'register' && (
-                                            <button onClick={() => switchMode('register')} className="flex items-center gap-1.5 text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
-                                                <UserPlus size={12} /> Daftar Akun
-                                            </button>
-                                        )}
-                                        {mode !== 'reset' && (
-                                            <button onClick={() => switchMode('reset')} className="text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
-                                                Lupa password?
-                                            </button>
-                                        )}
-                                    </div>
-
-                                    {/* Google login only shown on login mode */}
-                                    {mode === 'login' && (
-                                        <div className="mt-5">
-                                            <div className="flex items-center gap-3 mb-4">
-                                                <div className="h-px flex-1 bg-slate-100 dark:bg-white/5" />
-                                                <span className="text-[9px] font-bold text-slate-300 dark:text-slate-600 uppercase tracking-widest">atau</span>
-                                                <div className="h-px flex-1 bg-slate-100 dark:bg-white/5" />
-                                            </div>
-                                            <Button variant="outline" onClick={handleGoogleLogin} disabled={isLoading}
-                                                className="w-full h-11 border-slate-200 dark:border-white/10 gap-2 text-[11px] font-bold uppercase tracking-wider">
-                                                <svg className="w-4 h-4" viewBox="0 0 24 24">
-                                                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
-                                                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-                                                    <path d="M5.84 14.1c-.22-.66-.35-1.36-.35-2.1s.13-1.44.35-2.1V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l3.66-2.84z" fill="#FBBC05" />
-                                                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 6.18l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
-                                                </svg>
-                                                Masuk dengan Google
-                                            </Button>
-                                            <p className="text-center text-[9px] text-slate-400 mt-2">Login Google dibatasi hanya untuk domain perusahaan</p>
-                                        </div>
-                                    )}
-                                </CardContent>
-
-                                <CardFooter className="px-8 pb-8 pt-0 flex flex-col gap-3">
-                                    <div className="w-full h-px bg-slate-100 dark:bg-white/5" />
-                                    <div className="flex items-center gap-4 text-slate-400/60 text-[9px] font-bold uppercase tracking-widest">
-                                        <button onClick={() => window.location.href = 'mailto:it@gesit.co.id'} className="hover:text-slate-700 dark:hover:text-white transition-colors">Support</button>
-                                        <span>·</span>
-                                        <a href="/privacy" className="hover:text-primary transition-colors">Privacy</a>
-                                        <span>·</span>
-                                        <a href="/terms" className="hover:text-primary transition-colors">Terms</a>
-                                    </div>
-                                </CardFooter>
-                            </Card>
-                        </motion.div>
-                    </AnimatePresence>
+                        {/* Footer */}
+                        <p className="text-center text-[11px] text-slate-400 mt-8 flex items-center justify-center gap-1.5">
+                            <Shield size={11} />
+                            © 2026 CSL System. All rights reserved.
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
