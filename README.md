@@ -139,4 +139,4 @@ csl-system/
 ## 📄 Lisensi
 
 Proprietary Software — Internal Use Only.  
-Copyright © 2026 PT GESIT. All rights reserved.
+Copyright © 2026 THE GESIT COMPANIES. All rights reserved.
