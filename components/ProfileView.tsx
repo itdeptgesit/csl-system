@@ -270,7 +270,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onLogout, user, onUpda
                         <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-2 border-slate-100 dark:border-zinc-800 shadow-md bg-slate-50 dark:bg-zinc-800">
                             <Avatar className="w-full h-full rounded-full">
                                 {avatarUrl && <AvatarImage src={avatarUrl} className="object-cover" />}
-                                <AvatarFallback className="text-3xl font-black bg-gradient-to-br from-indigo-500 to-violet-600 text-white rounded-full w-full h-full flex items-center justify-center">
+                                <AvatarFallback className="text-3xl font-black bg-[#0B1A35] text-white rounded-full w-full h-full flex items-center justify-center">
                                     {userInitial}
                                 </AvatarFallback>
                             </Avatar>
@@ -280,7 +280,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onLogout, user, onUpda
                                 </div>
                             )}
                         </div>
-                        <label className="absolute bottom-0 right-0 w-9 h-9 bg-indigo-600 hover:bg-indigo-700 rounded-full flex items-center justify-center cursor-pointer shadow-lg transition-all border-2 border-white dark:border-zinc-900">
+                        <label className="absolute bottom-0 right-0 w-9 h-9 bg-[#0B1A35] hover:opacity-90 rounded-full flex items-center justify-center cursor-pointer shadow-lg transition-all border-2 border-white dark:border-zinc-900">
                             <input type="file" className="hidden" accept="image/*" onChange={handlePhotoUpload} disabled={isUploading} />
                             <Camera size={14} className="text-white" />
                         </label>
@@ -293,7 +293,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onLogout, user, onUpda
                                 <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight capitalize">
                                     {formData.fullName || 'User Profile'}
                                 </h1>
-                                <Badge className="bg-indigo-50 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300 border-none text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg">
+                                <Badge className="bg-[#0B1A35]/10 text-[#0B1A35] dark:bg-[#0B1A35]/30 dark:text-[#C9A84C] border border-[#0B1A35]/20 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg">
                                     {userRole}
                                 </Badge>
                             </div>
@@ -305,7 +305,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onLogout, user, onUpda
                         {/* Quick meta chips */}
                         <div className="flex flex-wrap justify-center sm:justify-start gap-2 mt-auto">
                             <span className="flex items-center gap-1.5 bg-slate-50 dark:bg-white/5 px-3 py-1.5 rounded-full border border-slate-100 dark:border-white/10 text-[12px] font-semibold text-slate-600 dark:text-zinc-300">
-                                <Mail size={13} className="text-indigo-400" /> {userEmail}
+                                <Mail size={13} className="text-[#C9A84C]" /> {userEmail}
                             </span>
                         </div>
                     </div>
@@ -362,7 +362,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onLogout, user, onUpda
                                             value={(formData as any)[key]}
                                             disabled={!isEditing}
                                             onChange={(e) => setFormData({ ...formData, [key]: e.target.value })}
-                                            className="h-11 rounded-xl border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-800/50 px-4 font-semibold text-sm disabled:opacity-60 disabled:cursor-default focus-visible:ring-indigo-500/30 focus-visible:border-indigo-500"
+                                            className="h-11 rounded-xl border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-800/50 px-4 font-semibold text-sm disabled:opacity-60 disabled:cursor-default focus-visible:ring-[#0B1A35]/30 focus-visible:border-[#0B1A35]"
                                         />
                                     </div>
                                 ))}
@@ -403,7 +403,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onLogout, user, onUpda
                             {isEditing && (
                                 <div className="flex justify-end gap-3 pt-2">
                                     <Button variant="outline" onClick={() => setIsEditing(false)} className="rounded-xl font-bold">Cancel</Button>
-                                    <Button onClick={handleSave} disabled={isSaving} className="rounded-xl font-bold bg-indigo-600 hover:bg-indigo-700 gap-2">
+                                    <Button onClick={handleSave} disabled={isSaving} className="rounded-xl font-bold bg-[#0B1A35] hover:opacity-90 gap-2">
                                         {isSaving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
                                         Save Changes
                                     </Button>
@@ -577,7 +577,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onLogout, user, onUpda
                                                         {session.isCurrent ? (
                                                             <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">Active</span>
                                                         ) : (
-                                                            <Button variant="ghost" size="sm" className="h-7 px-3 text-[10px] font-bold text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg"
+                                                            <Button variant="ghost" size="sm" className="h-7 px-3 text-[10px] font-bold text-[#0B1A35] hover:text-[#E6C200] hover:bg-[#0B1A35]/5 dark:hover:bg-[#E6C200]/10 rounded-lg"
                                                                 onClick={async () => {
                                                                     if (session.sessionToken) {
                                                                         await supabase.from('user_sessions').delete().eq('session_token', session.sessionToken);

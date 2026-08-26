@@ -41,6 +41,7 @@ import {
 
 import { checkAssetLoanOverdue } from './utils/LoanNotificationUtils';
 import { ProfileView } from './components/ProfileView';
+import { CompleteProfileModal } from './components/CompleteProfileModal';
 
 
 // Lazy Load Managers
@@ -106,13 +107,14 @@ const PublicLayout: React.FC<{
     value: string;
     onChange: (val: string) => void;
   };
-}> = ({ children, appSettings, onLogout, currentUser, groupDefinitions, variant = 'admin', hideHeader = false, hideFooter = false, searchProps }) => {
+  refreshUserProfile?: () => void;
+}> = ({ children, appSettings, onLogout, currentUser, groupDefinitions, variant = 'admin', hideHeader = false, hideFooter = false, searchProps, refreshUserProfile }) => {
   const location = useLocation();
   const navigate = useNavigate();
 
   return (
     <div className="flex h-screen bg-sidebar text-foreground transition-colors duration-300 overflow-hidden relative font-sans">
-
+      <CompleteProfileModal user={currentUser} onUpdateSuccess={refreshUserProfile} />
       {variant !== 'public' && (
         <NavigationSidebar
           currentUser={currentUser}
@@ -834,6 +836,7 @@ const DashboardLayout: React.FC<any & { children?: React.ReactNode }> = ({
 
   return (
     <SidebarProvider>
+      <CompleteProfileModal user={currentUser} onUpdateSuccess={refreshUserProfile} />
       <NavigationSidebar
         currentUser={currentUser}
         groupDefinitions={groupDefinitions}
