@@ -393,7 +393,11 @@ const InternalApp: React.FC = () => {
         .eq('email', email)
         .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.error('App.tsx: SELECT user_accounts error:', error);
+        throw error;
+      }
+      console.log("App.tsx: user_accounts query result:", data ? 'found' : 'not found');
 
       if (data) {
         const userProfile: UserAccount = {
@@ -441,7 +445,6 @@ const InternalApp: React.FC = () => {
           .from('user_accounts')
           .insert([{
             email: email,
-            username: email.split('@')[0],
             full_name: fullName,
             role: 'User',
             groups: ['user'],
@@ -452,13 +455,15 @@ const InternalApp: React.FC = () => {
           .select()
           .single();
 
-        if (createError) throw createError;
+        if (createError) {
+          console.error('App.tsx: Auto-registration failed:', createError);
+          throw new Error(`Akun Anda tidak ditemukan di sistem. Hubungi administrator untuk mendaftarkan akun Anda. (${createError.message})`);
+        }
 
         if (newUser) {
           const userProfile: UserAccount = {
             id: newUser.id,
             email: newUser.email,
-            username: newUser.username,
             fullName: newUser.full_name,
             role: newUser.role,
             groups: newUser.groups || [],
@@ -476,9 +481,9 @@ const InternalApp: React.FC = () => {
           showToast(t('welcomeAutoReg'), 'success');
         }
       }
-    } catch (error) {
-      console.error('Login error:', error);
-      showToast(t('loginFailedAdmin'), 'error');
+    } catch (error: any) {
+      console.error('Login error full:', error);
+      showToast(error?.message || t('loginFailedAdmin'), 'error');
     }
   };
 
