@@ -134,17 +134,17 @@ export const Navbar: React.FC<NavbarProps> = ({
                                         onClick={() => setActiveSubMenu(activeSubMenu === item.id ? null : item.id)}
                                         className={`relative flex items-center gap-3 px-6 py-3 rounded-xl text-[11px] font-bold transition-colors duration-300 tracking-tight whitespace-nowrap z-10
                                             ${isSubActive
-                                                ? 'text-blue-600 dark:text-blue-400'
+                                                ? 'text-[#C9A84C] dark:text-[#C9A84C]'
                                                 : 'text-slate-400 dark:text-zinc-500 hover:text-slate-900 dark:hover:text-white'}`}
                                     >
                                         {isSubActive && (
                                             <motion.div
                                                 layoutId="nav-pill"
-                                                className="absolute inset-0 bg-blue-50/90 dark:bg-blue-900/40 shadow-[0_10px_20px_-5px_rgba(37,99,235,0.2)] ring-1 ring-blue-500/20 rounded-xl z-[-1]"
+                                                className="absolute inset-0 bg-[#C9A84C]/10 dark:bg-[#C9A84C]/20 shadow-[0_10px_20px_-5px_rgba(37,99,235,0.2)] ring-1 ring-[#C9A84C]/20 rounded-xl z-[-1]"
                                                 transition={{ type: "spring", stiffness: 400, damping: 30 }}
                                             />
                                         )}
-                                        <Icon size={20} className={`${isSubActive ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-zinc-500'} transition-colors duration-300`} strokeWidth={isSubActive ? 2.5 : 2} />
+                                        <Icon size={20} className={`${isSubActive ? 'text-[#C9A84C] dark:text-[#C9A84C]' : 'text-slate-400 dark:text-zinc-500'} transition-colors duration-300`} strokeWidth={isSubActive ? 2.5 : 2} />
                                         <span>{item.label}</span>
                                         <ChevronDown size={12} className={`transition-transform duration-300 ${activeSubMenu === item.id ? 'rotate-180' : ''} ${isSubActive ? 'opacity-100' : 'opacity-40'}`} />
                                     </motion.button>
@@ -165,10 +165,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                                                             onClick={() => setActiveSubMenu(null)}
                                                             className={({ isActive }) => `w-full flex items-center gap-4 px-4 py-3 rounded-xl text-[11px] font-bold transition-all duration-200 tracking-tight
                                                                 ${isActive
-                                                                    ? 'text-blue-600 bg-blue-50/50 dark:bg-blue-900/30'
+                                                                    ? 'text-[#C9A84C] bg-[#C9A84C]/10 dark:bg-[#C9A84C]/10'
                                                                     : 'text-slate-500 dark:text-zinc-400 hover:bg-slate-50 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white'}`}
                                                         >
-                                                            {sub.icon && <sub.icon size={16} className={currentView === sub.id ? 'text-blue-600' : 'opacity-40'} />}
+                                                            {sub.icon && <sub.icon size={16} className={currentView === sub.id ? 'text-[#C9A84C]' : 'opacity-40'} />}
                                                             {sub.label}
                                                         </NavLink>
                                                     ))}
@@ -186,7 +186,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                                     to={path}
                                     className={({ isActive }) => `relative flex items-center gap-3 px-6 py-3 rounded-xl text-[11px] font-bold transition-colors duration-300 tracking-tight whitespace-nowrap z-10
                                         ${isActive
-                                            ? 'text-blue-600 dark:text-blue-400'
+                                            ? 'text-[#C9A84C] dark:text-[#C9A84C]'
                                             : 'text-slate-400 dark:text-zinc-500 hover:text-slate-900 dark:hover:text-white'}`}
                                 >
                                     {({ isActive }) => (
@@ -194,11 +194,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                                             {isActive && (
                                                 <motion.div
                                                     layoutId="nav-pill"
-                                                    className="absolute inset-0 bg-blue-50/90 dark:bg-blue-900/40 shadow-[0_10px_20px_-5px_rgba(37,99,235,0.2)] ring-1 ring-blue-500/20 rounded-xl z-[-1]"
+                                                    className="absolute inset-0 bg-[#C9A84C]/10 dark:bg-[#C9A84C]/20 shadow-[0_10px_20px_-5px_rgba(37,99,235,0.2)] ring-1 ring-[#C9A84C]/20 rounded-xl z-[-1]"
                                                     transition={{ type: "spring", stiffness: 400, damping: 30 }}
                                                 />
                                             )}
-                                            <Icon size={20} className={`${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-zinc-500'} transition-colors duration-300`} strokeWidth={isActive ? 2.5 : 2} />
+                                            <Icon size={20} className={`${isActive ? 'text-[#C9A84C] dark:text-[#C9A84C]' : 'text-slate-400 dark:text-zinc-500'} transition-colors duration-300`} strokeWidth={isActive ? 2.5 : 2} />
                                             <span>{item.label}</span>
                                         </>
                                     )}

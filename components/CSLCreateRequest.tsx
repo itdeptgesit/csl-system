@@ -195,10 +195,10 @@ export const CSLCreateRequest: React.FC<CSLCreateRequestProps> = ({ currentUser,
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6 text-center animate-in fade-in duration-500 font-sans">
         <div className="w-24 h-24 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center shadow-lg">
-          <CheckCircle2 size={42} className="text-emerald-600" />
+          <CheckCircle2 size={42} className="text-[#C9A84C]" />
         </div>
         <div>
-          <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600 mb-2">Permintaan Terkirim!</p>
+          <p className="text-[10px] font-black uppercase tracking-widest text-[#C9A84C] mb-2">Permintaan Terkirim!</p>
           <h2 className="text-3xl font-black text-foreground font-mono">{submittedNumber}</h2>
           <p className="text-sm text-muted-foreground mt-3 max-w-sm leading-relaxed">
             Permintaan kamu telah diterima. Tim CSL akan segera menghubungi kamu melalui email.
@@ -211,7 +211,7 @@ export const CSLCreateRequest: React.FC<CSLCreateRequestProps> = ({ currentUser,
           }}>
             Tutup & Lihat Data
           </Button>
-          <Button className="rounded-lg font-bold text-sm h-10 px-5 bg-blue-600 hover:bg-blue-500" onClick={() => {
+          <Button className="rounded-lg font-bold text-sm h-10 px-5 bg-[#0B1A35] hover:opacity-90" onClick={() => {
             setSubmitted(false);
             setForm({ ...form, description: '', tujuan: '', required_date: '' });
             setAttachedFiles([]);
@@ -238,7 +238,7 @@ export const CSLCreateRequest: React.FC<CSLCreateRequestProps> = ({ currentUser,
           {/* SECTION 1 — Identitas */}
           <div className="bg-white dark:bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
             <div className="flex items-center gap-3 px-5 py-3.5 border-b border-border bg-muted/20">
-              <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-black shrink-0">1</div>
+              <div className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-black shrink-0" style={{ backgroundColor: '#0B1A35' }}>1</div>
               <h2 className="text-sm font-extrabold text-foreground">Identitas Pemohon</h2>
             </div>
             <div className="p-5 grid grid-cols-2 gap-4">
@@ -288,7 +288,7 @@ export const CSLCreateRequest: React.FC<CSLCreateRequestProps> = ({ currentUser,
           {/* SECTION 2 — Detail */}
           <div className="bg-white dark:bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
             <div className="flex items-center gap-3 px-5 py-3.5 border-b border-border bg-muted/20">
-              <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-black shrink-0">2</div>
+              <div className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-black shrink-0" style={{ backgroundColor: '#0B1A35' }}>2</div>
               <h2 className="text-sm font-extrabold text-foreground">Detail Permintaan</h2>
             </div>
             <div className="p-5 space-y-5">
@@ -349,9 +349,11 @@ export const CSLCreateRequest: React.FC<CSLCreateRequestProps> = ({ currentUser,
 
           {/* SECTION 3 — Lampiran */}
           <div className="bg-white dark:bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
-            <div className="flex items-center gap-3 px-5 py-3.5 border-b border-border bg-muted/20">
-              <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-black shrink-0">3</div>
-              <h2 className="text-sm font-extrabold text-foreground">Lampiran</h2>
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-border bg-muted/20">
+              <div className="flex items-center gap-3">
+                <div className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-black shrink-0" style={{ backgroundColor: '#0B1A35' }}>3</div>
+                <h2 className="text-sm font-extrabold text-foreground">Lampiran Dokumen</h2>
+              </div>
             </div>
             <div className="p-5 space-y-3">
               <div>
@@ -373,7 +375,7 @@ export const CSLCreateRequest: React.FC<CSLCreateRequestProps> = ({ currentUser,
                 }`}
               >
                 <Upload size={22} className="text-blue-500" />
-                <p className="text-xs font-bold text-blue-600">Klik untuk pilih file</p>
+                <p className="text-xs font-bold text-[#0B1A35]">Klik untuk pilih file</p>
                 <p className="text-[11px] text-muted-foreground">atau seret dan lepas file di sini</p>
                 <input ref={fileInputRef} type="file" multiple accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.xls,.xlsx"
                   className="hidden" onChange={e => addFiles(e.target.files)} />
@@ -414,7 +416,7 @@ export const CSLCreateRequest: React.FC<CSLCreateRequestProps> = ({ currentUser,
               Batal
             </Button>
             <Button type="submit" disabled={isSubmitting}
-              className="flex-1 h-11 rounded-xl font-bold text-sm bg-blue-600 hover:bg-blue-500 text-white shadow-md shadow-blue-600/20">
+              className="flex-1 h-11 rounded-xl font-bold text-sm bg-[#0B1A35] hover:opacity-90 text-white shadow-md shadow-blue-600/20">
               {isSubmitting
                 ? <><Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> Mengirim...</>
                 : <><Send className="mr-1.5 h-4 w-4" /> Kirim Permintaan</>}
