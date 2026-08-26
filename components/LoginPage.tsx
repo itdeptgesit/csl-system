@@ -135,7 +135,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                     {/* Logo + Brand */}
                     <div className="flex items-center gap-4 mb-auto">
                         <div className="flex flex-col">
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-4">
+                                <img src={logoUrl} alt="Logo" className="w-12 h-12 object-contain" />
                                 <span className="text-4xl font-black text-white tracking-tight">CSL</span>
                                 <div className="w-px h-10" style={{ background: GOLD }} />
                                 <div className="flex flex-col text-[10px] font-bold tracking-widest uppercase leading-tight" style={{ color: `${GOLD}CC` }}>
