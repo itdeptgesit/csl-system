@@ -48,7 +48,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
             if (!finalEmail.includes('@')) {
                 // Use RPC function (SECURITY DEFINER) to bypass RLS for unauthenticated username lookup
                 const { data: emailResult, error: rpcError } = await supabase
-                    .rpc('get_email_by_username', { p_username: finalEmail.toLowerCase() });
+                    .rpc('get_email_by_username', { input_username: finalEmail.toLowerCase() });
                 if (rpcError) throw new Error('Gagal mencari akun.');
                 if (!emailResult) throw new Error('Username tidak ditemukan. Coba masukkan email Anda.');
                 finalEmail = emailResult;
