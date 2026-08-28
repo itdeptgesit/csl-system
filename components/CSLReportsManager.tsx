@@ -67,7 +67,7 @@ export const CSLReportsManager: React.FC<CSLReportsManagerProps> = ({ currentUse
       acc[dept] = (acc[dept] || 0) + 1;
       return acc;
     }, {});
-    const topDept = Object.entries(deptStats).sort((a, b) => b[1] - a[1])[0] || ['-', 0];
+    const topDept = Object.entries(deptStats).sort((a, b) => (b[1] as number) - (a[1] as number))[0] || ['-', 0];
 
     return (
       <div className="space-y-6 animate-in fade-in duration-500 pb-12 font-sans">
@@ -100,7 +100,7 @@ export const CSLReportsManager: React.FC<CSLReportsManagerProps> = ({ currentUse
           <div className="bg-card border border-border/40 p-5 rounded-2xl shadow-sm">
             <span className="text-[10px] font-black uppercase text-muted-foreground">Top Requesting Dept</span>
             <p className="text-3xl font-black text-foreground mt-1">{topDept[0]}</p>
-            <span className="text-xs text-indigo-600 font-semibold mt-1 inline-block">{topDept[1]} requests</span>
+            <span className="text-xs text-indigo-600 font-semibold mt-1 inline-block">{String(topDept[1])} requests</span>
           </div>
         </div>
 
@@ -199,7 +199,7 @@ export const CSLReportsManager: React.FC<CSLReportsManagerProps> = ({ currentUse
               {Object.entries(catStats).map(([cat, count]) => (
                 <div key={cat} className="flex items-center justify-between">
                   <span className="text-xs font-medium text-muted-foreground">{cat}</span>
-                  <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600">{count as React.ReactNode}</span>
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600">{count}</span>
                 </div>
               ))}
               {Object.keys(catStats).length === 0 && (
