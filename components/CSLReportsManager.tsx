@@ -1,73 +1,106 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { UserAccount } from '../types';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { supabase } from '@/lib/supabaseClient';
 import { 
-  BarChart2, 
   Download, 
   Filter, 
   TrendingUp, 
   Clock, 
-  CalendarCheck, 
-  Coins, 
-  Award, 
   CheckCircle2, 
-  Users, 
   PieChart, 
-  Star 
+  Wallet,
+  CheckSquare,
+  FileBarChart
 } from 'lucide-react';
 
 interface CSLReportsManagerProps {
   currentUser: UserAccount | null;
-  view?: 'request' | 'sla' | 'routine' | 'budget' | 'performance';
+  view?: 'request' | 'task' | 'budget';
 }
 
 export const CSLReportsManager: React.FC<CSLReportsManagerProps> = ({ currentUser, view = 'request' }) => {
+  const [loading, setLoading] = useState(true);
 
-  // ── SUB-PAGE 1: SLA PERFORMANCE REPORT ──────────────────────────────────
-  if (view === 'sla') {
-    const slaData = [
-      { category: 'Agreement', total: 18, avgDays: '3.4 days', target: '5 days', breach: 0, compliance: '100%' },
-      { category: 'Corporate Secretary', total: 8, avgDays: '4.1 days', target: '5 days', breach: 0, compliance: '100%' },
-      { category: 'OSS & Licensing', total: 6, avgDays: '11.8 days', target: '14 days', breach: 1, compliance: '83.3%' },
-      { category: 'Legal Opinion', total: 5, avgDays: '4.8 days', target: '5 days', breach: 0, compliance: '100%' },
-      { category: 'Document Request', total: 5, avgDays: '1.2 days', target: '2 days', breach: 0, compliance: '100%' },
-    ];
+  // States for Requests
+  const [requests, setRequests] = useState<any[]>([]);
+  // States for Tasks
+  const [tasks, setTasks] = useState<any[]>([]);
+  // States for Budget
+  const [expenses, setExpenses] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        if (view === 'request') {
+          const { data } = await supabase.from('csl_requests').select('*').order('created_at', { ascending: false });
+          if (data) setRequests(data);
+        } else if (view === 'task') {
+          const { data } = await supabase.from('csl_tasks').select('*').order('created_at', { ascending: false });
+          if (data) setTasks(data);
+        } else if (view === 'budget') {
+          const { data } = await supabase.from('csl_expense_approvals').select('*').order('created_at', { ascending: false });
+          if (data) setExpenses(data);
+        }
+      } catch (error) {
+        console.error('Error fetching report data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [view]);
+
+  // ── SUB-PAGE 1: REQUEST REPORT ──────────────────────────────────
+  if (view === 'request') {
+    const totalRequests = requests.length;
+    const completedRequests = requests.filter(r => ['COMPLETED', 'CLOSED'].includes(r.status)).length;
+    const activeRequests = requests.filter(r => !['COMPLETED', 'CLOSED', 'REJECTED'].includes(r.status)).length;
+    const rejectedRequests = requests.filter(r => r.status === 'REJECTED').length;
+    
+    // Group by department
+    const deptStats = requests.reduce((acc: Record<string, number>, curr) => {
+      const dept = curr.department || 'General';
+      acc[dept] = (acc[dept] || 0) + 1;
+      return acc;
+    }, {});
+    const topDept = Object.entries(deptStats).sort((a, b) => b[1] - a[1])[0] || ['-', 0];
 
     return (
       <div className="space-y-6 animate-in fade-in duration-500 pb-12 font-sans">
-        <PageHeader title="SLA Performance & Fulfillment Analytics" description="Analysis of request resolution speed, target compliance rate, and bottleneck categories">
+        <PageHeader title="Request Volume & SLA Report" description="Comprehensive analysis of incoming legal and corporate secretary requests">
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" className="text-xs font-bold rounded-xl h-9">
               <Filter size={13} className="mr-1.5" /> Filter Period
             </Button>
             <Button size="sm" className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl h-9 px-4 shadow-md">
-              <Download size={13} className="mr-1.5" /> Export Report
+              <Download size={13} className="mr-1.5" /> Export PDF
             </Button>
           </div>
         </PageHeader>
 
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-5">
           <div className="bg-card border border-border/40 p-5 rounded-2xl shadow-sm">
-            <span className="text-[10px] font-black uppercase text-muted-foreground">Overall SLA Fulfillment</span>
-            <p className="text-3xl font-black text-emerald-600 mt-1">96.4%</p>
-            <span className="text-xs text-emerald-600 font-semibold mt-1 inline-block">+2.1% vs last month</span>
+            <span className="text-[10px] font-black uppercase text-muted-foreground">Total Requests</span>
+            <p className="text-3xl font-black text-foreground mt-1">{totalRequests}</p>
+            <span className="text-xs text-emerald-600 font-semibold mt-1 inline-block"><TrendingUp size={12} className="inline mr-1"/> Live Data</span>
           </div>
           <div className="bg-card border border-border/40 p-5 rounded-2xl shadow-sm">
-            <span className="text-[10px] font-black uppercase text-muted-foreground">Avg Resolution Time</span>
-            <p className="text-3xl font-black text-indigo-600 mt-1">3.2 Days</p>
-            <span className="text-xs text-muted-foreground mt-1 inline-block">Target SLA: &lt; 5.0 Days</span>
+            <span className="text-[10px] font-black uppercase text-muted-foreground">Completed</span>
+            <p className="text-3xl font-black text-emerald-600 mt-1">{completedRequests}</p>
+            <span className="text-xs text-muted-foreground font-semibold mt-1 inline-block">{(totalRequests ? (completedRequests/totalRequests*100).toFixed(1) : 0)}% completion rate</span>
           </div>
           <div className="bg-card border border-border/40 p-5 rounded-2xl shadow-sm">
-            <span className="text-[10px] font-black uppercase text-muted-foreground">Total SLA Breaches</span>
-            <p className="text-3xl font-black text-red-600 mt-1">1</p>
-            <span className="text-xs text-muted-foreground mt-1 inline-block">Out of 42 requests</span>
+            <span className="text-[10px] font-black uppercase text-muted-foreground">Active / Processing</span>
+            <p className="text-3xl font-black text-indigo-600 mt-1">{activeRequests}</p>
           </div>
           <div className="bg-card border border-border/40 p-5 rounded-2xl shadow-sm">
-            <span className="text-[10px] font-black uppercase text-muted-foreground">Fastest Category</span>
-            <p className="text-3xl font-black text-foreground mt-1">Doc Request</p>
-            <span className="text-xs text-indigo-600 font-semibold mt-1 inline-block">Avg 1.2 Days</span>
+            <span className="text-[10px] font-black uppercase text-muted-foreground">Top Requesting Dept</span>
+            <p className="text-3xl font-black text-foreground mt-1">{topDept[0]}</p>
+            <span className="text-xs text-indigo-600 font-semibold mt-1 inline-block">{topDept[1]} requests</span>
           </div>
         </div>
 
@@ -75,29 +108,37 @@ export const CSLReportsManager: React.FC<CSLReportsManagerProps> = ({ currentUse
           <Table>
             <TableHeader className="bg-muted/30">
               <TableRow>
-                <TableHead className="text-[10px] font-black uppercase tracking-widest">Category</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-widest">Processed Volume</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-widest">Avg Handling Time</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-widest">SLA Target</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-widest">Breach Count</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-widest">Compliance Rate</TableHead>
+                <TableHead className="text-[10px] font-black uppercase tracking-widest w-[120px]">Request No</TableHead>
+                <TableHead className="text-[10px] font-black uppercase tracking-widest">Description</TableHead>
+                <TableHead className="text-[10px] font-black uppercase tracking-widest">Department</TableHead>
+                <TableHead className="text-[10px] font-black uppercase tracking-widest">Status</TableHead>
+                <TableHead className="text-[10px] font-black uppercase tracking-widest">Date</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {slaData.map((s, idx) => (
-                <TableRow key={idx} className="hover:bg-muted/40">
-                  <TableCell className="font-bold text-sm text-foreground">{s.category}</TableCell>
-                  <TableCell className="font-mono text-xs font-bold text-indigo-600">{s.total} requests</TableCell>
-                  <TableCell className="font-mono text-xs font-bold text-foreground">{s.avgDays}</TableCell>
-                  <TableCell className="font-mono text-xs text-muted-foreground">{s.target}</TableCell>
-                  <TableCell className="font-mono text-xs font-bold text-red-600">{s.breach}</TableCell>
-                  <TableCell>
-                    <span className="text-xs font-black text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-lg">
-                      {s.compliance}
-                    </span>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {loading ? (
+                <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Loading...</TableCell></TableRow>
+              ) : requests.length === 0 ? (
+                <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Tidak ada data request.</TableCell></TableRow>
+              ) : (
+                requests.slice(0, 15).map((req, idx) => (
+                  <TableRow key={idx} className="hover:bg-muted/40">
+                    <TableCell className="font-bold text-xs text-indigo-600">{req.request_number}</TableCell>
+                    <TableCell className="text-xs font-medium text-foreground max-w-[300px] truncate">{req.description}</TableCell>
+                    <TableCell className="font-mono text-xs text-muted-foreground">{req.department || req.company}</TableCell>
+                    <TableCell>
+                      <span className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-md border ${
+                        ['COMPLETED', 'CLOSED'].includes(req.status) ? 'bg-[#0B1A35]/10 text-[#0B1A35] border-[#0B1A35]/20' :
+                        ['PROCESSING', 'RESPONDED'].includes(req.status) ? 'bg-[#C9A84C]/10 text-[#C9A84C] border-[#C9A84C]/20' : 
+                        'bg-slate-100 text-slate-600 border-slate-200 dark:bg-white/5 dark:text-slate-300 dark:border-white/10'
+                      }`}>
+                        {req.status}
+                      </span>
+                    </TableCell>
+                    <TableCell className="font-mono text-xs text-muted-foreground">{new Date(req.created_at).toLocaleDateString('id-ID')}</TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </div>
@@ -105,78 +146,180 @@ export const CSLReportsManager: React.FC<CSLReportsManagerProps> = ({ currentUse
     );
   }
 
-  // ── SUB-PAGE 2: ROUTINE COMPLIANCE REPORT ─────────────────────────────────
-  if (view === 'routine') {
+  // ── SUB-PAGE 2: TASK REPORT ─────────────────────────────────
+  if (view === 'task') {
+    const totalTasks = tasks.length;
+    const completedTasks = tasks.filter(t => t.status === 'Completed').length;
+    const inProgressTasks = tasks.filter(t => t.status === 'In progress').length;
+    const blockedTasks = tasks.filter(t => t.status === 'Blocked').length;
+
+    // Group by Category
+    const catStats = tasks.reduce((acc: Record<string, number>, curr) => {
+      const cat = curr.category || 'Other';
+      acc[cat] = (acc[cat] || 0) + 1;
+      return acc;
+    }, {});
+
     return (
       <div className="space-y-6 animate-in fade-in duration-500 pb-12 font-sans">
-        <PageHeader title="Routine Activity Compliance Scorecard" description="Tracking statutory tax filings, quarterly compliance audits, and OSS renewals">
-          <Button size="sm" className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl h-9 px-4 shadow-md">
-            <Download size={13} className="mr-1.5" /> Export Compliance PDF
-          </Button>
+        <PageHeader title="Task & Routine Activity Report" description="Tracking statutory tax filings, quarterly compliance audits, and OSS renewals">
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" className="text-xs font-bold rounded-xl h-9">
+              <Filter size={13} className="mr-1.5" /> Filter Period
+            </Button>
+            <Button size="sm" className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl h-9 px-4 shadow-md">
+              <Download size={13} className="mr-1.5" /> Export PDF
+            </Button>
+          </div>
+        </PageHeader>
+
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-5">
+          <div className="bg-card border border-border/40 p-5 rounded-2xl shadow-sm">
+            <span className="text-[10px] font-black uppercase text-muted-foreground">Total Tasks</span>
+            <p className="text-3xl font-black text-foreground mt-1">{totalTasks}</p>
+          </div>
+          <div className="bg-card border border-border/40 p-5 rounded-2xl shadow-sm">
+            <span className="text-[10px] font-black uppercase text-muted-foreground">Completed</span>
+            <p className="text-3xl font-black text-emerald-600 mt-1">{completedTasks}</p>
+          </div>
+          <div className="bg-card border border-border/40 p-5 rounded-2xl shadow-sm">
+            <span className="text-[10px] font-black uppercase text-muted-foreground">In Progress</span>
+            <p className="text-3xl font-black text-indigo-600 mt-1">{inProgressTasks}</p>
+          </div>
+          <div className="bg-card border border-border/40 p-5 rounded-2xl shadow-sm">
+            <span className="text-[10px] font-black uppercase text-muted-foreground">Blocked / Issues</span>
+            <p className="text-3xl font-black text-red-600 mt-1">{blockedTasks}</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-card border border-border/40 rounded-2xl p-5 shadow-sm">
+            <h3 className="text-sm font-bold mb-4">Task Categories</h3>
+            <div className="space-y-3">
+              {Object.entries(catStats).map(([cat, count]) => (
+                <div key={cat} className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-muted-foreground">{cat}</span>
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600">{count as React.ReactNode}</span>
+                </div>
+              ))}
+              {Object.keys(catStats).length === 0 && (
+                <div className="text-xs text-muted-foreground">Tidak ada kategori.</div>
+              )}
+            </div>
+          </div>
+
+          <div className="md:col-span-2 bg-card border border-border/40 rounded-2xl overflow-hidden shadow-sm">
+            <Table>
+              <TableHeader className="bg-muted/30">
+                <TableRow>
+                  <TableHead className="text-[10px] font-black uppercase tracking-widest">Category</TableHead>
+                  <TableHead className="text-[10px] font-black uppercase tracking-widest">Task Name</TableHead>
+                  <TableHead className="text-[10px] font-black uppercase tracking-widest">Owner</TableHead>
+                  <TableHead className="text-[10px] font-black uppercase tracking-widest">Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {loading ? (
+                  <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">Loading...</TableCell></TableRow>
+                ) : tasks.length === 0 ? (
+                  <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">Tidak ada data task.</TableCell></TableRow>
+                ) : (
+                  tasks.slice(0, 10).map((t, idx) => (
+                    <TableRow key={idx} className="hover:bg-muted/40">
+                      <TableCell className="font-bold text-xs text-indigo-600">{t.category}</TableCell>
+                      <TableCell className="text-xs font-medium text-foreground">{t.task_name || t.company || '-'}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{t.owner || '-'}</TableCell>
+                      <TableCell>
+                        <span className="text-[9px] font-black uppercase text-muted-foreground bg-muted px-2 py-0.5 rounded-md">{t.status || 'Pending'}</span>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── SUB-PAGE 3: BUDGET REPORT ───────────────────────────
+  if (view === 'budget') {
+    const totalExpenses = expenses.length;
+    const approved = expenses.filter(e => e.status === 'Approved').length;
+    const totalAmount = expenses.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
+    const approvedAmount = expenses.filter(e => e.status === 'Approved').reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
+
+    const formatCurrency = (val: number) => {
+      return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(val);
+    };
+
+    return (
+      <div className="space-y-6 animate-in fade-in duration-500 pb-12 font-sans">
+        <PageHeader title="Budget & Expenses Report" description="Analysis of departmental spending, expense approvals, and budget utilization">
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" className="text-xs font-bold rounded-xl h-9">
+              <Filter size={13} className="mr-1.5" /> Filter Period
+            </Button>
+            <Button size="sm" className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl h-9 px-4 shadow-md">
+              <Download size={13} className="mr-1.5" /> Export PDF
+            </Button>
+          </div>
         </PageHeader>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
           <div className="bg-card border border-border/40 p-5 rounded-2xl shadow-sm">
-            <span className="text-[10px] font-black uppercase text-muted-foreground">Compliance Completion Rate</span>
-            <p className="text-3xl font-black text-emerald-600 mt-1">100%</p>
-            <span className="text-xs text-emerald-600 font-semibold mt-1 inline-block">All Q2 routines completed</span>
+            <span className="text-[10px] font-black uppercase text-muted-foreground">Total Budget Requested</span>
+            <p className="text-2xl font-black text-foreground mt-1 truncate">{formatCurrency(totalAmount)}</p>
+            <span className="text-xs text-muted-foreground mt-1 inline-block">From {totalExpenses} requests</span>
           </div>
           <div className="bg-card border border-border/40 p-5 rounded-2xl shadow-sm">
-            <span className="text-[10px] font-black uppercase text-muted-foreground">Active Schedules</span>
-            <p className="text-3xl font-black text-indigo-600 mt-1">12 Routines</p>
+            <span className="text-[10px] font-black uppercase text-muted-foreground">Total Approved Spending</span>
+            <p className="text-2xl font-black text-emerald-600 mt-1 truncate">{formatCurrency(approvedAmount)}</p>
+            <span className="text-xs text-emerald-600 font-semibold mt-1 inline-block">From {approved} approvals</span>
           </div>
           <div className="bg-card border border-border/40 p-5 rounded-2xl shadow-sm">
-            <span className="text-[10px] font-black uppercase text-muted-foreground">Upcoming Deadlines (This Month)</span>
-            <p className="text-3xl font-black text-amber-600 mt-1">3 Tasks</p>
+            <span className="text-[10px] font-black uppercase text-muted-foreground">Pending Review</span>
+            <p className="text-3xl font-black text-amber-600 mt-1">{expenses.filter(e => e.status === 'Pending').length}</p>
+            <span className="text-xs text-amber-600 font-semibold mt-1 inline-block">Requires action</span>
           </div>
         </div>
-      </div>
-    );
-  }
-
-  // ── SUB-PAGE 3: TEAM PERFORMANCE & PRODUCTIVITY ───────────────────────────
-  if (view === 'performance') {
-    const team = [
-      { name: 'Budi Santoso, S.H.', role: 'Senior Legal Specialist', handled: 18, resolved: 17, avgDays: '2.8 days', rating: '4.9 / 5.0' },
-      { name: 'Rina Agustina, S.H.', role: 'Corporate Secretary Specialist', handled: 14, resolved: 14, avgDays: '3.1 days', rating: '5.0 / 5.0' },
-      { name: 'Legal Team Pool', role: 'General Support', handled: 10, resolved: 9, avgDays: '3.8 days', rating: '4.8 / 5.0' },
-    ];
-
-    return (
-      <div className="space-y-6 animate-in fade-in duration-500 pb-12 font-sans">
-        <PageHeader title="Team Productivity & Leaderboard" description="Individual legal staff ticket handling volume, resolution times, and user ratings">
-          <Button size="sm" className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl h-9 px-4 shadow-md">
-            <Award className="h-4 w-4 mr-1.5" /> Performance Review
-          </Button>
-        </PageHeader>
 
         <div className="bg-card border border-border/40 rounded-2xl overflow-hidden shadow-sm">
           <Table>
             <TableHeader className="bg-muted/30">
               <TableRow>
-                <TableHead className="text-[10px] font-black uppercase tracking-widest">Legal Staff Member</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-widest">Role</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-widest">Assigned Tickets</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-widest">Completed</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-widest">Avg Handling Time</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-widest">User Rating</TableHead>
+                <TableHead className="text-[10px] font-black uppercase tracking-widest w-[120px]">Req No</TableHead>
+                <TableHead className="text-[10px] font-black uppercase tracking-widest">Applicant</TableHead>
+                <TableHead className="text-[10px] font-black uppercase tracking-widest">Purpose</TableHead>
+                <TableHead className="text-[10px] font-black uppercase tracking-widest text-right">Amount (IDR)</TableHead>
+                <TableHead className="text-[10px] font-black uppercase tracking-widest text-right">Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {team.map((t, idx) => (
-                <TableRow key={idx} className="hover:bg-muted/40">
-                  <TableCell className="font-bold text-sm text-foreground">{t.name}</TableCell>
-                  <TableCell className="text-xs text-muted-foreground">{t.role}</TableCell>
-                  <TableCell className="font-mono text-xs font-bold text-indigo-600">{t.handled} tickets</TableCell>
-                  <TableCell className="font-mono text-xs font-bold text-emerald-600">{t.resolved}</TableCell>
-                  <TableCell className="font-mono text-xs text-foreground">{t.avgDays}</TableCell>
-                  <TableCell>
-                    <span className="text-xs font-black text-amber-600 flex items-center gap-1">
-                      <Star size={12} className="fill-amber-400 text-amber-400" /> {t.rating}
-                    </span>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {loading ? (
+                <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Loading...</TableCell></TableRow>
+              ) : expenses.length === 0 ? (
+                <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Tidak ada data expense.</TableCell></TableRow>
+              ) : (
+                expenses.slice(0, 15).map((exp, idx) => (
+                  <TableRow key={idx} className="hover:bg-muted/40">
+                    <TableCell className="font-bold text-xs text-indigo-600">{exp.request_no}</TableCell>
+                    <TableCell className="text-xs font-medium text-foreground">{exp.applicant_name}</TableCell>
+                    <TableCell className="font-mono text-xs text-muted-foreground max-w-[300px] truncate">{exp.purpose}</TableCell>
+                    <TableCell className="font-mono text-xs font-bold text-foreground text-right">{formatCurrency(Number(exp.amount))}</TableCell>
+                    <TableCell className="text-right">
+                      <span className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-md border ${
+                        exp.status === 'Approved' ? 'bg-[#0B1A35]/10 text-[#0B1A35] border-[#0B1A35]/20' :
+                        exp.status === 'Pending' ? 'bg-[#C9A84C]/10 text-[#C9A84C] border-[#C9A84C]/20' : 
+                        'bg-red-50 text-red-600 border-red-200'
+                      }`}>
+                        {exp.status}
+                      </span>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </div>
@@ -184,40 +327,5 @@ export const CSLReportsManager: React.FC<CSLReportsManagerProps> = ({ currentUse
     );
   }
 
-  // ── SUB-PAGE 4: REQUEST VOLUME REPORT (DEFAULT) ───────────────────────────
-  return (
-    <div className="space-y-6 animate-in fade-in duration-500 pb-12 font-sans">
-      <PageHeader title="Request Volume & Category Distribution" description="Comprehensive analysis of incoming legal and corporate secretary requests">
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="text-xs font-bold rounded-xl h-9">
-            <Filter size={13} className="mr-1.5" /> Filter Period
-          </Button>
-          <Button size="sm" className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl h-9 px-4 shadow-md">
-            <Download size={13} className="mr-1.5" /> Export PDF
-          </Button>
-        </div>
-      </PageHeader>
-
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-5">
-        <div className="bg-card border border-border/40 p-5 rounded-2xl shadow-sm">
-          <span className="text-[10px] font-black uppercase text-muted-foreground">Total Requests Received</span>
-          <p className="text-3xl font-black text-foreground mt-1">42</p>
-          <span className="text-xs text-emerald-600 font-semibold mt-1 inline-block">+12% vs last month</span>
-        </div>
-        <div className="bg-card border border-border/40 p-5 rounded-2xl shadow-sm">
-          <span className="text-[10px] font-black uppercase text-muted-foreground">Completed Requests</span>
-          <p className="text-3xl font-black text-emerald-600 mt-1">30</p>
-        </div>
-        <div className="bg-card border border-border/40 p-5 rounded-2xl shadow-sm">
-          <span className="text-[10px] font-black uppercase text-muted-foreground">In Progress</span>
-          <p className="text-3xl font-black text-indigo-600 mt-1">8</p>
-        </div>
-        <div className="bg-card border border-border/40 p-5 rounded-2xl shadow-sm">
-          <span className="text-[10px] font-black uppercase text-muted-foreground">Top Category</span>
-          <p className="text-3xl font-black text-foreground mt-1">Agreement</p>
-          <span className="text-xs text-indigo-600 font-semibold mt-1 inline-block">42.8% of volume</span>
-        </div>
-      </div>
-    </div>
-  );
+  return null;
 };

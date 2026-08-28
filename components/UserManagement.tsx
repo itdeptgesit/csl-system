@@ -5,6 +5,7 @@ import { Search, Plus, Trash2, Pencil, RefreshCcw, ShieldCheck, Target, Clock, C
 import { exportToExcel } from '../lib/excelExport';
 import { UserAccount, UserGroup } from '../types';
 import { UserFormModal } from './UserFormModal';
+import { MenuPermissionsModal } from './MenuPermissionsModal';
 import { DangerConfirmModal } from './DangerConfirmModal';
 import { supabase } from '../lib/supabaseClient';
 import { trackActivity } from '../lib/auditLogger';
@@ -30,6 +31,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onUpdateSuccess,
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserAccount | null>(null);
   const [deleteUser, setDeleteUser] = useState<UserAccount | null>(null);
+  const [permissionUser, setPermissionUser] = useState<UserAccount | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -187,11 +189,11 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onUpdateSuccess,
           <Table className="w-full">
             <TableHeader>
               <TableRow className="bg-white dark:bg-zinc-900 hover:bg-white dark:hover:bg-slate-900">
-                <TableHead className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-zinc-500">Status</TableHead>
-                <TableHead className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-zinc-500">User Identity</TableHead>
-                <TableHead className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-zinc-500">Organization / Team</TableHead>
-                <TableHead className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-zinc-500">Global Role</TableHead>
-                <TableHead className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-zinc-500">Last Session</TableHead>
+                <TableHead className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-zinc-500">User Name</TableHead>
+                <TableHead className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-zinc-500">Email</TableHead>
+                <TableHead className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-zinc-500">Company & Dept</TableHead>
+                <TableHead className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-zinc-500">Role</TableHead>
+                <TableHead className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-zinc-500">Access Scope</TableHead>
                 <TableHead className="px-6 py-5 text-center text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-zinc-500">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -199,56 +201,28 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onUpdateSuccess,
               {isLoading ? (
                 Array.from({ length: itemsPerPage }).map((_, idx) => (
                   <TableRow key={idx}>
-                    <TableCell className="px-6 py-4 text-center"><Skeleton className="h-4 w-4 rounded-full mx-auto" /></TableCell>
-                    <TableCell className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <Skeleton className="h-9 w-9 rounded-xl" />
-                        <div className="space-y-2 flex-1">
-                          <Skeleton className="h-4 w-3/4" />
-                          <Skeleton className="h-3 w-1/2" />
-                        </div>
-                      </div>
-                    </TableCell>
+                    <TableCell className="px-6 py-4"><Skeleton className="h-4 w-32" /></TableCell>
+                    <TableCell className="px-6 py-4"><Skeleton className="h-4 w-40" /></TableCell>
                     <TableCell className="px-6 py-4">
                       <div className="space-y-2">
                         <Skeleton className="h-4 w-24" />
                         <Skeleton className="h-3 w-16" />
                       </div>
                     </TableCell>
-                    <TableCell className="px-6 py-4"><Skeleton className="h-6 w-16 rounded-lg" /></TableCell>
-                    <TableCell className="px-6 py-4">
-                      <div className="space-y-2">
-                        <Skeleton className="h-4 w-20" />
-                        <Skeleton className="h-4 w-20" />
-                      </div>
-                    </TableCell>
-                    <TableCell className="px-6 py-4 text-center"><Skeleton className="h-8 w-16 mx-auto rounded-lg" /></TableCell>
+                    <TableCell className="px-6 py-4"><Skeleton className="h-6 w-16 rounded-md" /></TableCell>
+                    <TableCell className="px-6 py-4"><Skeleton className="h-8 w-40 rounded-lg" /></TableCell>
+                    <TableCell className="px-6 py-4 text-center"><Skeleton className="h-4 w-12 mx-auto" /></TableCell>
                   </TableRow>
                 ))
               ) : paginatedUsers.length === 0 ? (
                 <TableRow><TableCell colSpan={6} className="text-center py-20 text-slate-300 dark:text-slate-700 font-bold uppercase tracking-[0.2em] text-[10px]">Registry Empty.</TableCell></TableRow>
               ) : paginatedUsers.map((user) => (
                 <TableRow key={user.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-all group">
-                  <TableCell className="px-6 py-4 text-center">
-                    <div className="flex flex-col items-center gap-1.5">
-                      <div className={`w-2 h-2 rounded-full shadow-sm ${user.status === 'Active' ? 'bg-emerald-500 shadow-emerald-500/20' : 'bg-slate-300 dark:bg-slate-700'}`}></div>
-                      <span className="text-[7px] font-black uppercase tracking-tighter opacity-40">{user.status}</span>
-                    </div>
+                  <TableCell className="px-6 py-4 font-bold text-sm text-slate-900 dark:text-slate-100">
+                    {user.fullName}
                   </TableCell>
-                  <TableCell className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-zinc-800/30 border border-slate-200 dark:border-zinc-700 flex items-center justify-center text-slate-500 dark:text-zinc-400 font-bold text-xs overflow-hidden">
-                        {user.avatarUrl ? (
-                          <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
-                        ) : (
-                          (user.fullName || '').substring(0, 2).toUpperCase()
-                        )}
-                      </div>
-                      <div>
-                        <p className="font-semibold text-slate-800 dark:text-slate-200 text-sm tracking-tight group-hover:text-zinc-950 dark:group-hover:text-zinc-50 transition-colors">{user.fullName}</p>
-                        <p className="text-[10px] font-medium text-slate-400 dark:text-zinc-500 mt-0.5">{user.email}</p>
-                      </div>
-                    </div>
+                  <TableCell className="px-6 py-4 text-xs font-medium text-slate-500">
+                    {user.email}
                   </TableCell>
                   <TableCell className="px-6 py-4">
                     <div className="flex flex-col">
@@ -256,22 +230,20 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onUpdateSuccess,
                       <span className="text-[10px] font-medium text-slate-400 dark:text-zinc-500">{user.department || 'Global'}</span>
                     </div>
                   </TableCell>
-                  <TableCell className="px-6 py-4"><span className={`px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase tracking-widest border ${user.role === 'Admin' ? 'bg-zinc-900 dark:bg-zinc-50 text-zinc-50 dark:text-zinc-900 border-zinc-900 dark:border-zinc-50 shadow' : 'bg-white dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 border-slate-200 dark:border-zinc-700'}`}>{user.role}</span></TableCell>
                   <TableCell className="px-6 py-4">
-                    <div className="flex flex-col">
-                      <div className="flex items-center gap-1.5 text-slate-600 dark:text-zinc-400 text-[10px] font-bold">
-                        <Clock size={10} /> {formatRelativeTime(user.lastLogin)}
-                      </div>
-                      <div className="mt-2 space-y-1">
-                        {user.supervisorId ? (<div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-500 text-[8px] font-black uppercase tracking-tighter"><ShieldCheck size={9} className="shrink-0" /> SV: {users.find(u => u.id.toString() === user.supervisorId)?.fullName?.split(' ')[0] || '...'}</div>) : null}
-                        {user.managerId ? (<div className="flex items-center gap-1.5 text-zinc-650 dark:text-zinc-400 text-[8px] font-black uppercase tracking-tighter"><Target size={9} className="shrink-0" /> MG: {users.find(u => u.id.toString() === user.managerId)?.fullName?.split(' ')[0] || '...'}</div>) : null}
-                      </div>
-                    </div>
+                    <span className="px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
+                      {user.role}
+                    </span>
+                  </TableCell>
+                  <TableCell className="px-6 py-4">
+                    <Button variant="outline" size="sm" onClick={() => setPermissionUser(user)} className="h-8 text-xs font-semibold text-indigo-600 border-indigo-200 bg-indigo-50/50 hover:bg-indigo-50 dark:bg-indigo-950/20 dark:border-indigo-900 dark:hover:bg-indigo-950/40">
+                      <ShieldCheck className="h-3.5 w-3.5 mr-1.5" /> Configure Permissions
+                    </Button>
                   </TableCell>
                   <TableCell className="px-6 py-4 text-center">
-                    <div className="flex items-center justify-center gap-1.5 opacity-40 group-hover:opacity-100 transition-all">
-                      <button onClick={() => handleEditUser(user)} className="p-2 text-slate-400 dark:text-slate-600 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"><Pencil size={14} /></button>
-                      <button onClick={() => setDeleteUser(user)} className="p-2 text-slate-400 dark:text-slate-600 hover:text-rose-600 dark:hover:text-rose-400 transition-colors"><Trash2 size={14} /></button>
+                    <div className="flex items-center justify-center gap-4 text-slate-400 group-hover:text-slate-500 transition-colors">
+                      <button onClick={() => handleEditUser(user)} className="hover:text-slate-800 dark:hover:text-slate-200 transition-colors"><Pencil size={15} /></button>
+                      <button onClick={() => setDeleteUser(user)} className="hover:text-red-500 transition-colors"><Trash2 size={15} /></button>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -344,7 +316,6 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onUpdateSuccess,
           setIsProcessing(true);
           try {
             await supabase.from('user_accounts').delete().eq('id', deleteUser.id);
-
             await trackActivity(
               currentUser?.fullName || 'User',
               currentUser?.role || 'User',
@@ -352,7 +323,6 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onUpdateSuccess,
               'UserManagement',
               `Deleted user ${deleteUser.email} (${deleteUser.fullName})`
             );
-
             await fetchData();
             showToast("User deleted successfully", "success");
             setDeleteUser(null);
@@ -365,6 +335,24 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onUpdateSuccess,
         title="Revoke Node Identity"
         message={`Permanently erase protocol access for "${deleteUser?.fullName}"?`}
         isLoading={isProcessing}
+      />
+
+      <MenuPermissionsModal
+        isOpen={!!permissionUser}
+        onClose={() => setPermissionUser(null)}
+        user={permissionUser}
+        onSave={async (menus) => {
+          if (!permissionUser) return;
+          try {
+            await supabase.from('user_accounts').update({ groups: menus }).eq('id', permissionUser.id);
+            showToast(`Permissions updated for ${permissionUser.fullName}`, "success");
+            await fetchData();
+          } catch (err: any) {
+            showToast("Failed to update permissions: " + err.message, "error");
+          } finally {
+            setPermissionUser(null);
+          }
+        }}
       />
     </div>
   );

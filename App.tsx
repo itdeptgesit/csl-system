@@ -36,7 +36,7 @@ import {
   LayoutGrid, LifeBuoy, Activity, Calendar, ShoppingCart, Package,
   Network, Folder, Shield, ChevronDown, ChevronRight, X, Users, Building2,
   Briefcase, Layers, Zap, ChevronLeft, PanelLeftClose, PanelLeft, Phone,
-  Settings, Megaphone, Loader2, CheckCircle2, Circle, LayoutDashboard, Kanban
+  Settings, Megaphone, Loader2, CheckCircle2, Circle, LayoutDashboard, Kanban, CheckSquare
 } from 'lucide-react';
 
 import { checkAssetLoanOverdue } from './utils/LoanNotificationUtils';
@@ -70,6 +70,7 @@ const CSLDocumentsManager = React.lazy(() => import('./components/CSLDocumentsMa
 const CSLBudgetManager = React.lazy(() => import('./components/CSLBudgetManager').then(m => ({ default: m.CSLBudgetManager })));
 const CSLReportsManager = React.lazy(() => import('./components/CSLReportsManager').then(m => ({ default: m.CSLReportsManager })));
 const CSLSettings = React.lazy(() => import('./components/CSLSettings').then(m => ({ default: m.CSLSettings })));
+const CSLTaskManager = React.lazy(() => import('./components/CSLTaskManager').then(m => ({ default: m.CSLTaskManager })));
 
 const ICON_MAP: Record<string, React.ElementType> = {
   LayoutDashboard: LayoutDashboard,
@@ -92,6 +93,7 @@ const ICON_MAP: Record<string, React.ElementType> = {
   Megaphone: Megaphone,
   Key: CheckCircle2,
   User: Circle,
+  CheckSquare: CheckSquare,
 }
 
 const PublicLayout: React.FC<{
@@ -672,6 +674,9 @@ const InternalApp: React.FC = () => {
                              <Route path="routine-timeline" element={<CSLRoutineManager currentUser={currentUser} view="timeline" />} />
                              <Route path="routine-monitoring" element={<CSLRoutineManager currentUser={currentUser} view="monitoring" />} />
                              
+                             {/* Task Management */}
+                             <Route path="routine-task" element={<CSLTaskManager currentUser={currentUser} />} />
+
                              {/* Documents */}
                              <Route path="documents" element={<CSLDocumentsManager currentUser={currentUser} category="all" />} />
                              <Route path="documents-all" element={<CSLDocumentsManager currentUser={currentUser} category="all" />} />
@@ -680,11 +685,8 @@ const InternalApp: React.FC = () => {
                              <Route path="documents-gdrive" element={<CSLDocumentsManager currentUser={currentUser} category="gdrive" />} />
 
                              {/* Budget & Cost */}
-                             <Route path="budget" element={<CSLBudgetManager currentUser={currentUser} view="monitoring" />} />
-                             <Route path="budget-plan" element={<CSLBudgetManager currentUser={currentUser} view="plan" />} />
-                             <Route path="budget-request" element={<CSLBudgetManager currentUser={currentUser} view="request" />} />
+                             <Route path="budget" element={<CSLBudgetManager currentUser={currentUser} view="expense" />} />
                              <Route path="budget-expense" element={<CSLBudgetManager currentUser={currentUser} view="expense" />} />
-                             <Route path="budget-monitoring" element={<CSLBudgetManager currentUser={currentUser} view="monitoring" />} />
 
                              {/* Phone Directory */}
                              <Route path="directory" element={<CSLDirectoryManager currentUser={currentUser} category="all" />} />
@@ -697,10 +699,8 @@ const InternalApp: React.FC = () => {
                              {/* Reports */}
                              <Route path="reports" element={<CSLReportsManager currentUser={currentUser} view="request" />} />
                              <Route path="reports-request" element={<CSLReportsManager currentUser={currentUser} view="request" />} />
-                             <Route path="reports-sla" element={<CSLReportsManager currentUser={currentUser} view="sla" />} />
-                             <Route path="reports-routine" element={<CSLReportsManager currentUser={currentUser} view="routine" />} />
+                             <Route path="reports-task" element={<CSLReportsManager currentUser={currentUser} view="task" />} />
                              <Route path="reports-budget" element={<CSLReportsManager currentUser={currentUser} view="budget" />} />
-                             <Route path="reports-performance" element={<CSLReportsManager currentUser={currentUser} view="performance" />} />
 
                              {/* Settings */}
                              <Route path="settings" element={<CSLSettings currentUser={currentUser} view="categories" />} />

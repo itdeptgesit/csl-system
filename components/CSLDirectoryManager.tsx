@@ -43,7 +43,11 @@ import {
   AlertTriangle,
   Loader2,
   Sparkles,
-  Download
+  Download,
+  Copy,
+  Check,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 
 interface CSLDirectoryManagerProps {
@@ -76,7 +80,7 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
   const [searchTerm, setSearchTerm] = useState('');
   const [contacts, setContacts] = useState<ContactItem[]>(MOCK_CONTACTS);
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
   
   // Modals & Feedback state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -84,6 +88,20 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
   const [deleteConfirm, setDeleteConfirm] = useState<ContactItem | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedbackBanner, setFeedbackBanner] = useState<string | null>(null);
+  
+  // Pagination state
+  const ITEMS_PER_PAGE = 9;
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Copy-to-clipboard state: stores the id+field that was just copied
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  const copyToClipboard = (text: string, key: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedKey(key);
+      setTimeout(() => setCopiedKey(null), 2000);
+    });
+  };
 
   // Form State
   const [formData, setFormData] = useState<{
@@ -283,6 +301,19 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
     return matchesCategory && matchesSearch;
   });
 
+  // Reset to page 1 whenever search/filter changes
+  const totalPages = Math.ceil(filteredContacts.length / ITEMS_PER_PAGE);
+  const paginatedContacts = filteredContacts.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  // Helper: go to page 1 on search change
+  const handleSearchChange = (val: string) => {
+    setSearchTerm(val);
+    setCurrentPage(1);
+  };
+
   const getPageMeta = () => {
     switch (category) {
       case 'lawyer': return { title: 'Lawyers & Notaries Directory', desc: 'Retainer legal counsel, litigation attorneys, PPAT, and notary offices', icon: Scale };
@@ -330,42 +361,40 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
 
       {/* KPI Cards when in All View */}
       {category === 'all' && (
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-          <div className="bg-card border border-border/40 p-4 rounded-2xl shadow-sm flex items-center justify-between">
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-5">
+          <div className="bg-gradient-to-br from-indigo-500 to-indigo-700 dark:from-indigo-600 dark:to-indigo-900 border-none p-5 rounded-3xl shadow-lg shadow-indigo-200 dark:shadow-none flex flex-col justify-between relative overflow-hidden text-white">
+            <Phone size={100} className="absolute -right-6 -bottom-6 opacity-10 rotate-12" />
             <div>
-              <span className="text-[10px] font-black uppercase text-muted-foreground">Total Contacts</span>
-              <p className="text-2xl font-black text-foreground mt-0.5">{contacts.length}</p>
-            </div>
-            <div className="p-3 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600">
-              <Phone size={20} />
+              <span className="text-[11px] font-black uppercase tracking-widest text-indigo-100">Total Directory</span>
+              <p className="text-4xl font-black mt-1">{contacts.length}</p>
             </div>
           </div>
-          <div className="bg-card border border-border/40 p-4 rounded-2xl shadow-sm flex items-center justify-between">
-            <div>
-              <span className="text-[10px] font-black uppercase text-muted-foreground">Lawyers & Notaries</span>
-              <p className="text-2xl font-black text-purple-600 mt-0.5">{contacts.filter(c => c.category === 'Lawyer').length}</p>
+          <div className="bg-card border border-border/40 p-5 rounded-3xl shadow-sm flex flex-col justify-between group hover:shadow-md transition-all">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Lawyers & Notaries</span>
+              <div className="p-2 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 group-hover:scale-110 transition-transform">
+                <Scale size={18} />
+              </div>
             </div>
-            <div className="p-3 rounded-2xl bg-purple-50 dark:bg-purple-950/40 text-purple-600">
-              <Scale size={20} />
-            </div>
+            <p className="text-3xl font-black text-purple-600 mt-4">{contacts.filter(c => c.category === 'Lawyer').length}</p>
           </div>
-          <div className="bg-card border border-border/40 p-4 rounded-2xl shadow-sm flex items-center justify-between">
-            <div>
-              <span className="text-[10px] font-black uppercase text-muted-foreground">Government Agencies</span>
-              <p className="text-2xl font-black text-amber-600 mt-0.5">{contacts.filter(c => c.category === 'Government').length}</p>
+          <div className="bg-card border border-border/40 p-5 rounded-3xl shadow-sm flex flex-col justify-between group hover:shadow-md transition-all">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Govt Agencies</span>
+              <div className="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 group-hover:scale-110 transition-transform">
+                <Landmark size={18} />
+              </div>
             </div>
-            <div className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600">
-              <Landmark size={20} />
-            </div>
+            <p className="text-3xl font-black text-amber-600 mt-4">{contacts.filter(c => c.category === 'Government').length}</p>
           </div>
-          <div className="bg-card border border-border/40 p-4 rounded-2xl shadow-sm flex items-center justify-between">
-            <div>
-              <span className="text-[10px] font-black uppercase text-muted-foreground">Legal Vendors</span>
-              <p className="text-2xl font-black text-blue-600 mt-0.5">{contacts.filter(c => c.category === 'Vendor').length}</p>
+          <div className="bg-card border border-border/40 p-5 rounded-3xl shadow-sm flex flex-col justify-between group hover:shadow-md transition-all">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Legal Vendors</span>
+              <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 group-hover:scale-110 transition-transform">
+                <Store size={18} />
+              </div>
             </div>
-            <div className="p-3 rounded-2xl bg-blue-50 dark:bg-blue-950/40 text-blue-600">
-              <Store size={20} />
-            </div>
+            <p className="text-3xl font-black text-blue-600 mt-4">{contacts.filter(c => c.category === 'Vendor').length}</p>
           </div>
         </div>
       )}
@@ -378,7 +407,7 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
             placeholder={`Search ${meta.title.toLowerCase()} by name, firm, agency, or notes...`} 
             className="pl-10 text-sm bg-muted/30 border-border/20 rounded-xl h-10 w-full"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
           />
         </div>
 
@@ -414,164 +443,153 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
         </div>
       ) : viewMode === 'grid' ? (
         /* ── GRID / CARD VIEW ── */
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filteredContacts.map(contact => (
-            <div key={contact.id} className="bg-card border border-border/40 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 space-y-4 flex flex-col justify-between group">
-              <div className="space-y-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="space-y-0.5 flex-1 pr-2">
-                    <h3 className="font-extrabold text-sm text-foreground tracking-tight group-hover:text-indigo-600 transition-colors">{contact.name}</h3>
-                    <p className="text-xs text-muted-foreground flex items-center gap-1.5 font-medium">
-                      <Building2 size={13} className="text-muted-foreground/60 shrink-0" /> {contact.organization}
-                    </p>
-                  </div>
-                  <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-lg shrink-0 ${
-                    contact.category === 'Lawyer' ? 'bg-purple-100 text-purple-700 dark:bg-purple-950/50 dark:text-purple-300' :
-                    contact.category === 'Government' ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300' :
-                    contact.category === 'Vendor' ? 'bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300' : 
-                    'bg-slate-100 text-slate-700 dark:bg-zinc-800 dark:text-zinc-300'
-                  }`}>
-                    {contact.category}
-                  </span>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {paginatedContacts.map(contact => {
+            const getInitials = (name: string) => name.replace(/(Adv\.|S\.H\.|M\.H\.|Dra\.|PT|Kantor Notaris)/gi, '').trim().substring(0, 2).toUpperCase();
+            const catColors = { Lawyer: 'from-purple-500 to-fuchsia-600 text-white', Government: 'from-amber-500 to-orange-600 text-white', Vendor: 'from-blue-500 to-cyan-600 text-white', Other: 'from-slate-500 to-slate-700 text-white' };
+            const catBg = catColors[contact.category] || catColors['Other'];
+            return (
+              <div key={contact.id} className="bg-card border border-border/40 rounded-3xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col overflow-hidden group">
+                <div className={`h-16 bg-gradient-to-r ${catBg} opacity-90 relative`}>
+                  <div className="absolute right-3 top-3 bg-white/20 backdrop-blur-sm px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest text-white shadow-sm">{contact.category}</div>
                 </div>
-
-                {contact.licenseNo && (
-                  <div className="text-[10px] font-mono font-bold text-purple-600 bg-purple-50 dark:bg-purple-950/40 px-2.5 py-1 rounded-lg w-fit flex items-center gap-1">
-                    <ShieldCheck size={11} /> {contact.licenseNo}
+                <div className="px-5 pb-5 flex-1 flex flex-col">
+                  <div className="-mt-8 mb-3">
+                    <div className="w-16 h-16 rounded-2xl bg-white dark:bg-zinc-900 border-4 border-card shadow-sm flex items-center justify-center text-xl font-black text-indigo-900 dark:text-indigo-100 overflow-hidden relative">
+                      <div className={`absolute inset-0 bg-gradient-to-br ${catBg} opacity-10`}></div>
+                      {getInitials(contact.name)}
+                    </div>
                   </div>
-                )}
-
-                {contact.notes && (
-                  <p className="text-xs text-muted-foreground bg-muted/40 p-3 rounded-xl border border-border/20 leading-relaxed font-medium">
-                    {contact.notes}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-3 pt-3 border-t border-border/20 text-xs font-medium">
-                <div className="flex items-center justify-between text-muted-foreground">
-                  <span className="flex items-center gap-1.5 font-bold text-foreground">
-                    <Phone size={13} className="text-indigo-600 shrink-0" /> {contact.phone}
-                  </span>
-                  <span className="flex items-center gap-1 text-[11px] text-muted-foreground/80">
-                    <MapPin size={11} /> {contact.city}
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between text-muted-foreground">
-                  <span className="flex items-center gap-1.5 truncate text-muted-foreground">
-                    <Mail size={13} className="text-indigo-600 shrink-0" /> {contact.email}
-                  </span>
-                  
-                  {/* Card Actions: Edit & Delete */}
-                  <div className="flex items-center gap-1 ml-2 shrink-0">
+                  <div className="space-y-1.5 mb-4">
+                    <h3 className="font-black text-base text-foreground tracking-tight leading-tight group-hover:text-indigo-600 transition-colors">{contact.name}</h3>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1.5 font-medium"><Building2 size={13} className="text-muted-foreground/60 shrink-0" /> {contact.organization}</p>
+                  </div>
+                  {contact.licenseNo && (
+                    <div className="mb-3 text-[10px] font-mono font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-zinc-800/50 px-2.5 py-1.5 rounded-lg w-fit flex items-center gap-1.5 border border-slate-200/50 dark:border-zinc-700/50">
+                      <ShieldCheck size={12} className="text-indigo-500" /> {contact.licenseNo}
+                    </div>
+                  )}
+                  {contact.notes && <p className="text-xs text-muted-foreground/80 leading-relaxed font-medium line-clamp-2 mb-4 flex-1">{contact.notes}</p>}
+                  <div className="space-y-2 pt-4 border-t border-border/40 mt-auto">
+                    <button onClick={() => copyToClipboard(contact.phone, `${contact.id}-phone`)} className="w-full flex items-center justify-between gap-2 text-xs font-bold text-foreground hover:bg-indigo-50 dark:hover:bg-indigo-950/20 px-2 py-1.5 rounded-lg transition-colors group/copy">
+                      <span className="flex items-center gap-2"><div className="w-5 h-5 rounded-md bg-indigo-50 dark:bg-indigo-950/30 flex items-center justify-center text-indigo-600"><Phone size={10} /></div>{contact.phone}</span>
+                      {copiedKey === `${contact.id}-phone` ? <Check size={12} className="text-emerald-500" /> : <Copy size={11} className="text-slate-300 group-hover/copy:text-indigo-400 transition-colors" />}
+                    </button>
                     {contact.email && contact.email !== '-' && (
-                      <a 
-                        href={`mailto:${contact.email}`} 
-                        title="Send Email"
-                        className="p-1.5 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 rounded-lg transition-colors"
-                      >
-                        <ExternalLink size={13} />
-                      </a>
+                      <button onClick={() => copyToClipboard(contact.email, `${contact.id}-email`)} className="w-full flex items-center justify-between gap-2 text-xs font-medium text-muted-foreground hover:bg-slate-50 dark:hover:bg-zinc-800/50 px-2 py-1.5 rounded-lg transition-colors group/copy">
+                        <span className="flex items-center gap-2 truncate"><div className="w-5 h-5 rounded-md bg-slate-50 dark:bg-zinc-800/50 flex items-center justify-center text-slate-400 shrink-0"><Mail size={10} /></div><span className="truncate">{contact.email}</span></span>
+                        {copiedKey === `${contact.id}-email` ? <Check size={12} className="text-emerald-500 shrink-0" /> : <Copy size={11} className="text-slate-300 group-hover/copy:text-slate-400 transition-colors shrink-0" />}
+                      </button>
                     )}
-                    <button
-                      onClick={() => openEditModal(contact)}
-                      title="Edit Contact"
-                      className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-muted/60 rounded-lg transition-colors"
-                    >
-                      <Edit3 size={13} />
-                    </button>
-                    <button
-                      onClick={() => setDeleteConfirm(contact)}
-                      title="Delete Contact"
-                      className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors"
-                    >
-                      <Trash2 size={13} />
-                    </button>
+                    <div className="flex items-center justify-between pt-1">
+                      <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-widest"><MapPin size={11} /> {contact.city}</div>
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onClick={() => openEditModal(contact)} className="p-1.5 text-slate-400 hover:text-indigo-600 bg-slate-50 hover:bg-indigo-50 dark:bg-zinc-800 dark:hover:bg-indigo-950/50 rounded-lg transition-colors"><Edit3 size={13} /></button>
+                        <button onClick={() => setDeleteConfirm(contact)} className="p-1.5 text-slate-400 hover:text-red-600 bg-slate-50 hover:bg-red-50 dark:bg-zinc-800 dark:hover:bg-red-950/40 rounded-lg transition-colors"><Trash2 size={13} /></button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ) : (
         /* ── TABLE VIEW ── */
-        <div className="bg-card border border-border/40 rounded-2xl shadow-sm overflow-hidden">
+        <div className="bg-card border border-border/40 rounded-3xl shadow-sm overflow-hidden">
           <Table>
             <TableHeader className="bg-muted/30">
               <TableRow className="border-border/30">
-                <TableHead className="font-extrabold text-[11px] uppercase text-muted-foreground">Contact & Firm</TableHead>
-                <TableHead className="font-extrabold text-[11px] uppercase text-muted-foreground">Category</TableHead>
-                <TableHead className="font-extrabold text-[11px] uppercase text-muted-foreground">Phone</TableHead>
-                <TableHead className="font-extrabold text-[11px] uppercase text-muted-foreground">Email</TableHead>
-                <TableHead className="font-extrabold text-[11px] uppercase text-muted-foreground">City</TableHead>
-                <TableHead className="font-extrabold text-[11px] uppercase text-muted-foreground">Notes / Specialization</TableHead>
-                <TableHead className="font-extrabold text-[11px] uppercase text-muted-foreground text-right">Actions</TableHead>
+                <TableHead className="font-extrabold text-[10px] uppercase text-muted-foreground tracking-widest pl-6">Contact Details</TableHead>
+                <TableHead className="font-extrabold text-[10px] uppercase text-muted-foreground tracking-widest">Category</TableHead>
+                <TableHead className="font-extrabold text-[10px] uppercase text-muted-foreground tracking-widest">Phone</TableHead>
+                <TableHead className="font-extrabold text-[10px] uppercase text-muted-foreground tracking-widest">Email</TableHead>
+                <TableHead className="font-extrabold text-[10px] uppercase text-muted-foreground tracking-widest">City</TableHead>
+                <TableHead className="font-extrabold text-[10px] uppercase text-muted-foreground tracking-widest text-right pr-6">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredContacts.map(contact => (
-                <TableRow key={contact.id} className="border-border/20 hover:bg-muted/20 transition-colors">
-                  <TableCell className="py-3">
-                    <div className="font-bold text-sm text-foreground">{contact.name}</div>
-                    <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                      <Building2 size={11} className="text-muted-foreground/60" /> {contact.organization}
+              {paginatedContacts.map(contact => {
+                const getInitials = (name: string) => name.replace(/(Adv\.|S\.H\.|M\.H\.|Dra\.|PT|Kantor Notaris)/gi, '').trim().substring(0, 2).toUpperCase();
+                const catColors = { Lawyer: 'text-purple-600 bg-purple-50 dark:bg-purple-950/30', Government: 'text-amber-600 bg-amber-50 dark:bg-amber-950/30', Vendor: 'text-blue-600 bg-blue-50 dark:bg-blue-950/30', Other: 'text-slate-600 bg-slate-50 dark:bg-zinc-800' };
+                return (
+                <TableRow key={contact.id} className="border-border/20 hover:bg-muted/30 transition-colors group">
+                  <TableCell className="py-4 pl-6">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm border border-white/50 ${catColors[contact.category] || catColors['Other']}`}>{getInitials(contact.name)}</div>
+                      <div>
+                        <div className="font-bold text-sm text-foreground tracking-tight group-hover:text-indigo-600 transition-colors">{contact.name}</div>
+                        <div className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5 font-medium"><Building2 size={11} className="text-muted-foreground/60" /> {contact.organization}</div>
+                      </div>
                     </div>
                   </TableCell>
-                  <TableCell className="py-3">
-                    <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-lg ${
-                      contact.category === 'Lawyer' ? 'bg-purple-100 text-purple-700 dark:bg-purple-950/50 dark:text-purple-300' :
-                      contact.category === 'Government' ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300' :
-                      contact.category === 'Vendor' ? 'bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300' : 
-                      'bg-slate-100 text-slate-700 dark:bg-zinc-800 dark:text-zinc-300'
-                    }`}>
-                      {contact.category}
-                    </span>
+                  <TableCell className="py-4">
+                    <span className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-lg ${ contact.category === 'Lawyer' ? 'bg-purple-100 text-purple-700 dark:bg-purple-950/50 dark:text-purple-300' : contact.category === 'Government' ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300' : contact.category === 'Vendor' ? 'bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300' : 'bg-slate-100 text-slate-700 dark:bg-zinc-800 dark:text-zinc-300'}`}>{contact.category}</span>
                   </TableCell>
-                  <TableCell className="py-3 font-mono text-xs font-bold text-foreground">
-                    <div className="flex items-center gap-1.5">
-                      <Phone size={12} className="text-indigo-600" /> {contact.phone}
-                    </div>
+                  <TableCell className="py-4">
+                    <button onClick={() => copyToClipboard(contact.phone, `${contact.id}-phone`)} className="flex items-center gap-1.5 font-mono text-xs font-bold text-foreground hover:text-indigo-600 transition-colors group/cp">
+                      {contact.phone}
+                      {copiedKey === `${contact.id}-phone` ? <Check size={12} className="text-emerald-500" /> : <Copy size={11} className="text-slate-300 group-hover/cp:text-indigo-400 transition-colors" />}
+                    </button>
                   </TableCell>
-                  <TableCell className="py-3 text-xs text-muted-foreground">
+                  <TableCell className="py-4 text-xs">
                     {contact.email && contact.email !== '-' ? (
-                      <a href={`mailto:${contact.email}`} className="text-indigo-600 hover:underline flex items-center gap-1 font-medium">
-                        <Mail size={12} /> {contact.email}
-                      </a>
-                    ) : (
-                      '—'
-                    )}
-                  </TableCell>
-                  <TableCell className="py-3 text-xs font-medium text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <MapPin size={11} /> {contact.city}
-                    </div>
-                  </TableCell>
-                  <TableCell className="py-3 text-xs text-muted-foreground max-w-xs truncate font-medium">
-                    {contact.notes || '—'}
-                  </TableCell>
-                  <TableCell className="py-3 text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <button
-                        onClick={() => openEditModal(contact)}
-                        title="Edit Contact"
-                        className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-muted rounded-lg transition-colors"
-                      >
-                        <Edit3 size={14} />
+                      <button onClick={() => copyToClipboard(contact.email, `${contact.id}-email`)} className="flex items-center gap-1.5 text-muted-foreground hover:text-indigo-600 transition-colors group/ce font-medium">
+                        {contact.email}
+                        {copiedKey === `${contact.id}-email` ? <Check size={12} className="text-emerald-500" /> : <Copy size={11} className="text-slate-300 group-hover/ce:text-indigo-400 transition-colors" />}
                       </button>
-                      <button
-                        onClick={() => setDeleteConfirm(contact)}
-                        title="Delete Contact"
-                        className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                    ) : '—'}
+                  </TableCell>
+                  <TableCell className="py-4 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">{contact.city}</TableCell>
+                  <TableCell className="py-4 text-right pr-6">
+                    <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onClick={() => openEditModal(contact)} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded-lg transition-colors"><Edit3 size={15} /></button>
+                      <button onClick={() => setDeleteConfirm(contact)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors"><Trash2 size={15} /></button>
                     </div>
                   </TableCell>
                 </TableRow>
-              ))}
+                )
+              })}
             </TableBody>
           </Table>
+        </div>
+      )}
+
+      {/* Pagination */}
+      {!loading && totalPages > 1 && (
+        <div className="flex items-center justify-between bg-card border border-border/40 rounded-2xl px-5 py-3 shadow-sm">
+          <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">
+            Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, filteredContacts.length)} of {filteredContacts.length} contacts
+          </p>
+          <div className="flex items-center gap-1">
+            <button
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              className="p-2 rounded-xl border border-border/40 bg-white dark:bg-zinc-800 text-muted-foreground hover:text-foreground disabled:opacity-30 transition-all"
+            >
+              <ChevronLeft size={15} />
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+              <button
+                key={page}
+                onClick={() => setCurrentPage(page)}
+                className={`w-8 h-8 rounded-xl text-xs font-bold transition-all ${
+                  page === currentPage
+                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200 dark:shadow-none'
+                    : 'border border-border/40 bg-white dark:bg-zinc-800 text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {page}
+              </button>
+            ))}
+            <button
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              className="p-2 rounded-xl border border-border/40 bg-white dark:bg-zinc-800 text-muted-foreground hover:text-foreground disabled:opacity-30 transition-all"
+            >
+              <ChevronRight size={15} />
+            </button>
+          </div>
         </div>
       )}
 

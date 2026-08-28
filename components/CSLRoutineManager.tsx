@@ -47,6 +47,7 @@ interface CSLRoutineManagerProps {
 }
 
 const FREQUENCY_BADGES: Record<string, string> = {
+  ONCE: 'bg-orange-100 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300',
   DAILY: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
   WEEKLY: 'bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300',
   MONTHLY: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300',
@@ -106,29 +107,113 @@ export const CSLRoutineManager: React.FC<CSLRoutineManagerProps> = ({ currentUse
     setTimeout(() => setFeedbackMessage(null), 3000);
   };
 
+  const isCslTeam = useMemo(() => {
+    const role = currentUser?.role?.toLowerCase() || '';
+    return role.includes('admin') || role.includes('staff') ||
+      (currentUser?.groups || []).some(g => ['admin', 'csl_admin', 'csl_staff'].includes(g.toLowerCase()));
+  }, [currentUser]);
+
+  const isAdmin = useMemo(() => {
+    const role = currentUser?.role?.toLowerCase() || '';
+    return role.includes('admin') || role.includes('owner') || (currentUser?.groups || []).some(g => g.toLowerCase().includes('admin'));
+  }, [currentUser]);
+
   const fetchData = async () => {
     setIsLoading(true);
     try {
+      let routinesQuery = supabase.from('csl_routines').select('*').order('title');
+      let instancesQuery = supabase.from('csl_routine_instances').select(`*, csl_routines (title, category, assigned_pic_name)`).order('due_date', { ascending: true });
+      let requestsQuery = supabase.from('csl_requests').select('*').order('created_at', { ascending: false });
+
+      if (!isAdmin) {
+          // If not admin, restrict routines based on name
+          // Since routines only use assigned_pic_name, we do a text match
+          if (currentUser?.fullName) {
+              routinesQuery = routinesQuery.ilike('assigned_pic_name', `%${currentUser.fullName}%`);
+          }
+          // Restrict requests based on ID
+          requestsQuery = requestsQuery.eq('assigned_pic_id', currentUser?.id);
+      }
+
       if (view === 'activity') {
-        const { data, error } = await supabase.from('csl_routines').select('*').order('title');
-        if (error) throw error;
-        if (data && data.length > 0) setRoutines(data);
+        const [routinesRes, requestsRes] = await Promise.all([
+          routinesQuery,
+          requestsQuery
+        ]);
+        
+        let combinedRoutines: any[] = [];
+        if (routinesRes.data) {
+            combinedRoutines = [...routinesRes.data];
+        }
+        if (requestsRes.data) {
+            const mappedRequests = requestsRes.data.map(req => ({
+                id: `req-${req.id}`,
+                title: req.description || `[Request] ${req.request_number}`,
+                description: req.description,
+                category: req.category_name || 'Request',
+                frequency: 'ONCE',
+                due_day: req.sla_due_date ? new Date(req.sla_due_date).getDate() : 0,
+                assigned_pic_name: req.assigned_pic_name || 'Unassigned',
+                is_active: !['COMPLETED', 'CLOSED', 'CANCELLED', 'REJECTED'].includes(req.status)
+            }));
+            combinedRoutines = [...combinedRoutines, ...mappedRequests];
+        }
+        
+        setRoutines(combinedRoutines);
         setUseMock(false);
       } else {
-        const { data, error } = await supabase.from('csl_routine_instances').select(`
-          *,
-          csl_routines (title, category)
-        `).order('due_date', { ascending: true });
+        const [instancesRes, requestsRes] = await Promise.all([
+          instancesQuery,
+          requestsQuery
+        ]);
         
-        if (error) throw error;
-        if (data && data.length > 0) {
-          const mapped = data.map((item: any) => ({
-              ...item,
-              routine_title: item.csl_routines?.title,
-              routine_category: item.csl_routines?.category
-          }));
-          setInstances(mapped);
+        let combinedInstances: any[] = [];
+        if (instancesRes.data) {
+            let filteredInstances = instancesRes.data;
+            if (!isAdmin && currentUser?.fullName) {
+                // instances don't have assigned_pic, they inherit from routines
+                filteredInstances = filteredInstances.filter(i => {
+                    const picName = i.csl_routines?.assigned_pic_name || '';
+                    return picName.toLowerCase().includes(currentUser.fullName.toLowerCase());
+                });
+            }
+            combinedInstances = filteredInstances.map((item: any) => ({
+                ...item,
+                routine_title: item.csl_routines?.title,
+                routine_category: item.csl_routines?.category
+            }));
         }
+        
+        if (requestsRes.data) {
+            const mappedRequests = requestsRes.data.map(req => {
+                let status = 'PENDING';
+                if (['IN_REVIEW', 'PROCESSING', 'REVISION_REQUIRED', 'RESPONDED'].includes(req.status)) status = 'IN_PROGRESS';
+                else if (['COMPLETED', 'CLOSED'].includes(req.status)) status = 'COMPLETED';
+                else if (['CANCELLED', 'REJECTED'].includes(req.status)) status = 'CANCELLED';
+                
+                // Check if overdue
+                if (status !== 'COMPLETED' && status !== 'CANCELLED' && req.sla_due_date) {
+                    if (new Date(req.sla_due_date) < new Date()) {
+                        status = 'OVERDUE';
+                    }
+                }
+                
+                return {
+                    id: `req-inst-${req.id}`,
+                    routine_id: `req-${req.id}`,
+                    routine_title: req.description || `[Request] ${req.request_number}`,
+                    routine_category: req.category_name || 'Request',
+                    period_start: req.created_at ? req.created_at.split('T')[0] : '',
+                    period_end: req.sla_due_date ? req.sla_due_date.split('T')[0] : '',
+                    due_date: req.sla_due_date ? req.sla_due_date.split('T')[0] : '',
+                    status: status,
+                    completed_at: req.completed_at
+                };
+            });
+            combinedInstances = [...combinedInstances, ...mappedRequests];
+        }
+        
+        setInstances(combinedInstances.sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime()));
         setUseMock(false);
       }
     } catch {

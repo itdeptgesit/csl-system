@@ -4,20 +4,8 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { 
-  Search, 
-  Plus, 
-  Wallet, 
-  PieChart, 
-  Receipt, 
-  BarChart2, 
-  TrendingUp, 
-  CheckCircle2, 
-  Clock, 
-  AlertCircle, 
-  ArrowUpRight, 
-  FileCheck 
-} from 'lucide-react';
+import { Plus, Receipt } from 'lucide-react';
+import { CSLExpenseApproval } from './CSLExpenseApproval';
 
 interface CSLBudgetManagerProps {
   currentUser: UserAccount | null;
@@ -142,54 +130,9 @@ export const CSLBudgetManager: React.FC<CSLBudgetManagerProps> = ({ currentUser,
     );
   }
 
-  // ── SUB-PAGE 3: COST & EXPENSE TRACKER ────────────────────────────────────
+  // ── SUB-PAGE 3: EXPENSES APPROVAL ──────────────────────────────────────────
   if (view === 'expense') {
-    const expenses = [
-      { id: 1, invNo: 'INV-NOT-091', vendor: 'Kantor Notaris Dra. Linda Wijaya', category: 'Notary Fee', amount: 15000000, date: '12 Aug 2026', receipt: 'receipt_091.pdf' },
-      { id: 2, invNo: 'INV-HPL-441', vendor: 'Herman & Partners Law Firm', category: 'Litigation Counsel', amount: 45000000, date: '01 Aug 2026', receipt: 'invoice_hpl.pdf' },
-      { id: 3, invNo: 'INV-TRN-102', vendor: 'PT Solusi Terpadu Legal', category: 'Translation', amount: 6500000, date: '25 Jul 2026', receipt: 'receipt_trn.pdf' },
-    ];
-
-    return (
-      <div className="space-y-6 animate-in fade-in duration-500 pb-12 font-sans">
-        <PageHeader title="Cost & Expense Tracker" description="Itemized payment history, notary invoices, and external counsel fees">
-          <Button size="sm" className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md">
-            <Receipt className="h-4 w-4 mr-1.5" /> Record Expense
-          </Button>
-        </PageHeader>
-
-        <div className="bg-card border border-border/40 rounded-2xl overflow-hidden shadow-sm">
-          <Table>
-            <TableHeader className="bg-muted/30">
-              <TableRow>
-                <TableHead className="text-[10px] font-black uppercase tracking-widest">Invoice / Ref No.</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-widest">Vendor / Payee</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-widest">Category</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-widest">Paid Amount</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-widest">Payment Date</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-widest text-right">Receipt</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {expenses.map(e => (
-                <TableRow key={e.id} className="hover:bg-muted/40">
-                  <TableCell className="font-mono text-xs font-bold text-indigo-600">{e.invNo}</TableCell>
-                  <TableCell className="font-bold text-sm text-foreground">{e.vendor}</TableCell>
-                  <TableCell className="text-xs text-muted-foreground">{e.category}</TableCell>
-                  <TableCell className="font-mono text-xs font-bold text-emerald-600">{formatRupiah(e.amount)}</TableCell>
-                  <TableCell className="text-xs font-mono text-muted-foreground">{e.date}</TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="sm" className="text-indigo-600 font-bold text-xs">
-                      View Receipt
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      </div>
-    );
+    return <CSLExpenseApproval currentUser={currentUser} />;
   }
 
   // ── SUB-PAGE 4: BUDGET MONITORING & ANALYTICS (DEFAULT) ───────────────────

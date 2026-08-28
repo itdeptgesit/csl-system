@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { CSLCreateRequest } from './CSLCreateRequest';
@@ -267,15 +267,8 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
     if (!editForm.id) return;
     setIsSubmitting(true);
     try {
-      const cat = categories.find(c => c.id === editForm.category_id);
       const payload = {
-        category_id: editForm.category_id,
-        priority: editForm.priority,
         status: editForm.status,
-        department: editForm.department,
-        assigned_pic_name: editForm.assigned_pic_name,
-        description: editForm.description,
-        category_name: cat?.name,
         updated_at: new Date().toISOString()
       };
       const { error } = await supabase.from('csl_requests').update(payload).eq('id', editForm.id);
@@ -312,6 +305,12 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
           } else {
               query = query.eq('requester_email', currentUser?.email || '');
           }
+      } else if (view === 'all') {
+          if (isCslTeam && !isAdmin) {
+              query = query.or(`assigned_pic_id.eq.${currentUser?.id},assigned_pic_id.is.null`);
+          } else if (!isCslTeam) {
+              query = query.eq('requester_email', currentUser?.email || '');
+          }
       }
 
       const { data: reqData, error: reqErr } = await query;
@@ -320,9 +319,16 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
         setUseMock(false);
       } else {
         // Use mock data filtered by view
-        const filtered = view === 'mine'
-          ? MOCK_REQUESTS.filter(r => isCslTeam ? r.assigned_pic_name === currentUser?.fullName : r.requester_email === currentUser?.email)
-          : MOCK_REQUESTS;
+        let filtered = MOCK_REQUESTS;
+        if (view === 'mine') {
+            filtered = MOCK_REQUESTS.filter(r => isCslTeam ? r.assigned_pic_name === currentUser?.fullName : r.requester_email === currentUser?.email);
+        } else if (view === 'all') {
+            if (isCslTeam && !isAdmin) {
+                filtered = MOCK_REQUESTS.filter(r => r.assigned_pic_name === currentUser?.fullName || !r.assigned_pic_name);
+            } else if (!isCslTeam) {
+                filtered = MOCK_REQUESTS.filter(r => r.requester_email === currentUser?.email);
+            }
+        }
         setRequests(filtered);
         setUseMock(true);
       }
@@ -1589,64 +1595,31 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
 
       {/* Edit Dialog for Admin */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-xl">
-          <div className="space-y-4 py-2">
-            <h2 className="text-lg font-bold">Edit Request</h2>
-            <div className="grid gap-4">
-              <div className="space-y-2">
-                <label className="text-xs font-semibold">Kategori</label>
-                <select 
-                  className="w-full text-sm border border-border bg-background rounded-md px-3 py-2"
-                  value={editForm.category_id || ''}
-                  onChange={e => setEditForm({...editForm, category_id: Number(e.target.value)})}
-                >
-                  {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-semibold">Status</label>
-                <select 
-                  className="w-full text-sm border border-border bg-background rounded-md px-3 py-2"
-                  value={editForm.status || ''}
-                  onChange={e => setEditForm({...editForm, status: e.target.value})}
-                >
-                  {Object.keys(STATUS_BADGE).map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-semibold">Prioritas</label>
-                <select 
-                  className="w-full text-sm border border-border bg-background rounded-md px-3 py-2"
-                  value={editForm.priority || ''}
-                  onChange={e => setEditForm({...editForm, priority: e.target.value as any})}
-                >
-                  {Object.keys(PRIORITY_BADGE).map(p => <option key={p} value={p}>{p}</option>)}
-                </select>
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-semibold">Assigned PIC</label>
-                <Input 
-                  value={editForm.assigned_pic_name || ''}
-                  onChange={e => setEditForm({...editForm, assigned_pic_name: e.target.value})}
-                  placeholder="Nama PIC (opsional)..."
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-semibold">Deskripsi</label>
-                <textarea 
-                  className="w-full text-sm border border-border bg-background rounded-md px-3 py-2 min-h-[100px]"
-                  value={editForm.description || ''}
-                  onChange={e => setEditForm({...editForm, description: e.target.value})}
-                />
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 mt-4">
-              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Batal</Button>
-              <Button onClick={handleEditSave} disabled={isSubmitting}>
-                {isSubmitting ? 'Menyimpan...' : 'Simpan'}
-              </Button>
+        <DialogContent className="sm:max-w-md p-0 overflow-hidden rounded-2xl">
+          <DialogHeader className="p-6 pb-4 border-b bg-muted/20">
+            <DialogTitle className="text-xl font-black">Ubah Status Request</DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">Khusus Admin: Koreksi status secara paksa.</DialogDescription>
+          </DialogHeader>
+          <div className="p-6 space-y-4">
+            <div className="space-y-2">
+              <label className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground block mb-1">Status</label>
+              <select 
+                className="w-full text-sm border border-border bg-background rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                value={editForm.status || ''}
+                onChange={e => setEditForm({...editForm, status: e.target.value})}
+              >
+                {Object.keys(STATUS_BADGE).map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
             </div>
           </div>
+          <DialogFooter className="p-4 border-t bg-muted/10 gap-2 flex sm:justify-end">
+            <Button variant="outline" size="sm" onClick={() => setIsEditDialogOpen(false)} className="text-xs font-bold rounded-xl h-9">
+              Batal
+            </Button>
+            <Button size="sm" onClick={handleEditSave} disabled={isSubmitting} className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl h-9 px-5">
+              {isSubmitting ? 'Menyimpan...' : 'Simpan Perubahan'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

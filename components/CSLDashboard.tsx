@@ -30,13 +30,14 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
   const [stats, setStats] = useState({
     activeRequests: 0,
     totalDocuments: 0,
-    routinesDue: 0,
+    pendingTasks: 0,
+    pendingExpenses: 0,
     completedRequests: 0,
     totalRequests: 0
   });
 
   const [recentRequests, setRecentRequests] = useState<any[]>([]);
-  const [upcomingRoutines, setUpcomingRoutines] = useState<any[]>([]);
+  const [upcomingTasks, setUpcomingTasks] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -69,22 +70,25 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
           setStats(prev => ({ ...prev, totalDocuments: docCount }));
         }
 
-        // Fetch routines (dummy for now if table is empty)
-        const { data: routines } = await supabase
-          .from('csl_routines')
+        // Fetch tasks
+        const { data: tasks } = await supabase
+          .from('csl_tasks')
           .select('*')
-          .order('due_date', { ascending: true })
-          .limit(3);
+          .order('created_at', { ascending: false });
         
-        if (routines && routines.length > 0) {
-          setUpcomingRoutines(routines);
-          const pending = routines.filter(r => r.status !== 'COMPLETED');
-          setStats(prev => ({ ...prev, routinesDue: pending.length }));
-        } else {
-          // If no routines exist yet, just use a placeholder to keep the UI looking nice
-          setUpcomingRoutines([
-             { id: 1, title: 'Monthly Tax Report Filing (Mock)', due_date: '2026-08-15', status: 'PENDING', priority: 'High' }
-          ]);
+        if (tasks) {
+          const pending = tasks.filter(t => t.status !== 'Completed');
+          setStats(prev => ({ ...prev, pendingTasks: pending.length }));
+          setUpcomingTasks(pending.slice(0, 3));
+        }
+
+        // Fetch expenses
+        const { data: expenses } = await supabase
+          .from('csl_expense_approvals')
+          .select('*');
+        if (expenses) {
+          const pendingEx = expenses.filter(e => e.status === 'Pending');
+          setStats(prev => ({ ...prev, pendingExpenses: pendingEx.length }));
         }
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
@@ -145,8 +149,8 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {[
           { label: 'Active Requests', value: stats.activeRequests, icon: Kanban, sub1: 'Live', sub2: 'Requests currently processing', color: '#0B1A35', route: 'csl-all-requests' },
-          { label: 'Routines Due', value: stats.routinesDue, icon: Calendar, sub1: 'Action needed', sub2: 'Upcoming compliance & reports', color: '#C9A84C', route: 'routine-monitoring' },
-          { label: 'SLA Fulfillment', value: `${slaPercentage}%`, icon: Clock, sub1: 'On track', sub2: 'Based on completed vs total', color: '#0B1A35', route: 'reports-sla' },
+          { label: 'Pending Tasks', value: stats.pendingTasks, icon: Calendar, sub1: 'Action needed', sub2: 'Routine & Agreement tasks', color: '#C9A84C', route: 'routine-task' },
+          { label: 'Pending Expenses', value: stats.pendingExpenses, icon: Wallet, sub1: 'Approval needed', sub2: 'Budget & Cost requests', color: '#0B1A35', route: 'budget-expense' },
           { label: 'Documents Vault', value: stats.totalDocuments, icon: FolderOpen, sub1: 'Agreements & Legal', sub2: 'Safely stored in system', color: '#C9A84C', route: 'documents-all' },
         ].map((kpi, i) => (
           <div key={i} onClick={() => onNavigate(kpi.route)}
@@ -175,11 +179,11 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           {[
             { id: 'csl-requests', label: 'Ticketing / Request', icon: Kanban, route: 'csl-all-requests' },
-            { id: 'routine', label: 'Routine Activity', icon: Calendar, route: 'routine-monitoring' },
+            { id: 'routine', label: 'Task & Routine', icon: Calendar, route: 'routine-task' },
             { id: 'documents', label: 'Documents Vault', icon: FolderOpen, route: 'documents-all' },
-            { id: 'budget', label: 'Budget & Cost', icon: Wallet, route: 'budget-plan' },
+            { id: 'budget', label: 'Budget & Cost', icon: Wallet, route: 'budget-expense' },
             { id: 'directory', label: 'Phone Directory', icon: PhoneCall, route: 'directory-all' },
-            { id: 'reports', label: 'Reports & SLA', icon: TrendingUp, route: 'reports-sla' },
+            { id: 'reports', label: 'Reports & SLA', icon: TrendingUp, route: 'reports-request' },
           ].map((item, i) => {
             const Icon = item.icon;
             const isGold = i % 2 === 1;
@@ -252,47 +256,45 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
           </div>
         </div>
 
-        {/* Routines & Compliance Alerts */}
+        {/* Active Tasks & Compliance Alerts */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-extrabold tracking-tight text-slate-900 dark:text-white">Upcoming Routines</h2>
+            <h2 className="text-lg font-extrabold tracking-tight text-slate-900 dark:text-white">Active Tasks</h2>
             <Button 
               variant="ghost" 
               size="sm" 
-              onClick={() => onNavigate('routine-monitoring')} 
+              onClick={() => onNavigate('routine-task')} 
               className="text-xs font-bold hover:bg-slate-100 dark:hover:bg-zinc-800"
               style={{ color: '#C9A84C' }}
             >
-              Monitor <ArrowUpRight className="h-3.5 w-3.5 ml-1" />
+              View All <ArrowUpRight className="h-3.5 w-3.5 ml-1" />
             </Button>
           </div>
 
           <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900 p-5 space-y-3 shadow-sm">
-            {upcomingRoutines.map((routine, idx) => (
+            {upcomingTasks.length > 0 ? upcomingTasks.map((task, idx) => (
               <div key={idx} className="p-3.5 rounded-xl border border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-zinc-800/50 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-900 dark:text-white">{routine.title}</span>
-                  <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border ${
-                    routine.priority === 'High' ? 'bg-red-50 text-red-600 border-red-200 dark:bg-red-500/10 dark:border-red-500/20' : 
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <span className="text-[10px] font-black uppercase text-indigo-600 block mb-0.5">{task.category}</span>
+                    <span className="text-xs font-bold text-slate-900 dark:text-white truncate block">{task.task_name || task.company || 'Unnamed Task'}</span>
+                  </div>
+                  <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border shrink-0 ${
+                    task.status === 'In progress' ? 'bg-yellow-50 text-yellow-600 border-yellow-200 dark:bg-yellow-500/10 dark:border-yellow-500/20' : 
+                    task.status === 'Blocked' ? 'bg-red-50 text-red-600 border-red-200 dark:bg-red-500/10 dark:border-red-500/20' : 
                     'bg-slate-100 text-slate-600 border-slate-200 dark:bg-white/5 dark:text-slate-300 dark:border-white/10'
                   }`}>
-                    {routine.due_date ? new Date(routine.due_date).toLocaleDateString() : 'No date'}
+                    {task.status || 'Pending'}
                   </span>
                 </div>
-                <div className="flex items-center justify-between text-xs font-medium text-slate-500">
-                  <span>Status: <strong className="text-slate-900 dark:text-white">{routine.status?.replace(/_/g, ' ')}</strong></span>
-                  <Button 
-                    variant="link" 
-                    size="sm" 
-                    onClick={() => onNavigate('routine-monitoring')}
-                    className="h-auto p-0 text-xs font-bold hover:opacity-80"
-                    style={{ color: '#0B1A35' }}
-                  >
-                    Details &rarr;
-                  </Button>
+                <div className="flex items-center justify-between text-[11px] font-medium text-slate-500">
+                  <span>PIC: <strong className="text-slate-900 dark:text-white">{task.owner || '-'}</strong></span>
+                  <span>{task.due_date || task.finish_date ? new Date(task.due_date || task.finish_date).toLocaleDateString('id-ID') : 'No Date'}</span>
                 </div>
               </div>
-            ))}
+            )) : (
+              <div className="text-center text-sm font-medium text-slate-500 py-4">Belum ada task aktif.</div>
+            )}
           </div>
         </div>
       </div>

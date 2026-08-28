@@ -13,15 +13,15 @@ export const MOCK_GROUPS = [
             // Request / Ticketing
             'csl-requests', 'csl-all-requests', 'csl-my-requests',
             // Routine
-            'routine', 'routine-activity', 'routine-timeline', 'routine-monitoring',
+            'routine', 'routine-activity', 'routine-task',
             // Documents
             'documents', 'documents-all', 'documents-agreement', 'documents-legal', 'documents-gdrive',
             // Budget & Cost
-            'budget', 'budget-plan', 'budget-request', 'budget-expense', 'budget-monitoring',
+            'budget', 'budget-expense',
             // Phone Directory
             'directory', 'directory-all', 'directory-lawyer', 'directory-vendor', 'directory-government', 'directory-other',
             // Reports
-            'reports', 'reports-request', 'reports-sla', 'reports-routine', 'reports-budget', 'reports-performance',
+            'reports', 'reports-request', 'reports-task', 'reports-budget',
             // Settings
             'settings', 'settings-users', 'settings-companies', 'settings-departments', 'settings-system',
         ]
@@ -33,11 +33,11 @@ export const MOCK_GROUPS = [
         allowedMenus: [
             'dashboard',
             'csl-requests', 'csl-all-requests', 'csl-my-requests',
-            'routine', 'routine-activity', 'routine-timeline', 'routine-monitoring',
+            'routine', 'routine-activity', 'routine-task',
             'documents', 'documents-all', 'documents-agreement', 'documents-legal', 'documents-gdrive',
-            'budget', 'budget-plan', 'budget-request', 'budget-expense', 'budget-monitoring',
+            'budget', 'budget-expense',
             'directory', 'directory-all', 'directory-lawyer', 'directory-vendor', 'directory-government', 'directory-other',
-            'reports', 'reports-request', 'reports-sla', 'reports-routine', 'reports-budget', 'reports-performance',
+            'reports', 'reports-request', 'reports-task', 'reports-budget',
         ]
     },
     {
@@ -63,8 +63,7 @@ export const APP_MENU_STRUCTURE = [
     // ── Routine Activity ──
     { id: 'routine', label: 'Routine Activity', iconName: 'Calendar' },
     { id: 'routine-activity',   label: 'Activity',   parentId: 'routine', iconName: 'Activity' },
-    { id: 'routine-timeline',   label: 'Timeline',   parentId: 'routine', iconName: 'GitBranch' },
-    { id: 'routine-monitoring', label: 'Monitoring', parentId: 'routine', iconName: 'Monitor' },
+    { id: 'routine-task',       label: 'Task',       parentId: 'routine', iconName: 'CheckSquare' },
 
     // ── Documents ──
     { id: 'documents', label: 'Documents', iconName: 'FolderOpen' },
@@ -75,10 +74,7 @@ export const APP_MENU_STRUCTURE = [
 
     // ── Budget & Cost ──
     { id: 'budget', label: 'Budget & Cost', iconName: 'Wallet' },
-    { id: 'budget-plan',       label: 'Budget Plan',    parentId: 'budget', iconName: 'PieChart' },
-    { id: 'budget-request',    label: 'Budget Request', parentId: 'budget', iconName: 'ClipboardList' },
-    { id: 'budget-expense',    label: 'Cost / Expense', parentId: 'budget', iconName: 'Receipt' },
-    { id: 'budget-monitoring', label: 'Monitoring',     parentId: 'budget', iconName: 'BarChart2' },
+    { id: 'budget-expense',    label: 'Expenses Approval', parentId: 'budget', iconName: 'Receipt' },
 
     // ── Phone Directory ──
     { id: 'directory', label: 'Phone Directory', iconName: 'Phone' },
@@ -90,11 +86,9 @@ export const APP_MENU_STRUCTURE = [
 
     // ── Reports ──
     { id: 'reports', label: 'Reports', iconName: 'BarChart2' },
-    { id: 'reports-request',     label: 'Request Report',     parentId: 'reports', iconName: 'FileBarChart' },
-    { id: 'reports-sla',         label: 'SLA Report',         parentId: 'reports', iconName: 'Timer' },
-    { id: 'reports-routine',     label: 'Routine Report',     parentId: 'reports', iconName: 'CalendarCheck' },
-    { id: 'reports-budget',      label: 'Budget Report',      parentId: 'reports', iconName: 'Coins' },
-    { id: 'reports-performance', label: 'Performance Report', parentId: 'reports', iconName: 'TrendingUp' },
+    { id: 'reports-request', label: 'Request Report', parentId: 'reports', iconName: 'FileBarChart' },
+    { id: 'reports-task',    label: 'Task Report',    parentId: 'reports', iconName: 'CheckSquare' },
+    { id: 'reports-budget',  label: 'Budget Report',  parentId: 'reports', iconName: 'Wallet' },
 
     // ── Settings ──
     { id: 'settings', label: 'Settings', iconName: 'Settings' },
