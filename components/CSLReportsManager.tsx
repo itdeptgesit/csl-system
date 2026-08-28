@@ -196,7 +196,7 @@ export const CSLReportsManager: React.FC<CSLReportsManagerProps> = ({ currentUse
           <div className="bg-card border border-border/40 rounded-2xl p-5 shadow-sm">
             <h3 className="text-sm font-bold mb-4">Task Categories</h3>
             <div className="space-y-3">
-              {Object.entries(catStats).map(([cat, count]) => (
+              {(Object.entries(catStats) as [string, number][]).map(([cat, count]) => (
                 <div key={cat} className="flex items-center justify-between">
                   <span className="text-xs font-medium text-muted-foreground">{cat}</span>
                   <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600">{count}</span>
