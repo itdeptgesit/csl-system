@@ -466,6 +466,7 @@ const InternalApp: React.FC = () => {
           const userProfile: UserAccount = {
             id: newUser.id,
             email: newUser.email,
+            username: newUser.username || newUser.email?.split('@')[0] || '',
             fullName: newUser.full_name,
             role: newUser.role,
             groups: newUser.groups || [],
