@@ -169,6 +169,12 @@ export function AppSidebarModern({
       }
     })
 
+    // Fallback: if groups exist but none have configured menus (e.g. new 'user' group),
+    // grant minimum access so sidebar is not empty
+    if (allowed.size === 0) {
+      ;["csl-requests", "csl-my-requests", "profile"].forEach((id) => allowed.add(id))
+    }
+
     // Auto-allow parents of allowed children
     APP_MENU_STRUCTURE.forEach((menu) => {
       if (menu.parentId && allowed.has(menu.id)) allowed.add(menu.parentId)

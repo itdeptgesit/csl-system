@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { AlertCircle, CheckCircle2, Loader2, Mail, Lock, Eye, EyeOff, User, UserPlus, LogIn, Shield, Globe } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Loader2, Mail, Lock, Eye, EyeOff, User, UserPlus, LogIn, Shield, Globe, MailCheck, ArrowRight, RefreshCw } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { sendPasswordResetNotificationEmail } from '../utils/EmailSystemUtils';
 
@@ -20,7 +20,7 @@ function isAllowedDomain(email: string): boolean {
     return ALLOWED_DOMAINS.includes(domain);
 }
 
-type Mode = 'login' | 'register' | 'reset';
+type Mode = 'login' | 'register' | 'reset' | 'email-sent';
 
 export const LoginPage: React.FC<LoginPageProps> = ({
     onLogin,
@@ -28,6 +28,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
     logoUrl = '/image/logo.png',
 }) => {
     const [mode, setMode] = useState<Mode>('login');
+    const [registeredEmail, setRegisteredEmail] = useState('');
     const [identifier, setIdentifier] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -78,9 +79,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                 options: { data: { full_name: fullName.trim() } }
             });
             if (signUpErr) throw signUpErr;
-            setSuccessMsg('Pendaftaran berhasil! Cek email Anda untuk konfirmasi.');
-            switchMode('login');
-            setIdentifier(email);
+            setRegisteredEmail(email);
+            setMode('email-sent');
             setPassword(''); setFullName(''); setConfirmPassword('');
         } catch (err: any) { setError(err.message || 'Pendaftaran gagal.'); }
         finally { setIsLoading(false); }
@@ -207,6 +207,68 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                 {/* Form area */}
                 <div className="flex-1 flex flex-col justify-center items-center px-8 py-6">
                     <div className="w-full max-w-[420px]">
+
+                        {/* ══ EMAIL SENT SCREEN ══ */}
+                        {mode === 'email-sent' && (
+                            <div className="text-center">
+                                {/* Icon */}
+                                <div className="flex justify-center mb-6">
+                                    <div className="w-20 h-20 rounded-2xl flex items-center justify-center"
+                                        style={{ background: 'linear-gradient(135deg, #ecfdf5, #d1fae5)', border: '2px solid #a7f3d0' }}>
+                                        <MailCheck size={36} className="text-emerald-600" />
+                                    </div>
+                                </div>
+
+                                <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: GOLD }}>Satu Langkah Lagi</p>
+                                <h2 className="text-3xl font-black text-slate-900 mb-3 tracking-tight">Cek Email Anda!</h2>
+                                <p className="text-sm text-slate-500 mb-2">
+                                    Kami telah mengirimkan link konfirmasi ke:
+                                </p>
+                                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl mb-7"
+                                    style={{ background: '#f1f5f9', border: '1px solid #e2e8f0' }}>
+                                    <Mail size={14} className="text-slate-500" />
+                                    <span className="text-sm font-bold text-slate-800">{registeredEmail}</span>
+                                </div>
+
+                                {/* Steps */}
+                                <div className="text-left space-y-3 mb-8 p-5 rounded-2xl" style={{ background: '#fafafa', border: '1px solid #e2e8f0' }}>
+                                    <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">Langkah Selanjutnya</p>
+                                    {[
+                                        { step: '1', text: 'Buka inbox email Anda (atau folder Spam)' },
+                                        { step: '2', text: 'Klik link konfirmasi yang kami kirimkan' },
+                                        { step: '3', text: 'Akun Anda aktif — silakan login!' },
+                                    ].map(({ step, text }) => (
+                                        <div key={step} className="flex items-center gap-3">
+                                            <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-white text-[11px] font-black"
+                                                style={{ background: '#0B1A35' }}>
+                                                {step}
+                                            </div>
+                                            <p className="text-xs font-semibold text-slate-600">{text}</p>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Info box */}
+                                <div className="flex items-start gap-2.5 p-3.5 rounded-xl mb-6 text-left"
+                                    style={{ background: '#fffbeb', border: '1px solid #fde68a' }}>
+                                    <AlertCircle size={14} className="text-amber-500 shrink-0 mt-0.5" />
+                                    <p className="text-xs text-amber-700 font-medium">
+                                        Tidak ada email masuk? Periksa folder <strong>Spam / Junk</strong>, atau tunggu beberapa menit. Link berlaku selama <strong>24 jam</strong>.
+                                    </p>
+                                </div>
+
+                                {/* Action buttons */}
+                                <button
+                                    onClick={() => { setMode('login'); setIdentifier(registeredEmail); setError(''); setSuccessMsg(''); }}
+                                    className="w-full h-12 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 transition-all hover:opacity-90 mb-3"
+                                    style={{ background: '#0B1A35' }}>
+                                    <LogIn size={15} /> Pergi ke Halaman Login
+                                    <ArrowRight size={15} />
+                                </button>
+                            </div>
+                        )}
+
+                        {mode !== 'email-sent' && (<>
 
                         {/* Mobile logo */}
                         <div className="lg:hidden flex items-center gap-3 mb-8">
@@ -389,11 +451,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                             </div>
                         )}
 
-                        {/* Footer */}
                         <p className="text-center text-[11px] text-slate-400 mt-8 flex items-center justify-center gap-1.5">
                             <Shield size={11} />
                             © 2026 CSL System. All rights reserved.
                         </p>
+                        </>)}
                     </div>
                 </div>
             </div>

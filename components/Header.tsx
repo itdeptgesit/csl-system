@@ -116,6 +116,12 @@ export const Header: React.FC<HeaderProps> = ({
   useEffect(() => {
     if (!user?.email) return;
     const userEmail = user.email.toLowerCase();
+    
+    const role = userRole?.toLowerCase() || user?.role?.toLowerCase() || '';
+    const isCslStaff = role.includes('admin') || role.includes('staff') ||
+          (userGroups || []).some(g => ['admin', 'csl_admin', 'csl_staff'].includes(g.toLowerCase()));
+    const cslGenericEmail = 'csl_team@gesit.co.id';
+
     const mapNotification = (n: any): NotificationItem => ({
       id: n.id,
       userId: n.user_id || n.user_email,
@@ -126,17 +132,21 @@ export const Header: React.FC<HeaderProps> = ({
       createdAt: n.created_at,
       link: n.link
     });
+    
     const fetchNotifications = async () => {
       let query = supabase.from('notifications').select('*');
-      if (user?.id && userEmail) {
-        query = query.or(`user_id.eq.${user.id},user_email.ilike.${userEmail}`);
-      } else if (user?.id) {
-        query = query.eq('user_id', user.id);
-      } else if (userEmail) {
-        query = query.ilike('user_email', userEmail);
+      
+      let orConditions = [];
+      if (user?.id) orConditions.push(`user_id.eq.${user.id}`);
+      if (userEmail) orConditions.push(`user_email.ilike.${userEmail}`);
+      if (isCslStaff) orConditions.push(`user_email.ilike.${cslGenericEmail}`);
+      
+      if (orConditions.length > 0) {
+        query = query.or(orConditions.join(','));
       } else {
         return;
       }
+      
       const { data } = await query.order('created_at', { ascending: false }).limit(20);
       if (data) setNotifications(data.map(mapNotification));
     };
@@ -147,13 +157,17 @@ export const Header: React.FC<HeaderProps> = ({
         table: 'notifications'
       }, (payload) => {
         const n = payload.new;
-        if (n.user_id === user?.id || (userEmail && n.user_email?.toLowerCase() === userEmail)) {
+        if (
+          n.user_id === user?.id || 
+          (userEmail && n.user_email?.toLowerCase() === userEmail) ||
+          (isCslStaff && n.user_email?.toLowerCase() === cslGenericEmail)
+        ) {
           const mapped = mapNotification(n);
           setNotifications(prev => [mapped, ...prev].slice(0, 20));
         }
       }).subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [user?.email]);
+  }, [user?.email, user?.id, userRole, user?.role, userGroups]);
 
   const markAsRead = async (id: string) => {
     const { error } = await supabase.from('notifications').update({ is_read: true }).eq('id', id);
@@ -163,11 +177,25 @@ export const Header: React.FC<HeaderProps> = ({
   const markAllAsRead = async () => {
     if (!user) return;
     const email = user.email?.toLowerCase();
+    
+    const role = userRole?.toLowerCase() || user?.role?.toLowerCase() || '';
+    const isCslStaff = role.includes('admin') || role.includes('staff') ||
+          (userGroups || []).some(g => ['admin', 'csl_admin', 'csl_staff'].includes(g.toLowerCase()));
+    const cslGenericEmail = 'csl_team@gesit.co.id';
+    
     let query = supabase.from('notifications').update({ is_read: true });
-    if (user.id && email) query = query.or(`user_id.eq.${user.id},user_email.ilike.${email}`);
-    else if (user.id) query = query.eq('user_id', user.id);
-    else if (email) query = query.ilike('user_email', email);
-    else return;
+    
+    let orConditions = [];
+    if (user.id) orConditions.push(`user_id.eq.${user.id}`);
+    if (email) orConditions.push(`user_email.ilike.${email}`);
+    if (isCslStaff) orConditions.push(`user_email.ilike.${cslGenericEmail}`);
+    
+    if (orConditions.length > 0) {
+        query = query.or(orConditions.join(','));
+    } else {
+        return;
+    }
+    
     const { error } = await query.eq('is_read', false);
     if (!error) setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
   };
@@ -175,15 +203,23 @@ export const Header: React.FC<HeaderProps> = ({
   const clearAllNotifications = async () => {
     if (!user) return;
     const email = user.email?.toLowerCase();
+    
+    const role = userRole?.toLowerCase() || user?.role?.toLowerCase() || '';
+    const isCslStaff = role.includes('admin') || role.includes('staff') ||
+          (userGroups || []).some(g => ['admin', 'csl_admin', 'csl_staff'].includes(g.toLowerCase()));
+    const cslGenericEmail = 'csl_team@gesit.co.id';
+    
     let query = supabase.from('notifications').delete();
-    if (user.id && email) {
-      query = query.or(`user_id.eq.${user.id},user_email.ilike.${email}`);
-    } else if (user.id) {
-      query = query.eq('user_id', user.id);
-    } else if (email) {
-      query = query.ilike('user_email', email);
+    
+    let orConditions = [];
+    if (user.id) orConditions.push(`user_id.eq.${user.id}`);
+    if (email) orConditions.push(`user_email.ilike.${email}`);
+    if (isCslStaff) orConditions.push(`user_email.ilike.${cslGenericEmail}`);
+    
+    if (orConditions.length > 0) {
+        query = query.or(orConditions.join(','));
     } else {
-      return;
+        return;
     }
     
     const { error } = await query;

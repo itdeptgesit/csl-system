@@ -446,11 +446,11 @@ const InternalApp: React.FC = () => {
         const { data: newUser, error: createError } = await supabase
           .from('user_accounts')
           .insert([{
+            id: session?.user?.id,
             email: email,
             full_name: fullName,
             role: 'User',
             groups: ['user'],
-            status: 'Active',
             department: 'Other',
             company: 'GESIT'
           }])
@@ -821,6 +821,14 @@ const DashboardLayout: React.FC<any & { children?: React.ReactNode }> = ({
         groupConfig.allowedMenus.forEach(menuId => allowed.add(menuId));
       }
     });
+
+    // Fallback: if user has groups but none have configured menus (e.g. new 'user' group),
+    // grant default access so sidebar is not empty
+    if (allowed.size === 0) {
+      allowed.add('csl-my-requests');
+      allowed.add('csl-requests');
+      allowed.add('profile');
+    }
 
     // Ensure parents are allowed if children are
     const allMenus = APP_MENU_STRUCTURE || [];

@@ -492,7 +492,8 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                   setIsSubmitting(false);
                   return;
               }
-              await notifyRequestUpdate({ ...selectedRequest, ...payload }, 'STATUS_CHANGED', payload.csl_response);
+              const attachments = newFileMeta.map((f: any) => ({ name: f.name, url: f.url }));
+              await notifyRequestUpdate({ ...selectedRequest, ...payload }, 'STATUS_CHANGED', payload.csl_response, attachments);
               const statusLabel: Record<string, string> = {
                   ACKNOWLEDGED: 'Permintaan diakui dan sedang dikaji',
                   IN_REVIEW: 'Permintaan sedang dalam review',
@@ -545,9 +546,11 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                   return;
               }
               
-              // Notify requester about new comment
+              // Notify requester or CSL staff about new comment
               if (currentUser?.email !== selectedRequest.requester_email) {
                   await notifyRequestUpdate(selectedRequest, 'STATUS_CHANGED', `Pesan baru dari ${currentUser?.fullName || 'CSL Team'}:\n\n"${newComment.trim()}"`);
+              } else {
+                  await notifyRequestUpdate(selectedRequest, 'USER_RESPONDED', `Pemohon mengirim pesan baru:\n\n"${newComment.trim()}"`);
               }
               
               // Refresh logs after insert
@@ -636,9 +639,12 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                   return;
               }
               
-              // Notify requester about new document
+              // Notify requester or CSL staff about new document
+              const attachment = { name: docForm.doc_name.trim(), url: finalGdriveUrl };
               if (currentUser?.email !== selectedRequest.requester_email) {
-                  await notifyRequestUpdate(selectedRequest, 'STATUS_CHANGED', `Dokumen baru telah dilampirkan: ${docForm.doc_name.trim()}`);
+                  await notifyRequestUpdate(selectedRequest, 'STATUS_CHANGED', `Dokumen baru telah dilampirkan: ${docForm.doc_name.trim()}`, [attachment]);
+              } else {
+                  await notifyRequestUpdate(selectedRequest, 'USER_RESPONDED', `Pemohon melampirkan dokumen baru: ${docForm.doc_name.trim()}`, [attachment]);
               }
               
               // Refresh documents
@@ -728,33 +734,33 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
 
       {/* SLA Stat Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/30 rounded-xl p-4">
+        <div className="bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/25 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-1">
-            <CheckCircle2 size={16} className="text-emerald-600" />
-            <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700 dark:text-emerald-400">On Track</span>
+            <CheckCircle2 size={16} className="text-emerald-600 dark:text-emerald-400" />
+            <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700 dark:text-emerald-300">On Track</span>
           </div>
-          <p className="text-3xl font-black text-emerald-700 dark:text-emerald-400">{slaStats.onTrack}</p>
+          <p className="text-3xl font-black text-emerald-700 dark:text-emerald-300">{slaStats.onTrack}</p>
         </div>
-        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/30 rounded-xl p-4">
+        <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/25 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-1">
-            <Clock size={16} className="text-amber-600" />
-            <span className="text-[10px] font-black uppercase tracking-widest text-amber-700 dark:text-amber-400">Due Soon</span>
+            <Clock size={16} className="text-amber-600 dark:text-amber-400" />
+            <span className="text-[10px] font-black uppercase tracking-widest text-amber-700 dark:text-amber-300">Due Soon</span>
           </div>
-          <p className="text-3xl font-black text-amber-700 dark:text-amber-400">{slaStats.dueSoon + slaStats.dueToday}</p>
+          <p className="text-3xl font-black text-amber-700 dark:text-amber-300">{slaStats.dueSoon + slaStats.dueToday}</p>
         </div>
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/30 rounded-xl p-4">
+        <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/25 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-1">
-            <AlertTriangle size={16} className="text-red-600" />
-            <span className="text-[10px] font-black uppercase tracking-widest text-red-700 dark:text-red-400">Overdue</span>
+            <AlertTriangle size={16} className="text-red-600 dark:text-red-400" />
+            <span className="text-[10px] font-black uppercase tracking-widest text-red-700 dark:text-red-300">Overdue</span>
           </div>
-          <p className="text-3xl font-black text-red-700 dark:text-red-400">{slaStats.overdue}</p>
+          <p className="text-3xl font-black text-red-700 dark:text-red-300">{slaStats.overdue}</p>
         </div>
-        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/30 rounded-xl p-4">
+        <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/25 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-1">
-            <BarChart2 size={16} className="text-blue-600" />
-            <span className="text-[10px] font-black uppercase tracking-widest text-blue-700 dark:text-blue-400">Total</span>
+            <BarChart2 size={16} className="text-blue-600 dark:text-blue-400" />
+            <span className="text-[10px] font-black uppercase tracking-widest text-blue-700 dark:text-blue-300">Total</span>
           </div>
-          <p className="text-3xl font-black text-blue-700 dark:text-blue-400">{slaStats.total}</p>
+          <p className="text-3xl font-black text-blue-700 dark:text-blue-300">{slaStats.total}</p>
         </div>
       </div>
 
@@ -803,11 +809,11 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
               <TableHeader className="bg-muted/30">
                 <TableRow className="border-border/10">
                   {view === 'mine' ? (
-                    [...['Request No.', 'Deskripsi', 'Tanggal Request', 'Status', 'SLA Due'], ...(isAdmin ? ['Actions'] : [])].map(h => (
+                    [...['Request No.', 'Deskripsi', 'PIC', 'Tanggal Request', 'Status', 'SLA Due'], ...(isAdmin ? ['Actions'] : [])].map(h => (
                       <TableHead key={h} className={`text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground/70 whitespace-nowrap ${h === 'Actions' ? 'text-right' : ''}`}>{h}</TableHead>
                     ))
                   ) : (
-                    [...['Request No.', 'Deskripsi', 'Pemohon', 'Dept', 'PIC', 'Status', 'SLA Due', 'SLA Status'], ...(isAdmin ? ['Actions'] : [])].map(h => (
+                    [...['Request No.', 'Deskripsi', 'Pemohon', 'PIC', 'Status', 'SLA Due', 'SLA Status'], ...(isAdmin ? ['Actions'] : [])].map(h => (
                       <TableHead key={h} className={`text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground/70 whitespace-nowrap ${h === 'Actions' ? 'text-right' : ''}`}>{h}</TableHead>
                     ))
                   )}
@@ -819,12 +825,14 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                   const slaBadge = SLA_BADGE[slaStatus];
                   const dueDate = new Date(req.sla_due_date).toLocaleDateString('en-GB');
                   const requestDate = new Date(req.created_at).toLocaleDateString('en-GB');
+                  const catName = categories.find(c => c.id === req.category_id)?.name || req.category_name || '-';
 
                   if (view === 'mine') {
                     return (
                       <TableRow key={req.id} onClick={() => handleRowClick(req)} className="group border-border/10 hover:bg-muted/30 transition-colors cursor-pointer">
                         <TableCell className="font-mono text-xs font-bold text-primary">{req.request_number}</TableCell>
                         <TableCell className="text-xs max-w-xs truncate font-medium text-foreground">{req.description}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{req.assigned_pic_name || <span className="italic opacity-40">Unassigned</span>}</TableCell>
                         <TableCell className="font-mono text-xs text-muted-foreground">{requestDate}</TableCell>
                         <TableCell>
                           <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md ${STATUS_BADGE[req.status] || ''}`}>
@@ -876,7 +884,6 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                           <p className="text-[10px] text-muted-foreground truncate max-w-[140px]">{req.requester_email}</p>
                         </div>
                       </TableCell>
-                      <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{req.department}</TableCell>
                       <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{req.assigned_pic_name || <span className="italic opacity-40">Unassigned</span>}</TableCell>
                       <TableCell>
                         <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md whitespace-nowrap ${STATUS_BADGE[req.status] || ''}`}>
@@ -1057,7 +1064,10 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                         const oldAttachments: string[] = (() => {
                           try { return JSON.parse((selectedRequest as any).attachments || '[]'); } catch { return []; }
                         })();
-                        const hasDocuments = oldAttachments.length > 0 || requestDocuments.length > 0;
+                        const responseFiles: any[] = (() => {
+                          try { return JSON.parse((selectedRequest as any).csl_response_files || '[]'); } catch { return []; }
+                        })();
+                        const hasDocuments = oldAttachments.length > 0 || requestDocuments.length > 0 || responseFiles.length > 0;
                         if (!hasDocuments && !isCslTeam) return null;
                         
                         return (
@@ -1065,7 +1075,6 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                             <div className="px-4 py-2.5 bg-muted/30 border-b border-border flex justify-between items-center">
                               <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
                                 {(() => {
-                                  const responseFiles = (() => { try { return JSON.parse((selectedRequest as any).csl_response_files || '[]'); } catch { return []; } })();
                                   const totalCount = oldAttachments.length + requestDocuments.length + responseFiles.length;
                                   return <><FolderOpen size={12} /> Dokumen Lampiran ({totalCount})</>;
                                 })()}
@@ -1113,9 +1122,6 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
 
                               {/* Response Files (csl_response_files) */}
                               {(() => {
-                                const responseFiles: any[] = (() => {
-                                  try { return JSON.parse((selectedRequest as any).csl_response_files || '[]'); } catch { return []; }
-                                })();
                                 return responseFiles.map((f, i) => (
                                   <div key={`resp-${i}`} className="flex items-center justify-between px-3 py-2 rounded-lg bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-800/30 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors group">
                                     <a href={f.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 min-w-0 flex-1">

@@ -6,21 +6,24 @@ export type NotificationType = 'Info' | 'Warning' | 'Success' | 'Alert';
  * Creates an in-app notification in the `notifications` table.
  */
 export async function createInAppNotification(
-    userId: string,
+    userId: string | null,
     title: string,
     message: string,
     type: NotificationType = 'Info',
-    link?: string
+    link?: string,
+    userEmail?: string
 ) {
     try {
-        const payload = {
-            user_id: userId,
+        const payload: any = {
             title,
             message,
             type,
             is_read: false,
             link
         };
+        
+        if (userId) payload.user_id = userId;
+        if (userEmail) payload.user_email = userEmail;
 
         const { error } = await supabase.from('notifications').insert([payload]);
         if (error) {
@@ -68,19 +71,51 @@ export async function sendEmailNotification(
  */
 export async function notifyRequestUpdate(
     request: any, // The CSL Request object
-    eventType: 'SUBMITTED' | 'ASSIGNED' | 'STATUS_CHANGED' | 'COMPLETED' | 'RESPONDED',
-    additionalInfo?: string
+    eventType: 'SUBMITTED' | 'ASSIGNED' | 'STATUS_CHANGED' | 'COMPLETED' | 'RESPONDED' | 'USER_RESPONDED',
+    additionalInfo?: string,
+    attachments?: { name: string; url: string }[]
 ) {
     const requestLink = `/csl-all-requests?id=${request.id}`; // Or route to specific detail page
 
     switch (eventType) {
         case 'SUBMITTED':
-            // Notify CSL Admins (would need to query for admin IDs, for now just logging email)
+            // Notify CSL Admins
+            await createInAppNotification(
+                null,
+                'New Request Submitted',
+                `A new request (${request.category_name}) has been submitted by ${request.requester_name}.`,
+                'Info',
+                requestLink,
+                'csl_team@gesit.co.id'
+            );
+            
             await sendEmailNotification(
                 'csl_team@gesit.co.id',
                 `New Request Submitted: ${request.request_number}`,
                 `A new request (${request.category_name}) has been submitted by ${request.requester_name}.`
             );
+            break;
+            
+        case 'USER_RESPONDED':
+            // Notify Assigned PIC, or all CSL staff if unassigned
+            if (request.assigned_pic_id) {
+                await createInAppNotification(
+                    request.assigned_pic_id,
+                    'New Message from Requester',
+                    `Requester ${request.requester_name} added a message to request ${request.request_number}.`,
+                    'Info',
+                    requestLink
+                );
+            } else {
+                await createInAppNotification(
+                    null,
+                    'New Message from Requester',
+                    `Requester ${request.requester_name} added a message to request ${request.request_number}.`,
+                    'Info',
+                    requestLink,
+                    'csl_team@gesit.co.id'
+                );
+            }
             break;
             
         case 'ASSIGNED':
@@ -166,6 +201,19 @@ export async function notifyRequestUpdate(
                         <h3 style="margin: 0 0 8px 0; color: #0f172a; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">Message / Note</h3>
                         <div style="background-color: #f1f5f9; border-left: 4px solid #3b82f6; padding: 16px; border-radius: 0 8px 8px 0; font-style: italic; color: #475569; font-size: 14px;">
                             ${additionalInfo.replace(/\n/g, '<br/>')}
+                        </div>
+                    </div>` : ''}
+
+                    ${attachments && attachments.length > 0 ? `
+                    <div style="margin: 24px 0;">
+                        <h3 style="margin: 0 0 8px 0; color: #0f172a; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">Attached Documents</h3>
+                        <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 8px;">
+                            ${attachments.map(att => `
+                                <div style="margin-bottom: 8px; display: flex; align-items: center;">
+                                    <span style="background-color: #e0f2fe; color: #0284c7; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; margin-right: 8px;">FILE</span>
+                                    <a href="${att.url}" target="_blank" style="color: #2563eb; text-decoration: none; font-size: 14px; font-weight: 500;">${att.name}</a>
+                                </div>
+                            `).join('')}
                         </div>
                     </div>` : ''}
                     

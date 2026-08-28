@@ -490,8 +490,8 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onLogout, user, onUpda
                     <Card className="rounded-2xl border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900 shadow-sm overflow-hidden">
                         <div className="p-6 sm:p-8 space-y-6">
                             <div>
-                                <h3 className="text-base font-black text-slate-900 dark:text-white">Security Protocols</h3>
-                                <p className="text-slate-400 dark:text-zinc-500 text-xs mt-0.5">Manage your passcode and active sessions.</p>
+                                <h3 className="text-base font-black text-slate-900 dark:text-white">Keamanan Akun</h3>
+                                <p className="text-slate-400 dark:text-zinc-500 text-xs mt-0.5">Kelola password dan sesi login aktif Anda.</p>
                             </div>
                             <Separator className="bg-slate-100 dark:bg-white/5" />
 
@@ -502,12 +502,12 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onLogout, user, onUpda
                                         <Key size={15} className="text-amber-500" />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-bold text-slate-900 dark:text-white">Change Password</p>
-                                        <p className="text-xs text-slate-400 mt-0.5">Update your security key for system access</p>
+                                        <p className="text-sm font-bold text-slate-900 dark:text-white">Ubah Password</p>
+                                        <p className="text-xs text-slate-400 mt-0.5">Perbarui password akun Anda</p>
                                     </div>
                                 </div>
                                 <Button onClick={() => setIsPasswordModalOpen(true)} variant="outline" className="w-full sm:w-auto font-bold rounded-xl gap-2">
-                                    <Lock size={14} /> Update Key
+                                    <Lock size={14} /> Ubah Password
                                 </Button>
                             </div>
 
@@ -520,12 +520,12 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onLogout, user, onUpda
                                         <LogOut size={15} className="text-rose-500" />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-bold text-slate-900 dark:text-white">Session Control</p>
-                                        <p className="text-xs text-slate-400 mt-0.5">Sign out from all active terminals</p>
+                                        <p className="text-sm font-bold text-slate-900 dark:text-white">Keluar Semua Sesi</p>
+                                        <p className="text-xs text-slate-400 mt-0.5">Logout dari semua perangkat yang sedang aktif</p>
                                     </div>
                                 </div>
                                 <Button onClick={handleTerminateAllSessions} variant="outline" className="w-full sm:w-auto font-bold rounded-xl gap-2 border-rose-200 text-rose-600 hover:bg-rose-50 dark:border-rose-500/20 dark:text-rose-400 dark:hover:bg-rose-500/10">
-                                    <LogOut size={14} /> Terminate All
+                                    <LogOut size={14} /> Logout Semua
                                 </Button>
                             </div>
 
