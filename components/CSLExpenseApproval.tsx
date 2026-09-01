@@ -191,9 +191,9 @@ export const CSLExpenseApproval: React.FC<{ currentUser: UserAccount | null }> =
       fetchData();
       // Notify approver by email
       await sendEmailNotification(
-        'nata@gesit.co.id',
+        'rudi.siarudin@gesit.co.id',
         `[CSL] Expenses Approval Baru: ${payload.expense_number}`,
-        `Halo,\n\nAda Expenses Approval baru yang memerlukan persetujuan Anda.\n\nNo: ${payload.expense_number}\nProject: ${payload.project_name}\nDibayarkan ke: ${payload.paid_to}\nTotal: ${formatRp(payload.total_amount)}\n\nSilakan login ke CSL System untuk menyetujui atau menolak.\n\nTerima kasih.`
+        `Halo Pak Rudi,\n\nAda Expenses Approval baru yang memerlukan persetujuan Anda.\n\nNo: ${payload.expense_number}\nProject: ${payload.project_name}\nDibayarkan ke: ${payload.paid_to}\nTotal: ${formatRp(payload.total_amount)}\nDiajukan oleh: ${payload.prepared_by_name}\n\nSilakan login ke CSL System untuk menyetujui atau menolak.\n\nTerima kasih.`
       );
     } catch (err: any) {
       toast.error('Gagal submit: ' + err.message);
