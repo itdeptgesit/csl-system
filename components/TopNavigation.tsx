@@ -116,33 +116,30 @@ export const TopNavigation: React.FC<TopNavigationProps> = ({
     useEffect(() => {
         if (!user) return;
         const fetchNotifications = async () => {
-            let query = supabase.from('notifications').select('*');
-            const email = user.email?.toLowerCase();
-
-            if (user.id && email) {
-                query = query.or(`user_id.eq.${user.id},user_email.ilike.${email}`);
-            } else if (user.id) {
-                query = query.eq('user_id', user.id);
-            } else if (email) {
-                query = query.ilike('user_email', email);
-            } else {
-                return;
+            try {
+                if (!user.id) return;
+                const { data } = await supabase
+                    .from('notifications')
+                    .select('*')
+                    .eq('user_id', String(user.id))
+                    .order('created_at', { ascending: false })
+                    .limit(10);
+                if (data) setNotifications(data.map((n: any) => ({
+                    id: n.id, 
+                    userId: n.user_id, 
+                    title: n.title, 
+                    message: n.message, 
+                    type: n.type, 
+                    isRead: n.is_read, 
+                    createdAt: n.created_at, 
+                    link: n.link
+                })));
+            } catch (err) {
+                console.error('TopNavigation fetchNotifications error:', err);
             }
-
-            const { data } = await query.order('created_at', { ascending: false }).limit(10);
-            if (data) setNotifications(data.map((n: any) => ({
-                id: n.id, 
-                userId: n.user_id || n.user_email, 
-                title: n.title, 
-                message: n.message, 
-                type: n.type, 
-                isRead: n.is_read, 
-                createdAt: n.created_at, 
-                link: n.link
-            })));
         };
         fetchNotifications();
-    }, [user?.email, user?.id]);
+    }, [user?.id]);
 
     const markAsRead = async (id: string) => {
         const { error } = await supabase.from('notifications').update({ is_read: true }).eq('id', id);

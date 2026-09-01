@@ -114,17 +114,15 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   useEffect(() => {
-    if (!user?.email) return;
-    const userEmail = user.email.toLowerCase();
-    
+    if (!user) return;
+    const userId = user.id ? String(user.id) : null;
     const role = userRole?.toLowerCase() || user?.role?.toLowerCase() || '';
     const isCslStaff = role.includes('admin') || role.includes('staff') ||
           (userGroups || []).some(g => ['admin', 'csl_admin', 'csl_staff'].includes(g.toLowerCase()));
-    const cslGenericEmail = 'csl_team@gesit.co.id';
 
     const mapNotification = (n: any): NotificationItem => ({
       id: n.id,
-      userId: n.user_id || n.user_email,
+      userId: n.user_id,
       title: n.title,
       message: n.message,
       type: n.type,
@@ -132,40 +130,64 @@ export const Header: React.FC<HeaderProps> = ({
       createdAt: n.created_at,
       link: n.link
     });
-    
+
     const fetchNotifications = async () => {
-      let query = supabase.from('notifications').select('*');
-      
-      let orConditions = [];
-      if (user?.id) orConditions.push(`user_id.eq.${user.id}`);
-      if (userEmail) orConditions.push(`user_email.ilike.${userEmail}`);
-      if (isCslStaff) orConditions.push(`user_email.ilike.${cslGenericEmail}`);
-      
-      if (orConditions.length > 0) {
-        query = query.or(orConditions.join(','));
-      } else {
-        return;
+      try {
+        let items: any[] = [];
+
+        // 1. Fetch user-specific notifications
+        if (userId) {
+          const { data, error } = await supabase
+            .from('notifications')
+            .select('*')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false })
+            .limit(20);
+          if (!error && data) {
+            items.push(...data);
+          }
+        }
+
+        // 2. Fetch staff-wide broadcast notifications (where user_id is null)
+        if (isCslStaff) {
+          const { data, error } = await supabase
+            .from('notifications')
+            .select('*')
+            .is('user_id', null)
+            .order('created_at', { ascending: false })
+            .limit(20);
+          if (!error && data) {
+            items.push(...data);
+          }
+        }
+
+        // Deduplicate by ID and sort descending
+        const map = new Map<string | number, NotificationItem>();
+        items.forEach(n => map.set(n.id, mapNotification(n)));
+        const sorted = Array.from(map.values()).sort(
+          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+
+        setNotifications(sorted.slice(0, 20));
+      } catch (err) {
+        console.error('Error fetching notifications:', err);
       }
-      
-      const { data } = await query.order('created_at', { ascending: false }).limit(20);
-      if (data) setNotifications(data.map(mapNotification));
     };
+
     fetchNotifications();
-    const channel = supabase.channel(`notifications:${user?.id || userEmail}`).on('postgres_changes', {
+
+    const channel = supabase.channel(`notifications:${userId || 'global'}`).on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
         table: 'notifications'
       }, (payload) => {
         const n = payload.new;
-        if (
-          n.user_id === user?.id || 
-          (userEmail && n.user_email?.toLowerCase() === userEmail) ||
-          (isCslStaff && n.user_email?.toLowerCase() === cslGenericEmail)
-        ) {
+        if ((userId && n.user_id === userId) || (isCslStaff && !n.user_id)) {
           const mapped = mapNotification(n);
-          setNotifications(prev => [mapped, ...prev].slice(0, 20));
+          setNotifications(prev => [mapped, ...prev.filter(x => x.id !== mapped.id)].slice(0, 20));
         }
       }).subscribe();
+
     return () => { supabase.removeChannel(channel); };
   }, [user?.email, user?.id, userRole, user?.role, userGroups]);
 
@@ -176,54 +198,28 @@ export const Header: React.FC<HeaderProps> = ({
 
   const markAllAsRead = async () => {
     if (!user) return;
-    const email = user.email?.toLowerCase();
-    
-    const role = userRole?.toLowerCase() || user?.role?.toLowerCase() || '';
-    const isCslStaff = role.includes('admin') || role.includes('staff') ||
-          (userGroups || []).some(g => ['admin', 'csl_admin', 'csl_staff'].includes(g.toLowerCase()));
-    const cslGenericEmail = 'csl_team@gesit.co.id';
-    
-    let query = supabase.from('notifications').update({ is_read: true });
-    
-    let orConditions = [];
-    if (user.id) orConditions.push(`user_id.eq.${user.id}`);
-    if (email) orConditions.push(`user_email.ilike.${email}`);
-    if (isCslStaff) orConditions.push(`user_email.ilike.${cslGenericEmail}`);
-    
-    if (orConditions.length > 0) {
-        query = query.or(orConditions.join(','));
-    } else {
-        return;
+    const userId = user.id ? String(user.id) : null;
+    try {
+      if (userId) {
+        await supabase.from('notifications').update({ is_read: true }).eq('user_id', userId).eq('is_read', false);
+      }
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+    } catch (err) {
+      console.error('Error markAllAsRead:', err);
     }
-    
-    const { error } = await query.eq('is_read', false);
-    if (!error) setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
   };
 
   const clearAllNotifications = async () => {
     if (!user) return;
-    const email = user.email?.toLowerCase();
-    
-    const role = userRole?.toLowerCase() || user?.role?.toLowerCase() || '';
-    const isCslStaff = role.includes('admin') || role.includes('staff') ||
-          (userGroups || []).some(g => ['admin', 'csl_admin', 'csl_staff'].includes(g.toLowerCase()));
-    const cslGenericEmail = 'csl_team@gesit.co.id';
-    
-    let query = supabase.from('notifications').delete();
-    
-    let orConditions = [];
-    if (user.id) orConditions.push(`user_id.eq.${user.id}`);
-    if (email) orConditions.push(`user_email.ilike.${email}`);
-    if (isCslStaff) orConditions.push(`user_email.ilike.${cslGenericEmail}`);
-    
-    if (orConditions.length > 0) {
-        query = query.or(orConditions.join(','));
-    } else {
-        return;
+    const userId = user.id ? String(user.id) : null;
+    try {
+      if (userId) {
+        await supabase.from('notifications').delete().eq('user_id', userId);
+      }
+      setNotifications([]);
+    } catch (err) {
+      console.error('Error clearAllNotifications:', err);
     }
-    
-    const { error } = await query;
-    if (!error) setNotifications([]);
     setIsNotificationOpen(false);
   };
 

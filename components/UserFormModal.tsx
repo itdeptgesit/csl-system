@@ -214,10 +214,11 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({ isOpen, onClose, o
                         <div className="grid grid-cols-2 gap-8">
                             <div>
                                 <label className={labelClass}>Access Role</label>
-                                <select className={inputClass} value={formData.role} onChange={e => setFormData({ ...formData, role: e.target.value as any })}>
-                                    <option value="Admin">Administrator</option>
-                                    <option value="Staff">Operations Staff</option>
-                                    <option value="User">Standard User</option>
+                                <select className={inputClass} value={formData.role || 'User'} onChange={e => setFormData({ ...formData, role: e.target.value as any })}>
+                                    <option value="Super Admin">Super Admin (Kelola Seluruh Sistem)</option>
+                                    <option value="Admin">Admin (Approve & Edit, Tanpa Hapus)</option>
+                                    <option value="Staff">Staff (Kerjakan Request & Membuat)</option>
+                                    <option value="User">User (Hanya Request CSL)</option>
                                 </select>
                             </div>
                             <div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { UserAccount } from '../types';
 import { supabase } from '../lib/supabaseClient';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -127,6 +127,11 @@ export const CSLDocumentsManager: React.FC<CSLDocumentsManagerProps> = ({ curren
   const [uploading, setUploading] = useState(false);
   const [feedbackBanner, setFeedbackBanner] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<DocumentItem | null>(null);
+
+  const isSuperAdmin = useMemo(() => {
+    const role = (currentUser?.role || '').trim().toLowerCase();
+    return role === 'super admin' || role === 'super_admin' || role === 'owner';
+  }, [currentUser]);
 
   // Selected file state
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -484,13 +489,15 @@ export const CSLDocumentsManager: React.FC<CSLDocumentsManagerProps> = ({ curren
                             </a>
                           );
                         })()}
-                        <button
-                          onClick={() => setDeleteConfirm(doc)}
-                          title="Delete Document"
-                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl transition-colors"
-                        >
-                          <Trash2 size={14} />
-                        </button>
+                        {isSuperAdmin && (
+                          <button
+                            onClick={() => setDeleteConfirm(doc)}
+                            title="Delete Document (Super Admin Only)"
+                            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl transition-colors"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>

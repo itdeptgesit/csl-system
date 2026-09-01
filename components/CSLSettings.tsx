@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabaseClient';
+import { supabase, supabaseAdmin } from '../lib/supabaseClient';
+
 import { UserAccount } from '../types';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -108,8 +109,8 @@ export interface DepartmentItem {
   employees: number;
 }
 
-// Default Full Admin Permissions
-const DEFAULT_ADMIN_PERMISSIONS: MenuPermissions = {
+// Default Super Admin Permissions (full access everything)
+const DEFAULT_SUPER_ADMIN_PERMISSIONS: MenuPermissions = {
   dashboard: true,
   requests_view: true,
   requests_create: true,
@@ -126,7 +127,25 @@ const DEFAULT_ADMIN_PERMISSIONS: MenuPermissions = {
   settings_manage: true,
 };
 
-// Default Staff Permissions
+// Default Admin Permissions (full except delete)
+const DEFAULT_ADMIN_PERMISSIONS: MenuPermissions = {
+  dashboard: true,
+  requests_view: true,
+  requests_create: true,
+  requests_review: true,
+  routine_view: true,
+  routine_manage: true,
+  documents_view: true,
+  documents_upload: true,
+  budget_view: true,
+  budget_approve: true,
+  directory_view: true,
+  directory_manage: true,
+  reports_view: true,
+  settings_manage: false,
+};
+
+// Default Staff Permissions (operational, no approve budget / settings)
 const DEFAULT_STAFF_PERMISSIONS: MenuPermissions = {
   dashboard: true,
   requests_view: true,
@@ -139,24 +158,24 @@ const DEFAULT_STAFF_PERMISSIONS: MenuPermissions = {
   budget_view: true,
   budget_approve: false,
   directory_view: true,
-  directory_manage: true,
+  directory_manage: false,
   reports_view: true,
   settings_manage: false,
 };
 
-// Default Requester Permissions
+// Default User / Requester Permissions (submit requests only)
 const DEFAULT_REQUESTER_PERMISSIONS: MenuPermissions = {
-  dashboard: true,
+  dashboard: false,
   requests_view: true,
   requests_create: true,
   requests_review: false,
   routine_view: false,
   routine_manage: false,
-  documents_view: true,
+  documents_view: false,
   documents_upload: false,
   budget_view: false,
   budget_approve: false,
-  directory_view: true,
+  directory_view: false,
   directory_manage: false,
   reports_view: false,
   settings_manage: false,
@@ -233,18 +252,44 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
         if (error) {
           console.error('CSLSettings: Failed to load users:', error);
         } else if (data) {
-          const mapped: UserItem[] = data.map((u: any) => ({
-            id: u.id,
-            name: u.full_name || u.email || 'Unknown',
-            email: u.email || '',
-            role: u.role || 'User',
-            groups: u.groups || [],
-            permissions: u.role === 'Admin'
-              ? DEFAULT_ADMIN_PERMISSIONS
-              : u.role === 'Staff'
-              ? DEFAULT_STAFF_PERMISSIONS
-              : DEFAULT_REQUESTER_PERMISSIONS,
-          }));
+          const mapped: UserItem[] = data.map((u: any) => {
+            const role = u.role || 'User';
+            const roleLower = role.trim().toLowerCase();
+            const defaultPerms =
+              roleLower === 'super admin' || roleLower === 'super_admin'
+                ? DEFAULT_SUPER_ADMIN_PERMISSIONS
+                : roleLower === 'admin'
+                ? DEFAULT_ADMIN_PERMISSIONS
+                : roleLower === 'staff'
+                ? DEFAULT_STAFF_PERMISSIONS
+                : DEFAULT_REQUESTER_PERMISSIONS;
+            const groupsArr: string[] = u.groups || [];
+            const permissions = groupsArr.length > 0 ? {
+              dashboard: groupsArr.includes('dashboard'),
+              requests_view: groupsArr.includes('req_view') || groupsArr.includes('requests_view') || groupsArr.includes('csl-requests'),
+              requests_create: groupsArr.includes('req_submit') || groupsArr.includes('requests_create'),
+              requests_review: groupsArr.includes('req_review') || groupsArr.includes('requests_review'),
+              routine_view: groupsArr.includes('routine_view') || groupsArr.includes('routine'),
+              routine_manage: groupsArr.includes('routine_create') || groupsArr.includes('routine_manage'),
+              documents_view: groupsArr.includes('doc_vault') || groupsArr.includes('documents_view') || groupsArr.includes('documents'),
+              documents_upload: groupsArr.includes('doc_vault') || groupsArr.includes('documents_upload'),
+              budget_view: groupsArr.includes('budget') || groupsArr.includes('budget_view'),
+              budget_approve: groupsArr.includes('budget') || groupsArr.includes('budget_approve'),
+              directory_view: groupsArr.includes('directory') || groupsArr.includes('directory_view'),
+              directory_manage: groupsArr.includes('directory_manage'),
+              reports_view: groupsArr.includes('reports') || groupsArr.includes('reports_view'),
+              settings_manage: groupsArr.includes('settings') || groupsArr.includes('settings_manage'),
+            } : defaultPerms;
+
+            return {
+              id: u.id,
+              name: u.full_name || u.email || 'Unknown',
+              email: u.email || '',
+              role,
+              groups: groupsArr,
+              permissions,
+            };
+          });
           setUsers(mapped);
         }
       }
@@ -368,11 +413,14 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
   const handleSaveUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!userForm.name.trim() || !userForm.email.trim()) return;
-    const groupsArr = userForm.groupsStr.split(',').map(g => g.trim().toLowerCase()).filter(Boolean);
+    let groupsArr = userForm.groupsStr.split(',').map(g => g.trim().toLowerCase()).filter(Boolean);
+    if (userForm.role === 'Super Admin' && !groupsArr.includes('super_admin')) {
+      groupsArr.unshift('super_admin');
+    }
     setIsUserSaving(true);
     try {
       if (editingUser) {
-        const { error } = await supabase.from('user_accounts').update({
+        const { error } = await supabaseAdmin.from('user_accounts').update({
           full_name: userForm.name.trim(),
           email: userForm.email.trim(),
           role: userForm.role,
@@ -381,7 +429,7 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
         if (error) throw error;
         showFeedback(`User "${userForm.name}" updated!`);
       } else {
-        const { error } = await supabase.from('user_accounts').insert([{
+        const { error } = await supabaseAdmin.from('user_accounts').insert([{
           full_name: userForm.name.trim(),
           email: userForm.email.trim(),
           role: userForm.role,
@@ -404,26 +452,75 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
   // ── Permissions Modal Handlers ─────────────────────────────────────────────
   const openPermissionsModal = (u: UserItem) => {
     setPermUser(u);
-    setUserPerms(u.permissions || (u.role === 'Admin' ? DEFAULT_ADMIN_PERMISSIONS : DEFAULT_REQUESTER_PERMISSIONS));
+    const roleLower = (u.role || '').trim().toLowerCase();
+    const defaultPerms =
+      roleLower === 'super admin' || roleLower === 'super_admin'
+        ? DEFAULT_SUPER_ADMIN_PERMISSIONS
+        : roleLower === 'admin'
+        ? DEFAULT_ADMIN_PERMISSIONS
+        : roleLower === 'staff'
+        ? DEFAULT_STAFF_PERMISSIONS
+        : DEFAULT_REQUESTER_PERMISSIONS;
+
+    if (u.groups && Array.isArray(u.groups) && u.groups.length > 0) {
+      const g = u.groups;
+      setUserPerms({
+        dashboard: g.includes('dashboard'),
+        requests_view: g.includes('req_view') || g.includes('requests_view') || g.includes('csl-requests'),
+        requests_create: g.includes('req_submit') || g.includes('requests_create'),
+        requests_review: g.includes('req_review') || g.includes('requests_review'),
+        routine_view: g.includes('routine_view') || g.includes('routine'),
+        routine_manage: g.includes('routine_create') || g.includes('routine_manage'),
+        documents_view: g.includes('doc_vault') || g.includes('documents_view') || g.includes('documents'),
+        documents_upload: g.includes('doc_vault') || g.includes('documents_upload'),
+        budget_view: g.includes('budget') || g.includes('budget_view'),
+        budget_approve: g.includes('budget') || g.includes('budget_approve'),
+        directory_view: g.includes('directory') || g.includes('directory_view'),
+        directory_manage: g.includes('directory_manage'),
+        reports_view: g.includes('reports') || g.includes('reports_view'),
+        settings_manage: g.includes('settings') || g.includes('settings_manage'),
+      });
+    } else {
+      setUserPerms(u.permissions || defaultPerms);
+    }
   };
 
-  const handleSavePermissions = () => {
+  const handleSavePermissions = async () => {
     if (!permUser) return;
-    setUsers(users.map(u => u.id === permUser.id ? { ...u, permissions: userPerms } : u));
-    showFeedback(`Permissions saved for ${permUser.name}`);
+    // Konversi MenuPermissions object ke array menu IDs (format yang sama dengan MenuPermissionsModal)
+    const menuIds: string[] = [];
+    if (userPerms.dashboard) menuIds.push('dashboard');
+    if (userPerms.requests_view) menuIds.push('req_view');
+    if (userPerms.requests_create) menuIds.push('req_submit');
+    if (userPerms.requests_review) menuIds.push('req_review');
+    if (userPerms.routine_view) menuIds.push('routine_view');
+    if (userPerms.routine_manage) menuIds.push('routine_create');
+    if (userPerms.documents_view || userPerms.documents_upload) menuIds.push('doc_vault');
+    if (userPerms.budget_view || userPerms.budget_approve) menuIds.push('budget');
+    if (userPerms.directory_view || userPerms.directory_manage) menuIds.push('directory');
+    if (userPerms.reports_view) menuIds.push('reports');
+    if (userPerms.settings_manage) menuIds.push('settings');
+
+    try {
+      const { error } = await supabaseAdmin
+        .from('user_accounts')
+        .update({ groups: menuIds })
+        .eq('id', permUser.id);
+      if (error) throw error;
+      // Update local state setelah DB berhasil
+      setUsers(users.map(u => u.id === permUser.id ? { ...u, groups: menuIds, permissions: userPerms } : u));
+      showFeedback(`Permissions saved for ${permUser.name}`);
+    } catch (err: any) {
+      showFeedback(`Gagal menyimpan: ${err.message}`);
+    }
     setPermUser(null);
   };
 
-  const applyPreset = (preset: 'admin' | 'staff' | 'requester' | 'viewer') => {
+  const applyPreset = (preset: 'super_admin' | 'admin' | 'staff' | 'user') => {
+    if (preset === 'super_admin') setUserPerms(DEFAULT_SUPER_ADMIN_PERMISSIONS);
     if (preset === 'admin') setUserPerms(DEFAULT_ADMIN_PERMISSIONS);
     if (preset === 'staff') setUserPerms(DEFAULT_STAFF_PERMISSIONS);
-    if (preset === 'requester') setUserPerms(DEFAULT_REQUESTER_PERMISSIONS);
-    if (preset === 'viewer') setUserPerms({
-      dashboard: true, requests_view: true, requests_create: false, requests_review: false,
-      routine_view: true, routine_manage: false, documents_view: true, documents_upload: false,
-      budget_view: true, budget_approve: false, directory_view: true, directory_manage: false,
-      reports_view: true, settings_manage: false
-    });
+    if (preset === 'user') setUserPerms(DEFAULT_REQUESTER_PERMISSIONS);
   };
 
   // ── Company Handlers ───────────────────────────────────────────────────────
@@ -516,7 +613,7 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
         setCategories(categories.filter(c => c.id !== id));
       }
       if (type === 'user') {
-        const { error } = await supabase.from('user_accounts').delete().eq('id', id);
+        const { error } = await supabaseAdmin.from('user_accounts').delete().eq('id', id);
         if (error) throw error;
         setUsers(users.filter(u => u.id !== id));
       }
@@ -811,9 +908,10 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
               <div>
                 <label className="text-[11px] font-bold text-foreground mb-1 block">Primary System Role *</label>
                 <select value={userForm.role} onChange={e => setUserForm({...userForm, role: e.target.value})} className="w-full h-10 px-3 text-sm bg-muted/30 border border-border/30 rounded-xl font-semibold">
-                  <option value="Admin">Full Administrator</option>
-                  <option value="Staff">Legal Staff / Specialist</option>
-                  <option value="User">Requester User</option>
+                  <option value="Super Admin">Super Admin (Kelola Seluruh Sistem)</option>
+                  <option value="Admin">Admin (Approve & Edit, Tanpa Hapus)</option>
+                  <option value="Staff">Staff (Mengerjakan Request & Membuat)</option>
+                  <option value="User">User (Hanya Request CSL)</option>
                 </select>
               </div>
               <DialogFooter className="pt-4 border-t border-border/30 gap-2 flex sm:justify-end">
@@ -841,19 +939,19 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
             <div className="p-6 space-y-5 max-h-[75vh] overflow-y-auto">
               {/* Role Preset Shortcut */}
               <div className="space-y-2">
-                <label className="text-[11px] font-bold text-foreground block">Apply Quick Preset</label>
+                <label className="text-[11px] font-bold text-foreground block">Apply Quick Preset by Role</label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  <button type="button" onClick={() => applyPreset('admin')} className="text-[10px] font-extrabold uppercase py-2 px-2 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-700 hover:bg-purple-100 border border-purple-200 flex items-center justify-center gap-1">
-                    <Crown size={12} className="text-purple-600" /> Full Admin
+                  <button type="button" onClick={() => applyPreset('super_admin')} className="text-[10px] font-extrabold uppercase py-2 px-2 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-700 hover:bg-purple-100 border border-purple-200 flex items-center justify-center gap-1">
+                    <Crown size={12} className="text-purple-600" /> Super Admin
+                  </button>
+                  <button type="button" onClick={() => applyPreset('admin')} className="text-[10px] font-extrabold uppercase py-2 px-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 flex items-center justify-center gap-1">
+                    <ShieldCheck size={12} className="text-indigo-600" /> Admin
                   </button>
                   <button type="button" onClick={() => applyPreset('staff')} className="text-[10px] font-extrabold uppercase py-2 px-2 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-700 hover:bg-blue-100 border border-blue-200 flex items-center justify-center gap-1">
-                    <Briefcase size={12} className="text-blue-600" /> Legal Staff
+                    <Briefcase size={12} className="text-blue-600" /> Staff
                   </button>
-                  <button type="button" onClick={() => applyPreset('requester')} className="text-[10px] font-extrabold uppercase py-2 px-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 flex items-center justify-center gap-1">
-                    <FileText size={12} className="text-emerald-600" /> Requester
-                  </button>
-                  <button type="button" onClick={() => applyPreset('viewer')} className="text-[10px] font-extrabold uppercase py-2 px-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 hover:bg-slate-200 border border-slate-300 flex items-center justify-center gap-1">
-                    <Eye size={12} className="text-slate-600" /> Auditor
+                  <button type="button" onClick={() => applyPreset('user')} className="text-[10px] font-extrabold uppercase py-2 px-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 flex items-center justify-center gap-1">
+                    <FileText size={12} className="text-emerald-600" /> User
                   </button>
                 </div>
               </div>

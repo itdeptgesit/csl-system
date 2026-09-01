@@ -152,25 +152,38 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
           { label: 'Pending Tasks', value: stats.pendingTasks, icon: Calendar, sub1: 'Action needed', sub2: 'Routine & Agreement tasks', color: '#C9A84C', route: 'routine-task' },
           { label: 'Pending Expenses', value: stats.pendingExpenses, icon: Wallet, sub1: 'Approval needed', sub2: 'Budget & Cost requests', color: '#0B1A35', route: 'budget-expense' },
           { label: 'Documents Vault', value: stats.totalDocuments, icon: FolderOpen, sub1: 'Agreements & Legal', sub2: 'Safely stored in system', color: '#C9A84C', route: 'documents-all' },
-        ].map((kpi, i) => (
+        ].map((kpi, i) => {
+          // Map hardcoded colors to dark-mode-safe Tailwind classes
+          const isNavy = kpi.color === '#0B1A35';
+          const isGold = kpi.color === '#C9A84C';
+          return (
           <div key={i} onClick={() => onNavigate(kpi.route)}
             className="group cursor-pointer rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900 p-5 shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-1 hover:border-slate-300"
           >
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-500 dark:text-slate-400">{kpi.label}</span>
-              <div className="rounded-xl p-2.5 group-hover:scale-110 transition-transform" style={{ backgroundColor: `${kpi.color}15`, color: kpi.color }}>
+              <div className={`rounded-xl p-2.5 group-hover:scale-110 transition-transform ${
+                isNavy
+                  ? 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200'
+                  : 'bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400'
+              }`}>
                 <kpi.icon className="h-5 w-5" />
               </div>
             </div>
             <div className="mt-4 flex items-baseline gap-2">
               <span className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">{kpi.value}</span>
-              <span className="text-[10px] font-bold uppercase tracking-wider flex items-center" style={{ color: kpi.color }}>
+              <span className={`text-[10px] font-bold uppercase tracking-wider flex items-center ${
+                isNavy
+                  ? 'text-slate-600 dark:text-slate-300'
+                  : 'text-amber-600 dark:text-amber-400'
+              }`}>
                 {i % 2 === 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : <AlertTriangle className="h-3 w-3 mr-1" />} {kpi.sub1}
               </span>
             </div>
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 font-medium">{kpi.sub2}</p>
           </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Quick Access Modules Grid */}
@@ -187,14 +200,17 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
           ].map((item, i) => {
             const Icon = item.icon;
             const isGold = i % 2 === 1;
-            const color = isGold ? '#C9A84C' : '#0B1A35';
             return (
               <button
                 key={item.id}
                 onClick={() => onNavigate(item.route)}
                 className="flex flex-col items-center justify-center p-5 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-all duration-200 group text-center"
               >
-                <div className={`p-3 rounded-2xl mb-3 group-hover:scale-110 transition-transform`} style={{ backgroundColor: `${color}10`, color }}>
+                <div className={`p-3 rounded-2xl mb-3 group-hover:scale-110 transition-transform ${
+                  isGold
+                    ? 'bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400'
+                    : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
+                }`}>
                   <Icon className="h-6 w-6" />
                 </div>
                 <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
@@ -216,8 +232,7 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
               variant="ghost" 
               size="sm" 
               onClick={() => onNavigate('csl-all-requests')} 
-              className="text-xs font-bold hover:bg-slate-100 dark:hover:bg-zinc-800"
-              style={{ color: '#0B1A35' }}
+              className="text-xs font-bold hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-700 dark:text-slate-300"
             >
               View All <ArrowUpRight className="h-3.5 w-3.5 ml-1" />
             </Button>
@@ -230,7 +245,7 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
                   <div key={idx} className="p-5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors flex items-center justify-between gap-4">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono font-bold" style={{ color: '#0B1A35' }}>{req.request_number}</span>
+                        <span className="text-xs font-mono font-bold text-slate-700 dark:text-slate-300">{req.request_number}</span>
                         <span className="text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-white/10">
                           {req.department || req.company || 'General'}
                         </span>
@@ -240,9 +255,11 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
                     </div>
                     <div>
                       <span className={`text-[9px] font-black uppercase px-3 py-1 rounded-md border ${
-                        ['COMPLETED', 'CLOSED'].includes(req.status) ? 'bg-[#0B1A35]/10 text-[#0B1A35] border-[#0B1A35]/20' :
-                        ['PROCESSING', 'RESPONDED'].includes(req.status) ? 'bg-[#C9A84C]/10 text-[#C9A84C] border-[#C9A84C]/20' : 
-                        'bg-slate-100 text-slate-600 border-slate-200 dark:bg-white/5 dark:text-slate-300 dark:border-white/10'
+                        ['COMPLETED', 'CLOSED'].includes(req.status)
+                          ? 'bg-slate-200 text-slate-700 border-slate-300 dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600'
+                          : ['PROCESSING', 'RESPONDED'].includes(req.status)
+                          ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-700/40'
+                          : 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-white/5 dark:text-slate-300 dark:border-white/10'
                       }`}>
                         {req.status.replace(/_/g, ' ')}
                       </span>
@@ -276,7 +293,7 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
               <div key={idx} className="p-3.5 rounded-xl border border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-zinc-800/50 space-y-2">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex-1 min-w-0">
-                    <span className="text-[10px] font-black uppercase text-indigo-600 block mb-0.5">{task.category}</span>
+                    <span className="text-[10px] font-black uppercase text-indigo-600 dark:text-indigo-400 block mb-0.5">{task.category}</span>
                     <span className="text-xs font-bold text-slate-900 dark:text-white truncate block">{task.task_name || task.company || 'Unnamed Task'}</span>
                   </div>
                   <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border shrink-0 ${

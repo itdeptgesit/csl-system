@@ -52,6 +52,11 @@ const CredentialManager: React.FC<CredentialManagerProps> = ({ currentUser }) =>
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [unlockPassword, setUnlockPassword] = useState('');
   const [showGateError, setShowGateError] = useState(false);
+
+  const isSuperAdmin = useMemo(() => {
+    const role = (currentUser?.role || '').trim().toLowerCase();
+    return role === 'super admin' || role === 'super_admin' || role === 'owner';
+  }, [currentUser]);
   
   // LOGIC: Unlock Gate
   const handleUnlock = (e?: React.FormEvent) => {
@@ -339,7 +344,9 @@ const CredentialManager: React.FC<CredentialManagerProps> = ({ currentUser }) =>
                       </div>
                       <div className="flex gap-1">
                         <Button variant="ghost" size="icon" onClick={() => handleEdit(cred)} className="w-8 text-muted-foreground hover:text-primary"><Pencil size={14} /></Button>
-                        <Button variant="ghost" size="icon" onClick={() => setDeleteCredential(cred)} className="w-8 text-muted-foreground hover:text-destructive"><Trash2 size={14} /></Button>
+                        {isSuperAdmin && (
+                          <Button variant="ghost" size="icon" onClick={() => setDeleteCredential(cred)} title="Delete Secret (Super Admin Only)" className="w-8 text-muted-foreground hover:text-destructive"><Trash2 size={14} /></Button>
+                        )}
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-x-4 gap-y-2 mb-4 p-3 bg-muted/30 rounded-md border">
@@ -451,7 +458,9 @@ const CredentialManager: React.FC<CredentialManagerProps> = ({ currentUser }) =>
                             <button onClick={() => setSelectedQr(cred)} className="p-1.5 text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg"><RefreshCcw size={14} /></button>
                           )}
                           <button onClick={() => handleEdit(cred)} className="p-1.5 text-slate-400 hover:text-indigo-600"><Pencil size={14} /></button>
-                          <button onClick={() => setDeleteCredential(cred)} className="p-1.5 text-slate-400 hover:text-red-600"><Trash2 size={14} /></button>
+                          {isSuperAdmin && (
+                            <button onClick={() => setDeleteCredential(cred)} title="Delete Secret (Super Admin Only)" className="p-1.5 text-slate-400 hover:text-red-600"><Trash2 size={14} /></button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>

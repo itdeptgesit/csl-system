@@ -41,7 +41,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen
     })();
 
     const strengthLabel = ['', 'Lemah', 'Cukup', 'Kuat', 'Sangat Kuat'][passwordStrength];
-    const strengthColor = ['', '#ef4444', '#f59e0b', '#22c55e', '#0B1A35'][passwordStrength];
+    const strengthColor = ['', '#ef4444', '#f59e0b', '#22c55e', '#059669'][passwordStrength];
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -206,8 +206,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen
                                     <button
                                         type="submit"
                                         disabled={isLoading}
-                                        className="w-full h-12 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-60"
-                                        style={{ background: '#0B1A35' }}
+                                        className="w-full h-12 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-60 bg-slate-800 dark:bg-slate-600"
                                     >
                                         {isLoading ? (
                                             <><Loader2 size={16} className="animate-spin" /> Menyimpan...</>

@@ -270,7 +270,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onLogout, user, onUpda
                         <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-2 border-slate-100 dark:border-zinc-800 shadow-md bg-slate-50 dark:bg-zinc-800">
                             <Avatar className="w-full h-full rounded-full">
                                 {avatarUrl && <AvatarImage src={avatarUrl} className="object-cover" />}
-                                <AvatarFallback className="text-3xl font-black bg-[#0B1A35] text-white rounded-full w-full h-full flex items-center justify-center">
+                                <AvatarFallback className="text-3xl font-black bg-slate-700 dark:bg-slate-600 text-white rounded-full w-full h-full flex items-center justify-center">
                                     {userInitial}
                                 </AvatarFallback>
                             </Avatar>
@@ -280,7 +280,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onLogout, user, onUpda
                                 </div>
                             )}
                         </div>
-                        <label className="absolute bottom-0 right-0 w-9 h-9 bg-[#0B1A35] hover:opacity-90 rounded-full flex items-center justify-center cursor-pointer shadow-lg transition-all border-2 border-white dark:border-zinc-900">
+                        <label className="absolute bottom-0 right-0 w-9 h-9 bg-slate-700 dark:bg-slate-500 hover:opacity-90 rounded-full flex items-center justify-center cursor-pointer shadow-lg transition-all border-2 border-white dark:border-zinc-900">
                             <input type="file" className="hidden" accept="image/*" onChange={handlePhotoUpload} disabled={isUploading} />
                             <Camera size={14} className="text-white" />
                         </label>
@@ -362,7 +362,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onLogout, user, onUpda
                                             value={(formData as any)[key]}
                                             disabled={!isEditing}
                                             onChange={(e) => setFormData({ ...formData, [key]: e.target.value })}
-                                            className="h-11 rounded-xl border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-800/50 px-4 font-semibold text-sm disabled:opacity-60 disabled:cursor-default focus-visible:ring-[#0B1A35]/30 focus-visible:border-[#0B1A35]"
+                                            className="h-11 rounded-xl border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-800/50 px-4 font-semibold text-sm disabled:opacity-60 disabled:cursor-default focus-visible:ring-indigo-500/30 focus-visible:border-indigo-500"
                                         />
                                     </div>
                                 ))}
@@ -403,7 +403,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onLogout, user, onUpda
                             {isEditing && (
                                 <div className="flex justify-end gap-3 pt-2">
                                     <Button variant="outline" onClick={() => setIsEditing(false)} className="rounded-xl font-bold">Cancel</Button>
-                                    <Button onClick={handleSave} disabled={isSaving} className="rounded-xl font-bold bg-[#0B1A35] hover:opacity-90 gap-2">
+                                    <Button onClick={handleSave} disabled={isSaving} className="rounded-xl font-bold bg-slate-800 hover:bg-slate-700 dark:bg-slate-200 dark:text-slate-900 dark:hover:bg-slate-300 gap-2">
                                         {isSaving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
                                         Save Changes
                                     </Button>
@@ -577,7 +577,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onLogout, user, onUpda
                                                         {session.isCurrent ? (
                                                             <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">Active</span>
                                                         ) : (
-                                                            <Button variant="ghost" size="sm" className="h-7 px-3 text-[10px] font-bold text-[#0B1A35] hover:text-[#E6C200] hover:bg-[#0B1A35]/5 dark:hover:bg-[#E6C200]/10 rounded-lg"
+                                                            <Button variant="ghost" size="sm" className="h-7 px-3 text-[10px] font-bold text-slate-600 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg"
                                                                 onClick={async () => {
                                                                     if (session.sessionToken) {
                                                                         await supabase.from('user_sessions').delete().eq('session_token', session.sessionToken);

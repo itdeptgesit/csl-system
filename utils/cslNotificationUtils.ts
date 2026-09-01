@@ -23,7 +23,6 @@ export async function createInAppNotification(
         };
         
         if (userId) payload.user_id = userId;
-        if (userEmail) payload.user_email = userEmail;
 
         const { error } = await supabase.from('notifications').insert([payload]);
         if (error) {
@@ -75,63 +74,72 @@ export async function notifyRequestUpdate(
     additionalInfo?: string,
     attachments?: { name: string; url: string }[]
 ) {
-    const requestLink = `/csl-all-requests?id=${request.id}`; // Or route to specific detail page
+    const requestLink = `/csl-all-requests?id=${request.id}`;
+
+    // Helper to resolve user_id by email if ID is not directly present on request
+    const resolveUserId = async (id?: string | null, email?: string | null): Promise<string | null> => {
+        if (id && id !== 'null' && id !== 'undefined') return String(id);
+        if (!email) return null;
+        try {
+            const { data } = await supabase.from('user_accounts').select('id').ilike('email', email.trim()).maybeSingle();
+            return data?.id ? String(data.id) : null;
+        } catch {
+            return null;
+        }
+    };
+
+    const requesterUserId = await resolveUserId(request.requester_id, request.requester_email);
+    const assignedPicUserId = await resolveUserId(request.assigned_pic_id, request.assigned_pic_email);
 
     switch (eventType) {
         case 'SUBMITTED':
-            // Notify CSL Admins
+            // Notify CSL Staff / Admins (In-App broadcast with user_id = null)
             await createInAppNotification(
                 null,
-                'New Request Submitted',
-                `A new request (${request.category_name}) has been submitted by ${request.requester_name}.`,
+                'Permintaan Baru Diajukan',
+                `Permintaan ${request.request_number} (${request.category_name || request.department || 'CSL'}) diajukan oleh ${request.requester_name || 'User'}.`,
                 'Info',
-                requestLink,
-                'csl_team@gesit.co.id'
+                requestLink
             );
             
-            await sendEmailNotification(
-                'csl_team@gesit.co.id',
-                `New Request Submitted: ${request.request_number}`,
-                `A new request (${request.category_name}) has been submitted by ${request.requester_name}.`
-            );
+            if (request.requester_email) {
+                await sendEmailNotification(
+                    'csl_team@gesit.co.id',
+                    `Permintaan Baru: ${request.request_number}`,
+                    `Permintaan (${request.category_name || request.department || 'CSL'}) diajukan oleh ${request.requester_name} (${request.requester_email}).`
+                );
+            }
             break;
             
         case 'USER_RESPONDED':
             // Notify Assigned PIC, or all CSL staff if unassigned
-            if (request.assigned_pic_id) {
+            if (assignedPicUserId) {
                 await createInAppNotification(
-                    request.assigned_pic_id,
-                    'New Message from Requester',
-                    `Requester ${request.requester_name} added a message to request ${request.request_number}.`,
+                    assignedPicUserId,
+                    'Pesan Baru dari Pemohon',
+                    `Pemohon (${request.requester_name}) mengirim tanggapan pada ${request.request_number}.`,
                     'Info',
                     requestLink
                 );
             } else {
                 await createInAppNotification(
                     null,
-                    'New Message from Requester',
-                    `Requester ${request.requester_name} added a message to request ${request.request_number}.`,
+                    'Pesan Baru dari Pemohon',
+                    `Pemohon (${request.requester_name}) mengirim tanggapan pada ${request.request_number}.`,
                     'Info',
-                    requestLink,
-                    'csl_team@gesit.co.id'
+                    requestLink
                 );
             }
             break;
             
         case 'ASSIGNED':
-            if (request.assigned_pic_id) {
+            if (assignedPicUserId) {
                 await createInAppNotification(
-                    request.assigned_pic_id,
-                    'Request Assigned',
-                    `You have been assigned to request ${request.request_number}`,
+                    assignedPicUserId,
+                    'Penugasan Permintaan Baru',
+                    `Anda ditugaskan menangani permintaan ${request.request_number} (${request.requester_name}).`,
                     'Info',
                     requestLink
-                );
-                await sendEmailNotification(
-                    // Assuming you fetch PIC email somewhere, placeholder:
-                    `${request.assigned_pic_name?.replace(' ', '.').toLowerCase()}@gesit.co.id`,
-                    `Request Assigned: ${request.request_number}`,
-                    `You have been assigned to handle request ${request.request_number}.`
                 );
             }
             break;
@@ -140,13 +148,14 @@ export async function notifyRequestUpdate(
         case 'COMPLETED':
         case 'RESPONDED':
             // Notify Requester
-            if (request.requester_id) {
-                const title = eventType === 'COMPLETED' ? 'Request Completed' : 
-                              eventType === 'RESPONDED' ? 'New CSL Response' : 'Request Status Updated';
-                const message = `Your request ${request.request_number} status is now ${request.status}. ${additionalInfo ? additionalInfo.substring(0, 50) + '...' : ''}`;
+            if (requesterUserId) {
+                const title = eventType === 'COMPLETED' ? 'Permintaan Selesai' : 
+                              eventType === 'RESPONDED' ? 'Respons Baru dari CSL' : 'Status Permintaan Diperbarui';
+                const statusClean = (request.status || '').replace(/_/g, ' ');
+                const message = `Permintaan ${request.request_number} Anda berstatus [${statusClean}]. ${additionalInfo ? '\nCatatan: ' + additionalInfo.substring(0, 100) : ''}`;
                 
                 await createInAppNotification(
-                    request.requester_id,
+                    requesterUserId,
                     title,
                     message,
                     eventType === 'COMPLETED' ? 'Success' : 'Info',
@@ -233,5 +242,34 @@ export async function notifyRequestUpdate(
                 true // isHtml
             );
             break;
+    }
+}
+
+/**
+ * Notifies a staff member when a new routine activity is assigned to them by Admin.
+ */
+export async function notifyRoutineAssigned(routineTitle: string, assignedPicName: string, dueDay: number) {
+    try {
+        let staffUserId: string | null = null;
+        if (assignedPicName) {
+            const { data } = await supabase
+                .from('user_accounts')
+                .select('id')
+                .or(`full_name.ilike.%${assignedPicName}%,email.ilike.%${assignedPicName}%`)
+                .maybeSingle();
+            if (data?.id) staffUserId = String(data.id);
+        }
+
+        const link = `/routine`;
+        const title = `Tugas Rutin Baru Ditugaskan`;
+        const message = `Anda ditugaskan oleh Admin untuk menangani aktivitas rutin: "${routineTitle}" (Jatuh tempo setiap tanggal ${dueDay}). Mohon segera ditindaklanjuti.`;
+
+        if (staffUserId) {
+            await createInAppNotification(staffUserId, title, message, 'Info', link);
+        } else {
+            await createInAppNotification(null, title, message, 'Info', link);
+        }
+    } catch (err) {
+        console.error('Error notifying routine assigned:', err);
     }
 }

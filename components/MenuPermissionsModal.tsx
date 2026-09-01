@@ -11,7 +11,9 @@ import {
   FolderOpen,
   Briefcase,
   Eye,
-  Settings
+  Settings,
+  Phone,
+  BarChart2
 } from 'lucide-react';
 import { UserAccount } from '../types';
 
@@ -23,10 +25,10 @@ interface MenuPermissionsModalProps {
 }
 
 const PRESETS = {
-  'FULL ADMIN': ['dashboard', 'req_view', 'req_submit', 'req_review', 'routine_view', 'routine_create', 'doc_vault', 'budget', 'settings'],
-  'LEGAL STAFF': ['dashboard', 'req_view', 'req_submit', 'req_review', 'routine_view', 'doc_vault'],
+  'FULL ADMIN': ['dashboard', 'req_view', 'req_submit', 'req_review', 'routine_view', 'routine_create', 'doc_vault', 'budget', 'directory', 'reports', 'settings'],
+  'LEGAL STAFF': ['dashboard', 'req_view', 'req_submit', 'req_review', 'routine_view', 'doc_vault', 'directory', 'reports'],
   'REQUESTER': ['dashboard', 'req_submit', 'req_view'],
-  'AUDITOR': ['dashboard', 'req_view', 'routine_view', 'doc_vault', 'budget']
+  'AUDITOR': ['dashboard', 'req_view', 'routine_view', 'doc_vault', 'budget', 'reports']
 };
 
 const MENU_ITEMS = [
@@ -38,6 +40,8 @@ const MENU_ITEMS = [
   { id: 'routine_create', icon: Activity, title: 'Routine Activities - Create Schedules', desc: 'Define new routine schedules' },
   { id: 'doc_vault', icon: FolderOpen, title: 'Documents Vault - Access Repository', desc: 'Search and view agreements, deeds, and drive vault' },
   { id: 'budget', icon: Briefcase, title: 'Budget & Cost Management', desc: 'View and approve expense requests' },
+  { id: 'directory', icon: Phone, title: 'Phone Directory - Access Contacts', desc: 'Search lawyers, vendors, and government agencies' },
+  { id: 'reports', icon: BarChart2, title: 'Reports & Analytics', desc: 'View SLA compliance and team productivity reports' },
   { id: 'settings', icon: Settings, title: 'System Settings & Users', desc: 'Manage user access, companies, and app settings' },
 ];
 

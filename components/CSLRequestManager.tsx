@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Search, RefreshCcw, Clock, CheckCircle2, AlertTriangle, BarChart2, Star, MessageSquare, Send, Plus, Paperclip, Upload, Link, X, FolderOpen, ExternalLink, Shield, Trash2, FileText, Activity, Pencil } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabaseClient';
+import { supabase, supabaseAdmin } from '../lib/supabaseClient';
 import { UserAccount } from '../types';
 import { getSlaStatus, SLAStatus } from '../utils/cslSlaUtils';
 import { notifyRequestUpdate } from '../utils/cslNotificationUtils';
@@ -203,6 +203,7 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [useMock, setUseMock] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [cslStaffUsers, setCslStaffUsers] = useState<{ id: string; fullName: string; email: string; role: string }[]>([]);
   
   // Phase 2 State
   const [selectedRequest, setSelectedRequest] = useState<CSLRequest | null>(null);
@@ -226,16 +227,27 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
   const [isSubmittingDoc, setIsSubmittingDoc] = useState(false);
   const [showDocForm, setShowDocForm] = useState(false);
 
-  const isCslTeam = useMemo(() => {
-    const role = currentUser?.role?.toLowerCase() || '';
-    return role.includes('admin') || role.includes('staff') ||
-      (currentUser?.groups || []).some(g => ['admin', 'csl_admin', 'csl_staff'].includes(g.toLowerCase()));
-  }, [currentUser]);
+  const roleLower = (currentUser?.role || '').trim().toLowerCase();
+  
+  const isSuperAdmin = useMemo(() => {
+    return roleLower === 'super admin' || roleLower === 'super_admin' || roleLower === 'owner';
+  }, [roleLower]);
 
   const isAdmin = useMemo(() => {
-    const role = currentUser?.role?.toLowerCase() || '';
-    return role.includes('admin') || role.includes('owner') || (currentUser?.groups || []).some(g => g.toLowerCase().includes('admin'));
-  }, [currentUser]);
+    return isSuperAdmin || roleLower === 'admin' || (currentUser?.groups || []).some(g => g.toLowerCase().includes('admin'));
+  }, [roleLower, isSuperAdmin, currentUser]);
+
+  const isStaff = useMemo(() => {
+    return roleLower === 'staff' || roleLower === 'csl staff' || roleLower === 'csl_staff';
+  }, [roleLower]);
+
+  const isCslTeam = useMemo(() => {
+    return isSuperAdmin || isAdmin || isStaff || (currentUser?.groups || []).some(g => ['admin', 'csl_admin', 'csl_staff'].includes(g.toLowerCase()));
+  }, [isSuperAdmin, isAdmin, isStaff, currentUser]);
+
+  const canDelete = isSuperAdmin;
+  const canEdit = isSuperAdmin || isAdmin;
+  const canApprove = isSuperAdmin || isAdmin;
 
   // Edit & Delete State
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -267,16 +279,37 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
     if (!editForm.id) return;
     setIsSubmitting(true);
     try {
-      const payload = {
+      const selectedStaff = cslStaffUsers.find(s => s.id === editForm.assigned_pic_id);
+
+      const payload: any = {
         status: editForm.status,
         updated_at: new Date().toISOString()
       };
+
+      if (editForm.assigned_pic_id !== undefined) {
+        payload.assigned_pic_id = editForm.assigned_pic_id || null;
+        payload.assigned_pic_name = selectedStaff ? selectedStaff.fullName : (editForm.assigned_pic_name || null);
+      }
+
       const { error } = await supabase.from('csl_requests').update(payload).eq('id', editForm.id);
       if (error) throw error;
+      
+      const targetReq = requests.find(r => r.id === editForm.id);
+      if (targetReq) {
+        const isPicChanged = payload.assigned_pic_id && payload.assigned_pic_id !== targetReq.assigned_pic_id;
+        const updatedReq = { ...targetReq, ...payload };
+        
+        await notifyRequestUpdate(updatedReq, 'STATUS_CHANGED', `Status/PIC diperbarui oleh Admin`);
+        
+        if (isPicChanged) {
+          await notifyRequestUpdate(updatedReq, 'ASSIGNED');
+        }
+      }
+
       await fetchData();
       setIsEditDialogOpen(false);
       setEditForm({});
-      toast.success('Perubahan berhasil disimpan.');
+      toast.success('Perubahan status & penugasan PIC berhasil disimpan.');
     } catch (err: any) {
       toast.error('Gagal menyimpan perubahan: ' + err.message);
     } finally {
@@ -287,6 +320,35 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
   const fetchData = async () => {
     setIsLoading(true);
     try {
+      // Fetch ONLY CSL Staff users using supabaseAdmin to bypass RLS
+      const clientToUse = supabaseAdmin || supabase;
+      const { data: staffData } = await clientToUse
+        .from('user_accounts')
+        .select('id, full_name, email, role, groups')
+        .order('full_name');
+
+      if (staffData && staffData.length > 0) {
+        // Filter strictly for CSL Staff (role === 'staff' or 'csl_staff' or has req_review group)
+        const staffOnly = staffData.filter(u => {
+          const r = (u.role || '').trim().toLowerCase();
+          const grp = Array.isArray(u.groups) ? u.groups.map((g: string) => String(g).toLowerCase()) : [];
+          return r === 'staff' || r === 'csl staff' || r === 'csl_staff' || grp.includes('csl_staff') || grp.includes('req_review');
+        });
+
+        setCslStaffUsers(staffOnly.map(u => ({
+          id: String(u.id),
+          fullName: u.full_name || u.email,
+          email: u.email,
+          role: u.role
+        })));
+      } else {
+        // Fallback ONLY CSL staff list
+        setCslStaffUsers([
+          { id: '1faedcf6-881e-4beb-aeba-bb9b1fea7318', fullName: 'Desi Rahmuni', email: 'desi@gesit.co.id', role: 'staff' },
+          { id: 'f162b12f-a7a6-4ad5-98d3-0f4a03a7c362', fullName: 'Sylvia', email: 'sylvia@gesit.co.id', role: 'staff' },
+        ]);
+      }
+
       // Fetch categories
       const { data: catData, error: catErr } = await supabase
         .from('csl_request_categories').select('*').order('name');
@@ -297,20 +359,22 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
         setUseMock(true);
       }
 
-      // Fetch requests
+      // Fetch requests strictly based on role-based scoping:
+      // - Admin / Super Admin: See ALL requests across all staff
+      // - Staff: See ONLY requests assigned to them + unassigned requests
+      // - User: See ONLY requests created by them
       let query = supabase.from('csl_requests').select('*').order('created_at', { ascending: false });
-      if (view === 'mine') {
-          if (isCslTeam) {
-              query = query.eq('assigned_pic_id', currentUser?.id);
-          } else {
-              query = query.eq('requester_email', currentUser?.email || '');
-          }
-      } else if (view === 'all') {
-          if (isCslTeam && !isAdmin) {
-              query = query.or(`assigned_pic_id.eq.${currentUser?.id},assigned_pic_id.is.null`);
-          } else if (!isCslTeam) {
-              query = query.eq('requester_email', currentUser?.email || '');
-          }
+      
+      if (isAdmin) {
+        // Admin & Super Admin see full system requests
+      } else if (isStaff) {
+        if (currentUser?.id) {
+          query = query.or(`assigned_pic_id.eq.${currentUser.id},assigned_pic_id.is.null,assigned_pic_name.eq.${currentUser?.fullName || ''},assigned_pic_name.is.null,assigned_pic_name.eq.Unassigned`);
+        } else {
+          query = query.or(`assigned_pic_name.eq.${currentUser?.fullName || ''},assigned_pic_name.is.null,assigned_pic_name.eq.Unassigned`);
+        }
+      } else {
+        query = query.eq('requester_email', currentUser?.email || '');
       }
 
       const { data: reqData, error: reqErr } = await query;
@@ -318,24 +382,31 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
         setRequests(reqData);
         setUseMock(false);
       } else {
-        // Use mock data filtered by view
+        // Use mock data filtered strictly by role
         let filtered = MOCK_REQUESTS;
-        if (view === 'mine') {
-            filtered = MOCK_REQUESTS.filter(r => isCslTeam ? r.assigned_pic_name === currentUser?.fullName : r.requester_email === currentUser?.email);
-        } else if (view === 'all') {
-            if (isCslTeam && !isAdmin) {
-                filtered = MOCK_REQUESTS.filter(r => r.assigned_pic_name === currentUser?.fullName || !r.assigned_pic_name);
-            } else if (!isCslTeam) {
-                filtered = MOCK_REQUESTS.filter(r => r.requester_email === currentUser?.email);
-            }
+        if (isAdmin) {
+          filtered = MOCK_REQUESTS;
+        } else if (isStaff) {
+          filtered = MOCK_REQUESTS.filter(r => 
+            r.assigned_pic_name === currentUser?.fullName || 
+            !r.assigned_pic_name || 
+            r.assigned_pic_name === 'Unassigned' ||
+            (currentUser?.id && r.assigned_pic_id === currentUser.id)
+          );
+        } else {
+          filtered = MOCK_REQUESTS.filter(r => r.requester_email === currentUser?.email);
         }
         setRequests(filtered);
         setUseMock(true);
       }
     } catch {
-      setRequests(view === 'mine'
-        ? MOCK_REQUESTS.filter(r => r.requester_email === currentUser?.email)
-        : MOCK_REQUESTS);
+      let fallback = MOCK_REQUESTS;
+      if (!isAdmin && isStaff) {
+        fallback = MOCK_REQUESTS.filter(r => r.assigned_pic_name === currentUser?.fullName || !r.assigned_pic_name);
+      } else if (!isAdmin && !isStaff) {
+        fallback = MOCK_REQUESTS.filter(r => r.requester_email === currentUser?.email);
+      }
+      setRequests(fallback);
       setCategories(MOCK_CATEGORIES);
       setUseMock(true);
     } finally {
@@ -709,8 +780,12 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
 
   if (view === 'categories') return <CategoriesView categories={categories} />;
 
-  const pageTitle = view === 'mine' ? (isCslTeam ? 'Assigned to Me' : 'My Requests') : 'All Requests';
-  const pageDesc  = view === 'mine' ? (isCslTeam ? 'Track requests assigned to you for processing' : 'Track your submitted requests and their SLA status') : 'All CSL requests across departments';
+  const pageTitle = 'Request / Ticketing';
+  const pageDesc = isAdmin
+    ? 'Overview of all CSL requests across departments & staff'
+    : isStaff
+    ? 'Requests assigned to you and unassigned requests awaiting action'
+    : 'Track your submitted requests and their SLA status';
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-10">
@@ -724,11 +799,9 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
           <Button variant="outline" size="sm" onClick={fetchData} className="text-xs font-bold">
             <RefreshCcw className="h-3.5 w-3.5 mr-1.5" /> Refresh
           </Button>
-          {!isCslTeam && (
-            <Button size="sm" onClick={() => setIsCreateOpen(true)} className="bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs h-9">
-               <Plus className="h-4 w-4 mr-1.5" /> Create Request
-            </Button>
-          )}
+          <Button size="sm" onClick={() => setIsCreateOpen(true)} className="bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs h-9">
+            <Plus className="h-4 w-4 mr-1.5" /> Create Request
+          </Button>
         </div>
       </PageHeader>
 
@@ -809,11 +882,11 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
               <TableHeader className="bg-muted/30">
                 <TableRow className="border-border/10">
                   {view === 'mine' ? (
-                    [...['Request No.', 'Deskripsi', 'PIC', 'Tanggal Request', 'Status', 'SLA Due'], ...(isAdmin ? ['Actions'] : [])].map(h => (
+                    [...['Request No.', 'Deskripsi', 'PIC', 'Tanggal Request', 'Status', 'SLA Due'], ...((canEdit || canDelete) ? ['Actions'] : [])].map(h => (
                       <TableHead key={h} className={`text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground/70 whitespace-nowrap ${h === 'Actions' ? 'text-right' : ''}`}>{h}</TableHead>
                     ))
                   ) : (
-                    [...['Request No.', 'Deskripsi', 'Pemohon', 'PIC', 'Status', 'SLA Due', 'SLA Status'], ...(isAdmin ? ['Actions'] : [])].map(h => (
+                    [...['Request No.', 'Deskripsi', 'Pemohon', 'PIC', 'Status', 'SLA Due', 'SLA Status'], ...((canEdit || canDelete) ? ['Actions'] : [])].map(h => (
                       <TableHead key={h} className={`text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground/70 whitespace-nowrap ${h === 'Actions' ? 'text-right' : ''}`}>{h}</TableHead>
                     ))
                   )}
@@ -840,30 +913,35 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                           </span>
                         </TableCell>
                         <TableCell className="font-mono text-xs text-muted-foreground">{dueDate}</TableCell>
-                        {isAdmin && (
+                        {(canEdit || canDelete) && (
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-1">
-                              <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={(e) => {
-                                e.stopPropagation();
-                                setEditForm({
-                                  id: req.id,
-                                  category_id: req.category_id,
-                                  priority: req.priority,
-                                  status: req.status,
-                                  department: req.department,
-                                  assigned_pic_name: req.assigned_pic_name || '',
-                                  description: req.description
-                                });
-                                setIsEditDialogOpen(true);
-                              }}>
-                                <Pencil className="w-3.5 h-3.5" />
-                              </Button>
-                              <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-red-500" onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteRequest(req.id);
-                              }}>
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </Button>
+                              {canEdit && (
+                                <Button size="icon" variant="ghost" title="Edit Request" className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditForm({
+                                    id: req.id,
+                                    category_id: req.category_id,
+                                    priority: req.priority,
+                                    status: req.status,
+                                    department: req.department,
+                                    assigned_pic_id: req.assigned_pic_id || '',
+                                    assigned_pic_name: req.assigned_pic_name || '',
+                                    description: req.description
+                                  });
+                                  setIsEditDialogOpen(true);
+                                }}>
+                                  <Pencil className="w-3.5 h-3.5" />
+                                </Button>
+                              )}
+                              {canDelete && (
+                                <Button size="icon" variant="ghost" title="Delete Request (Super Admin Only)" className="h-7 w-7 text-muted-foreground hover:text-red-500" onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteRequest(req.id);
+                                }}>
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </Button>
+                              )}
                             </div>
                           </TableCell>
                         )}
@@ -896,30 +974,35 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                           {slaBadge.label}
                         </span>
                       </TableCell>
-                      {isAdmin && (
+                      {(canEdit || canDelete) && (
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
-                            <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={(e) => {
-                              e.stopPropagation();
-                              setEditForm({
-                                id: req.id,
-                                category_id: req.category_id,
-                                priority: req.priority,
-                                status: req.status,
-                                department: req.department,
-                                assigned_pic_name: req.assigned_pic_name || '',
-                                description: req.description
-                              });
-                              setIsEditDialogOpen(true);
-                            }}>
-                              <Pencil className="w-3.5 h-3.5" />
-                            </Button>
-                            <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-red-500" onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteRequest(req.id);
-                            }}>
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </Button>
+                            {canEdit && (
+                              <Button size="icon" variant="ghost" title="Edit Request" className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={(e) => {
+                                e.stopPropagation();
+                                setEditForm({
+                                  id: req.id,
+                                  category_id: req.category_id,
+                                  priority: req.priority,
+                                  status: req.status,
+                                  department: req.department,
+                                  assigned_pic_id: req.assigned_pic_id || '',
+                                  assigned_pic_name: req.assigned_pic_name || '',
+                                  description: req.description
+                                });
+                                setIsEditDialogOpen(true);
+                              }}>
+                                <Pencil className="w-3.5 h-3.5" />
+                              </Button>
+                            )}
+                            {canDelete && (
+                              <Button size="icon" variant="ghost" title="Delete Request (Super Admin Only)" className="h-7 w-7 text-muted-foreground hover:text-red-500" onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteRequest(req.id);
+                              }}>
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            )}
                           </div>
                         </TableCell>
                       )}
@@ -1603,18 +1686,41 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="sm:max-w-md p-0 overflow-hidden rounded-2xl">
           <DialogHeader className="p-6 pb-4 border-b bg-muted/20">
-            <DialogTitle className="text-xl font-black">Ubah Status Request</DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">Khusus Admin: Koreksi status secara paksa.</DialogDescription>
+            <DialogTitle className="text-xl font-black">Edit Status &amp; Penugasan PIC</DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">Khusus Admin: Koreksi status secara paksa &amp; alihkan penugasan ke Staff CSL.</DialogDescription>
           </DialogHeader>
           <div className="p-6 space-y-4">
             <div className="space-y-2">
-              <label className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground block mb-1">Status</label>
+              <label className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground block mb-1">Status Request</label>
               <select 
-                className="w-full text-sm border border-border bg-background rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                className="w-full text-sm border border-border bg-background rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500/30 font-medium"
                 value={editForm.status || ''}
                 onChange={e => setEditForm({...editForm, status: e.target.value})}
               >
-                {Object.keys(STATUS_BADGE).map(s => <option key={s} value={s}>{s}</option>)}
+                {Object.keys(STATUS_BADGE).map(s => <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>)}
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground block mb-1">Tugaskan ke Staff (PIC)</label>
+              <select 
+                className="w-full text-sm border border-border bg-background rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500/30 font-medium"
+                value={editForm.assigned_pic_id || ''}
+                onChange={e => {
+                  const staff = cslStaffUsers.find(s => s.id === e.target.value);
+                  setEditForm({
+                    ...editForm,
+                    assigned_pic_id: e.target.value,
+                    assigned_pic_name: staff ? staff.fullName : ''
+                  });
+                }}
+              >
+                <option value="">-- Belum Ditugaskan (Unassigned) --</option>
+                {cslStaffUsers.map(staff => (
+                  <option key={staff.id} value={staff.id}>
+                    {staff.fullName} ({staff.email})
+                  </option>
+                ))}
               </select>
             </div>
           </div>

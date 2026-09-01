@@ -7,7 +7,7 @@ import { UserAccount, UserGroup } from '../types';
 import { UserFormModal } from './UserFormModal';
 import { MenuPermissionsModal } from './MenuPermissionsModal';
 import { DangerConfirmModal } from './DangerConfirmModal';
-import { supabase } from '../lib/supabaseClient';
+import { supabase, supabaseAdmin } from '../lib/supabaseClient';
 import { trackActivity } from '../lib/auditLogger';
 import { useToast } from './ToastProvider';
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -144,8 +144,8 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onUpdateSuccess,
   const handleAddUser = () => { setEditingUser(null); setIsModalOpen(true); };
   const handleEditUser = (user: UserAccount) => { setEditingUser(user); setIsModalOpen(true); };
 
-  // Assuming isAdmin is derived from currentUser or another context
-  const isAdmin = currentUser?.role === 'Admin';
+  const isSuperAdmin = currentUser?.role?.toLowerCase() === 'super admin' || currentUser?.role?.toLowerCase() === 'super_admin';
+  const isAdminOrSuperAdmin = isSuperAdmin || currentUser?.role?.toLowerCase() === 'admin';
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-10">
@@ -161,7 +161,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onUpdateSuccess,
           >
             <FileSpreadsheet className="mr-2 h-3.5 w-3.5" /> Export Excel
           </Button>
-          {isAdmin && (
+          {isAdminOrSuperAdmin && (
             <Button
               onClick={() => { setEditingUser(null); setIsModalOpen(true); }}
               className="text-xs font-bold /20 whitespace-nowrap"
@@ -177,9 +177,9 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onUpdateSuccess,
           <Input placeholder="Search user identity..." className="w-full pl-11 pr-4 py-2.5 bg-slate-50 dark:bg-zinc-800 border-none rounded-xl font-semibold placeholder:text-slate-400 dark:text-slate-200" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-600" size={16} />
         </div>
-        <div className="flex bg-slate-50 dark:bg-zinc-800 p-1 rounded-xl">
-          {['', 'Admin', 'Staff', 'User'].map(r => (
-            <button key={r} onClick={() => setRoleFilter(r)} className={`px-5 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all ${roleFilter === r ? 'bg-white dark:bg-slate-700 text-zinc-950 dark:text-zinc-50 shadow-sm font-extrabold' : 'text-slate-400 hover:text-slate-600'}`}>{r || 'All'}</button>
+        <div className="flex bg-slate-50 dark:bg-zinc-800 p-1 rounded-xl flex-wrap gap-1">
+          {['', 'Super Admin', 'Admin', 'Staff', 'User'].map(r => (
+            <button key={r} onClick={() => setRoleFilter(r)} className={`px-4 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all ${roleFilter === r ? 'bg-white dark:bg-slate-700 text-zinc-950 dark:text-zinc-50 shadow-sm font-extrabold' : 'text-slate-400 hover:text-slate-600'}`}>{r || 'All'}</button>
           ))}
         </div>
       </div>
@@ -231,7 +231,12 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onUpdateSuccess,
                     </div>
                   </TableCell>
                   <TableCell className="px-6 py-4">
-                    <span className="px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
+                    <span className={`px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest ${
+                      user.role === 'Super Admin' ? 'bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300' :
+                      user.role === 'Admin' ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300' :
+                      user.role === 'Staff' ? 'bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300' :
+                      'bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-zinc-400'
+                    }`}>
                       {user.role}
                     </span>
                   </TableCell>
@@ -242,8 +247,10 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onUpdateSuccess,
                   </TableCell>
                   <TableCell className="px-6 py-4 text-center">
                     <div className="flex items-center justify-center gap-4 text-slate-400 group-hover:text-slate-500 transition-colors">
-                      <button onClick={() => handleEditUser(user)} className="hover:text-slate-800 dark:hover:text-slate-200 transition-colors"><Pencil size={15} /></button>
-                      <button onClick={() => setDeleteUser(user)} className="hover:text-red-500 transition-colors"><Trash2 size={15} /></button>
+                      <button onClick={() => handleEditUser(user)} title="Edit User" className="hover:text-slate-800 dark:hover:text-slate-200 transition-colors"><Pencil size={15} /></button>
+                      {isSuperAdmin && (
+                        <button onClick={() => setDeleteUser(user)} title="Delete User (Super Admin Only)" className="hover:text-red-500 transition-colors"><Trash2 size={15} /></button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -285,9 +292,9 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onUpdateSuccess,
           };
           try {
             if (editingUser) {
-              await supabase.from('user_accounts').update(payload).eq('id', editingUser.id);
+              await supabaseAdmin.from('user_accounts').update(payload).eq('id', editingUser.id);
             } else {
-              await supabase.from('user_accounts').insert([payload]);
+              await supabaseAdmin.from('user_accounts').insert([payload]);
             }
             if (onUpdateSuccess) onUpdateSuccess();
 
@@ -315,7 +322,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onUpdateSuccess,
           if (!deleteUser) return;
           setIsProcessing(true);
           try {
-            await supabase.from('user_accounts').delete().eq('id', deleteUser.id);
+            await supabaseAdmin.from('user_accounts').delete().eq('id', deleteUser.id);
             await trackActivity(
               currentUser?.fullName || 'User',
               currentUser?.role || 'User',
@@ -344,13 +351,17 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onUpdateSuccess,
         onSave={async (menus) => {
           if (!permissionUser) return;
           try {
-            await supabase.from('user_accounts').update({ groups: menus }).eq('id', permissionUser.id);
+            const { error } = await supabaseAdmin.from('user_accounts').update({ groups: menus }).eq('id', permissionUser.id);
+            if (error) {
+              console.error('MenuPermissions save error:', error);
+              throw error;
+            }
             showToast(`Permissions updated for ${permissionUser.fullName}`, "success");
             await fetchData();
-          } catch (err: any) {
-            showToast("Failed to update permissions: " + err.message, "error");
-          } finally {
             setPermissionUser(null);
+          } catch (err: any) {
+            console.error('MenuPermissions full error:', err);
+            showToast("Gagal menyimpan permission: " + (err.message || 'Unknown error'), "error");
           }
         }}
       />

@@ -173,13 +173,15 @@ export interface DashboardStat {
   trend?: string;
 }
 
+export type UserRole = 'Super Admin' | 'Admin' | 'Staff' | 'User';
+
 export interface UserAccount {
   id: number | string;
   authId?: string;
   email: string;
   username: string;
   fullName: string;
-  role: string;
+  role: UserRole | string;
   groups: string[];
   status: 'Active' | 'Disabled';
   department: string;

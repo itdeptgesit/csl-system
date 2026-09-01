@@ -664,9 +664,10 @@ const InternalApp: React.FC = () => {
                             <Route path="profile" element={<ProfileView onLogout={() => setIsLogoutModalOpen(true)} user={currentUser} onUpdateSuccess={refreshUserProfile} />} />
                              {/* CSL ERP Routes */}
                              <Route path="csl-requests" element={<CSLRequestManager currentUser={currentUser} view="all" />} />
+                             {/* Legacy redirects – keep so old bookmarks still work */}
                              <Route path="csl-all-requests" element={<CSLRequestManager currentUser={currentUser} view="all" />} />
-                             <Route path="csl-my-requests" element={<CSLRequestManager currentUser={currentUser} view="mine" />} />
-                             <Route path="csl-my-tickets" element={<CSLRequestManager currentUser={currentUser} view="mine" />} />
+                             <Route path="csl-my-requests" element={<CSLRequestManager currentUser={currentUser} view="all" />} />
+                             <Route path="csl-my-tickets" element={<CSLRequestManager currentUser={currentUser} view="all" />} />
                              <Route path="csl-categories" element={<CSLRequestManager currentUser={currentUser} view="categories" />} />
                              
                              {/* Routine Activity */}
@@ -798,39 +799,97 @@ const DashboardLayout: React.FC<any & { children?: React.ReactNode }> = ({
   // Strict Access Control Logic
   const allowedMenuIds = React.useMemo(() => {
     const allowed = new Set<string>();
-    const role = currentUser?.role?.toLowerCase() || '';
+    const roleRaw = (currentUser?.role || '').trim();
+    const roleLower = roleRaw.toLowerCase();
 
-    // Admin/Super Admin bypass
-    if (role.includes('admin')) {
+    // 1. Super Admin: full access
+    if (roleLower === 'super admin' || roleLower === 'super_admin' || roleLower === 'owner') {
       return null; // Null means all access
     }
 
+    // 2. Custom groups explicitly defined for user
     const userGroups = currentUser?.groups || [];
-    if (!userGroups || userGroups.length === 0) {
-      // Remove 'dashboard' from default allowed for regular users
-      allowed.add('helpdesk');
-      allowed.add('asset-loan');
-      allowed.add('extension-directory');
+    if (userGroups.length > 0) {
+      userGroups.forEach((g) => {
+        if (g === 'dashboard') allowed.add('dashboard');
+        if (g === 'req_view' || g === 'requests_view' || g === 'csl-requests') {
+          allowed.add('csl-requests'); allowed.add('csl-all-requests'); allowed.add('csl-my-requests'); allowed.add('csl-categories');
+        }
+        if (g === 'req_submit' || g === 'requests_create') {
+          allowed.add('csl-requests');
+        }
+        if (g === 'req_review' || g === 'requests_review') {
+          allowed.add('csl-requests');
+        }
+        if (g === 'routine_view' || g === 'routine') {
+          allowed.add('routine'); allowed.add('routine-monitoring');
+        }
+        if (g === 'routine_create' || g === 'routine_manage') {
+          allowed.add('routine-activity'); allowed.add('routine-task'); allowed.add('routine-timeline');
+        }
+        if (g === 'doc_vault' || g === 'documents_view' || g === 'documents') {
+          allowed.add('documents'); allowed.add('documents-all'); allowed.add('documents-agreement'); allowed.add('documents-legal'); allowed.add('documents-gdrive');
+        }
+        if (g === 'budget' || g === 'budget_view') {
+          allowed.add('budget'); allowed.add('budget-expense');
+        }
+        if (g === 'directory' || g === 'directory_view') {
+          allowed.add('directory'); allowed.add('directory-all'); allowed.add('directory-lawyer'); allowed.add('directory-vendor'); allowed.add('directory-government'); allowed.add('directory-other');
+        }
+        if (g === 'reports' || g === 'reports_view') {
+          allowed.add('reports'); allowed.add('reports-request'); allowed.add('reports-task'); allowed.add('reports-budget');
+        }
+        if (g === 'settings' || g === 'settings_manage') {
+          allowed.add('settings'); allowed.add('settings-categories'); allowed.add('settings-sla'); allowed.add('settings-notifications'); allowed.add('settings-users'); allowed.add('settings-companies'); allowed.add('settings-departments'); allowed.add('settings-system');
+        }
+      });
+
+      userGroups.forEach((groupId) => {
+        const groupConfig = groupDefinitions?.find((g) => g.id === groupId);
+        if (groupConfig && Array.isArray(groupConfig.allowedMenus)) {
+          groupConfig.allowedMenus.forEach((menuId) => allowed.add(menuId));
+        }
+      });
+
       allowed.add('profile');
+
+      const allMenus = APP_MENU_STRUCTURE || [];
+      allMenus.forEach((menu) => {
+        if (menu.parentId && allowed.has(menu.id)) {
+          allowed.add(menu.parentId);
+        }
+      });
+
+      if (allowed.size > 0) return allowed;
+    }
+
+    // 3. Fallbacks by role if no custom groups are defined
+    if (roleLower === 'admin') {
+      const allMenus = APP_MENU_STRUCTURE || [];
+      allMenus.forEach(m => {
+        if (m.id !== 'settings-users' && m.id !== 'settings-system') {
+          allowed.add(m.id);
+        }
+      });
       return allowed;
     }
 
-    userGroups.forEach(groupId => {
-      const groupConfig = groupDefinitions?.find(g => g.id === groupId);
-      if (groupConfig && Array.isArray(groupConfig.allowedMenus)) {
-        groupConfig.allowedMenus.forEach(menuId => allowed.add(menuId));
-      }
-    });
-
-    // Fallback: if user has groups but none have configured menus (e.g. new 'user' group),
-    // grant default access so sidebar is not empty
-    if (allowed.size === 0) {
-      allowed.add('csl-my-requests');
-      allowed.add('csl-requests');
-      allowed.add('profile');
+    if (roleLower === 'staff' || roleLower === 'csl staff' || roleLower === 'csl_staff') {
+      [
+        'dashboard',
+        'csl-requests',
+        'routine', 'routine-activity', 'routine-task',
+        'documents', 'documents-all', 'documents-agreement', 'documents-legal', 'documents-gdrive',
+        'budget', 'budget-expense',
+        'directory', 'directory-all', 'directory-lawyer', 'directory-vendor', 'directory-government', 'directory-other',
+        'reports', 'reports-request', 'reports-task', 'reports-budget',
+        'profile'
+      ].forEach(id => allowed.add(id));
+      return allowed;
     }
 
-    // Ensure parents are allowed if children are
+    ['csl-requests', 'profile'].forEach(id => allowed.add(id));
+
     const allMenus = APP_MENU_STRUCTURE || [];
     allMenus.forEach(menu => {
       if (menu.parentId && allowed.has(menu.id)) {

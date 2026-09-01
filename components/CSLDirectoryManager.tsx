@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { UserAccount } from '../types';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -86,6 +86,11 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingContact, setEditingContact] = useState<ContactItem | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<ContactItem | null>(null);
+  
+  const isSuperAdmin = useMemo(() => {
+    const role = (currentUser?.role || '').trim().toLowerCase();
+    return role === 'super admin' || role === 'super_admin' || role === 'owner';
+  }, [currentUser]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedbackBanner, setFeedbackBanner] = useState<string | null>(null);
   
@@ -485,7 +490,9 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
                       <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-widest"><MapPin size={11} /> {contact.city}</div>
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button onClick={() => openEditModal(contact)} className="p-1.5 text-slate-400 hover:text-indigo-600 bg-slate-50 hover:bg-indigo-50 dark:bg-zinc-800 dark:hover:bg-indigo-950/50 rounded-lg transition-colors"><Edit3 size={13} /></button>
-                        <button onClick={() => setDeleteConfirm(contact)} className="p-1.5 text-slate-400 hover:text-red-600 bg-slate-50 hover:bg-red-50 dark:bg-zinc-800 dark:hover:bg-red-950/40 rounded-lg transition-colors"><Trash2 size={13} /></button>
+                        {isSuperAdmin && (
+                          <button onClick={() => setDeleteConfirm(contact)} title="Delete Contact (Super Admin Only)" className="p-1.5 text-slate-400 hover:text-red-600 bg-slate-50 hover:bg-red-50 dark:bg-zinc-800 dark:hover:bg-red-950/40 rounded-lg transition-colors"><Trash2 size={13} /></button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -544,7 +551,9 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
                   <TableCell className="py-4 text-right pr-6">
                     <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button onClick={() => openEditModal(contact)} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded-lg transition-colors"><Edit3 size={15} /></button>
-                      <button onClick={() => setDeleteConfirm(contact)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors"><Trash2 size={15} /></button>
+                      {isSuperAdmin && (
+                        <button onClick={() => setDeleteConfirm(contact)} title="Delete Contact (Super Admin Only)" className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors"><Trash2 size={15} /></button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>

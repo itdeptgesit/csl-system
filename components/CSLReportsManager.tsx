@@ -128,9 +128,11 @@ export const CSLReportsManager: React.FC<CSLReportsManagerProps> = ({ currentUse
                     <TableCell className="font-mono text-xs text-muted-foreground">{req.department || req.company}</TableCell>
                     <TableCell>
                       <span className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-md border ${
-                        ['COMPLETED', 'CLOSED'].includes(req.status) ? 'bg-[#0B1A35]/10 text-[#0B1A35] border-[#0B1A35]/20' :
-                        ['PROCESSING', 'RESPONDED'].includes(req.status) ? 'bg-[#C9A84C]/10 text-[#C9A84C] border-[#C9A84C]/20' : 
-                        'bg-slate-100 text-slate-600 border-slate-200 dark:bg-white/5 dark:text-slate-300 dark:border-white/10'
+                        ['COMPLETED', 'CLOSED'].includes(req.status)
+                          ? 'bg-slate-200 text-slate-700 border-slate-300 dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600'
+                          : ['PROCESSING', 'RESPONDED'].includes(req.status)
+                          ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-700/40'
+                          : 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-white/5 dark:text-slate-300 dark:border-white/10'
                       }`}>
                         {req.status}
                       </span>
@@ -199,7 +201,7 @@ export const CSLReportsManager: React.FC<CSLReportsManagerProps> = ({ currentUse
               {(Object.entries(catStats) as [string, number][]).map(([cat, count]) => (
                 <div key={cat} className="flex items-center justify-between">
                   <span className="text-xs font-medium text-muted-foreground">{cat}</span>
-                  <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600">{count}</span>
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400">{count}</span>
                 </div>
               ))}
               {Object.keys(catStats).length === 0 && (
@@ -310,9 +312,11 @@ export const CSLReportsManager: React.FC<CSLReportsManagerProps> = ({ currentUse
                     <TableCell className="font-mono text-xs font-bold text-foreground text-right">{formatCurrency(Number(exp.amount))}</TableCell>
                     <TableCell className="text-right">
                       <span className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-md border ${
-                        exp.status === 'Approved' ? 'bg-[#0B1A35]/10 text-[#0B1A35] border-[#0B1A35]/20' :
-                        exp.status === 'Pending' ? 'bg-[#C9A84C]/10 text-[#C9A84C] border-[#C9A84C]/20' : 
-                        'bg-red-50 text-red-600 border-red-200'
+                        exp.status === 'Approved'
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-700/40'
+                          : exp.status === 'Pending'
+                          ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-700/40'
+                          : 'bg-red-50 text-red-600 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-700/40'
                       }`}>
                         {exp.status}
                       </span>

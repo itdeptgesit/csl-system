@@ -11,7 +11,7 @@ export const MOCK_GROUPS = [
         allowedMenus: [
             'dashboard',
             // Request / Ticketing
-            'csl-requests', 'csl-all-requests', 'csl-my-requests',
+            'csl-requests',
             // Routine
             'routine', 'routine-activity', 'routine-task',
             // Documents
@@ -32,7 +32,7 @@ export const MOCK_GROUPS = [
         description: 'CSL Operational Access',
         allowedMenus: [
             'dashboard',
-            'csl-requests', 'csl-all-requests', 'csl-my-requests',
+            'csl-requests',
             'routine', 'routine-activity', 'routine-task',
             'documents', 'documents-all', 'documents-agreement', 'documents-legal', 'documents-gdrive',
             'budget', 'budget-expense',
@@ -45,7 +45,7 @@ export const MOCK_GROUPS = [
         name: 'Requester',
         description: 'Request submission and tracking only',
         allowedMenus: [
-            'csl-requests', 'csl-my-requests',
+            'csl-requests',
         ]
     },
 ];
@@ -56,8 +56,6 @@ export const APP_MENU_STRUCTURE = [
 
     // ── Request / Ticketing ──
     { id: 'csl-requests', label: 'Request / Ticketing', iconName: 'Kanban' },
-    { id: 'csl-all-requests',   label: 'All Requests',    parentId: 'csl-requests', iconName: 'Layers' },
-    { id: 'csl-my-requests',    label: 'My Requests',     parentId: 'csl-requests', iconName: 'User' },
 
 
     // ── Routine Activity ──

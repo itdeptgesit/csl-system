@@ -5,7 +5,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { RefreshCcw, Search, Calendar, Clock, CheckCircle2, AlertTriangle, Plus, Activity, Save, Check } from 'lucide-react';
+import { RefreshCcw, Search, Calendar, Clock, CheckCircle2, AlertTriangle, Plus, Activity, Save, Check, Paperclip, ExternalLink, Send, MessageSquare, Trash2, FolderOpen } from 'lucide-react';
 import { 
   Dialog, 
   DialogContent, 
@@ -26,6 +26,9 @@ interface CSLRoutine {
   due_day: number;
   assigned_pic_name?: string;
   is_active: boolean;
+  attachment_url?: string;
+  attachment_name?: string;
+  created_at?: string;
 }
 
 interface CSLRoutineInstance {
@@ -39,6 +42,20 @@ interface CSLRoutineInstance {
   status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'OVERDUE' | 'CANCELLED';
   completion_notes?: string;
   completed_at?: string;
+  // Dokumen acuan dari Admin
+  admin_attachment_url?: string;
+  admin_attachment_name?: string;
+  // Hasil kerjaan Staff
+  work_file_url?: string;
+  work_file_name?: string;
+}
+
+interface RoutineComment {
+  id: string;
+  message: string;
+  sender_name: string;
+  sender_role: 'admin' | 'staff';
+  created_at: string;
 }
 
 interface CSLRoutineManagerProps {
@@ -79,8 +96,8 @@ const MOCK_INSTANCES: CSLRoutineInstance[] = [
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export const CSLRoutineManager: React.FC<CSLRoutineManagerProps> = ({ currentUser, view = 'monitoring' }) => {
-  const [routines, setRoutines] = useState<CSLRoutine[]>(MOCK_ROUTINES);
-  const [instances, setInstances] = useState<CSLRoutineInstance[]>(MOCK_INSTANCES);
+  const [routines, setRoutines] = useState<CSLRoutine[]>([]);
+  const [instances, setInstances] = useState<CSLRoutineInstance[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [useMock, setUseMock] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -98,9 +115,25 @@ export const CSLRoutineManager: React.FC<CSLRoutineManagerProps> = ({ currentUse
     category: 'Tax',
     frequency: 'MONTHLY' as CSLRoutine['frequency'],
     due_day: 15,
-    assigned_pic_name: 'Legal Team',
+    assigned_pic_name: '',
     description: '',
   });
+
+  // File lampiran dari Admin saat membuat routine
+  const [adminFile, setAdminFile] = useState<File | null>(null);
+  const [adminFilePreview, setAdminFilePreview] = useState<{ url: string; name: string } | null>(null);
+
+  // State untuk daftar Staff CSL (untuk pilihan dropdown Assigned PIC)
+  const [staffUsers, setStaffUsers] = useState<{ id: string; full_name: string; role: string }[]>([]);
+
+  // State untuk Staff mengirim hasil kerjaan
+  const [staffWorkFile, setStaffWorkFile] = useState<File | null>(null);
+  const [staffWorkNotes, setStaffWorkNotes] = useState('');
+  const [isSubmittingWork, setIsSubmittingWork] = useState(false);
+
+  // Chat/Diskusi
+  const [chatMessages, setChatMessages] = useState<RoutineComment[]>([]);
+  const [newChatMsg, setNewChatMsg] = useState('');
 
   const showFeedback = (msg: string) => {
     setFeedbackMessage(msg);
@@ -121,8 +154,18 @@ export const CSLRoutineManager: React.FC<CSLRoutineManagerProps> = ({ currentUse
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      let routinesQuery = supabase.from('csl_routines').select('*').order('title');
-      let instancesQuery = supabase.from('csl_routine_instances').select(`*, csl_routines (title, category, assigned_pic_name)`).order('due_date', { ascending: true });
+      // Fetch staff accounts for Assigned PIC selection (strictly Staff role)
+      const { data: usersData } = await supabase
+        .from('user_accounts')
+        .select('id, full_name, role')
+        .order('full_name');
+      if (usersData && usersData.length > 0) {
+        const onlyStaff = usersData.filter(u => (u.role || '').toLowerCase() === 'staff');
+        setStaffUsers(onlyStaff);
+      }
+
+      let routinesQuery = supabase.from('csl_routines').select('*').order('created_at', { ascending: false });
+      let instancesQuery = supabase.from('csl_routine_instances').select(`*, csl_routines (title, category, assigned_pic_name, attachment_url, attachment_name)`).order('due_date', { ascending: true });
       let requestsQuery = supabase.from('csl_requests').select('*').order('created_at', { ascending: false });
 
       if (!isAdmin) {
@@ -146,7 +189,8 @@ export const CSLRoutineManager: React.FC<CSLRoutineManagerProps> = ({ currentUse
             combinedRoutines = [...routinesRes.data];
         }
         if (requestsRes.data) {
-            const mappedRequests = requestsRes.data.map(req => ({
+            const completedRequestsOnly = requestsRes.data.filter(req => ['COMPLETED', 'CLOSED'].includes(req.status));
+            const mappedRequests = completedRequestsOnly.map(req => ({
                 id: `req-${req.id}`,
                 title: req.description || `[Request] ${req.request_number}`,
                 description: req.description,
@@ -154,11 +198,18 @@ export const CSLRoutineManager: React.FC<CSLRoutineManagerProps> = ({ currentUse
                 frequency: 'ONCE',
                 due_day: req.sla_due_date ? new Date(req.sla_due_date).getDate() : 0,
                 assigned_pic_name: req.assigned_pic_name || 'Unassigned',
-                is_active: !['COMPLETED', 'CLOSED', 'CANCELLED', 'REJECTED'].includes(req.status)
+                is_active: false
             }));
             combinedRoutines = [...combinedRoutines, ...mappedRequests];
         }
         
+        // Urutkan: yang paling baru di atas
+        combinedRoutines.sort((a, b) => {
+          const tA = a.created_at ? new Date(a.created_at).getTime() : 0;
+          const tB = b.created_at ? new Date(b.created_at).getTime() : 0;
+          return tB - tA;
+        });
+
         setRoutines(combinedRoutines);
         setUseMock(false);
       } else {
@@ -180,7 +231,9 @@ export const CSLRoutineManager: React.FC<CSLRoutineManagerProps> = ({ currentUse
             combinedInstances = filteredInstances.map((item: any) => ({
                 ...item,
                 routine_title: item.csl_routines?.title,
-                routine_category: item.csl_routines?.category
+                routine_category: item.csl_routines?.category,
+                admin_attachment_url: item.admin_attachment_url || item.csl_routines?.attachment_url,
+                admin_attachment_name: item.admin_attachment_name || item.csl_routines?.attachment_name,
             }));
         }
         
@@ -223,7 +276,7 @@ export const CSLRoutineManager: React.FC<CSLRoutineManagerProps> = ({ currentUse
     }
   };
 
-  useEffect(() => { fetchData(); }, [view]);
+  useEffect(() => { fetchData(); }, [view, isAdmin]);
 
   // ── Handle Add New Routine ────────────────────────────────────────────────
   const handleAddSubmit = async (e: React.FormEvent) => {
@@ -231,6 +284,54 @@ export const CSLRoutineManager: React.FC<CSLRoutineManagerProps> = ({ currentUse
     if (!formData.title.trim()) return;
 
     setIsSubmitting(true);
+
+    // Upload file lampiran Admin (Base64 / GDrive)
+    let attachUrl = '';
+    let attachName = '';
+    if (adminFile) {
+      attachName = adminFile.name;
+      try {
+        const base64Content = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (ev) => resolve(ev.target?.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(adminFile);
+        });
+
+        let mimeType = adminFile.type;
+        if (!mimeType || mimeType === 'application/octet-stream') {
+          if (adminFile.name.endsWith('.pptx')) mimeType = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+          else if (adminFile.name.endsWith('.ppt')) mimeType = 'application/vnd.ms-powerpoint';
+          else if (adminFile.name.endsWith('.pdf')) mimeType = 'application/pdf';
+          else if (adminFile.name.endsWith('.docx')) mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+          else if (adminFile.name.endsWith('.xlsx')) mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+          else mimeType = 'application/octet-stream';
+        }
+
+        // Try GDrive Function first (using standard payload format)
+        try {
+          const { data: uploadData } = await supabase.functions.invoke('upload-to-gdrive', {
+            body: {
+              fileName: `[Routine-Ref] ${adminFile.name}`,
+              fileMimeType: mimeType,
+              fileBase64: base64Content.split(',')[1],
+              folderType: 'routine'
+            }
+          });
+          if (uploadData?.gdriveUrl || uploadData?.webViewLink) {
+            attachUrl = uploadData.gdriveUrl || uploadData.webViewLink;
+          } else {
+            attachUrl = base64Content;
+          }
+        } catch {
+          // Fallback to Data URL for database persistence
+          attachUrl = base64Content;
+        }
+      } catch {
+        attachUrl = URL.createObjectURL(adminFile);
+      }
+    }
+
     const newRoutine: CSLRoutine = {
       id: Date.now(),
       title: formData.title.trim(),
@@ -240,12 +341,13 @@ export const CSLRoutineManager: React.FC<CSLRoutineManagerProps> = ({ currentUse
       assigned_pic_name: formData.assigned_pic_name.trim() || 'Legal Team',
       description: formData.description.trim(),
       is_active: true,
+      attachment_url: attachUrl,
+      attachment_name: attachName,
     };
 
-    // Update routines state immediately
     setRoutines(prev => [newRoutine, ...prev]);
 
-    // Also generate an active instance task for monitoring
+    // Buat instance sekaligus dengan attachment dari Admin
     const newInstance: CSLRoutineInstance = {
       id: Date.now() + 1,
       routine_id: newRoutine.id,
@@ -255,12 +357,13 @@ export const CSLRoutineManager: React.FC<CSLRoutineManagerProps> = ({ currentUse
       period_end: new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
       due_date: new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0],
       status: 'IN_PROGRESS',
+      admin_attachment_url: attachUrl,
+      admin_attachment_name: attachName,
     };
     setInstances(prev => [newInstance, ...prev]);
 
-    // Try persisting to Supabase
     try {
-      await supabase.from('csl_routines').insert([{
+      const { data: createdRoutine } = await supabase.from('csl_routines').insert([{
         title: newRoutine.title,
         category: newRoutine.category,
         frequency: newRoutine.frequency,
@@ -268,21 +371,211 @@ export const CSLRoutineManager: React.FC<CSLRoutineManagerProps> = ({ currentUse
         assigned_pic_name: newRoutine.assigned_pic_name,
         description: newRoutine.description,
         is_active: true,
-      }]);
+        attachment_url: attachUrl,
+        attachment_name: attachName,
+      }]).select().single();
+
+      if (createdRoutine?.id) {
+        await supabase.from('csl_routine_instances').insert([{
+          routine_id: createdRoutine.id,
+          period_start: newInstance.period_start,
+          period_end: newInstance.period_end,
+          due_date: newInstance.due_date,
+          status: 'IN_PROGRESS',
+        }]);
+      }
     } catch (err) {
-      console.warn('Persisted to local state (csl_routines table optional)', err);
+      console.warn('Persisted to local state', err);
     } finally {
       setIsSubmitting(false);
       setIsAddOpen(false);
-      showFeedback(`Routine "${newRoutine.title}" created successfully!`);
-      setFormData({
-        title: '',
-        category: 'Tax',
-        frequency: 'MONTHLY',
-        due_day: 15,
-        assigned_pic_name: 'Legal Team',
-        description: '',
-      });
+      setAdminFile(null);
+      setAdminFilePreview(null);
+      showFeedback(`Routine "${newRoutine.title}" berhasil dibuat & notifikasi dikirim ke Staff!`);
+      setFormData({ title: '', category: 'Tax', frequency: 'MONTHLY', due_day: 15, assigned_pic_name: '', description: '' });
+    }
+  };
+
+  // Delete Confirmation Modal State
+  const [routineToDelete, setRoutineToDelete] = useState<{ id: string | number; title: string } | null>(null);
+
+  const confirmDeleteRoutine = async () => {
+    if (!routineToDelete) return;
+    const { id: routineId, title: routineTitle } = routineToDelete;
+
+    setRoutines(prev => prev.filter(r => String(r.id) !== String(routineId)));
+    setInstances(prev => prev.filter(i => String(i.routine_id) !== String(routineId) && String(i.id) !== String(routineId)));
+
+    try {
+      if (typeof routineId === 'number' || !String(routineId).startsWith('req-')) {
+        await supabase.from('csl_routines').delete().eq('id', routineId);
+      }
+      showFeedback(`Routine "${routineTitle}" telah berhasil dihapus.`);
+    } catch (err) {
+      console.warn('Routine removed from state', err);
+      showFeedback(`Routine "${routineTitle}" dihapus dari tampilan.`);
+    } finally {
+      setRoutineToDelete(null);
+    }
+  };
+
+  // ── Fetch Chat Messages for selected task ──────────────────────────────────
+  const fetchComments = async (instanceId: string | number, routineId?: string | number) => {
+    const toMsg = (c: any): RoutineComment => ({
+      id: c.id,
+      message: c.message,
+      sender_name: c.sender_name,
+      sender_role: c.sender_role,
+      created_at: c.created_at,
+    });
+
+    try {
+      // Primary query by instance_id
+      const { data, error } = await supabase
+        .from('csl_routine_comments')
+        .select('*')
+        .eq('instance_id', String(instanceId))
+        .order('created_at', { ascending: true });
+
+      if (!error && data && data.length > 0) {
+        setChatMessages(data.map(toMsg));
+        return;
+      }
+
+      // If synthetic id (act-xxx) or empty result, also try by routine_id
+      if (routineId) {
+        const { data: data2 } = await supabase
+          .from('csl_routine_comments')
+          .select('*')
+          .eq('instance_id', String(routineId))
+          .order('created_at', { ascending: true });
+        if (data2 && data2.length > 0) {
+          setChatMessages(data2.map(toMsg));
+          return;
+        }
+      }
+
+      setChatMessages([]);
+    } catch {
+      setChatMessages([]);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedInstance) {
+      // Pass routine_id as fallback so synthetic 'act-xxx' IDs can still find comments
+      fetchComments(selectedInstance.id, selectedInstance.routine_id);
+      setStaffWorkFile(null);
+      setStaffWorkNotes('');
+    }
+  }, [selectedInstance]);
+
+  const handleSendChat = async () => {
+    if (!newChatMsg.trim() || !selectedInstance) return;
+    const senderName = currentUser?.fullName || (isAdmin ? 'Admin' : 'Staff CSL');
+    const senderRole = isAdmin ? 'admin' : 'staff';
+    const msgText = newChatMsg.trim();
+
+    const newComment: RoutineComment = {
+      id: String(Date.now()),
+      message: msgText,
+      sender_name: senderName,
+      sender_role: senderRole,
+      created_at: new Date().toISOString(),
+    };
+
+    setChatMessages(prev => [...prev, newComment]);
+    setNewChatMsg('');
+
+    try {
+      const payload: any = {
+        instance_id: String(selectedInstance.id),
+        sender_name: senderName,
+        sender_role: senderRole,
+        message: msgText,
+      };
+      if (currentUser?.id) {
+        payload.sender_id = currentUser.id;
+      }
+      await supabase.from('csl_routine_comments').insert([payload]);
+    } catch (err) {
+      console.warn('Chat saved to local state', err);
+    }
+  };
+
+  const handleCompleteWork = async () => {
+    if (!selectedInstance) return;
+    setIsSubmittingWork(true);
+
+    let workUrl = selectedInstance.work_file_url || '';
+    let workName = selectedInstance.work_file_name || '';
+
+    if (staffWorkFile) {
+      try {
+        const base64Content = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (ev) => resolve((ev.target?.result as string).split(',')[1]);
+          reader.onerror = reject;
+          reader.readAsDataURL(staffWorkFile);
+        });
+        try {
+          const { data: uploadData } = await supabase.functions.invoke('upload-to-gdrive', {
+            body: {
+              fileName: `[Routine-Output] ${staffWorkFile.name}`,
+              fileMimeType: staffWorkFile.type || 'application/octet-stream',
+              fileBase64: base64Content,
+              folderType: 'routine'
+            }
+          });
+          if (uploadData?.gdriveUrl || uploadData?.webViewLink) {
+            workUrl = uploadData.gdriveUrl || uploadData.webViewLink;
+            workName = staffWorkFile.name;
+          } else {
+            workUrl = `data:${staffWorkFile.type || 'application/octet-stream'};base64,${base64Content}`;
+            workName = staffWorkFile.name;
+          }
+        } catch {
+          workUrl = `data:${staffWorkFile.type || 'application/octet-stream'};base64,${base64Content}`;
+          workName = staffWorkFile.name;
+        }
+      } catch {
+        workUrl = URL.createObjectURL(staffWorkFile);
+        workName = staffWorkFile.name;
+      }
+    }
+
+    const updatedNotes = staffWorkNotes.trim() || selectedInstance.completion_notes || 'Tugas telah diselesaikan dan dikirimkan oleh Staff.';
+    const nowIso = new Date().toISOString();
+
+    setInstances(prev => prev.map(i =>
+      i.id === selectedInstance.id
+        ? {
+            ...i,
+            status: 'COMPLETED',
+            completed_at: nowIso,
+            completion_notes: updatedNotes,
+            work_file_url: workUrl,
+            work_file_name: workName,
+          }
+        : i
+    ));
+
+    try {
+      if (typeof selectedInstance.id === 'number' || !String(selectedInstance.id).startsWith('req-')) {
+        await supabase.from('csl_routine_instances').update({
+          status: 'COMPLETED',
+          completed_at: nowIso,
+          completion_notes: updatedNotes,
+          completion_file_url: workUrl,
+          completion_file_name: workName,
+        }).eq('id', selectedInstance.id);
+      }
+    } catch (err) {
+      console.warn('Updated instance state locally', err);
+    } finally {
+      setIsSubmittingWork(false);
+      setSelectedInstance(null);
+      showFeedback(`Tugas "${selectedInstance.routine_title}" telah berhasil dikirim & diselesaikan!`);
     }
   };
 
@@ -306,9 +599,11 @@ export const CSLRoutineManager: React.FC<CSLRoutineManagerProps> = ({ currentUse
         {feedbackBanner}
         <PageHeader title="Routine Activities" description="Manage recurring legal activity schedules and compliance definitions">
           <div className="flex items-center gap-2">
-            <Button onClick={() => setIsAddOpen(true)} size="sm" className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs h-9 px-4 rounded-xl shadow-md">
-              <Plus className="h-4 w-4 mr-1.5" /> New Routine Schedule
-            </Button>
+            {isAdmin && (
+              <Button onClick={() => setIsAddOpen(true)} size="sm" className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs h-9 px-4 rounded-xl shadow-md">
+                <Plus className="h-4 w-4 mr-1.5" /> New Routine Schedule
+              </Button>
+            )}
             <Button variant="outline" size="sm" onClick={fetchData} className="text-xs font-bold h-9 rounded-xl">
               <RefreshCcw className="h-3.5 w-3.5 mr-1.5" /> Refresh
             </Button>
@@ -331,35 +626,117 @@ export const CSLRoutineManager: React.FC<CSLRoutineManagerProps> = ({ currentUse
                 <TableHead className="text-[10px] font-black uppercase tracking-widest">Frequency</TableHead>
                 <TableHead className="text-[10px] font-black uppercase tracking-widest">Target Day</TableHead>
                 <TableHead className="text-[10px] font-black uppercase tracking-widest">Assigned PIC</TableHead>
+                <TableHead className="text-[10px] font-black uppercase tracking-widest">Tanggal Dibuat</TableHead>
                 <TableHead className="text-[10px] font-black uppercase tracking-widest">Status</TableHead>
+                <TableHead className="text-[10px] font-black uppercase tracking-widest text-right">Aksi</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredRoutines.map(r => (
-                <TableRow key={r.id} className="hover:bg-muted/30">
-                  <TableCell className="font-bold text-sm text-foreground">{r.title}</TableCell>
-                  <TableCell className="text-xs text-muted-foreground font-semibold">{r.category}</TableCell>
-                  <TableCell>
-                    <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-lg ${FREQUENCY_BADGES[r.frequency]}`}>
-                      {r.frequency}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-xs font-mono font-bold">Day {r.due_day}</TableCell>
-                  <TableCell className="text-xs text-muted-foreground font-medium">{r.assigned_pic_name || 'Team Pool'}</TableCell>
-                  <TableCell>
-                    {r.is_active ? 
-                      <span className="text-xs text-emerald-600 font-bold bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md">Active</span> : 
-                      <span className="text-xs text-slate-400">Inactive</span>
-                    }
+              {filteredRoutines.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center py-16">
+                    <div className="flex flex-col items-center justify-center space-y-2">
+                      <div className="w-12 h-12 rounded-2xl bg-muted/60 flex items-center justify-center text-muted-foreground/60 mb-1">
+                        <FolderOpen size={24} />
+                      </div>
+                      <p className="text-sm font-bold text-foreground">Tidak Ada Data Routine Activity</p>
+                      <p className="text-xs text-muted-foreground max-w-sm">
+                        {searchTerm ? `Tidak ditemukan data yang sesuai dengan kata kunci "${searchTerm}".` : 'Belum ada data jadwal kegiatan rutin yang terdaftar. Klik "+ New Routine Schedule" untuk menambahkan.'}
+                      </p>
+                    </div>
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                filteredRoutines.map(r => {
+                // Find real instance from DB first; fallback to synthetic if none
+                const realInst = instances.find(i =>
+                  String(i.routine_id) === String(r.id) || i.routine_title === r.title
+                );
+                const inst: CSLRoutineInstance = realInst || {
+                  id: `act-${r.id}`,
+                  routine_id: r.id,
+                  routine_title: r.title,
+                  routine_category: r.category,
+                  period_start: new Date().toISOString().split('T')[0],
+                  period_end: new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
+                  due_date: new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0],
+                  status: 'IN_PROGRESS',
+                  admin_attachment_url: r.attachment_url,
+                  admin_attachment_name: r.attachment_name,
+                };
+                // Merge attachment from routine if instance doesn't have it
+                if (realInst && !realInst.admin_attachment_url && r.attachment_url) {
+                  (inst as any).admin_attachment_url = r.attachment_url;
+                  (inst as any).admin_attachment_name = r.attachment_name;
+                }
+                return (
+                  <TableRow key={r.id} onClick={() => setSelectedInstance(inst)} className="hover:bg-muted/40 cursor-pointer transition-colors">
+                    <TableCell className="font-bold text-sm text-foreground">{r.title}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground font-semibold">{r.category}</TableCell>
+                    <TableCell>
+                      <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-lg ${FREQUENCY_BADGES[r.frequency]}`}>
+                        {r.frequency}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-xs font-mono font-bold">Day {r.due_day}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground font-medium">{r.assigned_pic_name || 'Team Pool'}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground font-mono">
+                      {r.created_at ? (
+                        <div>
+                          <div>{new Date(r.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
+                          <div className="text-[10px] text-muted-foreground/60">{new Date(r.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</div>
+                        </div>
+                      ) : '—'}
+                    </TableCell>
+                    <TableCell>
+                      {r.is_active ?
+                        <span className="text-xs text-emerald-600 font-bold bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md">Active</span> :
+                        <span className="text-xs text-slate-400">Inactive</span>
+                      }
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        {!isAdmin && !String(r.id).startsWith('req-') && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={e => { e.stopPropagation(); setSelectedInstance(inst); }}
+                            className="h-8 text-xs font-bold border-indigo-200 hover:bg-indigo-50 text-indigo-600 dark:border-indigo-800 dark:hover:bg-indigo-950/40 rounded-xl"
+                          >
+                            <Activity size={13} className="mr-1" /> Kerjakan
+                          </Button>
+                        )}
+
+                        {isAdmin && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={e => {
+                              e.stopPropagation();
+                              setRoutineToDelete({ id: r.id, title: r.title });
+                            }}
+                            title="Hapus Routine"
+                            className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl"
+                          >
+                            <Trash2 size={14} />
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+              )}
             </TableBody>
           </Table>
         </div>
 
         {/* Add Routine Modal */}
         {renderAddModal()}
+        {/* Task Detail Modal */}
+        {renderTaskDetailModal()}
+        {/* Delete Confirmation Modal */}
+        {renderDeleteModal()}
       </div>
     );
   }
@@ -379,9 +756,11 @@ export const CSLRoutineManager: React.FC<CSLRoutineManagerProps> = ({ currentUse
       {feedbackBanner}
       <PageHeader title={pageTitle} description={pageDesc}>
         <div className="flex items-center gap-2">
-          <Button onClick={() => setIsAddOpen(true)} size="sm" className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs h-9 px-4 rounded-xl shadow-md">
-            <Plus className="h-4 w-4 mr-1.5" /> New Routine
-          </Button>
+          {isAdmin && (
+            <Button onClick={() => setIsAddOpen(true)} size="sm" className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs h-9 px-4 rounded-xl shadow-md">
+              <Plus className="h-4 w-4 mr-1.5" /> New Routine
+            </Button>
+          )}
           <Button variant="outline" size="sm" onClick={fetchData} className="text-xs font-bold h-9 rounded-xl">
             <RefreshCcw className="h-3.5 w-3.5 mr-1.5" /> Refresh
           </Button>
@@ -439,10 +818,28 @@ export const CSLRoutineManager: React.FC<CSLRoutineManagerProps> = ({ currentUse
                 <TableHead className="text-[10px] font-black uppercase tracking-widest">Period</TableHead>
                 <TableHead className="text-[10px] font-black uppercase tracking-widest">Due Date</TableHead>
                 <TableHead className="text-[10px] font-black uppercase tracking-widest">Status</TableHead>
+                <TableHead className="text-[10px] font-black uppercase tracking-widest text-right">Aksi</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredInstances.map(inst => (
+              {filteredInstances.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-16">
+                    <div className="flex flex-col items-center justify-center space-y-2">
+                      <div className="w-12 h-12 rounded-2xl bg-muted/60 flex items-center justify-center text-muted-foreground/60 mb-1">
+                        <FolderOpen size={24} />
+                      </div>
+                      <p className="text-sm font-bold text-foreground">Tidak Ada Task / Penugasan</p>
+                      <p className="text-xs text-muted-foreground max-w-sm">
+                        {searchTerm || statusFilter !== 'ALL'
+                          ? 'Tidak ditemukan task yang sesuai dengan kriteria pencarian / filter Anda.'
+                          : 'Belum ada daftar task berjalan pada periode ini.'}
+                      </p>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredInstances.map(inst => (
                 <TableRow key={inst.id} onClick={() => setSelectedInstance(inst)} className="cursor-pointer hover:bg-muted/40 transition-colors">
                   <TableCell>
                     <div className="font-bold text-sm text-foreground">{inst.routine_title}</div>
@@ -455,114 +852,276 @@ export const CSLRoutineManager: React.FC<CSLRoutineManagerProps> = ({ currentUse
                     {inst.due_date}
                   </TableCell>
                   <TableCell>
-                    <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-lg ${STATUS_BADGES[inst.status]}`}>
-                      {inst.status.replace(/_/g, ' ')}
+                    <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-lg ${STATUS_BADGES[inst.status] || STATUS_BADGES.PENDING}`}>
+                      {(inst.status || 'PENDING').replace(/_/g, ' ')}
                     </span>
                   </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-1.5">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={e => { e.stopPropagation(); setSelectedInstance(inst); }}
+                        className="h-8 text-xs font-bold border-indigo-200 hover:bg-indigo-50 text-indigo-600 dark:border-indigo-800 dark:hover:bg-indigo-950/40 rounded-xl"
+                      >
+                        <Activity size={13} className="mr-1" /> {isAdmin ? 'Detail Task' : 'Kerjakan'}
+                      </Button>
+
+                      {isAdmin && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={e => {
+                            e.stopPropagation();
+                            setRoutineToDelete({ id: inst.routine_id || inst.id, title: inst.routine_title || 'Task' });
+                          }}
+                          title="Hapus Task"
+                          className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl"
+                        >
+                          <Trash2 size={14} />
+                        </Button>
+                      )}
+                    </div>
+                  </TableCell>
                 </TableRow>
-              ))}
+              ))
+              )}
             </TableBody>
           </Table>
         </div>
       )}
       
-      {/* ── Task Detail Dialog (Centered Modal) ── */}
+      {/* Add Routine Modal */}
+      {renderAddModal()}
+      {/* Task Detail Modal */}
+      {renderTaskDetailModal()}
+      {/* Delete Confirmation Modal */}
+      {renderDeleteModal()}
+    </div>
+  );
+
+  // ── Task Detail Modal ─────────────────────────────────────────────────────
+  function renderTaskDetailModal() {
+    return (
       <Dialog open={!!selectedInstance} onOpenChange={(open) => !open && setSelectedInstance(null)}>
-        <DialogContent className="sm:max-w-lg p-0 overflow-hidden font-sans border border-border/60 shadow-2xl rounded-2xl">
+        <DialogContent className="sm:max-w-2xl p-0 overflow-hidden font-sans border border-border/60 shadow-2xl rounded-2xl max-h-[90vh] flex flex-col">
           {selectedInstance && (
             <>
-              {/* Header */}
-              <DialogHeader className="p-6 pb-4 border-b border-border/30 bg-muted/20">
-                <div className="flex items-center gap-2 text-indigo-600 mb-1">
-                  <Activity size={18} />
-                  <span className="text-[10px] font-black uppercase tracking-widest">Routine Task Detail</span>
+              <DialogHeader className="p-6 pb-4 border-b border-border/30 bg-muted/20 shrink-0">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-indigo-600 mb-1">
+                    <Activity size={18} />
+                    <span className="text-[10px] font-black uppercase tracking-widest">Detail Task / Routine Activity</span>
+                  </div>
+                  <span className={`text-[10px] font-black uppercase px-3 py-1 rounded-lg ${STATUS_BADGES[selectedInstance.status] || STATUS_BADGES.PENDING}`}>
+                    {(selectedInstance.status || 'PENDING').replace(/_/g, ' ')}
+                  </span>
                 </div>
                 <DialogTitle className="text-xl font-black text-foreground leading-snug">
                   {selectedInstance.routine_title}
                 </DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground mt-1">
-                  Category: <span className="font-bold text-indigo-600">{selectedInstance.routine_category}</span>
+                  Kategori: <span className="font-bold text-indigo-600">{selectedInstance.routine_category}</span>
                 </DialogDescription>
               </DialogHeader>
 
-              {/* Body */}
-              <div className="p-6 space-y-5">
-                {/* Period Grid */}
+              <div className="p-6 space-y-5 overflow-y-auto flex-1">
+                {/* Information cards */}
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-muted/40 border border-border/20 p-4 rounded-2xl">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Period Start</p>
-                    <p className="text-sm font-extrabold text-foreground font-mono">{selectedInstance.period_start}</p>
+                  <div className="bg-muted/40 border border-border/20 p-3.5 rounded-2xl">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Periode</p>
+                    <p className="text-xs font-extrabold text-foreground font-mono">{selectedInstance.period_start} s/d {selectedInstance.period_end}</p>
                   </div>
-                  <div className="bg-muted/40 border border-border/20 p-4 rounded-2xl">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Period End</p>
-                    <p className="text-sm font-extrabold text-foreground font-mono">{selectedInstance.period_end}</p>
+                  <div className="bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800/30 p-3.5 rounded-2xl">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-indigo-600 mb-1">Tenggat Waktu (Due Date)</p>
+                    <p className="text-sm font-black text-indigo-700 dark:text-indigo-300 font-mono">{selectedInstance.due_date}</p>
                   </div>
                 </div>
 
-                {/* Due Date */}
-                <div className="bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800/30 p-4 rounded-2xl flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-indigo-600">
-                    <Clock size={16} />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Target Due Date</span>
-                  </div>
-                  <p className="text-lg font-black text-indigo-700 dark:text-indigo-300 font-mono">{selectedInstance.due_date}</p>
-                </div>
-
-                {/* Status */}
-                <div className="flex items-center justify-between">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Current Status</p>
-                  <span className={`text-xs font-black uppercase px-3 py-1.5 rounded-xl ${STATUS_BADGES[selectedInstance.status]}`}>
-                    {selectedInstance.status.replace(/_/g, ' ')}
-                  </span>
-                </div>
-
-                {/* Completion Record (if exists) */}
-                {selectedInstance.completed_at && (
-                  <div className="bg-emerald-50 dark:bg-emerald-950/40 p-4 rounded-2xl border border-emerald-200 dark:border-emerald-800/30">
-                    <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400 mb-2">
-                      <CheckCircle2 size={16} />
-                      <span className="text-[10px] font-black uppercase tracking-widest">Completion Record</span>
+                {/* Dokumen Acuan dari Admin — hanya tampil jika ada attachment */}
+                {selectedInstance.admin_attachment_url && (
+                  <div className="bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-200/50 dark:border-indigo-800/30 p-4 rounded-2xl">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-9 h-9 rounded-xl bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center shrink-0">
+                          <Paperclip size={16} className="text-indigo-600" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-widest text-indigo-600 mb-0.5">Dokumen Acuan dari Admin</p>
+                          <p className="text-xs font-bold text-foreground truncate max-w-[280px]">
+                            {selectedInstance.admin_attachment_name || 'Dokumen Acuan'}
+                          </p>
+                        </div>
+                      </div>
+                      <a
+                        href={selectedInstance.admin_attachment_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-1 text-xs font-bold text-indigo-600 hover:text-indigo-800 underline underline-offset-2 shrink-0"
+                      >
+                        Buka File <ExternalLink size={12} />
+                      </a>
                     </div>
-                    <p className="text-xs font-semibold text-emerald-800 dark:text-emerald-300">
-                      Completed on {new Date(selectedInstance.completed_at).toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' })}
-                    </p>
                   </div>
                 )}
 
-                {/* Completion Notes (if exists) */}
-                {selectedInstance.completion_notes && (
-                  <div className="bg-muted/40 border border-border/20 p-4 rounded-2xl">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-2">Completion Notes</p>
-                    <p className="text-xs font-medium text-foreground leading-relaxed">{selectedInstance.completion_notes}</p>
+                {/* Hasil Pengerjaan Staff (Jika Sudah Selesai) */}
+                {selectedInstance.status === 'COMPLETED' && (
+                  <div className="bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/30 p-4 rounded-2xl space-y-2">
+                    <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
+                      <CheckCircle2 size={16} />
+                      <span className="text-[10px] font-black uppercase tracking-widest">Pekerjaan Telah Selesai</span>
+                    </div>
+                    {selectedInstance.completed_at && (
+                      <p className="text-[11px] text-emerald-800 dark:text-emerald-300 font-semibold">
+                        Diselesaikan pada: {new Date(selectedInstance.completed_at).toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' })}
+                      </p>
+                    )}
+                    {selectedInstance.completion_notes && (
+                      <div className="bg-white/80 dark:bg-zinc-900/50 p-3 rounded-xl border border-emerald-200/50 dark:border-emerald-800/30 text-xs font-medium text-foreground">
+                        <span className="font-bold text-emerald-700 dark:text-emerald-400 block mb-0.5">Catatan Staff:</span>
+                        {selectedInstance.completion_notes}
+                      </div>
+                    )}
+                    {(selectedInstance.work_file_url || selectedInstance.work_file_name) && (
+                      <div className="flex items-center justify-between pt-1">
+                        <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300 truncate max-w-[280px]">
+                          📄 File Hasil: {selectedInstance.work_file_name || 'Dokumen_Hasil_Kerja'}
+                        </span>
+                        {selectedInstance.work_file_url && (
+                          <a
+                            href={selectedInstance.work_file_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex items-center gap-1 text-xs font-bold text-emerald-700 hover:text-emerald-900 underline underline-offset-2 shrink-0"
+                          >
+                            Buka di Google Drive <ExternalLink size={12} />
+                          </a>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
+
+                {/* Form Pengerjaan & Upload File oleh Staff (Jika Belum Selesai, hanya Staff) */}
+                {!isAdmin && selectedInstance.status !== 'COMPLETED' && (
+                  <div className="bg-muted/30 border border-border/30 rounded-2xl p-4 space-y-3">
+                    <div className="flex items-center gap-2 text-foreground">
+                      <Save size={15} className="text-emerald-600" />
+                      <span className="text-xs font-bold uppercase tracking-wider">Form Hasil Pengerjaan Staff</span>
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] font-bold text-muted-foreground mb-1 block">
+                        Upload File Hasil Kerjaan (Output)
+                      </label>
+                      <Input
+                        type="file"
+                        onChange={e => {
+                          const file = e.target.files?.[0];
+                          if (file) setStaffWorkFile(file);
+                        }}
+                        className="h-10 text-xs bg-white dark:bg-muted/40 file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-emerald-100 file:text-emerald-700 hover:file:bg-emerald-200 cursor-pointer"
+                      />
+                      {staffWorkFile && (
+                        <p className="text-[11px] text-emerald-600 font-bold mt-1">
+                          File siap dikirim: {staffWorkFile.name}
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] font-bold text-muted-foreground mb-1 block">
+                        Deskripsi / Catatan Pengerjaan Staff
+                      </label>
+                      <textarea
+                        rows={2}
+                        placeholder="Tuliskan ringkasan hasil pekerjaan atau penjelasan tambahan..."
+                        value={staffWorkNotes}
+                        onChange={e => setStaffWorkNotes(e.target.value)}
+                        className="w-full p-3 text-xs bg-white dark:bg-muted/40 border border-border/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium resize-none"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Ruang Chat / Diskusi Admin <-> Staff */}
+                <div className="border-t border-border/30 pt-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-indigo-600">
+                      <MessageSquare size={16} />
+                      <span className="text-xs font-extrabold uppercase tracking-wider">Diskusi & Chat (Admin ↔ Staff CSL)</span>
+                    </div>
+                    <span className="text-[10px] text-muted-foreground font-semibold">{chatMessages.length} Pesan</span>
+                  </div>
+
+                  {/* Bubble List */}
+                  <div className="bg-muted/20 border border-border/20 rounded-2xl p-3 h-44 overflow-y-auto space-y-2.5">
+                    {chatMessages.length === 0 ? (
+                      <div className="h-full flex items-center justify-center text-xs text-muted-foreground italic">
+                        Belum ada instruksi atau chat. Tulis pesan di bawah untuk memulai diskusi.
+                      </div>
+                    ) : (
+                      chatMessages.map(msg => {
+                        const isMe = (isAdmin && msg.sender_role === 'admin') || (!isAdmin && msg.sender_role === 'staff');
+                        return (
+                          <div key={msg.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+                            <div className="flex items-center gap-1.5 mb-0.5">
+                              <span className="text-[10px] font-bold text-muted-foreground">{msg.sender_name}</span>
+                              <span className={`text-[9px] font-black uppercase px-1.5 py-0.2 rounded ${
+                                msg.sender_role === 'admin' ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-100 text-emerald-700'
+                              }`}>
+                                {msg.sender_role}
+                              </span>
+                            </div>
+                            <div className={`p-2.5 rounded-2xl max-w-[85%] text-xs font-medium ${
+                              isMe ? 'bg-indigo-600 text-white rounded-tr-none' : 'bg-white dark:bg-muted border border-border/40 text-foreground rounded-tl-none shadow-sm'
+                            }`}>
+                              {msg.message}
+                            </div>
+                            <span className="text-[9px] text-muted-foreground mt-0.5 font-mono">
+                              {new Date(msg.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+
+                  {/* Input Chat */}
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Ketik pesan / pertanyakan ke Admin/Staff..."
+                      value={newChatMsg}
+                      onChange={e => setNewChatMsg(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleSendChat())}
+                      className="h-10 text-xs bg-muted/30 border-border/30 rounded-xl flex-1"
+                    />
+                    <Button
+                      type="button"
+                      onClick={handleSendChat}
+                      disabled={!newChatMsg.trim()}
+                      className="h-10 px-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold"
+                    >
+                      <Send size={14} />
+                    </Button>
+                  </div>
+                </div>
               </div>
 
-              {/* Footer Actions */}
-              <DialogFooter className="px-6 pb-6 pt-4 border-t border-border/30 flex gap-2 sm:justify-end">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setSelectedInstance(null)}
-                  className="text-xs font-bold rounded-xl h-9"
-                >
-                  Close
+              <DialogFooter className="px-6 pb-6 pt-4 border-t border-border/30 flex gap-2 sm:justify-end shrink-0">
+                <Button variant="outline" size="sm" onClick={() => setSelectedInstance(null)} className="text-xs font-bold rounded-xl h-9">
+                  Tutup
                 </Button>
-                {selectedInstance.status !== 'COMPLETED' && (
+                {!isAdmin && selectedInstance.status !== 'COMPLETED' && (
                   <Button
                     size="sm"
-                    onClick={() => {
-                      setInstances(prev => prev.map(i =>
-                        i.id === selectedInstance.id
-                          ? { ...i, status: 'COMPLETED', completed_at: new Date().toISOString() }
-                          : i
-                      ));
-                      setSelectedInstance(null);
-                      showFeedback(`"${selectedInstance.routine_title}" marked as completed!`);
-                    }}
-                    className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl h-9 px-5"
+                    disabled={isSubmittingWork}
+                    onClick={handleCompleteWork}
+                    className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl h-9 px-5 shadow-md"
                   >
-                    <CheckCircle2 size={14} className="mr-1.5" /> Mark as Completed
+                    <CheckCircle2 size={14} className="mr-1.5" />
+                    {isSubmittingWork ? 'Mengirim Pekerjaan...' : 'Kirim & Selesaikan Tugas'}
                   </Button>
                 )}
               </DialogFooter>
@@ -570,13 +1129,10 @@ export const CSLRoutineManager: React.FC<CSLRoutineManagerProps> = ({ currentUse
           )}
         </DialogContent>
       </Dialog>
+    );
+  }
 
-      {/* Add Routine Modal */}
-      {renderAddModal()}
-    </div>
-  );
-
-  // Helper Modal Renderer
+  // ── Add Routine Modal ─────────────────────────────────────────────────────
   function renderAddModal() {
     return (
       <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
@@ -654,13 +1210,28 @@ export const CSLRoutineManager: React.FC<CSLRoutineManagerProps> = ({ currentUse
               </div>
 
               <div>
-                <label className="text-[11px] font-bold text-foreground mb-1 block">Assigned PIC / Team</label>
-                <Input
-                  placeholder="e.g. Budi S. / Legal Team"
+                <label className="text-[11px] font-bold text-foreground mb-1 block">Assigned PIC (Staff CSL) *</label>
+                <select
+                  required
                   value={formData.assigned_pic_name}
                   onChange={e => setFormData({ ...formData, assigned_pic_name: e.target.value })}
-                  className="h-10 text-sm bg-muted/30"
-                />
+                  className="w-full h-10 px-3 text-sm bg-muted/30 border border-border/30 rounded-xl font-semibold"
+                >
+                  <option value="">-- Pilih Staff CSL --</option>
+                  {staffUsers.length > 0 ? (
+                    staffUsers.map(u => (
+                      <option key={u.id} value={u.full_name}>
+                        {u.full_name}
+                      </option>
+                    ))
+                  ) : (
+                    <>
+                      <option value="Desi Rahmuni">Desi Rahmuni</option>
+                      <option value="Sylvia">Sylvia</option>
+                      <option value="Budi S.">Budi S.</option>
+                    </>
+                  )}
+                </select>
               </div>
             </div>
 
@@ -675,6 +1246,33 @@ export const CSLRoutineManager: React.FC<CSLRoutineManagerProps> = ({ currentUse
               />
             </div>
 
+            {/* Lampiran Dokumen Acuan (Admin) */}
+            <div className="bg-indigo-50/60 dark:bg-indigo-950/20 border border-indigo-200/60 dark:border-indigo-800/30 rounded-xl p-4 space-y-2">
+              <label className="text-[11px] font-bold text-indigo-700 dark:text-indigo-300 block flex items-center gap-1.5">
+                <Paperclip size={13} /> Lampiran Dokumen Acuan untuk Staff (Opsional)
+              </label>
+              <Input
+                type="file"
+                accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.png,.jpg,.jpeg"
+                onChange={e => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    setAdminFile(file);
+                    setAdminFilePreview({ url: URL.createObjectURL(file), name: file.name });
+                  }
+                }}
+                className="h-10 text-xs bg-white dark:bg-muted/30 file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-100 file:text-indigo-700 hover:file:bg-indigo-200 cursor-pointer"
+              />
+              {adminFilePreview && (
+                <div className="flex items-center gap-2 mt-1">
+                  <Paperclip size={12} className="text-indigo-500 shrink-0" />
+                  <span className="text-[11px] text-indigo-700 dark:text-indigo-300 font-semibold truncate">{adminFilePreview.name}</span>
+                  <button type="button" onClick={() => { setAdminFile(null); setAdminFilePreview(null); }} className="text-[10px] text-red-500 hover:underline ml-auto shrink-0">Hapus</button>
+                </div>
+              )}
+              <p className="text-[10px] text-muted-foreground">File ini akan terlihat oleh Staff saat membuka task detail.</p>
+            </div>
+
             <DialogFooter className="pt-4 border-t border-border/30 gap-2 flex sm:justify-end">
               <Button type="button" variant="outline" size="sm" onClick={() => setIsAddOpen(false)} className="text-xs font-bold rounded-xl h-9">
                 Cancel
@@ -684,6 +1282,44 @@ export const CSLRoutineManager: React.FC<CSLRoutineManagerProps> = ({ currentUse
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  // ── Delete Confirmation Modal ──────────────────────────────────────────────
+  function renderDeleteModal() {
+    return (
+      <Dialog open={!!routineToDelete} onOpenChange={(open) => !open && setRoutineToDelete(null)}>
+        <DialogContent className="sm:max-w-[420px] p-6 bg-white dark:bg-zinc-950 rounded-2xl border border-slate-100 dark:border-zinc-800 shadow-2xl font-sans">
+          <div className="flex flex-col space-y-2 text-left pt-1">
+            <h3 className="text-base font-bold text-slate-900 dark:text-zinc-50 leading-tight">
+              Hapus Routine / Task Permanen?
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-zinc-400 leading-relaxed font-normal">
+              Tindakan ini tidak dapat dibatalkan. Tugas <span className="font-semibold text-slate-800 dark:text-zinc-200">"{routineToDelete?.title}"</span> beserta seluruh data percakapan dan dokumen yang terkait akan dihapus secara permanen dari sistem.
+            </p>
+          </div>
+
+          <div className="flex items-center justify-end gap-2.5 mt-6">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setRoutineToDelete(null)}
+              className="text-xs font-semibold h-9 px-4 rounded-lg border-slate-200 bg-slate-50/50 hover:bg-slate-100 text-slate-700 dark:bg-zinc-900 dark:border-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-800 transition-colors"
+            >
+              Batal
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              onClick={confirmDeleteRoutine}
+              className="bg-red-600 hover:bg-red-700 text-white text-xs font-bold h-9 px-5 rounded-lg shadow-sm transition-colors"
+            >
+              Ya, Hapus
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     );
