@@ -112,6 +112,30 @@ export const CSLExpenseApproval: React.FC<{ currentUser: UserAccount | null }> =
 
   useEffect(() => { fetchData(); }, []);
 
+  const ROMAN_MONTHS = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'];
+
+  const generateInvoiceNumber = async (): Promise<string> => {
+    const now = new Date();
+    const month = now.getMonth(); // 0-indexed
+    const year  = now.getFullYear();
+    const roman = ROMAN_MONTHS[month];
+
+    // Count existing invoices this month to get next sequence
+    try {
+      const monthStart = new Date(year, month, 1).toISOString();
+      const monthEnd   = new Date(year, month + 1, 0, 23, 59, 59).toISOString();
+      const { count } = await supabase
+        .from('csl_expense_approvals')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', monthStart)
+        .lte('created_at', monthEnd);
+      const seq = String((count || 0) + 1).padStart(3, '0');
+      return `${seq}/INV/${roman}/${year}`;
+    } catch {
+      return `001/INV/${roman}/${year}`;
+    }
+  };
+
   const generateNumber = () => {
     const now = new Date();
     const pad = (n: number) => String(n).padStart(2, '0');
@@ -228,7 +252,11 @@ export const CSLExpenseApproval: React.FC<{ currentUser: UserAccount | null }> =
           <Button variant="outline" size="sm" onClick={fetchData} className="text-xs font-bold">
             <RefreshCcw className="h-3.5 w-3.5 mr-1.5" /> Refresh
           </Button>
-          <Button size="sm" onClick={() => setIsFormOpen(true)} className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs">
+          <Button size="sm" onClick={async () => {
+            const invNum = await generateInvoiceNumber();
+            setForm({ ...EMPTY_FORM, invoice_number: invNum });
+            setIsFormOpen(true);
+          }} className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs">
             <Plus className="h-4 w-4 mr-1.5" /> Buat Pengajuan
           </Button>
         </div>
@@ -536,7 +564,7 @@ export const CSLExpenseApproval: React.FC<{ currentUser: UserAccount | null }> =
               </div>
               <div>
                 <label className="text-[11px] font-bold mb-1 block">No. Invoice *</label>
-                <Input required value={form.invoice_number} onChange={e => setForm({ ...form, invoice_number: e.target.value })} className="h-9 text-sm bg-muted/30 font-mono" placeholder="020/MK-INV/VIII/2026" />
+                <Input required value={form.invoice_number} onChange={e => setForm({ ...form, invoice_number: e.target.value.toUpperCase() })} className="h-9 text-sm bg-muted/30 font-mono uppercase" placeholder="020/INV/VIII/2026" />
               </div>
             </div>
 

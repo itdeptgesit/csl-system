@@ -679,13 +679,6 @@ const InternalApp: React.FC = () => {
                              {/* Task Management */}
                              <Route path="routine-task" element={<CSLTaskManager currentUser={currentUser} />} />
 
-                             {/* Documents */}
-                             <Route path="documents" element={<CSLDocumentsManager currentUser={currentUser} category="all" />} />
-                             <Route path="documents-all" element={<CSLDocumentsManager currentUser={currentUser} category="all" />} />
-                             <Route path="documents-agreement" element={<CSLDocumentsManager currentUser={currentUser} category="agreement" />} />
-                             <Route path="documents-legal" element={<CSLDocumentsManager currentUser={currentUser} category="legal" />} />
-                             <Route path="documents-gdrive" element={<CSLDocumentsManager currentUser={currentUser} category="gdrive" />} />
-
                              {/* Budget & Cost */}
                              <Route path="budget" element={<CSLBudgetManager currentUser={currentUser} view="expense" />} />
                              <Route path="budget-expense" element={<CSLBudgetManager currentUser={currentUser} view="expense" />} />
@@ -827,9 +820,6 @@ const DashboardLayout: React.FC<any & { children?: React.ReactNode }> = ({
         if (g === 'routine_create' || g === 'routine_manage') {
           allowed.add('routine-activity'); allowed.add('routine-task'); allowed.add('routine-timeline');
         }
-        if (g === 'doc_vault' || g === 'documents_view' || g === 'documents') {
-          allowed.add('documents'); allowed.add('documents-all'); allowed.add('documents-agreement'); allowed.add('documents-legal'); allowed.add('documents-gdrive');
-        }
         if (g === 'budget' || g === 'budget_view') {
           allowed.add('budget'); allowed.add('budget-expense');
         }
@@ -879,7 +869,6 @@ const DashboardLayout: React.FC<any & { children?: React.ReactNode }> = ({
         'dashboard',
         'csl-requests',
         'routine', 'routine-activity', 'routine-task',
-        'documents', 'documents-all', 'documents-agreement', 'documents-legal', 'documents-gdrive',
         'budget', 'budget-expense',
         'directory', 'directory-all', 'directory-lawyer', 'directory-vendor', 'directory-government', 'directory-other',
         'reports', 'reports-request', 'reports-task', 'reports-budget',

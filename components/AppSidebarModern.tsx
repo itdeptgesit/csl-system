@@ -176,9 +176,6 @@ export function AppSidebarModern({
         if (g === 'routine_create' || g === 'routine_manage') {
           allowed.add('routine-activity'); allowed.add('routine-task'); allowed.add('routine-timeline')
         }
-        if (g === 'doc_vault' || g === 'documents_view' || g === 'documents') {
-          allowed.add('documents'); allowed.add('documents-all'); allowed.add('documents-agreement'); allowed.add('documents-legal'); allowed.add('documents-gdrive')
-        }
         if (g === 'budget' || g === 'budget_view') {
           allowed.add('budget'); allowed.add('budget-expense')
         }
@@ -224,7 +221,6 @@ export function AppSidebarModern({
         'dashboard',
         'csl-requests',
         'routine', 'routine-activity', 'routine-task',
-        'documents', 'documents-all', 'documents-agreement', 'documents-legal', 'documents-gdrive',
         'budget', 'budget-expense',
         'directory', 'directory-all', 'directory-lawyer', 'directory-vendor', 'directory-government', 'directory-other',
         'reports', 'reports-request', 'reports-task', 'reports-budget',

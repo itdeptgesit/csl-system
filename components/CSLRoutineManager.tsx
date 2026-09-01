@@ -240,7 +240,7 @@ export const CSLRoutineManager: React.FC<CSLRoutineManagerProps> = ({ currentUse
         if (requestsRes.data) {
             const mappedRequests = requestsRes.data.map(req => {
                 let status = 'PENDING';
-                if (['IN_REVIEW', 'PROCESSING', 'REVISION_REQUIRED', 'RESPONDED'].includes(req.status)) status = 'IN_PROGRESS';
+                if (['IN_REVIEW', 'PROCESSING', 'REVIEW_USER', 'RESPONDED'].includes(req.status)) status = 'IN_PROGRESS';
                 else if (['COMPLETED', 'CLOSED'].includes(req.status)) status = 'COMPLETED';
                 else if (['CANCELLED', 'REJECTED'].includes(req.status)) status = 'CANCELLED';
                 

@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { UserAccount } from '../types';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { VCardQRScanner } from './VCardQRScanner';
 import { 
   Dialog, 
   DialogContent, 
@@ -47,7 +48,10 @@ import {
   Copy,
   Check,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Upload,
+  ContactRound,
+  QrCode
 } from 'lucide-react';
 
 interface CSLDirectoryManagerProps {
@@ -100,6 +104,11 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
 
   // Copy-to-clipboard state: stores the id+field that was just copied
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  // vCard import ref
+  const vcfInputRef = useRef<HTMLInputElement>(null);
+  // QR scanner state
+  const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
 
   const copyToClipboard = (text: string, key: string) => {
     navigator.clipboard.writeText(text).then(() => {
@@ -162,6 +171,91 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
   useEffect(() => { 
     fetchContacts(); 
   }, []);
+
+  // ── vCard Parser ──
+  const parseVCard = (text: string) => {
+    const getField = (tag: string): string => {
+      // Handles both simple and parameterized tags e.g. TEL;TYPE=CELL:
+      const regex = new RegExp(`^${tag}(?:;[^:]*)?:(.*)`, 'mi');
+      const match = text.match(regex);
+      return match ? match[1].trim().replace(/\\n/g, ' ').replace(/;/g, ', ') : '';
+    };
+
+    // ADR field format: ;;street;city;state;postcode;country
+    const extractCity = (): string => {
+      const adr = getField('ADR');
+      if (!adr) return '';
+      const parts = adr.split(',').map(s => s.trim()).filter(Boolean);
+      // city is typically the 3rd component (index 2 after splitting on ;)
+      const rawAdr = text.match(/^ADR(?:;[^:]*)?:(.*)$/mi)?.[1] || '';
+      const adrParts = rawAdr.split(';');
+      return adrParts[3]?.trim() || adrParts[2]?.trim() || parts[0] || '';
+    };
+
+    const defaultCat: 'Lawyer' | 'Vendor' | 'Government' | 'Other' =
+      category === 'vendor' ? 'Vendor'
+      : category === 'government' ? 'Government'
+      : category === 'other' ? 'Other'
+      : 'Other';
+
+    return {
+      name: getField('FN') || getField('N').replace(';', ' ').trim(),
+      organization: getField('ORG').replace(/;/g, ' ').trim(),
+      phone: getField('TEL'),
+      email: getField('EMAIL'),
+      city: extractCity() || 'Jakarta',
+      notes: getField('NOTE'),
+      category: defaultCat,
+    };
+  };
+
+  const handleVCardUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.name.toLowerCase().endsWith('.vcf') && file.type !== 'text/vcard') {
+      showFeedback('File tidak valid. Harap upload file berformat .vcf (vCard).');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = (ev.target?.result as string) || '';
+      populateFormFromVCard(text);
+    };
+    reader.readAsText(file);
+
+    // Reset input so the same file can be re-selected if needed
+    e.target.value = '';
+  };
+
+  // Shared handler for both file import and QR scan result
+  const populateFormFromVCard = (rawText: string) => {
+    const parsed = parseVCard(rawText);
+    setEditingContact(null);
+    setFormData({
+      name: parsed.name,
+      category: parsed.category,
+      organization: parsed.organization,
+      phone: parsed.phone,
+      email: parsed.email,
+      city: parsed.city,
+      notes: parsed.notes,
+    });
+    setIsModalOpen(true);
+    showFeedback(`vCard berhasil dibaca: ${parsed.name || 'Kontak Baru'}. Silakan review dan simpan.`);
+  };
+
+  const handleQRResult = (text: string) => {
+    // QR code may contain the vCard directly or a URL that serves a vCard
+    if (text.toUpperCase().includes('BEGIN:VCARD')) {
+      populateFormFromVCard(text);
+    } else {
+      // Treat as a URL or unknown text – still try to open modal with name as the URL
+      showFeedback('QR berhasil dibaca. Konten bukan vCard standar, silakan isi manual.');
+      openAddModal();
+    }
+  };
 
   const openAddModal = () => {
     setEditingContact(null);
@@ -333,6 +427,22 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-12 font-sans">
+      {/* Hidden vCard file input */}
+      <input
+        ref={vcfInputRef}
+        type="file"
+        accept=".vcf,text/vcard"
+        className="hidden"
+        onChange={handleVCardUpload}
+      />
+
+      {/* QR Scanner Modal */}
+      <VCardQRScanner
+        open={isQRScannerOpen}
+        onClose={() => setIsQRScannerOpen(false)}
+        onResult={handleQRResult}
+      />
+
       <PageHeader title={meta.title} description={meta.desc}>
         <div className="flex items-center gap-2">
           <Button 
@@ -343,6 +453,26 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
           >
             <Download className="h-4 w-4 mr-1.5" /> Export Excel
           </Button>
+          {/* Import dropdown group */}
+          <div className="flex items-center gap-1 rounded-xl border border-violet-500/30 overflow-hidden">
+            <Button 
+              onClick={() => vcfInputRef.current?.click()}
+              variant="ghost"
+              size="sm" 
+              className="text-violet-700 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-950/40 font-bold text-xs h-9 px-3 rounded-none border-r border-violet-500/30"
+            >
+              <ContactRound className="h-4 w-4 mr-1.5" /> Import vCard
+            </Button>
+            <Button 
+              onClick={() => setIsQRScannerOpen(true)}
+              variant="ghost"
+              size="sm" 
+              className="text-violet-700 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-950/40 font-bold text-xs h-9 px-3 rounded-none"
+              title="Scan QR Code dari kartu nama"
+            >
+              <QrCode className="h-4 w-4 mr-1.5" /> Scan QR
+            </Button>
+          </div>
           <Button 
             onClick={openAddModal} 
             size="sm" 

@@ -52,23 +52,16 @@ export const CSLCreateRequest: React.FC<CSLCreateRequestProps> = ({ currentUser,
   const [isDragging, setIsDragging] = useState(false);
 
   const [masterDepartments, setMasterDepartments] = useState<string[]>([]);
-  const [masterCompanies, setMasterCompanies] = useState<string[]>([]);
   const [isLoadingMaster, setIsLoadingMaster] = useState(true);
 
   useEffect(() => {
     const fetchMasterData = async () => {
       setIsLoadingMaster(true);
       try {
-        const [deptRes, compRes] = await Promise.all([
-          supabase.from('departments').select('name').order('name'),
-          supabase.from('companies').select('name').order('name')
-        ]);
+        const { data: deptRes } = await supabase.from('departments').select('name').order('name');
         
-        if (deptRes.data) {
-          setMasterDepartments(deptRes.data.map(d => d.name));
-        }
-        if (compRes.data) {
-          setMasterCompanies(compRes.data.map(c => c.name));
+        if (deptRes) {
+          setMasterDepartments(deptRes.map(d => d.name));
         }
       } catch (err) {
         console.error("Error fetching master data:", err);
@@ -81,7 +74,7 @@ export const CSLCreateRequest: React.FC<CSLCreateRequestProps> = ({ currentUser,
 
   const [form, setForm] = useState({
     department: currentUser?.department || '',
-    company: currentUser?.company || '',
+    otherDepartment: '',
     description: '',
     tujuan: '',
     required_date: '',
@@ -101,16 +94,26 @@ export const CSLCreateRequest: React.FC<CSLCreateRequestProps> = ({ currentUser,
     setIsSubmitting(true);
 
     const requestNumber = generateRequestNumber();
-    const slaTargetDays = 5;
-    const slaDueDate = new Date(Date.now() + slaTargetDays * 24 * 60 * 60 * 1000).toISOString();
+    let slaDueDate = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString();
+    let slaTargetDays = 5;
+
+    if (form.required_date) {
+      const reqDate = new Date(form.required_date);
+      // Set to end of day of the required date for SLA calculation
+      reqDate.setHours(23, 59, 59, 999);
+      slaDueDate = reqDate.toISOString();
+      
+      const diffTime = reqDate.getTime() - Date.now();
+      slaTargetDays = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+    }
 
     const payload = {
       request_number: requestNumber,
       requester_id: String(currentUser?.id || ''),
       requester_email: currentUser?.email || '',
       requester_name: currentUser?.fullName || '',
-      department: form.department,
-      company: form.company,
+      department: form.department === 'Other' ? form.otherDepartment : form.department,
+      company: currentUser?.company || 'PT GESIT',
       priority: 'Medium',
       status: 'SUBMITTED',
       description: form.description,
@@ -147,9 +150,9 @@ export const CSLCreateRequest: React.FC<CSLCreateRequestProps> = ({ currentUser,
         requester_id: currentUser?.id ? String(currentUser.id) : null,
         requester_email: currentUser?.email || '',
         requester_name: currentUser?.fullName || currentUser?.email || 'Pemohon',
-        department: form.department,
-        company: form.company,
-        category_name: form.department || 'Permintaan Legal',
+        department: form.department === 'Other' ? form.otherDepartment : form.department,
+        company: currentUser?.company || 'PT GESIT',
+        category_name: (form.department === 'Other' ? form.otherDepartment : form.department) || 'Permintaan Legal',
         status: 'SUBMITTED'
       }, 'SUBMITTED');
     }
@@ -227,7 +230,7 @@ export const CSLCreateRequest: React.FC<CSLCreateRequestProps> = ({ currentUser,
           </Button>
           <Button className="rounded-lg font-bold text-sm h-10 px-5 bg-slate-800 dark:bg-slate-200 dark:text-slate-900 hover:opacity-90" onClick={() => {
             setSubmitted(false);
-            setForm({ ...form, description: '', tujuan: '', required_date: '' });
+            setForm({ ...form, description: '', tujuan: '', required_date: '', otherDepartment: '' });
             setAttachedFiles([]);
           }}>
             Buat Permintaan Lain
@@ -275,27 +278,27 @@ export const CSLCreateRequest: React.FC<CSLCreateRequestProps> = ({ currentUser,
                     {isLoadingMaster ? (
                       <option disabled>Loading...</option>
                     ) : (
-                      masterDepartments.map(d => <option key={d} value={d}>{d}</option>)
+                      <>
+                        {masterDepartments.map(d => <option key={d} value={d}>{d}</option>)}
+                        <option value="Other">Lainnya (Ketik sendiri)</option>
+                      </>
                     )}
                   </select>
                   <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
                 </div>
               </div>
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-foreground">Perusahaan <span className="text-red-500">*</span></label>
-                <div className="relative">
-                  <select required value={form.company} onChange={e => setForm(f => ({ ...f, company: e.target.value }))}
-                    className="w-full h-9 pl-3 pr-8 text-sm font-medium bg-white dark:bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30 appearance-none text-foreground">
-                    <option value="">— Pilih Perusahaan —</option>
-                    {isLoadingMaster ? (
-                      <option disabled>Loading...</option>
-                    ) : (
-                      masterCompanies.map(c => <option key={c} value={c}>{c}</option>)
-                    )}
-                  </select>
-                  <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+              
+              {form.department === 'Other' && (
+                <div className="space-y-1.5 animate-in fade-in duration-300">
+                  <label className="text-xs font-semibold text-foreground">Nama Departemen <span className="text-red-500">*</span></label>
+                  <input type="text" required
+                    placeholder="Ketik nama departemen / divisi"
+                    value={form.otherDepartment}
+                    onChange={e => setForm(f => ({ ...f, otherDepartment: e.target.value }))}
+                    className="w-full h-9 px-3 text-sm font-medium bg-white dark:bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30 text-foreground"
+                  />
                 </div>
-              </div>
+              )}
             </div>
           </div>
 
@@ -419,7 +422,7 @@ export const CSLCreateRequest: React.FC<CSLCreateRequestProps> = ({ currentUser,
           <div className="flex items-start gap-2.5 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/40 rounded-xl px-4 py-3">
             <Info size={15} className="text-blue-500 shrink-0 mt-0.5" />
             <p className="text-xs text-blue-700 dark:text-blue-300 font-medium leading-relaxed">
-              Tim CSL akan menghubungi Anda melalui email setelah permintaan diproses.
+              Pantau terus sistem CSL ini dan cek juga email Anda secara berkala untuk mengetahui perkembangan request.
             </p>
           </div>
 

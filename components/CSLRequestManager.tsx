@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase, supabaseAdmin } from '../lib/supabaseClient';
 import { UserAccount } from '../types';
 import { getSlaStatus, SLAStatus } from '../utils/cslSlaUtils';
-import { notifyRequestUpdate } from '../utils/cslNotificationUtils';
+import { notifyRequestUpdate, notifyUserMentioned } from '../utils/cslNotificationUtils';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -77,7 +77,7 @@ const STATUS_BADGE: Record<string, string> = {
   SUBMITTED:         'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
   ACKNOWLEDGED:      'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300',
   IN_REVIEW:         'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300',
-  REVISION_REQUIRED: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+  REVIEW_USER:       'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
   PROCESSING:        'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300',
   COMPLETED:         'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
   RESPONDED:         'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300',
@@ -218,6 +218,7 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
   // New Comment State
   const [newComment, setNewComment] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [mentionState, setMentionState] = useState<{ active: boolean, query: string, index: number }>({ active: false, query: '', index: 0 });
 
   // Document Upload State (GDrive)
   const [requestDocuments, setRequestDocuments] = useState<any[]>([]);
@@ -360,19 +361,12 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
       }
 
       // Fetch requests strictly based on role-based scoping:
-      // - Admin / Super Admin: See ALL requests across all staff
-      // - Staff: See ONLY requests assigned to them + unassigned requests
+      // - Admin / Super Admin / Staff: See ALL requests
       // - User: See ONLY requests created by them
       let query = supabase.from('csl_requests').select('*').order('created_at', { ascending: false });
       
-      if (isAdmin) {
-        // Admin & Super Admin see full system requests
-      } else if (isStaff) {
-        if (currentUser?.id) {
-          query = query.or(`assigned_pic_id.eq.${currentUser.id},assigned_pic_id.is.null,assigned_pic_name.eq.${currentUser?.fullName || ''},assigned_pic_name.is.null,assigned_pic_name.eq.Unassigned`);
-        } else {
-          query = query.or(`assigned_pic_name.eq.${currentUser?.fullName || ''},assigned_pic_name.is.null,assigned_pic_name.eq.Unassigned`);
-        }
+      if (isAdmin || isStaff) {
+        // CSL Team sees full system requests
       } else {
         query = query.eq('requester_email', currentUser?.email || '');
       }
@@ -384,15 +378,8 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
       } else {
         // Use mock data filtered strictly by role
         let filtered = MOCK_REQUESTS;
-        if (isAdmin) {
+        if (isAdmin || isStaff) {
           filtered = MOCK_REQUESTS;
-        } else if (isStaff) {
-          filtered = MOCK_REQUESTS.filter(r => 
-            r.assigned_pic_name === currentUser?.fullName || 
-            !r.assigned_pic_name || 
-            r.assigned_pic_name === 'Unassigned' ||
-            (currentUser?.id && r.assigned_pic_id === currentUser.id)
-          );
         } else {
           filtered = MOCK_REQUESTS.filter(r => r.requester_email === currentUser?.email);
         }
@@ -401,9 +388,7 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
       }
     } catch {
       let fallback = MOCK_REQUESTS;
-      if (!isAdmin && isStaff) {
-        fallback = MOCK_REQUESTS.filter(r => r.assigned_pic_name === currentUser?.fullName || !r.assigned_pic_name);
-      } else if (!isAdmin && !isStaff) {
+      if (!isAdmin && !isStaff) {
         fallback = MOCK_REQUESTS.filter(r => r.requester_email === currentUser?.email);
       }
       setRequests(fallback);
@@ -485,12 +470,15 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
       const payload: any = {
           status: responseForm.status,
           updated_at: new Date().toISOString(),
-          // Automatically set the responding staff as PIC
-          assigned_pic_id: String(currentUser?.id || ''),
-          assigned_pic_name: currentUser?.fullName || currentUser?.email || '',
       };
       
-      if (['COMPLETED', 'REJECTED', 'RESPONDED', 'REVISION_REQUIRED'].includes(responseForm.status) && responseForm.response) {
+      // Automatically set the responding staff as PIC ONLY if it hasn't been assigned yet
+      if (!selectedRequest.assigned_pic_id) {
+          payload.assigned_pic_id = String(currentUser?.id || '');
+          payload.assigned_pic_name = currentUser?.fullName || currentUser?.email || '';
+      }
+      
+      if (['COMPLETED', 'REJECTED', 'RESPONDED', 'REVIEW_USER'].includes(responseForm.status) && responseForm.response) {
           payload.csl_response = responseForm.response;
           payload.csl_response_at = new Date().toISOString();
           if (responseForm.status === 'COMPLETED') {
@@ -569,7 +557,7 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                   ACKNOWLEDGED: 'Permintaan diakui dan sedang dikaji',
                   IN_REVIEW: 'Permintaan sedang dalam review',
                   PROCESSING: 'Permintaan sedang diproses',
-                  REVISION_REQUIRED: 'Revisi diperlukan dari pemohon',
+                  REVIEW_USER: 'Review dibutuhkan dari pemohon',
                   COMPLETED: 'Permintaan telah diselesaikan',
                   RESPONDED: 'Tim CSL telah memberikan respons',
                   REJECTED: 'Permintaan ditolak',
@@ -602,6 +590,8 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
       setIsSubmittingComment(true);
       
       try {
+          const hasSpecificMention = cslStaffUsers.some(u => newComment.includes(`@${u.fullName}`));
+          const isInternal = isCslTeam && (newComment.includes('@admin') || hasSpecificMention);
           if (!useMock) {
               const { error: insertErr } = await supabase.from('csl_request_logs').insert([{
                   request_id: selectedRequest.id,
@@ -610,6 +600,7 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                   actor_id: currentUser?.id ? String(currentUser.id) : null,
                   note: newComment.trim(),
                   has_files: false,
+                  is_internal: isInternal,
               }]);
               if (insertErr) {
                   alert(`Gagal mengirim komentar: ${insertErr.message}`);
@@ -618,10 +609,28 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
               }
               
               // Notify requester or CSL staff about new comment
-              if (currentUser?.email !== selectedRequest.requester_email) {
-                  await notifyRequestUpdate(selectedRequest, 'STATUS_CHANGED', `Pesan baru dari ${currentUser?.fullName || 'CSL Team'}:\n\n"${newComment.trim()}"`);
+              if (!isInternal) {
+                  if (currentUser?.email !== selectedRequest.requester_email) {
+                      await notifyRequestUpdate(selectedRequest, 'STATUS_CHANGED', `Pesan baru dari ${currentUser?.fullName || 'CSL Team'}:\n\n"${newComment.trim()}"`);
+                  } else {
+                      await notifyRequestUpdate(selectedRequest, 'USER_RESPONDED', `Pemohon mengirim pesan baru:\n\n"${newComment.trim()}"`);
+                  }
               } else {
-                  await notifyRequestUpdate(selectedRequest, 'USER_RESPONDED', `Pemohon mengirim pesan baru:\n\n"${newComment.trim()}"`);
+                  // If it's an internal note, notify specifically mentioned users
+                  const mentionedUsers = cslStaffUsers.filter(u => newComment.includes(`@${u.fullName}`));
+                  for (const u of mentionedUsers) {
+                      // Avoid sending email to oneself if they somehow tag themselves
+                      if (u.email !== currentUser?.email) {
+                          await notifyUserMentioned(
+                              selectedRequest,
+                              currentUser?.fullName || 'CSL Staff',
+                              u.id,
+                              u.email,
+                              u.fullName,
+                              newComment.trim()
+                          );
+                      }
+                  }
               }
               
               // Refresh logs after insert
@@ -641,6 +650,7 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                   actor_id: currentUser?.id ? String(currentUser.id) : null,
                   note: newComment.trim(),
                   has_files: false,
+                  is_internal: isInternal,
                   created_at: new Date().toISOString(),
               }]);
           }
@@ -849,7 +859,7 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
           />
         </div>
         <div className="flex gap-2 flex-wrap">
-          {['ALL', 'SUBMITTED', 'IN_REVIEW', 'PROCESSING', 'REVISION_REQUIRED', 'COMPLETED', 'OVERDUE'].map(s => (
+          {['ALL', 'SUBMITTED', 'IN_REVIEW', 'PROCESSING', 'REVIEW_USER', 'COMPLETED', 'OVERDUE'].map(s => (
             <button
               key={s}
               onClick={() => setStatusFilter(s)}
@@ -894,9 +904,10 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
               </TableHeader>
               <TableBody>
                 {filtered.map(req => {
-                  const slaStatus = getSlaStatus(req.sla_due_date, req.status, req.completed_at);
+                  const displaySlaDueDate = req.required_date || req.sla_due_date;
+                  const slaStatus = getSlaStatus(displaySlaDueDate, req.status, req.completed_at);
                   const slaBadge = SLA_BADGE[slaStatus];
-                  const dueDate = new Date(req.sla_due_date).toLocaleDateString('en-GB');
+                  const dueDate = new Date(displaySlaDueDate).toLocaleDateString('en-GB');
                   const requestDate = new Date(req.created_at).toLocaleDateString('en-GB');
                   const catName = categories.find(c => c.id === req.category_id)?.name || req.category_name || '-';
 
@@ -1024,7 +1035,8 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
       <Dialog open={!!selectedRequest} onOpenChange={(open) => !open && setSelectedRequest(null)}>
         <DialogContent className="sm:max-w-4xl xl:max-w-5xl p-0 overflow-hidden bg-transparent border-none shadow-none">
           {selectedRequest && (() => {
-            const sla = getSlaStatus(selectedRequest.sla_due_date, selectedRequest.status, selectedRequest.completed_at);
+            const displaySlaDueDate = selectedRequest.required_date || selectedRequest.sla_due_date;
+            const sla = getSlaStatus(displaySlaDueDate, selectedRequest.status, selectedRequest.completed_at);
             const slaBadge = SLA_BADGE[sla];
             
             return (
@@ -1078,12 +1090,16 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                       <div className="grid grid-cols-3 gap-3">
                         <div className="bg-card border border-border rounded-xl p-3 text-center">
                           <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide mb-1">SLA Target</p>
-                          <p className="text-lg font-black text-foreground">{selectedRequest.sla_target_days}d</p>
+                          <p className="text-lg font-black text-foreground">
+                            {selectedRequest.required_date 
+                              ? Math.max(1, Math.ceil((new Date(selectedRequest.required_date).getTime() - new Date(selectedRequest.created_at).getTime()) / (1000 * 60 * 60 * 24)))
+                              : selectedRequest.sla_target_days}d
+                          </p>
                         </div>
                         <div className="bg-card border border-border rounded-xl p-3 text-center">
                           <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide mb-1">SLA Due</p>
                           <p className="text-xs font-black text-foreground">
-                            {new Date(selectedRequest.sla_due_date).toLocaleDateString('id-ID', { day:'numeric', month:'short' })}
+                            {new Date(displaySlaDueDate).toLocaleDateString('id-ID', { day:'numeric', month:'short' })}
                           </p>
                         </div>
                         <div className={`rounded-xl p-3 text-center ${slaBadge.className}`}>
@@ -1151,7 +1167,11 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                           try { return JSON.parse((selectedRequest as any).csl_response_files || '[]'); } catch { return []; }
                         })();
                         const hasDocuments = oldAttachments.length > 0 || requestDocuments.length > 0 || responseFiles.length > 0;
-                        if (!hasDocuments && !isCslTeam) return null;
+                        const isVisibleToUser = ['REVIEW_USER', 'COMPLETED', 'CLOSED'].includes(selectedRequest.status);
+                        
+                        // CSL Team sees documents if they exist. Requester only sees them if status allows AND they exist.
+                        if (isCslTeam && !hasDocuments) return null;
+                        if (!isCslTeam && (!hasDocuments || !isVisibleToUser)) return null;
                         
                         return (
                           <div className="bg-card border border-border rounded-xl overflow-hidden">
@@ -1274,7 +1294,7 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                     <div className="p-4">
                       {(() => {
                         // Gunakan data dari DB jika ada, fallback ke derived jika DB kosong
-                        const fallbackEvents: { date: string; status: string; actor: string; note?: string; hasFiles?: boolean }[] = 
+                        const fallbackEvents: { date: string; status: string; actor: string; note?: string; hasFiles?: boolean; isInternal?: boolean }[] = 
                           requestLogs.length === 0
                             ? [{ date: selectedRequest.created_at, status: 'SUBMITTED', actor: selectedRequest.requester_name, note: 'Permintaan diajukan' }]
                             : [];
@@ -1286,15 +1306,17 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                             actor: l.actor_name,
                             note: l.note,
                             hasFiles: l.has_files,
+                            isInternal: l.is_internal,
                           }))
-                        ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+                        ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+                         .filter(evt => isCslTeam || !evt.isInternal);
 
                         const dotColor: Record<string, string> = {
                           SUBMITTED:         'bg-blue-500',
                           ACKNOWLEDGED:      'bg-sky-500',
                           IN_REVIEW:         'bg-violet-500',
                           PROCESSING:        'bg-amber-500',
-                          REVISION_REQUIRED: 'bg-orange-500',
+                          REVIEW_USER:       'bg-orange-500',
                           COMPLETED:         'bg-emerald-500',
                           REJECTED:          'bg-red-500',
                           CLOSED:            'bg-slate-400',
@@ -1352,7 +1374,12 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                                           </p>
                                         </div>
                                       ) : (
-                                        <div className="mt-1.5 px-3.5 py-2.5 rounded-2xl rounded-tl-sm bg-muted/40 dark:bg-muted/20 text-[13px] text-foreground/90 border border-border/40 inline-block shadow-sm leading-relaxed">
+                                        <div className={`mt-1.5 px-3.5 py-2.5 rounded-2xl rounded-tl-sm border inline-block shadow-sm leading-relaxed text-[13px] ${
+                                          evt.isInternal 
+                                            ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-900 dark:text-amber-100 border-amber-200/50' 
+                                            : 'bg-muted/40 dark:bg-muted/20 text-foreground/90 border-border/40'
+                                        }`}>
+                                          {evt.isInternal && <span className="text-[10px] font-bold uppercase text-amber-600 block mb-1">Internal Note</span>}
                                           {evt.note}
                                         </div>
                                       )
@@ -1414,18 +1441,72 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                           </div>
 
                           {/* Input Wrapper */}
-                          <div className="flex-1 flex items-end gap-2.5 transition-all duration-200">
+                          <div className="flex-1 flex items-end gap-2.5 transition-all duration-200 relative">
+                            {/* Mention Dropdown */}
+                            {mentionState.active && (
+                              <div className="absolute bottom-full left-0 mb-2 w-64 max-h-48 overflow-y-auto bg-card border border-border rounded-xl shadow-xl z-[100] py-1 animate-in fade-in slide-in-from-bottom-2">
+                                <p className="text-[10px] font-black uppercase text-muted-foreground px-3 py-1.5 border-b border-border/50 bg-muted/20">Pilih Tim CSL</p>
+                                {cslStaffUsers
+                                  .filter(u => u.fullName.toLowerCase().includes(mentionState.query.toLowerCase()))
+                                  .map((u, idx) => (
+                                    <button
+                                      key={u.id}
+                                      type="button"
+                                      className={`w-full text-left px-3 py-2 text-sm font-semibold hover:bg-muted/50 transition-colors flex items-center justify-between ${idx === 0 ? 'bg-muted/30' : ''}`}
+                                      onClick={() => {
+                                        const before = newComment.slice(0, mentionState.index);
+                                        const after = newComment.slice(mentionState.index + mentionState.query.length + 1);
+                                        setNewComment(`${before}@${u.fullName} ${after}`);
+                                        setMentionState({ active: false, query: '', index: 0 });
+                                      }}
+                                    >
+                                      <span className="truncate">{u.fullName}</span>
+                                      <span className="text-[9px] font-black text-muted-foreground uppercase shrink-0 ml-2">{u.role}</span>
+                                    </button>
+                                  ))}
+                                {cslStaffUsers.filter(u => u.fullName.toLowerCase().includes(mentionState.query.toLowerCase())).length === 0 && (
+                                  <div className="px-3 py-2 text-xs text-muted-foreground italic">Tidak ditemukan</div>
+                                )}
+                              </div>
+                            )}
+
                             <textarea
                               rows={1}
-                              placeholder="Ketik pesan atau update..."
+                              placeholder="Ketik pesan atau update (ketik @ untuk tag)..."
                               value={newComment}
                               onChange={(e) => {
-                                setNewComment(e.target.value);
+                                const val = e.target.value;
+                                setNewComment(val);
                                 e.target.style.height = 'auto';
                                 e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
+                                
+                                const cursorPos = e.target.selectionStart;
+                                const textBeforeCursor = val.slice(0, cursorPos);
+                                const match = textBeforeCursor.match(/(?:^|\s)@([a-zA-Z0-9_ ]*)$/);
+                                
+                                if (match && isCslTeam) {
+                                  // match.index is where the (?:^|\s) matched. 
+                                  // The actual @ is either at match.index (if ^) or match.index + 1 (if \s)
+                                  const atIndex = match[0].startsWith(' ') ? match.index! + 1 : match.index!;
+                                  setMentionState({ active: true, query: match[1], index: atIndex });
+                                } else {
+                                  setMentionState({ active: false, query: '', index: 0 });
+                                }
                               }}
                               onKeyDown={(e) => {
-                                if (e.key === 'Enter' && !e.shiftKey) {
+                                if (mentionState.active && (e.key === 'Enter' || e.key === 'Tab')) {
+                                  e.preventDefault();
+                                  const matches = cslStaffUsers.filter(u => u.fullName.toLowerCase().includes(mentionState.query.toLowerCase()));
+                                  if (matches.length > 0) {
+                                    const u = matches[0];
+                                    const before = newComment.slice(0, mentionState.index);
+                                    const after = newComment.slice(mentionState.index + mentionState.query.length + 1);
+                                    setNewComment(`${before}@${u.fullName} ${after}`);
+                                    setMentionState({ active: false, query: '', index: 0 });
+                                  }
+                                } else if (mentionState.active && e.key === 'Escape') {
+                                  setMentionState({ active: false, query: '', index: 0 });
+                                } else if (e.key === 'Enter' && !e.shiftKey && !mentionState.active) {
                                   e.preventDefault();
                                   submitComment();
                                 }
@@ -1513,14 +1594,14 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                             <option value="ACKNOWLEDGED">Acknowledged</option>
                             <option value="IN_REVIEW">In Review</option>
                             <option value="PROCESSING">Processing</option>
-                            <option value="REVISION_REQUIRED">Revision Required</option>
+                            <option value="REVIEW_USER">Review User</option>
                             <option value="COMPLETED">Completed ✓</option>
                             <option value="REJECTED">Rejected</option>
                           </select>
                         </div>
 
                         {/* Catatan */}
-                        {['COMPLETED', 'REJECTED', 'REVISION_REQUIRED', 'RESPONDED'].includes(responseForm.status) && (
+                        {['COMPLETED', 'REJECTED', 'REVIEW_USER', 'RESPONDED'].includes(responseForm.status) && (
                           <div>
                             <label className="text-[10px] font-black uppercase text-muted-foreground">Catatan / Balasan</label>
                             <textarea 

@@ -75,8 +75,6 @@ interface MenuPermissions {
   requests_review: boolean;
   routine_view: boolean;
   routine_manage: boolean;
-  documents_view: boolean;
-  documents_upload: boolean;
   budget_view: boolean;
   budget_approve: boolean;
   directory_view: boolean;
@@ -117,8 +115,6 @@ const DEFAULT_SUPER_ADMIN_PERMISSIONS: MenuPermissions = {
   requests_review: true,
   routine_view: true,
   routine_manage: true,
-  documents_view: true,
-  documents_upload: true,
   budget_view: true,
   budget_approve: true,
   directory_view: true,
@@ -135,8 +131,6 @@ const DEFAULT_ADMIN_PERMISSIONS: MenuPermissions = {
   requests_review: true,
   routine_view: true,
   routine_manage: true,
-  documents_view: true,
-  documents_upload: true,
   budget_view: true,
   budget_approve: true,
   directory_view: true,
@@ -153,8 +147,6 @@ const DEFAULT_STAFF_PERMISSIONS: MenuPermissions = {
   requests_review: true,
   routine_view: true,
   routine_manage: true,
-  documents_view: true,
-  documents_upload: true,
   budget_view: true,
   budget_approve: false,
   directory_view: true,
@@ -171,8 +163,6 @@ const DEFAULT_REQUESTER_PERMISSIONS: MenuPermissions = {
   requests_review: false,
   routine_view: false,
   routine_manage: false,
-  documents_view: false,
-  documents_upload: false,
   budget_view: false,
   budget_approve: false,
   directory_view: false,
@@ -271,8 +261,6 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
               requests_review: groupsArr.includes('req_review') || groupsArr.includes('requests_review'),
               routine_view: groupsArr.includes('routine_view') || groupsArr.includes('routine'),
               routine_manage: groupsArr.includes('routine_create') || groupsArr.includes('routine_manage'),
-              documents_view: groupsArr.includes('doc_vault') || groupsArr.includes('documents_view') || groupsArr.includes('documents'),
-              documents_upload: groupsArr.includes('doc_vault') || groupsArr.includes('documents_upload'),
               budget_view: groupsArr.includes('budget') || groupsArr.includes('budget_view'),
               budget_approve: groupsArr.includes('budget') || groupsArr.includes('budget_approve'),
               directory_view: groupsArr.includes('directory') || groupsArr.includes('directory_view'),
@@ -471,8 +459,6 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
         requests_review: g.includes('req_review') || g.includes('requests_review'),
         routine_view: g.includes('routine_view') || g.includes('routine'),
         routine_manage: g.includes('routine_create') || g.includes('routine_manage'),
-        documents_view: g.includes('doc_vault') || g.includes('documents_view') || g.includes('documents'),
-        documents_upload: g.includes('doc_vault') || g.includes('documents_upload'),
         budget_view: g.includes('budget') || g.includes('budget_view'),
         budget_approve: g.includes('budget') || g.includes('budget_approve'),
         directory_view: g.includes('directory') || g.includes('directory_view'),
@@ -495,7 +481,6 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
     if (userPerms.requests_review) menuIds.push('req_review');
     if (userPerms.routine_view) menuIds.push('routine_view');
     if (userPerms.routine_manage) menuIds.push('routine_create');
-    if (userPerms.documents_view || userPerms.documents_upload) menuIds.push('doc_vault');
     if (userPerms.budget_view || userPerms.budget_approve) menuIds.push('budget');
     if (userPerms.directory_view || userPerms.directory_manage) menuIds.push('directory');
     if (userPerms.reports_view) menuIds.push('reports');
@@ -967,8 +952,6 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
                   { key: 'requests_review', label: 'Request Management - Review & Process', icon: CheckCircle2, color: 'text-blue-600', desc: 'Assign staff, update status, and review tickets' },
                   { key: 'routine_view', label: 'Routine Activities - View Monitoring', icon: Calendar, color: 'text-emerald-600', desc: 'Access recurring compliance and tax schedules' },
                   { key: 'routine_manage', label: 'Routine Activities - Create Schedules', icon: Activity, color: 'text-emerald-600', desc: 'Define new routine schedules' },
-                  { key: 'documents_view', label: 'Documents Vault - Access Repository', icon: FolderOpen, color: 'text-amber-600', desc: 'Search and view agreements, deeds, and drive vault' },
-                  { key: 'documents_upload', label: 'Documents Vault - Upload Documents', icon: FileCheck, color: 'text-amber-600', desc: 'Upload contracts and statutory permits' },
                   { key: 'budget_view', label: 'Budget & Cost - View Monitoring', icon: Wallet, color: 'text-violet-600', desc: 'View budget allocations and expenditure graphs' },
                   { key: 'budget_approve', label: 'Budget & Cost - Approve & Disburse', icon: Coins, color: 'text-violet-600', desc: 'Approve cost requests and disburse funds' },
                   { key: 'directory_view', label: 'Phone Directory - Access Contacts', icon: Phone, color: 'text-rose-600', desc: 'Search lawyers, vendors, and government agencies' },

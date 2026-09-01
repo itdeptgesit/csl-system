@@ -25,10 +25,10 @@ interface MenuPermissionsModalProps {
 }
 
 const PRESETS = {
-  'FULL ADMIN': ['dashboard', 'req_view', 'req_submit', 'req_review', 'routine_view', 'routine_create', 'doc_vault', 'budget', 'directory', 'reports', 'settings'],
-  'LEGAL STAFF': ['dashboard', 'req_view', 'req_submit', 'req_review', 'routine_view', 'doc_vault', 'directory', 'reports'],
+  'FULL ADMIN': ['dashboard', 'req_view', 'req_submit', 'req_review', 'routine_view', 'routine_create', 'budget', 'directory', 'reports', 'settings'],
+  'LEGAL STAFF': ['dashboard', 'req_view', 'req_submit', 'req_review', 'routine_view', 'directory', 'reports'],
   'REQUESTER': ['dashboard', 'req_submit', 'req_view'],
-  'AUDITOR': ['dashboard', 'req_view', 'routine_view', 'doc_vault', 'budget', 'reports']
+  'AUDITOR': ['dashboard', 'req_view', 'routine_view', 'budget', 'reports']
 };
 
 const MENU_ITEMS = [
@@ -38,7 +38,6 @@ const MENU_ITEMS = [
   { id: 'req_review', icon: ShieldCheck, title: 'Request Management - Review & Process', desc: 'Assign staff, update status, and review tickets' },
   { id: 'routine_view', icon: Calendar, title: 'Routine Activities - View Monitoring', desc: 'Access recurring compliance and tax schedules' },
   { id: 'routine_create', icon: Activity, title: 'Routine Activities - Create Schedules', desc: 'Define new routine schedules' },
-  { id: 'doc_vault', icon: FolderOpen, title: 'Documents Vault - Access Repository', desc: 'Search and view agreements, deeds, and drive vault' },
   { id: 'budget', icon: Briefcase, title: 'Budget & Cost Management', desc: 'View and approve expense requests' },
   { id: 'directory', icon: Phone, title: 'Phone Directory - Access Contacts', desc: 'Search lawyers, vendors, and government agencies' },
   { id: 'reports', icon: BarChart2, title: 'Reports & Analytics', desc: 'View SLA compliance and team productivity reports' },

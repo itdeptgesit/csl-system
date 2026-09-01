@@ -273,3 +273,57 @@ export async function notifyRoutineAssigned(routineTitle: string, assignedPicNam
         console.error('Error notifying routine assigned:', err);
     }
 }
+
+/**
+ * Notifies a user when they are mentioned in a request comment.
+ */
+export async function notifyUserMentioned(
+    request: any,
+    mentionerName: string,
+    taggedUserId: string,
+    taggedUserEmail: string,
+    taggedUserName: string,
+    commentText: string
+) {
+    const requestLink = `/csl-all-requests?id=${request.id}`;
+    
+    // In-app notification
+    await createInAppNotification(
+        taggedUserId,
+        'Anda di-mention',
+        `${mentionerName} menyebut Anda di catatan internal pada request ${request.request_number}.`,
+        'Info',
+        requestLink
+    );
+    
+    // Email notification
+    const htmlBody = `
+    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background-color: #ffffff; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+        <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 24px; text-align: center; border-bottom: 3px solid #8b5cf6;">
+            <h2 style="margin: 0; color: #ffffff; font-size: 20px; font-weight: 600; letter-spacing: 0.5px;">Mentioned in Note</h2>
+            <p style="margin: 8px 0 0 0; color: #94a3b8; font-size: 14px;">${request.request_number}</p>
+        </div>
+        
+        <div style="padding: 32px 24px; color: #334155; line-height: 1.6;">
+            <p style="margin-top: 0; font-size: 16px;">Hello <strong>${taggedUserName}</strong>,</p>
+            <p style="font-size: 15px;"><strong>${mentionerName}</strong> mentioned you in an internal note for request <strong>${request.request_number}</strong>.</p>
+            
+            <div style="margin: 24px 0;">
+                <h3 style="margin: 0 0 8px 0; color: #0f172a; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">Message</h3>
+                <div style="background-color: #f1f5f9; border-left: 4px solid #8b5cf6; padding: 16px; border-radius: 0 8px 8px 0; font-style: italic; color: #475569; font-size: 14px;">
+                    ${commentText.replace(/\n/g, '<br/>')}
+                </div>
+            </div>
+            
+            <p style="margin-bottom: 0; font-size: 14px; color: #64748b;">Please log in to the CSL System to view and respond.</p>
+        </div>
+    </div>
+    `;
+
+    await sendEmailNotification(
+        taggedUserEmail,
+        `CSL System: You were mentioned by ${mentionerName}`,
+        htmlBody,
+        true // isHtml
+    );
+}

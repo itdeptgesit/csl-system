@@ -14,8 +14,6 @@ export const MOCK_GROUPS = [
             'csl-requests',
             // Routine
             'routine', 'routine-activity', 'routine-task',
-            // Documents
-            'documents', 'documents-all', 'documents-agreement', 'documents-legal', 'documents-gdrive',
             // Budget & Cost
             'budget', 'budget-expense',
             // Phone Directory
@@ -34,7 +32,6 @@ export const MOCK_GROUPS = [
             'dashboard',
             'csl-requests',
             'routine', 'routine-activity', 'routine-task',
-            'documents', 'documents-all', 'documents-agreement', 'documents-legal', 'documents-gdrive',
             'budget', 'budget-expense',
             'directory', 'directory-all', 'directory-lawyer', 'directory-vendor', 'directory-government', 'directory-other',
             'reports', 'reports-request', 'reports-task', 'reports-budget',
@@ -62,13 +59,6 @@ export const APP_MENU_STRUCTURE = [
     { id: 'routine', label: 'Routine Activity', iconName: 'Calendar' },
     { id: 'routine-activity',   label: 'Activity',   parentId: 'routine', iconName: 'Activity' },
     { id: 'routine-task',       label: 'Task',       parentId: 'routine', iconName: 'CheckSquare' },
-
-    // ── Documents ──
-    { id: 'documents', label: 'Documents', iconName: 'FolderOpen' },
-    { id: 'documents-all',       label: 'All Documents',   parentId: 'documents', iconName: 'Files' },
-    { id: 'documents-agreement', label: 'Agreement',       parentId: 'documents', iconName: 'FileCheck' },
-    { id: 'documents-legal',     label: 'Legal Documents', parentId: 'documents', iconName: 'Scale' },
-    { id: 'documents-gdrive',    label: 'Google Drive',    parentId: 'documents', iconName: 'Cloud' },
 
     // ── Budget & Cost ──
     { id: 'budget', label: 'Budget & Cost', iconName: 'Wallet' },
