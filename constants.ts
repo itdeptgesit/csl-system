@@ -15,7 +15,7 @@ export const MOCK_GROUPS = [
             // Routine
             'routine', 'routine-activity', 'routine-task',
             // Budget & Cost
-            'budget', 'budget-expense',
+            'budget', 'budget-expense', 'budget-offshore-invoice',
             // Phone Directory
             'directory', 'directory-all', 'directory-lawyer', 'directory-vendor', 'directory-government', 'directory-other',
             // Reports
@@ -32,7 +32,7 @@ export const MOCK_GROUPS = [
             'dashboard',
             'csl-requests',
             'routine', 'routine-activity', 'routine-task',
-            'budget', 'budget-expense',
+            'budget', 'budget-expense', 'budget-offshore-invoice',
             'directory', 'directory-all', 'directory-lawyer', 'directory-vendor', 'directory-government', 'directory-other',
             'reports', 'reports-request', 'reports-task', 'reports-budget',
         ]
@@ -62,7 +62,8 @@ export const APP_MENU_STRUCTURE = [
 
     // ── Budget & Cost ──
     { id: 'budget', label: 'Budget & Cost', iconName: 'Wallet' },
-    { id: 'budget-expense',    label: 'Expenses Approval', parentId: 'budget', iconName: 'Receipt' },
+    { id: 'budget-expense',           label: 'Expenses Approval',           parentId: 'budget', iconName: 'Receipt' },
+    { id: 'budget-offshore-invoice',  label: 'Offshore Invoice Payment',    parentId: 'budget', iconName: 'Globe' },
 
     // ── Phone Directory ──
     { id: 'directory', label: 'Phone Directory', iconName: 'Phone' },

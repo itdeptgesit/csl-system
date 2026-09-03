@@ -16,7 +16,9 @@ import {
   FileText, 
   ShieldCheck, 
   PhoneCall, 
-  ArrowUpRight 
+  ArrowUpRight,
+  DollarSign,
+  Activity
 } from 'lucide-react';
 
 interface CSLDashboardProps {
@@ -172,44 +174,43 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
       </div>
 
       {/* KPI Metrics */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        {[
-          { label: 'Active Requests', value: stats.activeRequests, icon: Kanban, sub1: 'Live', sub2: 'Requests currently processing', color: '#0B1A35', route: 'csl-all-requests' },
-          { label: 'Pending Tasks', value: stats.pendingTasks, icon: Calendar, sub1: 'Action needed', sub2: 'Routine & Agreement tasks', color: '#C9A84C', route: 'routine-task' },
-          { label: 'Pending Expenses', value: stats.pendingExpenses, icon: Wallet, sub1: 'Approval needed', sub2: 'Budget & Cost requests', color: '#0B1A35', route: 'budget-expense' },
-          { label: 'SLA Compliance', value: `${slaPercentage}%`, icon: ShieldCheck, sub1: 'Performance', sub2: 'Requests met SLA targets', color: '#C9A84C', route: 'reports-request' },
-        ].map((kpi, i) => {
-          // Map hardcoded colors to dark-mode-safe Tailwind classes
-          const isNavy = kpi.color === '#0B1A35';
-          const isGold = kpi.color === '#C9A84C';
-          return (
-          <div key={i} onClick={() => onNavigate(kpi.route)}
-            className="group cursor-pointer rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900 p-5 shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-1 hover:border-slate-300"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-500 dark:text-slate-400">{kpi.label}</span>
-              <div className={`rounded-xl p-2.5 group-hover:scale-110 transition-transform ${
-                isNavy
-                  ? 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200'
-                  : 'bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400'
-              }`}>
-                <kpi.icon className="h-5 w-5" />
-              </div>
-            </div>
-            <div className="mt-4 flex items-baseline gap-2">
-              <span className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">{kpi.value}</span>
-              <span className={`text-[10px] font-bold uppercase tracking-wider flex items-center ${
-                isNavy
-                  ? 'text-slate-600 dark:text-slate-300'
-                  : 'text-amber-600 dark:text-amber-400'
-              }`}>
-                {i % 2 === 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : <AlertTriangle className="h-3 w-3 mr-1" />} {kpi.sub1}
-              </span>
-            </div>
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 font-medium">{kpi.sub2}</p>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {/* Active Requests */}
+        <div className="border rounded-xl p-4 text-indigo-700 bg-indigo-50 border-indigo-200 cursor-pointer hover:-translate-y-0.5 transition-transform" onClick={() => onNavigate('csl-all-requests')}>
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] font-black uppercase tracking-widest opacity-70">Active Requests</p>
+            <span className="h-7 w-7 flex items-center justify-center rounded-lg bg-indigo-100 text-indigo-600"><Kanban className="h-4 w-4" /></span>
           </div>
-          );
-        })}
+          <p className="text-3xl font-black mt-1">{stats.activeRequests}</p>
+          <p className="text-[10px] font-medium mt-1 opacity-60">Requests currently processing</p>
+        </div>
+        {/* Pending Tasks */}
+        <div className="border rounded-xl p-4 text-amber-700 bg-amber-50 border-amber-200 cursor-pointer hover:-translate-y-0.5 transition-transform" onClick={() => onNavigate('routine-task')}>
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] font-black uppercase tracking-widest opacity-70">Pending Tasks</p>
+            <span className="h-7 w-7 flex items-center justify-center rounded-lg bg-amber-100 text-amber-600"><Calendar className="h-4 w-4" /></span>
+          </div>
+          <p className="text-3xl font-black mt-1">{stats.pendingTasks}</p>
+          <p className="text-[10px] font-medium mt-1 opacity-60">Routine &amp; Agreement tasks</p>
+        </div>
+        {/* Pending Expenses */}
+        <div className="border rounded-xl p-4 text-blue-700 bg-blue-50 border-blue-200 cursor-pointer hover:-translate-y-0.5 transition-transform" onClick={() => onNavigate('budget-expense')}>
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] font-black uppercase tracking-widest opacity-70">Pending Expenses</p>
+            <span className="h-7 w-7 flex items-center justify-center rounded-lg bg-blue-100 text-blue-600"><Wallet className="h-4 w-4" /></span>
+          </div>
+          <p className="text-3xl font-black mt-1">{stats.pendingExpenses}</p>
+          <p className="text-[10px] font-medium mt-1 opacity-60">Budget &amp; Cost requests</p>
+        </div>
+        {/* SLA Compliance */}
+        <div className="border rounded-xl p-4 text-emerald-700 bg-emerald-50 border-emerald-200 cursor-pointer hover:-translate-y-0.5 transition-transform" onClick={() => onNavigate('reports-request')}>
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] font-black uppercase tracking-widest opacity-70">SLA Compliance</p>
+            <span className="h-7 w-7 flex items-center justify-center rounded-lg bg-emerald-100 text-emerald-600"><ShieldCheck className="h-4 w-4" /></span>
+          </div>
+          <p className="text-3xl font-black mt-1">{slaPercentage}%</p>
+          <p className="text-[10px] font-medium mt-1 opacity-60">Requests met SLA targets</p>
+        </div>
       </div>
 
       {/* Quick Access Modules Grid */}

@@ -252,9 +252,8 @@ export const CSLExpenseApproval: React.FC<{ currentUser: UserAccount | null }> =
           <Button variant="outline" size="sm" onClick={fetchData} className="text-xs font-bold">
             <RefreshCcw className="h-3.5 w-3.5 mr-1.5" /> Refresh
           </Button>
-          <Button size="sm" onClick={async () => {
-            const invNum = await generateInvoiceNumber();
-            setForm({ ...EMPTY_FORM, invoice_number: invNum });
+          <Button size="sm" onClick={() => {
+            setForm({ ...EMPTY_FORM });
             setIsFormOpen(true);
           }} className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs">
             <Plus className="h-4 w-4 mr-1.5" /> Buat Pengajuan
@@ -563,8 +562,9 @@ export const CSLExpenseApproval: React.FC<{ currentUser: UserAccount | null }> =
                 <Input required type="number" value={form.total_amount} onChange={e => setForm({ ...form, total_amount: e.target.value })} className="h-9 text-sm bg-muted/30 font-mono" placeholder="4602564" />
               </div>
               <div>
-                <label className="text-[11px] font-bold mb-1 block">No. Invoice *</label>
-                <Input required value={form.invoice_number} onChange={e => setForm({ ...form, invoice_number: e.target.value.toUpperCase() })} className="h-9 text-sm bg-muted/30 font-mono uppercase" placeholder="020/INV/VIII/2026" />
+                <label className="text-[11px] font-bold mb-1 block">No. Invoice (dari vendor/pihak ketiga) *</label>
+                <Input required value={form.invoice_number} onChange={e => setForm({ ...form, invoice_number: e.target.value.toUpperCase() })} className="h-9 text-sm bg-muted/30 font-mono uppercase" placeholder="e.g. 020/INV/VIII/2026" />
+                <p className="text-[10px] text-muted-foreground mt-0.5">Nomor invoice dari vendor / pihak lain</p>
               </div>
             </div>
 

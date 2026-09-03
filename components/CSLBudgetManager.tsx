@@ -4,12 +4,13 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Receipt } from 'lucide-react';
+import { Plus, Receipt, Globe, Search, Eye, CheckCircle2, Clock, XCircle, AlertTriangle, Upload, FileText, DollarSign, Building2, Calendar, ChevronDown } from 'lucide-react';
 import { CSLExpenseApproval } from './CSLExpenseApproval';
+import { CSLOffshoreInvoice } from './CSLOffshoreInvoice';
 
 interface CSLBudgetManagerProps {
   currentUser: UserAccount | null;
-  view?: 'plan' | 'request' | 'expense' | 'monitoring';
+  view?: 'plan' | 'request' | 'expense' | 'monitoring' | 'offshore-invoice';
 }
 
 export const CSLBudgetManager: React.FC<CSLBudgetManagerProps> = ({ currentUser, view = 'monitoring' }) => {
@@ -130,9 +131,14 @@ export const CSLBudgetManager: React.FC<CSLBudgetManagerProps> = ({ currentUser,
     );
   }
 
-  // ── SUB-PAGE 3: EXPENSES APPROVAL ──────────────────────────────────────────
+  // ── SUB-PAGE 3: EXPENSES APPROVAL ──────────────────────────────────────────────────────
   if (view === 'expense') {
     return <CSLExpenseApproval currentUser={currentUser} />;
+  }
+
+  // ── SUB-PAGE 4: OFFSHORE INVOICE PAYMENT ───────────────────────────────────────────────
+  if (view === 'offshore-invoice') {
+    return <CSLOffshoreInvoice currentUser={currentUser} />;
   }
 
   // ── SUB-PAGE 4: BUDGET MONITORING & ANALYTICS (DEFAULT) ───────────────────

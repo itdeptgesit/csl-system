@@ -70,6 +70,7 @@ import {
   TrendingUp,
   Bell,
   Cpu,
+  Globe,
 } from "lucide-react"
 
 const ICON_MAP: Record<string, React.ElementType> = {
@@ -121,6 +122,7 @@ const ICON_MAP: Record<string, React.ElementType> = {
   Coins: Coins,
   TrendingUp: TrendingUp,
   Bell: Bell,
+  Globe: Globe,
 }
 
 interface AppSidebarProps {
@@ -177,7 +179,7 @@ export function AppSidebarModern({
           allowed.add('routine-activity'); allowed.add('routine-task'); allowed.add('routine-timeline')
         }
         if (g === 'budget' || g === 'budget_view') {
-          allowed.add('budget'); allowed.add('budget-expense')
+          allowed.add('budget'); allowed.add('budget-expense'); allowed.add('budget-offshore-invoice')
         }
         if (g === 'directory' || g === 'directory_view') {
           allowed.add('directory'); allowed.add('directory-all'); allowed.add('directory-lawyer'); allowed.add('directory-vendor'); allowed.add('directory-government'); allowed.add('directory-other')
@@ -221,7 +223,7 @@ export function AppSidebarModern({
         'dashboard',
         'csl-requests',
         'routine', 'routine-activity', 'routine-task',
-        'budget', 'budget-expense',
+        'budget', 'budget-expense', 'budget-offshore-invoice',
         'directory', 'directory-all', 'directory-lawyer', 'directory-vendor', 'directory-government', 'directory-other',
         'reports', 'reports-request', 'reports-task', 'reports-budget',
         'profile'

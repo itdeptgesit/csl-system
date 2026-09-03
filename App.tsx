@@ -682,6 +682,7 @@ const InternalApp: React.FC = () => {
                              {/* Budget & Cost */}
                              <Route path="budget" element={<CSLBudgetManager currentUser={currentUser} view="expense" />} />
                              <Route path="budget-expense" element={<CSLBudgetManager currentUser={currentUser} view="expense" />} />
+                             <Route path="budget-offshore-invoice" element={<CSLBudgetManager currentUser={currentUser} view="offshore-invoice" />} />
 
                              {/* Phone Directory */}
                              <Route path="directory" element={<CSLDirectoryManager currentUser={currentUser} category="all" />} />
@@ -821,7 +822,7 @@ const DashboardLayout: React.FC<any & { children?: React.ReactNode }> = ({
           allowed.add('routine-activity'); allowed.add('routine-task'); allowed.add('routine-timeline');
         }
         if (g === 'budget' || g === 'budget_view') {
-          allowed.add('budget'); allowed.add('budget-expense');
+          allowed.add('budget'); allowed.add('budget-expense'); allowed.add('budget-offshore-invoice');
         }
         if (g === 'directory' || g === 'directory_view') {
           allowed.add('directory'); allowed.add('directory-all'); allowed.add('directory-lawyer'); allowed.add('directory-vendor'); allowed.add('directory-government'); allowed.add('directory-other');
@@ -869,7 +870,7 @@ const DashboardLayout: React.FC<any & { children?: React.ReactNode }> = ({
         'dashboard',
         'csl-requests',
         'routine', 'routine-activity', 'routine-task',
-        'budget', 'budget-expense',
+        'budget', 'budget-expense', 'budget-offshore-invoice',
         'directory', 'directory-all', 'directory-lawyer', 'directory-vendor', 'directory-government', 'directory-other',
         'reports', 'reports-request', 'reports-task', 'reports-budget',
         'profile'
