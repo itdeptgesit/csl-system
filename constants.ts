@@ -67,11 +67,6 @@ export const APP_MENU_STRUCTURE = [
 
     // ── Phone Directory ──
     { id: 'directory', label: 'Phone Directory', iconName: 'Phone' },
-    { id: 'directory-all',        label: 'All Contacts', parentId: 'directory', iconName: 'BookUser' },
-    { id: 'directory-lawyer',     label: 'Lawyer',       parentId: 'directory', iconName: 'Scale' },
-    { id: 'directory-vendor',     label: 'Vendor',       parentId: 'directory', iconName: 'Store' },
-    { id: 'directory-government', label: 'Government',   parentId: 'directory', iconName: 'Landmark' },
-    { id: 'directory-other',      label: 'Other',        parentId: 'directory', iconName: 'MoreHorizontal' },
 
     // ── Reports ──
     { id: 'reports', label: 'Reports', iconName: 'BarChart2' },

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase, supabaseAdmin } from '../lib/supabaseClient';
+import { supabase, supabaseAdmin, ensureAuthUserWithPassword } from '../lib/supabaseClient';
 
 import { UserAccount } from '../types';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -49,6 +49,7 @@ import {
   Scale,
   FileText,
   Eye,
+  EyeOff,
   Crown,
   Briefcase,
   Network
@@ -206,7 +207,8 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
   // User Modal State
   const [userModalOpen, setUserModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserItem | null>(null);
-  const [userForm, setUserForm] = useState({ name: '', email: '', role: 'User', groupsStr: 'requester' });
+  const [userForm, setUserForm] = useState({ name: '', email: '', role: 'User', groupsStr: 'requester', password: '' });
+  const [showUserPassword, setShowUserPassword] = useState(false);
   const [isUserSaving, setIsUserSaving] = useState(false);
 
   // User Permissions Modal State
@@ -226,6 +228,41 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
   const [editingDept, setEditingDept] = useState<DepartmentItem | null>(null);
   const [deptForm, setDeptForm] = useState({ name: '', code: '' });
 
+  // Single Designated Approver Routing State
+  const [expenseApprover, setExpenseApprover] = useState<string>(() => {
+    try {
+      const s = localStorage.getItem('csl_expense_approver');
+      if (s) return s;
+    } catch {}
+    return 'natalia@gesit.co.id';
+  });
+
+  const [offshoreApprover, setOffshoreApprover] = useState<string>(() => {
+    try {
+      const s = localStorage.getItem('csl_offshore_approver');
+      if (s) return s;
+    } catch {}
+    return 'natalia@gesit.co.id';
+  });
+
+  const handleSaveApprovers = async () => {
+    // Save to local storage first (fallback)
+    localStorage.setItem('csl_expense_approver', expenseApprover);
+    localStorage.setItem('csl_offshore_approver', offshoreApprover);
+    
+    // Save to Supabase (upsert)
+    try {
+      await supabase.from('csl_system_settings').upsert([
+        { setting_key: 'csl_expense_approver', setting_value: expenseApprover },
+        { setting_key: 'csl_offshore_approver', setting_value: offshoreApprover }
+      ], { onConflict: 'setting_key' });
+    } catch (e) {
+      console.warn('System settings table may not exist yet, using localStorage only.', e);
+    }
+    
+    showFeedback('Pengaturan System & Approver berhasil disimpan!');
+  };
+
   // ── Fetch DB Data ──────────────────────────────────────────────────────────
   const fetchData = async () => {
     setIsLoading(true);
@@ -234,7 +271,7 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
         const { data, error } = await supabase.from('csl_request_categories').select('*').order('name');
         if (!error && data && data.length > 0) setCategories(data);
       }
-      if (view === 'users') {
+      if (view === 'users' || view === 'notifications') {
         const { data, error } = await supabase
           .from('user_accounts')
           .select('id, full_name, email, role, groups, department, company')
@@ -281,6 +318,22 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
           setUsers(mapped);
         }
       }
+
+      // Fetch system settings for approvers
+      const { data: sysSettings, error: sysError } = await supabase.from('csl_system_settings').select('*');
+      if (!sysError && sysSettings) {
+        const expenseRow = sysSettings.find((s: any) => s.setting_key === 'csl_expense_approver');
+        const offshoreRow = sysSettings.find((s: any) => s.setting_key === 'csl_offshore_approver');
+        if (expenseRow?.setting_value) {
+          setExpenseApprover(expenseRow.setting_value);
+          localStorage.setItem('csl_expense_approver', expenseRow.setting_value);
+        }
+        if (offshoreRow?.setting_value) {
+          setOffshoreApprover(offshoreRow.setting_value);
+          localStorage.setItem('csl_offshore_approver', offshoreRow.setting_value);
+        }
+      }
+
       if (view === 'companies') {
         const [compRes, usersRes] = await Promise.all([
           supabase.from('companies').select('*').order('name'),
@@ -390,11 +443,12 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
   const openUserModal = (u?: UserItem) => {
     if (u) {
       setEditingUser(u);
-      setUserForm({ name: u.name, email: u.email, role: u.role, groupsStr: u.groups.join(', ') });
+      setUserForm({ name: u.name, email: u.email, role: u.role, groupsStr: u.groups.join(', '), password: '' });
     } else {
       setEditingUser(null);
-      setUserForm({ name: '', email: '', role: 'User', groupsStr: 'requester' });
+      setUserForm({ name: '', email: '', role: 'User', groupsStr: 'requester', password: '' });
     }
+    setShowUserPassword(false);
     setUserModalOpen(true);
   };
 
@@ -407,31 +461,68 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
     }
     setIsUserSaving(true);
     try {
+      const emailTrim = userForm.email.trim().toLowerCase();
+      const passwordTrim = userForm.password.trim();
+
+      if (passwordTrim && passwordTrim.length < 6) {
+        throw new Error('Password minimal 6 karakter');
+      }
+
+      // Ensure user exists in Supabase Auth & password is properly configured
+      const authUserId = await ensureAuthUserWithPassword(
+        emailTrim,
+        passwordTrim,
+        userForm.name.trim(),
+        editingUser?.id
+      );
+
       if (editingUser) {
-        const { error } = await supabaseAdmin.from('user_accounts').update({
+        const updatePayload: any = {
           full_name: userForm.name.trim(),
-          email: userForm.email.trim(),
+          email: emailTrim,
           role: userForm.role,
           groups: groupsArr,
-        }).eq('id', editingUser.id);
-        if (error) throw error;
+        };
+        if (authUserId && authUserId !== editingUser.id.toString()) {
+          updatePayload.id = authUserId;
+        }
+
+        let { error } = await supabaseAdmin.from('user_accounts').update(updatePayload).eq('email', emailTrim);
+
+        if (error) {
+          const fallback = await supabase.from('user_accounts').update(updatePayload).eq('email', emailTrim);
+          if (fallback.error) throw fallback.error;
+        }
         showFeedback(`User "${userForm.name}" updated!`);
       } else {
-        const { error } = await supabaseAdmin.from('user_accounts').insert([{
+        const id = authUserId || crypto.randomUUID();
+        const username = emailTrim.split('@')[0];
+
+        const newUserPayload = {
+          id,
+          username,
           full_name: userForm.name.trim(),
-          email: userForm.email.trim(),
+          email: emailTrim,
           role: userForm.role,
           groups: groupsArr.length ? groupsArr : ['user'],
           company: 'GESIT',
           department: 'Other',
-        }]);
-        if (error) throw error;
+          status: 'Active',
+        };
+
+        let { error } = await supabaseAdmin.from('user_accounts').insert([newUserPayload]);
+        if (error) {
+          console.warn('supabaseAdmin insert failed, trying supabase anon fallback:', error);
+          const fallback = await supabase.from('user_accounts').insert([newUserPayload]);
+          if (fallback.error) throw fallback.error;
+        }
         showFeedback(`User "${userForm.name}" ditambahkan!`);
       }
       setUserModalOpen(false);
       await fetchData();
     } catch (err: any) {
-      showFeedback(`Error: ${err.message}`);
+      console.error('Failed to save user:', err);
+      showFeedback(`Error: ${err.message || 'Gagal menyimpan user'}`);
     } finally {
       setIsUserSaving(false);
     }
@@ -598,8 +689,16 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
         setCategories(categories.filter(c => c.id !== id));
       }
       if (type === 'user') {
-        const { error } = await supabaseAdmin.from('user_accounts').delete().eq('id', id);
-        if (error) throw error;
+        let { error } = await supabaseAdmin.from('user_accounts').delete().eq('id', id);
+        if (error) {
+          const fallback = await supabase.from('user_accounts').delete().eq('id', id);
+          if (fallback.error) throw fallback.error;
+        }
+        try {
+          await supabaseAdmin.auth.admin.deleteUser(id.toString());
+        } catch (authErr) {
+          console.warn('Could not delete auth user:', authErr);
+        }
         setUsers(users.filter(u => u.id !== id));
       }
       if (type === 'company') {
@@ -614,7 +713,7 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
       }
       showFeedback(`"${name}" berhasil dihapus.`);
     } catch (err: any) {
-      showFeedback(`Gagal menghapus: ${err.message}`);
+      showFeedback(`Gagal menghapus: ${err.message || 'Error occurred'}`);
     }
     setDeleteConfirm(null);
   };
@@ -783,42 +882,7 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
     );
   }
 
-  // ── Notification Settings View ─────────────────────────────────────────────
-  if (view === 'notifications') {
-    return (
-      <div className="space-y-6 animate-in fade-in duration-500 pb-12 font-sans">
-        {feedbackBanner}
-        <PageHeader title="Notification Settings" description="Configure email alerts and system notifications" />
 
-        <div className="bg-card border border-border/40 rounded-2xl p-6 shadow-sm space-y-4">
-          {[
-            'Email notification on new request submission',
-            'Email alert on request assignment to legal staff',
-            'Email update on request status change',
-            'SLA breach warning email (1 business day before deadline)',
-            'In-app desktop notifications for urgent tasks',
-            'Weekly legal activity summary report',
-          ].map((label, idx) => (
-            <div key={idx} className="flex items-center justify-between py-3 border-b border-border/20 last:border-0">
-              <div className="flex items-center gap-3">
-                <Bell size={16} className="text-indigo-600 shrink-0" />
-                <span className="text-sm font-semibold text-foreground">{label}</span>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" defaultChecked className="sr-only peer" />
-                <div className="w-9 h-5 bg-muted rounded-full peer peer-checked:bg-indigo-600 transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full" />
-              </label>
-            </div>
-          ))}
-          <div className="pt-4 flex justify-end">
-            <Button onClick={() => showFeedback('Notification preferences saved!')} size="sm" className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl h-9 px-5">
-              <Save size={14} className="mr-1.5" /> Save Preferences
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   // ── Users & Roles & Permissions View ──────────────────────────────────────
   if (view === 'users') {
@@ -891,6 +955,27 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
                 <Input type="email" required placeholder="budi@gesit.co.id" value={userForm.email} onChange={e => setUserForm({...userForm, email: e.target.value})} className="h-10 text-sm bg-muted/30" />
               </div>
               <div>
+                <label className="text-[11px] font-bold text-foreground mb-1 block">
+                  {editingUser ? 'New Password (Biarkan kosong jika tidak diubah)' : 'Set Password (Opsional)'}
+                </label>
+                <div className="relative">
+                  <Input
+                    type={showUserPassword ? "text" : "password"}
+                    placeholder={editingUser ? "Password baru..." : "Password untuk login akun"}
+                    value={userForm.password}
+                    onChange={e => setUserForm({...userForm, password: e.target.value})}
+                    className="h-10 text-sm bg-muted/30 pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowUserPassword(!showUserPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {showUserPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
+              <div>
                 <label className="text-[11px] font-bold text-foreground mb-1 block">Primary System Role *</label>
                 <select value={userForm.role} onChange={e => setUserForm({...userForm, role: e.target.value})} className="w-full h-10 px-3 text-sm bg-muted/30 border border-border/30 rounded-xl font-semibold">
                   <option value="Super Admin">Super Admin (Kelola Seluruh Sistem)</option>
@@ -901,7 +986,9 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
               </div>
               <DialogFooter className="pt-4 border-t border-border/30 gap-2 flex sm:justify-end">
                 <Button type="button" variant="outline" size="sm" onClick={() => setUserModalOpen(false)} className="text-xs font-bold rounded-xl h-9">Cancel</Button>
-                <Button type="submit" size="sm" className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl h-9 px-5">Save Account</Button>
+                <Button type="submit" disabled={isUserSaving} size="sm" className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl h-9 px-5">
+                  {isUserSaving ? 'Saving...' : 'Save Account'}
+                </Button>
               </DialogFooter>
             </form>
           </DialogContent>
@@ -987,6 +1074,26 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
                 </Button>
               </DialogFooter>
             </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
+          <DialogContent className="sm:max-w-md font-sans border border-border/60 shadow-2xl rounded-2xl">
+            <DialogHeader className="p-6 pb-4 border-b border-border/30 bg-muted/20">
+              <div className="flex items-center gap-2 text-red-500 mb-1">
+                <AlertTriangle size={20} />
+                <span className="text-[10px] font-black uppercase tracking-widest text-red-500">Delete Confirmation</span>
+              </div>
+              <DialogTitle className="text-xl font-black">Are you sure?</DialogTitle>
+              <DialogDescription className="text-xs text-muted-foreground mt-1">
+                This action will delete <strong>{deleteConfirm?.name}</strong>.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="p-6 pt-4 border-t border-border/30 gap-2 flex sm:justify-end">
+              <Button variant="outline" size="sm" onClick={() => setDeleteConfirm(null)} className="text-xs font-bold rounded-xl h-9">Cancel</Button>
+              <Button onClick={handleConfirmDelete} size="sm" className="bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-xl h-9 px-5">Confirm Delete</Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
@@ -1256,8 +1363,105 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
           </div>
         </div>
 
-        <div className="flex justify-end">
-          <Button onClick={() => showFeedback('Pengaturan sistem disimpan!')} size="sm" className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl h-9 px-6 shadow-md">
+        {/* Approval Routing & Approvers Configuration */}
+        <div className="bg-card border border-border/40 rounded-2xl p-6 shadow-sm space-y-6">
+          <div className="flex items-center gap-2 text-indigo-600">
+            <ShieldCheck size={20} />
+            <h3 className="text-base font-bold text-foreground">Designated Single Approver Configuration</h3>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Pilih <strong>1 orang Approver utama</strong> untuk masing-masing modul. Notifikasi email persetujuan hanya akan dikirimkan kepada 1 approver yang dipilih. Pengaturan ini akan tersimpan global di Supabase database.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+            {/* Expenses Approval Approver */}
+            <div className="border border-border/40 rounded-xl p-4 bg-muted/10 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-emerald-600">
+                  <Wallet size={16} />
+                  <h4 className="text-xs font-bold text-foreground">Expenses Approval Approver</h4>
+                </div>
+                <span className="text-[10px] font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">
+                  1 Approver Selected
+                </span>
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Pilih 1 orang yang menerima email & menyetujui Expenses Approval (Biaya Operasional).
+              </p>
+              <div className="space-y-2 max-h-52 overflow-y-auto pt-1">
+                {users.length === 0 ? (
+                  <p className="text-xs text-muted-foreground italic py-2">Loading users...</p>
+                ) : (
+                  users.filter(u => u.role?.toLowerCase().includes('admin')).map(u => {
+                    const isSelected = expenseApprover === u.email;
+                    return (
+                      <label key={`exp-${u.id}`} className={`flex items-center justify-between p-2.5 rounded-xl border cursor-pointer transition-all ${
+                        isSelected ? 'bg-emerald-50/70 border-emerald-300 dark:bg-emerald-950/30 dark:border-emerald-800' : 'bg-card border-border/30 hover:border-indigo-300'
+                      }`}>
+                        <div>
+                          <p className="text-xs font-bold text-foreground">{u.name}</p>
+                          <p className="text-[10px] text-muted-foreground">{u.email} • <span className="font-semibold text-indigo-600">{u.role}</span></p>
+                        </div>
+                        <input
+                          type="radio"
+                          name="expense_approver_radio"
+                          checked={isSelected}
+                          onChange={() => setExpenseApprover(u.email)}
+                          className="h-4 w-4 text-emerald-600 border-gray-300 focus:ring-emerald-500 cursor-pointer"
+                        />
+                      </label>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+
+            {/* Offshore Invoice Payment Approver */}
+            <div className="border border-border/40 rounded-xl p-4 bg-muted/10 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-blue-600">
+                  <Briefcase size={16} />
+                  <h4 className="text-xs font-bold text-foreground">Offshore Invoice Approver</h4>
+                </div>
+                <span className="text-[10px] font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                  1 Approver Selected
+                </span>
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Pilih 1 orang yang menerima email & menyetujui Offshore Invoice Payment (Luar Negeri).
+              </p>
+              <div className="space-y-2 max-h-52 overflow-y-auto pt-1">
+                {users.length === 0 ? (
+                  <p className="text-xs text-muted-foreground italic py-2">Loading users...</p>
+                ) : (
+                  users.filter(u => u.role?.toLowerCase().includes('admin')).map(u => {
+                    const isSelected = offshoreApprover === u.email;
+                    return (
+                      <label key={`off-${u.id}`} className={`flex items-center justify-between p-2.5 rounded-xl border cursor-pointer transition-all ${
+                        isSelected ? 'bg-blue-50/70 border-blue-300 dark:bg-blue-950/30 dark:border-blue-800' : 'bg-card border-border/30 hover:border-indigo-300'
+                      }`}>
+                        <div>
+                          <p className="text-xs font-bold text-foreground">{u.name}</p>
+                          <p className="text-[10px] text-muted-foreground">{u.email} • <span className="font-semibold text-indigo-600">{u.role}</span></p>
+                        </div>
+                        <input
+                          type="radio"
+                          name="offshore_approver_radio"
+                          checked={isSelected}
+                          onChange={() => setOffshoreApprover(u.email)}
+                          className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500 cursor-pointer"
+                        />
+                      </label>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex justify-end pt-2">
+          <Button onClick={handleSaveApprovers} size="sm" className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl h-9 px-6 shadow-md">
             <Save size={14} className="mr-1.5" /> Simpan Pengaturan
           </Button>
         </div>

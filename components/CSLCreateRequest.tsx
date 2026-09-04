@@ -270,11 +270,11 @@ export const CSLCreateRequest: React.FC<CSLCreateRequestProps> = ({ currentUser,
                   className="w-full h-9 px-3 text-sm font-medium bg-muted/40 border border-border rounded-lg text-muted-foreground cursor-default focus:outline-none truncate" />
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-foreground">Departemen <span className="text-red-500">*</span></label>
+                <label className="text-xs font-semibold text-foreground">Divisi <span className="text-red-500">*</span></label>
                 <div className="relative">
                   <select required value={form.department} onChange={e => setForm(f => ({ ...f, department: e.target.value }))}
                     className="w-full h-9 pl-3 pr-8 text-sm font-medium bg-white dark:bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30 appearance-none text-foreground">
-                    <option value="">— Pilih Departemen —</option>
+                    <option value="">— Pilih Divisi —</option>
                     {isLoadingMaster ? (
                       <option disabled>Loading...</option>
                     ) : (
@@ -290,9 +290,9 @@ export const CSLCreateRequest: React.FC<CSLCreateRequestProps> = ({ currentUser,
               
               {form.department === 'Other' && (
                 <div className="space-y-1.5 animate-in fade-in duration-300">
-                  <label className="text-xs font-semibold text-foreground">Nama Departemen <span className="text-red-500">*</span></label>
+                  <label className="text-xs font-semibold text-foreground">Nama Divisi <span className="text-red-500">*</span></label>
                   <input type="text" required
-                    placeholder="Ketik nama departemen / divisi"
+                    placeholder="Ketik nama divisi"
                     value={form.otherDepartment}
                     onChange={e => setForm(f => ({ ...f, otherDepartment: e.target.value }))}
                     className="w-full h-9 px-3 text-sm font-medium bg-white dark:bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30 text-foreground"

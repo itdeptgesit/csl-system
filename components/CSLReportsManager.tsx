@@ -30,6 +30,7 @@ export const CSLReportsManager: React.FC<CSLReportsManagerProps> = ({ currentUse
   const [tasks, setTasks] = useState<any[]>([]);
   // States for Budget
   const [expenses, setExpenses] = useState<any[]>([]);
+  const [offshoreInvoices, setOffshoreInvoices] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -39,11 +40,46 @@ export const CSLReportsManager: React.FC<CSLReportsManagerProps> = ({ currentUse
           const { data } = await supabase.from('csl_requests').select('*').order('created_at', { ascending: false });
           if (data) setRequests(data);
         } else if (view === 'task') {
-          const { data } = await supabase.from('csl_tasks').select('*').order('created_at', { ascending: false });
-          if (data) setTasks(data);
+          const [resRoutines, resRups] = await Promise.all([
+            supabase.from('csl_routine_instances').select(`*, csl_routines(title, category, assigned_pic_name)`).order('created_at', { ascending: false }),
+            supabase.from('csl_rups_ar').select('*').order('created_at', { ascending: false })
+          ]);
+          
+          let combinedTasks: any[] = [];
+          
+          if (resRoutines.data) {
+            combinedTasks = [...combinedTasks, ...resRoutines.data.map((r: any) => ({
+              id: `routine_${r.id}`,
+              category: r.csl_routines?.category || 'Routine',
+              task_name: r.csl_routines?.title || 'Unknown Routine',
+              owner: r.csl_routines?.assigned_pic_name || '-',
+              status: r.status,
+              created_at: r.created_at
+            }))];
+          }
+          
+          if (resRups.data) {
+            combinedTasks = [...combinedTasks, ...resRups.data.map((r: any) => ({
+              id: `rups_${r.id}`,
+              category: 'RUPS-AR',
+              company: r.company || 'Unknown Company',
+              owner: r.owner || '-',
+              status: r.status,
+              created_at: r.created_at
+            }))];
+          }
+          
+          // Sort descending by created_at
+          combinedTasks.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+          
+          setTasks(combinedTasks);
         } else if (view === 'budget') {
-          const { data } = await supabase.from('csl_expense_approvals').select('*').order('created_at', { ascending: false });
-          if (data) setExpenses(data);
+          const [resExpenses, resOffshore] = await Promise.all([
+            supabase.from('csl_expense_approvals').select('*').order('created_at', { ascending: false }),
+            supabase.from('csl_offshore_invoices').select('*').order('created_at', { ascending: false })
+          ]);
+          if (resExpenses.data) setExpenses(resExpenses.data);
+          if (resOffshore.data) setOffshoreInvoices(resOffshore.data);
         }
       } catch (error) {
         console.error('Error fetching report data:', error);
@@ -151,9 +187,9 @@ export const CSLReportsManager: React.FC<CSLReportsManagerProps> = ({ currentUse
   // ── SUB-PAGE 2: TASK REPORT ─────────────────────────────────
   if (view === 'task') {
     const totalTasks = tasks.length;
-    const completedTasks = tasks.filter(t => t.status === 'Completed').length;
-    const inProgressTasks = tasks.filter(t => t.status === 'In progress').length;
-    const blockedTasks = tasks.filter(t => t.status === 'Blocked').length;
+    const completedTasks = tasks.filter(t => t.status?.toLowerCase() === 'completed').length;
+    const inProgressTasks = tasks.filter(t => t.status?.toLowerCase() === 'in progress').length;
+    const blockedTasks = tasks.filter(t => t.status?.toLowerCase() === 'blocked').length;
 
     // Group by Category
     const catStats = tasks.reduce((acc: Record<string, number>, curr) => {
@@ -248,9 +284,12 @@ export const CSLReportsManager: React.FC<CSLReportsManagerProps> = ({ currentUse
   // ── SUB-PAGE 3: BUDGET REPORT ───────────────────────────
   if (view === 'budget') {
     const totalExpenses = expenses.length;
-    const approved = expenses.filter(e => e.status === 'Approved').length;
-    const totalAmount = expenses.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
-    const approvedAmount = expenses.filter(e => e.status === 'Approved').reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
+    const totalOffshore = offshoreInvoices.length;
+    const approved = expenses.filter(e => e.status === 'APPROVED' || e.status === 'PAID').length;
+    const totalAmount = expenses.reduce((acc, curr) => acc + (Number(curr.total_amount) || 0), 0);
+    const approvedAmount = expenses.filter(e => e.status === 'APPROVED' || e.status === 'PAID').reduce((acc, curr) => acc + (Number(curr.total_amount) || 0), 0);
+    
+    const pendingTotal = expenses.filter(e => e.status === 'PENDING_APPROVAL').length + offshoreInvoices.filter(e => e.status === 'PENDING_APPROVAL').length;
 
     const formatCurrency = (val: number) => {
       return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(val);
@@ -282,12 +321,15 @@ export const CSLReportsManager: React.FC<CSLReportsManagerProps> = ({ currentUse
           </div>
           <div className="bg-card border border-border/40 p-5 rounded-2xl shadow-sm">
             <span className="text-[10px] font-black uppercase text-muted-foreground">Pending Review</span>
-            <p className="text-3xl font-black text-amber-600 mt-1">{expenses.filter(e => e.status === 'Pending').length}</p>
-            <span className="text-xs text-amber-600 font-semibold mt-1 inline-block">Requires action</span>
+            <p className="text-3xl font-black text-amber-600 mt-1">{pendingTotal}</p>
+            <span className="text-xs text-amber-600 font-semibold mt-1 inline-block">Requires action (Local & Offshore)</span>
           </div>
         </div>
 
         <div className="bg-card border border-border/40 rounded-2xl overflow-hidden shadow-sm">
+          <div className="p-4 bg-muted/20 border-b border-border/40">
+            <h3 className="text-sm font-bold">Local Expenses</h3>
+          </div>
           <Table>
             <TableHeader className="bg-muted/30">
               <TableRow>
@@ -306,19 +348,63 @@ export const CSLReportsManager: React.FC<CSLReportsManagerProps> = ({ currentUse
               ) : (
                 expenses.slice(0, 15).map((exp, idx) => (
                   <TableRow key={idx} className="hover:bg-muted/40">
-                    <TableCell className="font-bold text-xs text-indigo-600">{exp.request_no}</TableCell>
-                    <TableCell className="text-xs font-medium text-foreground">{exp.applicant_name}</TableCell>
-                    <TableCell className="font-mono text-xs text-muted-foreground max-w-[300px] truncate">{exp.purpose}</TableCell>
-                    <TableCell className="font-mono text-xs font-bold text-foreground text-right">{formatCurrency(Number(exp.amount))}</TableCell>
+                    <TableCell className="font-bold text-xs text-indigo-600">{exp.expense_number}</TableCell>
+                    <TableCell className="text-xs font-medium text-foreground">{exp.prepared_by_name}</TableCell>
+                    <TableCell className="font-mono text-xs text-muted-foreground max-w-[300px] truncate">{exp.project_name}</TableCell>
+                    <TableCell className="font-mono text-xs font-bold text-foreground text-right">{formatCurrency(Number(exp.total_amount))}</TableCell>
                     <TableCell className="text-right">
                       <span className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-md border ${
-                        exp.status === 'Approved'
+                        (exp.status === 'APPROVED' || exp.status === 'PAID')
                           ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-700/40'
-                          : exp.status === 'Pending'
+                          : exp.status === 'PENDING_APPROVAL'
                           ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-700/40'
                           : 'bg-red-50 text-red-600 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-700/40'
                       }`}>
-                        {exp.status}
+                        {exp.status ? exp.status.replace(/_/g, ' ') : 'UNKNOWN'}
+                      </span>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+
+        <div className="bg-card border border-border/40 rounded-2xl overflow-hidden shadow-sm mt-6">
+          <div className="p-4 bg-muted/20 border-b border-border/40">
+            <h3 className="text-sm font-bold">Offshore Invoices</h3>
+          </div>
+          <Table>
+            <TableHeader className="bg-muted/30">
+              <TableRow>
+                <TableHead className="text-[10px] font-black uppercase tracking-widest w-[120px]">Invoice No</TableHead>
+                <TableHead className="text-[10px] font-black uppercase tracking-widest">Paid To</TableHead>
+                <TableHead className="text-[10px] font-black uppercase tracking-widest">Description</TableHead>
+                <TableHead className="text-[10px] font-black uppercase tracking-widest text-right">Amount (Foreign)</TableHead>
+                <TableHead className="text-[10px] font-black uppercase tracking-widest text-right">Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Loading...</TableCell></TableRow>
+              ) : offshoreInvoices.length === 0 ? (
+                <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Tidak ada data offshore invoice.</TableCell></TableRow>
+              ) : (
+                offshoreInvoices.slice(0, 15).map((exp, idx) => (
+                  <TableRow key={idx} className="hover:bg-muted/40">
+                    <TableCell className="font-bold text-xs text-indigo-600">{exp.invoice_number}</TableCell>
+                    <TableCell className="text-xs font-medium text-foreground">{exp.paid_to}</TableCell>
+                    <TableCell className="font-mono text-xs text-muted-foreground max-w-[300px] truncate">{exp.payment_description}</TableCell>
+                    <TableCell className="font-mono text-xs font-bold text-foreground text-right">{exp.foreign_currency} {Number(exp.foreign_amount).toLocaleString('id-ID')}</TableCell>
+                    <TableCell className="text-right">
+                      <span className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-md border ${
+                        (exp.status === 'APPROVED' || exp.status === 'PAID')
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-700/40'
+                          : exp.status === 'PENDING_APPROVAL'
+                          ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-700/40'
+                          : 'bg-red-50 text-red-600 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-700/40'
+                      }`}>
+                        {exp.status ? exp.status.replace(/_/g, ' ') : 'UNKNOWN'}
                       </span>
                     </TableCell>
                   </TableRow>

@@ -73,6 +73,9 @@ export const CSLExpenseApproval: React.FC<{ currentUser: UserAccount | null }> =
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
+  const [designatedApproverEmail, setDesignatedApproverEmail] = useState<string>(
+    localStorage.getItem('csl_expense_approver') || 'natalia@gesit.co.id'
+  );
 
   const filteredExpenses = useMemo(() => {
     return expenses.filter(e => {
@@ -98,14 +101,24 @@ export const CSLExpenseApproval: React.FC<{ currentUser: UserAccount | null }> =
     return isSuperAdmin || roleLower === 'admin' || (currentUser?.groups || []).some(g => g.toLowerCase().includes('admin'));
   }, [roleLower, isSuperAdmin, currentUser]);
 
+  // Only the designated approver can approve/reject
+  const isDesignatedApprover = useMemo(() => {
+    if (!currentUser?.email || !designatedApproverEmail) return false;
+    return currentUser.email.trim().toLowerCase() === designatedApproverEmail.trim().toLowerCase();
+  }, [currentUser, designatedApproverEmail]);
+
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const { data } = await supabase
-        .from('csl_expense_approvals')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const [{ data }, { data: sysSettings }] = await Promise.all([
+        supabase.from('csl_expense_approvals').select('*').order('created_at', { ascending: false }),
+        supabase.from('csl_system_settings').select('setting_value').eq('setting_key', 'csl_expense_approver').maybeSingle()
+      ]);
       if (data) setExpenses(data);
+      if (sysSettings?.setting_value) {
+        setDesignatedApproverEmail(sysSettings.setting_value);
+        localStorage.setItem('csl_expense_approver', sysSettings.setting_value);
+      }
     } catch { /* ignore */ }
     finally { setIsLoading(false); }
   };
@@ -189,12 +202,24 @@ export const CSLExpenseApproval: React.FC<{ currentUser: UserAccount | null }> =
       setForm(EMPTY_FORM);
       setAttachmentFile(null);
       fetchData();
-      // Notify approver by email
-      await sendEmailNotification(
-        'rudi.siarudin@gesit.co.id',
-        `[CSL] Expenses Approval Baru: ${payload.expense_number}`,
-        `Halo Pak Rudi,\n\nAda Expenses Approval baru yang memerlukan persetujuan Anda.\n\nNo: ${payload.expense_number}\nProject: ${payload.project_name}\nDibayarkan ke: ${payload.paid_to}\nTotal: ${formatRp(payload.total_amount)}\nDiajukan oleh: ${payload.prepared_by_name}\n\nSilakan login ke CSL System untuk menyetujui atau menolak.\n\nTerima kasih.`
-      );
+      // Notify designated single approver by email
+      let approverEmail = 'natalia@gesit.co.id';
+      try {
+        const { data: sysSettings, error: sysErr } = await supabase.from('csl_system_settings').select('setting_value').eq('setting_key', 'csl_expense_approver').maybeSingle();
+        if (!sysErr && sysSettings?.setting_value) {
+          approverEmail = sysSettings.setting_value.trim();
+        } else {
+          const saved = localStorage.getItem('csl_expense_approver');
+          if (saved && saved.trim()) approverEmail = saved.trim();
+        }
+      } catch {}
+      if (approverEmail) {
+        await sendEmailNotification(
+          approverEmail,
+          `[CSL] Expenses Approval Baru: ${payload.expense_number}`,
+          `Halo,\n\nAda Expenses Approval baru yang memerlukan persetujuan Anda.\n\nNo: ${payload.expense_number}\nProject: ${payload.project_name}\nDibayarkan ke: ${payload.paid_to}\nTotal: ${formatRp(payload.total_amount)}\nDiajukan oleh: ${payload.prepared_by_name}\n\nSilakan login ke CSL System untuk menyetujui atau menolak.\n\nTerima kasih.`
+        );
+      }
     } catch (err: any) {
       toast.error('Gagal submit: ' + err.message);
     } finally {
@@ -416,7 +441,7 @@ export const CSLExpenseApproval: React.FC<{ currentUser: UserAccount | null }> =
                         >
                           <Printer className="h-3.5 w-3.5" />
                         </Button>
-                        {isAdmin && exp.status === 'PENDING_APPROVAL' && (
+                        {isDesignatedApprover && exp.status === 'PENDING_APPROVAL' && (
                           <>
                             <Button variant="ghost" size="sm"
                               onClick={e => { e.stopPropagation(); setSelected(exp); setConfirmAction('approve'); }}

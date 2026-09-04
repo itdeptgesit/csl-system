@@ -216,7 +216,7 @@ const DUMMY_AGREEMENT = [
   { id: 4, requestBy: 'Bu Yayan', taskName: 'Market Research and Business Development Agreement TCS & ACL', status: 'In progress', owner: 'Desi Rahmuni', startDate: '2026-08-18', finishDate: '', notes: 'waiting for Finance confirmation to proceed' },
 ];
 
-const EMPTY_RUPS_FORM = { company: '', status: '', owner: '', startDate: '', dueDate: '', finishDate: '', notes: '' };
+const EMPTY_RUPS_FORM = { company: '', periode: new Date().getFullYear().toString(), status: '', owner: '', startDate: '', dueDate: '', finishDate: '', notes: '' };
 const EMPTY_ASET_FORM = { company: '', taskName: '', status: '', owner: '', startDate: '', dueDate: '', notes: '' };
 const EMPTY_AGREEMENT_FORM = { requestBy: '', taskName: '', status: '', owner: '', startDate: '', finishDate: '', notes: '' };
 
@@ -228,6 +228,8 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
   const [agreementData, setAgreementData] = useState(DUMMY_AGREEMENT);
   const [currentPage, setCurrentPage] = useState(1);
   const [userList, setUserList] = useState<string[]>([]);
+  const [activePeriode, setActivePeriode] = useState(new Date().getFullYear().toString());
+  const saveTimeoutRef = useRef<{ [key: string]: NodeJS.Timeout }>({});
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -250,10 +252,63 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
     fetchUsers();
   }, []);
 
+  // Fetch RUPS from Supabase
+  const fetchRupsData = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('csl_rups_ar')
+        .select('*')
+        .order('id', { ascending: false });
+      
+      if (!error && data) {
+        setRupsData(data.map(d => ({
+          id: d.id,
+          company: d.company || '',
+          periode: d.periode || '',
+          status: d.status || '',
+          owner: d.owner || '',
+          startDate: d.start_date || '',
+          dueDate: d.due_date || '',
+          finishDate: d.finish_date || '',
+          notes: d.notes || ''
+        })));
+      } else {
+        // Fallback to dummy if table doesn't exist yet
+        setRupsData(DUMMY_RUPS_AR.map(d => ({ ...d, periode: new Date().getFullYear().toString() })));
+      }
+    } catch {
+      setRupsData(DUMMY_RUPS_AR.map(d => ({ ...d, periode: new Date().getFullYear().toString() })));
+    }
+  };
+
+  useEffect(() => {
+    fetchRupsData();
+  }, []);
+
+  const updateRupsInDb = (id: number, field: string, value: string) => {
+    if (saveTimeoutRef.current[`${id}-${field}`]) {
+      clearTimeout(saveTimeoutRef.current[`${id}-${field}`]);
+    }
+    // Map camelCase fields to snake_case for Supabase
+    const dbField = field === 'startDate' ? 'start_date' : field === 'dueDate' ? 'due_date' : field === 'finishDate' ? 'finish_date' : field;
+    
+    saveTimeoutRef.current[`${id}-${field}`] = setTimeout(async () => {
+      try {
+        const { error } = await supabase.from('csl_rups_ar').update({ [dbField]: value }).eq('id', id);
+        if (error && error.code !== '42P01') {
+           toast.error('Gagal menyimpan: ' + error.message);
+        } else if (!error) {
+           toast.success('Disimpan', { duration: 1500 });
+        }
+      } catch (err) {}
+    }, 1000);
+  };
+
   const handleUpdateRups = (id: number, field: string, value: string) => {
     setRupsData(prev => prev.map(item => 
       item.id === id ? { ...item, [field]: value } : item
     ));
+    updateRupsInDb(id, field, value);
   };
 
   const handleUpdateAset = (id: number, field: string, value: string) => {
@@ -268,11 +323,16 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
     ));
   };
 
-  const filteredRups = rupsData.filter(item =>
-    item.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.owner.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.notes.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredRups = rupsData.filter(item => {
+    const p = (item as any).periode || new Date().getFullYear().toString();
+    const searchMatches = 
+      item.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.owner.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.notes.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.status.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    return p === activePeriode && searchMatches;
+  });
 
   const totalPages = Math.max(1, Math.ceil(filteredRups.length / PAGE_SIZE));
   const safePage = Math.min(currentPage, totalPages);
@@ -312,13 +372,50 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
     setCurrentPage(1);
   };
 
-  const handleAddTask = () => {
+  const handleAddTask = async () => {
     if (activeCategory === 'RUPS-AR') {
       if (!rupsForm.company.trim()) { toast.error('Company wajib diisi!'); return; }
-      const newId = Math.max(0, ...rupsData.map(r => r.id)) + 1;
-      setRupsData(prev => [{ id: newId, ...rupsForm }, ...prev]);
-      setRupsForm(EMPTY_RUPS_FORM);
-      toast.success('Task RUPS-AR berhasil ditambahkan!');
+      
+      const payload = {
+        company: rupsForm.company,
+        periode: rupsForm.periode,
+        status: rupsForm.status,
+        owner: rupsForm.owner,
+        start_date: rupsForm.startDate || null,
+        due_date: rupsForm.dueDate || null,
+        finish_date: rupsForm.finishDate || null,
+        notes: rupsForm.notes
+      };
+
+      try {
+        const { data, error } = await supabase.from('csl_rups_ar').insert([payload]).select().single();
+        if (error && error.code !== '42P01') {
+          toast.error('Gagal tambah task: ' + error.message);
+          return;
+        }
+        
+        const newEntry = data ? {
+          id: data.id,
+          company: data.company || '',
+          periode: data.periode || '',
+          status: data.status || '',
+          owner: data.owner || '',
+          startDate: data.start_date || '',
+          dueDate: data.due_date || '',
+          finishDate: data.finish_date || '',
+          notes: data.notes || ''
+        } : { id: Math.max(0, ...rupsData.map(r => r.id)) + 1, ...rupsForm };
+
+        setRupsData(prev => [newEntry, ...prev]);
+        setRupsForm(EMPTY_RUPS_FORM);
+        toast.success('Task RUPS-AR berhasil ditambahkan!');
+      } catch (err) {
+        // Local fallback
+        const newId = Math.max(0, ...rupsData.map(r => r.id)) + 1;
+        setRupsData(prev => [{ id: newId, ...rupsForm }, ...prev]);
+        setRupsForm(EMPTY_RUPS_FORM);
+        toast.success('Task RUPS-AR berhasil ditambahkan (Lokal)');
+      }
     } else if (activeCategory === 'ASET') {
       if (!asetForm.company.trim()) { toast.error('Company wajib diisi!'); return; }
       const newId = Math.max(0, ...asetData.map(r => r.id)) + 1;
@@ -374,6 +471,22 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
             className="pl-9 h-9 text-sm rounded-xl bg-muted/30"
           />
         </div>
+        
+        {activeCategory === 'RUPS-AR' && (
+          <select
+            value={activePeriode}
+            onChange={e => {
+              setActivePeriode(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="h-9 text-sm font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-xl px-3 outline-none focus:ring-2 focus:ring-indigo-500/30 cursor-pointer"
+          >
+            {[2024, 2025, 2026, 2027, 2028].map(y => (
+              <option key={y} value={y.toString()}>Periode {y}</option>
+            ))}
+          </select>
+        )}
+
         <Button variant="outline" size="sm" className="h-9 rounded-xl text-xs font-bold bg-card border-border/40">
           <Filter className="h-4 w-4 mr-1.5" /> Filter
         </Button>
@@ -771,6 +884,10 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
                 <div>
                   <label className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground block mb-1">Company *</label>
                   <Input value={rupsForm.company} onChange={e => setRupsForm({...rupsForm, company: e.target.value})} placeholder="Nama perusahaan..." className="h-9 text-sm bg-muted/30" />
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground block mb-1">Periode (Tahun)</label>
+                  <Input value={(rupsForm as any).periode} onChange={e => setRupsForm({...rupsForm, periode: e.target.value})} placeholder="Mis. 2026" className="h-9 text-sm bg-muted/30" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>

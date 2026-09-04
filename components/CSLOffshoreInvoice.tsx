@@ -68,6 +68,9 @@ export const CSLOffshoreInvoice: React.FC<{ currentUser: UserAccount | null }> =
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
+  const [designatedApproverEmail, setDesignatedApproverEmail] = useState<string>(
+    localStorage.getItem('csl_offshore_approver') || 'natalia@gesit.co.id'
+  );
 
   const filteredInvoices = useMemo(() => {
     return invoices.filter(inv => {
@@ -87,17 +90,22 @@ export const CSLOffshoreInvoice: React.FC<{ currentUser: UserAccount | null }> =
   const isSuperAdmin = roleLower === 'super admin' || roleLower === 'super_admin' || roleLower === 'owner';
   const isAdmin = isSuperAdmin || roleLower === 'admin' || (currentUser?.groups || []).some(g => g.toLowerCase().includes('admin'));
 
+  // Only the designated approver can approve/reject/pay
+  const isDesignatedApprover = useMemo(() => {
+    if (!currentUser?.email || !designatedApproverEmail) return false;
+    return currentUser.email.trim().toLowerCase() === designatedApproverEmail.trim().toLowerCase();
+  }, [currentUser, designatedApproverEmail]);
+
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('csl_offshore_invoices')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const [{ data, error }, { data: sysSettings }] = await Promise.all([
+        supabase.from('csl_offshore_invoices').select('*').order('created_at', { ascending: false }),
+        supabase.from('csl_system_settings').select('setting_value').eq('setting_key', 'csl_offshore_approver').maybeSingle()
+      ]);
 
       if (error) {
         if (error.code === '42P01') {
-          // Table doesn't exist yet – show empty state
           setInvoices([]);
         } else {
           toast.error('Gagal memuat data: ' + error.message);
@@ -105,6 +113,10 @@ export const CSLOffshoreInvoice: React.FC<{ currentUser: UserAccount | null }> =
         return;
       }
       if (data) setInvoices(data as OffshoreInvoiceData[]);
+      if (sysSettings?.setting_value) {
+        setDesignatedApproverEmail(sysSettings.setting_value);
+        localStorage.setItem('csl_offshore_approver', sysSettings.setting_value);
+      }
     } catch (err: any) {
       toast.error('Error: ' + err.message);
     } finally {
@@ -182,11 +194,23 @@ export const CSLOffshoreInvoice: React.FC<{ currentUser: UserAccount | null }> =
       setAttachmentFile(null);
       fetchData();
       
-      await sendEmailNotification(
-        'rudi.siarudin@gesit.co.id',
-        `[CSL] Offshore Invoice Baru – Perlu Approval: ${payload.invoice_number}`,
-        `Halo Pak Rudi,\n\nAda Offshore Invoice baru yang memerlukan persetujuan Anda sebelum diproses pembayarannya.\n\nNo Invoice : ${payload.invoice_number}\nDibayarkan ke : ${payload.paid_to}\nJumlah : ${formatForeign(payload.foreign_currency, payload.foreign_amount || 0)}\nKeterangan : ${payload.payment_description}\nDiajukan oleh : ${payload.prepared_by_name}\n\nSilakan login ke CSL System untuk menyetujui atau menolak invoice ini.\n\nTerima kasih.`
-      );
+      let approverEmail = 'natalia@gesit.co.id';
+      try {
+        const { data: sysSettings, error: sysErr } = await supabase.from('csl_system_settings').select('setting_value').eq('setting_key', 'csl_offshore_approver').maybeSingle();
+        if (!sysErr && sysSettings?.setting_value) {
+          approverEmail = sysSettings.setting_value.trim();
+        } else {
+          const saved = localStorage.getItem('csl_offshore_approver');
+          if (saved && saved.trim()) approverEmail = saved.trim();
+        }
+      } catch {}
+      if (approverEmail) {
+        await sendEmailNotification(
+          approverEmail,
+          `[CSL] Offshore Invoice Baru – Perlu Approval: ${payload.invoice_number}`,
+          `Halo,\n\nAda Offshore Invoice baru yang memerlukan persetujuan Anda sebelum diproses pembayarannya.\n\nNo Invoice : ${payload.invoice_number}\nDibayarkan ke : ${payload.paid_to}\nJumlah : ${formatForeign(payload.foreign_currency, payload.foreign_amount || 0)}\nKeterangan : ${payload.payment_description}\nDiajukan oleh : ${payload.prepared_by_name}\n\nSilakan login ke CSL System untuk menyetujui atau menolak invoice ini.\n\nTerima kasih.`
+        );
+      }
     } catch (err: any) {
       toast.error('Gagal submit: ' + err.message);
     } finally {
@@ -402,8 +426,8 @@ export const CSLOffshoreInvoice: React.FC<{ currentUser: UserAccount | null }> =
                           <Printer className="h-3.5 w-3.5" />
                         </Button>
 
-                        {/* Admin: Approve / Reject when PENDING_APPROVAL */}
-                        {isAdmin && inv.status === 'PENDING_APPROVAL' && (<>
+                        {/* Designated Approver only: Approve / Reject when PENDING_APPROVAL */}
+                        {isDesignatedApprover && inv.status === 'PENDING_APPROVAL' && (<>
                           <Button variant="ghost" size="sm"
                             onClick={() => { setSelected(inv); setConfirmAction('approve'); }}
                             className="h-7 px-2 text-xs text-emerald-600"
@@ -420,8 +444,8 @@ export const CSLOffshoreInvoice: React.FC<{ currentUser: UserAccount | null }> =
                           </Button>
                         </>)}
 
-                        {/* Admin: Process Payment when APPROVED */}
-                        {isAdmin && inv.status === 'APPROVED' && (
+                        {/* Designated Approver: Process Payment when APPROVED */}
+                        {isDesignatedApprover && inv.status === 'APPROVED' && (
                           <Button variant="ghost" size="sm"
                             onClick={() => { setSelected(inv); setConfirmAction('pay'); }}
                             className="h-7 px-2 text-xs text-blue-600"

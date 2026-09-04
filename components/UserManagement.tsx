@@ -7,7 +7,7 @@ import { UserAccount, UserGroup } from '../types';
 import { UserFormModal } from './UserFormModal';
 import { MenuPermissionsModal } from './MenuPermissionsModal';
 import { DangerConfirmModal } from './DangerConfirmModal';
-import { supabase, supabaseAdmin } from '../lib/supabaseClient';
+import { supabase, supabaseAdmin, ensureAuthUserWithPassword } from '../lib/supabaseClient';
 import { trackActivity } from '../lib/auditLogger';
 import { useToast } from './ToastProvider';
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -272,15 +272,19 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onUpdateSuccess,
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSubmit={async (userData) => {
+          const emailTrim = (userData.email || '').trim().toLowerCase();
+          const username = userData.username || emailTrim.split('@')[0] || '';
+          const passwordTrim = (userData as any).password?.trim();
+
           const payload = {
-            username: userData.username,
+            username,
             full_name: userData.fullName,
-            email: userData.email,
-            role: userData.role,
-            groups: userData.groups,
-            status: userData.status,
-            company: userData.company,
-            department: userData.department,
+            email: emailTrim,
+            role: userData.role || 'User',
+            groups: userData.groups || ['user'],
+            status: userData.status || 'Active',
+            company: userData.company || 'GESIT',
+            department: userData.department || 'Other',
             phone: userData.phone,
             address: userData.address,
             job_title: userData.jobTitle,
@@ -291,10 +295,37 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onUpdateSuccess,
             is_helpdesk_support: userData.isHelpdeskSupport
           };
           try {
+            if (passwordTrim && passwordTrim.length < 6) {
+              showToast("Password minimal 6 karakter", "error");
+              return;
+            }
+
+            const authUserId = await ensureAuthUserWithPassword(
+              emailTrim,
+              passwordTrim,
+              userData.fullName,
+              editingUser?.id
+            );
+
             if (editingUser) {
-              await supabaseAdmin.from('user_accounts').update(payload).eq('id', editingUser.id);
+              const updatePayload: any = { ...payload };
+              if (authUserId && authUserId !== editingUser.id.toString()) {
+                updatePayload.id = authUserId;
+              }
+              let { error } = await supabaseAdmin.from('user_accounts').update(updatePayload).eq('email', emailTrim);
+              if (error) {
+                const fallback = await supabase.from('user_accounts').update(updatePayload).eq('email', emailTrim);
+                if (fallback.error) throw fallback.error;
+              }
             } else {
-              await supabaseAdmin.from('user_accounts').insert([payload]);
+              const id = authUserId || crypto.randomUUID();
+              const newRecord = { id, ...payload };
+              let { error } = await supabaseAdmin.from('user_accounts').insert([newRecord]);
+              if (error) {
+                console.warn('supabaseAdmin insert failed, trying supabase anon fallback:', error);
+                const fallback = await supabase.from('user_accounts').insert([newRecord]);
+                if (fallback.error) throw fallback.error;
+              }
             }
             if (onUpdateSuccess) onUpdateSuccess();
 
@@ -308,7 +339,8 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onUpdateSuccess,
             fetchData();
             showToast(editingUser ? "User updated successfully" : "User created successfully", "success");
           } catch (err: any) {
-            showToast("Failed to save user: " + err.message, "error");
+            console.error("Save user error:", err);
+            showToast("Failed to save user: " + (err.message || 'Unknown error'), "error");
           }
         }}
         initialData={editingUser}
@@ -322,7 +354,16 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onUpdateSuccess,
           if (!deleteUser) return;
           setIsProcessing(true);
           try {
-            await supabaseAdmin.from('user_accounts').delete().eq('id', deleteUser.id);
+            let { error } = await supabaseAdmin.from('user_accounts').delete().eq('id', deleteUser.id);
+            if (error) {
+              const fallback = await supabase.from('user_accounts').delete().eq('id', deleteUser.id);
+              if (fallback.error) throw fallback.error;
+            }
+            try {
+              await supabaseAdmin.auth.admin.deleteUser(deleteUser.id.toString());
+            } catch (authErr) {
+              console.warn('Could not delete auth user:', authErr);
+            }
             await trackActivity(
               currentUser?.fullName || 'User',
               currentUser?.role || 'User',
@@ -334,7 +375,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onUpdateSuccess,
             showToast("User deleted successfully", "success");
             setDeleteUser(null);
           } catch (err: any) {
-            showToast("Failed to delete user: " + err.message, "error");
+            showToast("Failed to delete user: " + (err.message || 'Unknown error'), "error");
           } finally {
             setIsProcessing(false);
           }

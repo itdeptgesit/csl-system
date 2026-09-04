@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Shield, Users, Building2, UserCheck, Layers, Briefcase, MapPin, Loader2, Image as ImageIcon, Camera, LifeBuoy } from 'lucide-react';
+import { X, Shield, Users, Building2, UserCheck, Layers, Briefcase, MapPin, Loader2, Image as ImageIcon, Camera, LifeBuoy, Eye, EyeOff } from 'lucide-react';
 import { UserAccount, UserGroup, Company } from '../types';
 import { supabase } from '../lib/supabaseClient';
 import { useToast } from './ToastProvider';
@@ -28,6 +28,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({ isOpen, onClose, o
     const [companyList, setCompanyList] = useState<Company[]>([]);
     const [departmentList, setDepartmentList] = useState<{ name: string }[]>([]);
     const [isUploading, setIsUploading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
 
     useEffect(() => {
         const fetchResources = async () => {
@@ -143,6 +144,16 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({ isOpen, onClose, o
                             <div>
                                 <label className={labelClass}>Official Email</label>
                                 <input type="email" required className={inputClass} value={formData.email || ''} onChange={e => setFormData({ ...formData, email: e.target.value })} />
+                            </div>
+
+                            <div className="md:col-span-2">
+                                <label className={labelClass}>{initialData ? 'New Password (Optional)' : 'Set Password (Optional)'}</label>
+                                <div className="relative">
+                                    <input type={showPassword ? "text" : "password"} className={`${inputClass} pr-10`} value={(formData as any).password || ''} onChange={e => setFormData({ ...formData, password: e.target.value } as any)} placeholder={initialData ? "Leave empty to keep unchanged" : "Set password for login"} />
+                                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-[calc(50%+2px)] -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                    </button>
+                                </div>
                             </div>
 
                             <div className="md:col-span-2">

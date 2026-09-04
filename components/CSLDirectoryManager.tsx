@@ -81,6 +81,7 @@ const MOCK_CONTACTS: ContactItem[] = [
 ];
 
 export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ currentUser, category = 'all' }) => {
+  const [activeCategory, setActiveCategory] = useState<'all'|'lawyer'|'vendor'|'government'|'other'>(category);
   const [searchTerm, setSearchTerm] = useState('');
   const [contacts, setContacts] = useState<ContactItem[]>(MOCK_CONTACTS);
   const [loading, setLoading] = useState(true);
@@ -171,6 +172,12 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
   useEffect(() => { 
     fetchContacts(); 
   }, []);
+
+  // Reset to page 1 when category changes
+  useEffect(() => {
+    setCurrentPage(1);
+    setSearchTerm('');
+  }, [activeCategory]);
 
   // ── vCard Parser ──
   const parseVCard = (text: string) => {
@@ -376,7 +383,7 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
       'Catatan / Spesialisasi': c.notes || '-'
     }));
 
-    const categorySuffix = category === 'all' ? 'All' : category.toUpperCase();
+    const categorySuffix = activeCategory === 'all' ? 'All' : activeCategory.toUpperCase();
     const dateStr = new Date().toISOString().split('T')[0];
     const fileName = `Phone_Directory_CSL_${categorySuffix}_${dateStr}`;
 
@@ -386,16 +393,19 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
 
   const filteredContacts = contacts.filter(c => {
     const matchesCategory = 
-      category === 'all' ? true :
-      c.category.toLowerCase() === category.toLowerCase();
+      activeCategory === 'all' ? true :
+      c.category.toLowerCase() === activeCategory.toLowerCase();
     
-    const matchesSearch = 
-      c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.organization.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.city.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.phone.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.notes?.toLowerCase().includes(searchTerm.toLowerCase());
+    const q = searchTerm.toLowerCase().trim();
+    const matchesSearch = !q ||
+      c.name.toLowerCase().includes(q) ||
+      c.organization.toLowerCase().includes(q) ||
+      c.category.toLowerCase().includes(q) ||
+      c.city.toLowerCase().includes(q) ||
+      c.phone.toLowerCase().includes(q) ||
+      c.email.toLowerCase().includes(q) ||
+      c.notes?.toLowerCase().includes(q) ||
+      c.licenseNo?.toLowerCase().includes(q);
 
     return matchesCategory && matchesSearch;
   });
@@ -414,7 +424,7 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
   };
 
   const getPageMeta = () => {
-    switch (category) {
+    switch (activeCategory) {
       case 'lawyer': return { title: 'Lawyers & Notaries Directory', desc: 'Retainer legal counsel, litigation attorneys, PPAT, and notary offices', icon: Scale };
       case 'vendor': return { title: 'Legal Vendors & Sworn Translators', desc: 'Certified legal translation agencies, document legalization, and IP attorneys', icon: Store };
       case 'government': return { title: 'Government Agencies & Ministries', desc: 'Kemenkumham, OSS BKPM, BPN, Tax Office, and provincial authority contacts', icon: Landmark };
@@ -444,41 +454,40 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
       />
 
       <PageHeader title={meta.title} description={meta.desc}>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button 
             onClick={handleExportExcel} 
             variant="outline" 
             size="sm" 
-            className="border-emerald-600/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 font-bold text-xs h-9 px-4 rounded-xl shadow-sm"
+            className="h-9"
           >
-            <Download className="h-4 w-4 mr-1.5" /> Export Excel
+            <Download className="h-4 w-4 mr-2" /> Export
           </Button>
-          {/* Import dropdown group */}
-          <div className="flex items-center gap-1 rounded-xl border border-violet-500/30 overflow-hidden">
+          <div className="flex items-center rounded-md border bg-background">
             <Button 
               onClick={() => vcfInputRef.current?.click()}
               variant="ghost"
               size="sm" 
-              className="text-violet-700 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-950/40 font-bold text-xs h-9 px-3 rounded-none border-r border-violet-500/30"
+              className="h-9 rounded-none border-r px-3"
             >
-              <ContactRound className="h-4 w-4 mr-1.5" /> Import vCard
+              <ContactRound className="h-4 w-4 mr-2" /> Import
             </Button>
             <Button 
               onClick={() => setIsQRScannerOpen(true)}
               variant="ghost"
               size="sm" 
-              className="text-violet-700 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-950/40 font-bold text-xs h-9 px-3 rounded-none"
+              className="h-9 rounded-none px-3"
               title="Scan QR Code dari kartu nama"
             >
-              <QrCode className="h-4 w-4 mr-1.5" /> Scan QR
+              <QrCode className="h-4 w-4 mr-2" /> Scan QR
             </Button>
           </div>
           <Button 
             onClick={openAddModal} 
             size="sm" 
-            className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs h-9 px-4 rounded-xl shadow-md"
+            className="h-9"
           >
-            <Plus className="h-4 w-4 mr-1.5" /> Add Contact
+            <Plus className="h-4 w-4 mr-2" /> Add Contact
           </Button>
         </div>
       </PageHeader>
@@ -495,78 +504,100 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
       )}
 
       {/* KPI Cards when in All View */}
-      {category === 'all' && (
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-5">
-          <div className="bg-gradient-to-br from-indigo-500 to-indigo-700 dark:from-indigo-600 dark:to-indigo-900 border-none p-5 rounded-3xl shadow-lg shadow-indigo-200 dark:shadow-none flex flex-col justify-between relative overflow-hidden text-white">
-            <Phone size={100} className="absolute -right-6 -bottom-6 opacity-10 rotate-12" />
-            <div>
-              <span className="text-[11px] font-black uppercase tracking-widest text-indigo-100">Total Directory</span>
-              <p className="text-4xl font-black mt-1">{contacts.length}</p>
-            </div>
-          </div>
-          <div className="bg-card border border-border/40 p-5 rounded-3xl shadow-sm flex flex-col justify-between group hover:shadow-md transition-all">
+      {activeCategory === 'all' && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-card border border-border/40 p-5 rounded-xl shadow-sm flex flex-col justify-between">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Lawyers & Notaries</span>
-              <div className="p-2 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 group-hover:scale-110 transition-transform">
-                <Scale size={18} />
-              </div>
+              <span className="text-sm font-medium text-muted-foreground">Total Directory</span>
+              <Phone size={16} className="text-muted-foreground" />
             </div>
-            <p className="text-3xl font-black text-purple-600 mt-4">{contacts.filter(c => c.category === 'Lawyer').length}</p>
+            <p className="text-2xl font-bold mt-2">{contacts.length}</p>
           </div>
-          <div className="bg-card border border-border/40 p-5 rounded-3xl shadow-sm flex flex-col justify-between group hover:shadow-md transition-all">
+          <div className="bg-card border border-border/40 p-5 rounded-xl shadow-sm flex flex-col justify-between">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Govt Agencies</span>
-              <div className="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 group-hover:scale-110 transition-transform">
-                <Landmark size={18} />
-              </div>
+              <span className="text-sm font-medium text-muted-foreground">Lawyers & Notaries</span>
+              <Scale size={16} className="text-muted-foreground" />
             </div>
-            <p className="text-3xl font-black text-amber-600 mt-4">{contacts.filter(c => c.category === 'Government').length}</p>
+            <p className="text-2xl font-bold mt-2">{contacts.filter(c => c.category === 'Lawyer').length}</p>
           </div>
-          <div className="bg-card border border-border/40 p-5 rounded-3xl shadow-sm flex flex-col justify-between group hover:shadow-md transition-all">
+          <div className="bg-card border border-border/40 p-5 rounded-xl shadow-sm flex flex-col justify-between">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Legal Vendors</span>
-              <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 group-hover:scale-110 transition-transform">
-                <Store size={18} />
-              </div>
+              <span className="text-sm font-medium text-muted-foreground">Govt Agencies</span>
+              <Landmark size={16} className="text-muted-foreground" />
             </div>
-            <p className="text-3xl font-black text-blue-600 mt-4">{contacts.filter(c => c.category === 'Vendor').length}</p>
+            <p className="text-2xl font-bold mt-2">{contacts.filter(c => c.category === 'Government').length}</p>
+          </div>
+          <div className="bg-card border border-border/40 p-5 rounded-xl shadow-sm flex flex-col justify-between">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-muted-foreground">Legal Vendors</span>
+              <Store size={16} className="text-muted-foreground" />
+            </div>
+            <p className="text-2xl font-bold mt-2">{contacts.filter(c => c.category === 'Vendor').length}</p>
           </div>
         </div>
       )}
 
-      {/* Search & View Switcher Toolbar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-card border border-border/40 rounded-2xl p-4 shadow-sm">
-        <div className="relative flex-1 w-full">
-          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/50" />
-          <Input 
-            placeholder={`Search ${meta.title.toLowerCase()} by name, firm, agency, or notes...`} 
-            className="pl-10 text-sm bg-muted/30 border-border/20 rounded-xl h-10 w-full"
-            value={searchTerm}
-            onChange={(e) => handleSearchChange(e.target.value)}
-          />
+      {/* Search & View Switcher Toolbar (Shadcn Style) */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+        
+        {/* Left Side: Search + Filter */}
+        <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
+          {/* Search Bar */}
+          <div className="relative w-full sm:w-80">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input 
+              placeholder="Search contacts..." 
+              className="pl-9 h-9 text-sm rounded-md"
+              value={searchTerm}
+              onChange={(e) => handleSearchChange(e.target.value)}
+            />
+          </div>
+
+          {/* Shadcn Tabs style for categories */}
+          <div className="inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground w-full sm:w-auto overflow-x-auto hide-scrollbar">
+            {[
+              { id: 'all', label: 'All' },
+              { id: 'lawyer', label: 'Lawyers' },
+              { id: 'vendor', label: 'Vendors' },
+              { id: 'government', label: 'Government' },
+              { id: 'other', label: 'Others' }
+            ].map(cat => (
+              <button
+                key={cat.id}
+                onClick={() => setActiveCategory(cat.id as any)}
+                className={`inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                  activeCategory === cat.id 
+                    ? 'bg-background text-foreground shadow-sm' 
+                    : 'hover:text-foreground'
+                }`}
+              >
+                {cat.label}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* View Mode Toggle: Grid / Card vs Table */}
-        <div className="flex items-center bg-muted/40 p-1 rounded-xl border border-border/30 shrink-0 self-end sm:self-auto">
+        {/* View Mode Toggle */}
+        <div className="inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground self-end sm:self-auto">
           <button
             onClick={() => setViewMode('grid')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+            className={`inline-flex items-center justify-center whitespace-nowrap rounded-md px-2 py-1 text-sm font-medium transition-all ${
               viewMode === 'grid' 
-                ? 'bg-white dark:bg-zinc-800 text-indigo-600 shadow-sm' 
-                : 'text-muted-foreground hover:text-foreground'
+                ? 'bg-background text-foreground shadow-sm' 
+                : 'hover:text-foreground'
             }`}
           >
-            <LayoutGrid size={14} /> Card View
+            <LayoutGrid size={14} className="mr-1" /> Grid
           </button>
           <button
             onClick={() => setViewMode('table')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+            className={`inline-flex items-center justify-center whitespace-nowrap rounded-md px-2 py-1 text-sm font-medium transition-all ${
               viewMode === 'table' 
-                ? 'bg-white dark:bg-zinc-800 text-indigo-600 shadow-sm' 
-                : 'text-muted-foreground hover:text-foreground'
+                ? 'bg-background text-foreground shadow-sm' 
+                : 'hover:text-foreground'
             }`}
           >
-            <List size={14} /> Table View
+            <List size={14} className="mr-1" /> List
           </button>
         </div>
       </div>
@@ -578,53 +609,53 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
         </div>
       ) : viewMode === 'grid' ? (
         /* ── GRID / CARD VIEW ── */
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {paginatedContacts.map(contact => {
             const getInitials = (name: string) => name.replace(/(Adv\.|S\.H\.|M\.H\.|Dra\.|PT|Kantor Notaris)/gi, '').trim().substring(0, 2).toUpperCase();
-            const catColors = { Lawyer: 'from-purple-500 to-fuchsia-600 text-white', Government: 'from-amber-500 to-orange-600 text-white', Vendor: 'from-blue-500 to-cyan-600 text-white', Other: 'from-slate-500 to-slate-700 text-white' };
-            const catBg = catColors[contact.category] || catColors['Other'];
             return (
-              <div key={contact.id} className="bg-card border border-border/40 rounded-3xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col overflow-hidden group">
-                <div className={`h-16 bg-gradient-to-r ${catBg} opacity-90 relative`}>
-                  <div className="absolute right-3 top-3 bg-white/20 backdrop-blur-sm px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest text-white shadow-sm">{contact.category}</div>
-                </div>
-                <div className="px-5 pb-5 flex-1 flex flex-col">
-                  <div className="-mt-8 mb-3">
-                    <div className="w-16 h-16 rounded-2xl bg-white dark:bg-zinc-900 border-4 border-card shadow-sm flex items-center justify-center text-xl font-black text-indigo-900 dark:text-indigo-100 overflow-hidden relative">
-                      <div className={`absolute inset-0 bg-gradient-to-br ${catBg} opacity-10`}></div>
-                      {getInitials(contact.name)}
+              <div key={contact.id} className="rounded-lg border bg-card shadow-sm hover:shadow-md transition-shadow flex flex-col group">
+                {/* Card Header */}
+                <div className="p-5 pb-4 flex items-start gap-4 border-b">
+                  <div className="w-10 h-10 rounded-md border bg-muted flex items-center justify-center text-sm font-semibold text-muted-foreground shrink-0">
+                    {getInitials(contact.name)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="font-semibold text-sm text-foreground leading-tight truncate">{contact.name}</h3>
+                      <span className="inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium text-muted-foreground whitespace-nowrap shrink-0">{contact.category}</span>
                     </div>
+                    <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1 truncate"><Building2 size={11} className="shrink-0" /> {contact.organization}</p>
                   </div>
-                  <div className="space-y-1.5 mb-4">
-                    <h3 className="font-black text-base text-foreground tracking-tight leading-tight group-hover:text-indigo-600 transition-colors">{contact.name}</h3>
-                    <p className="text-xs text-muted-foreground flex items-center gap-1.5 font-medium"><Building2 size={13} className="text-muted-foreground/60 shrink-0" /> {contact.organization}</p>
-                  </div>
+                </div>
+                {/* Card Body */}
+                <div className="p-4 space-y-2 flex-1">
                   {contact.licenseNo && (
-                    <div className="mb-3 text-[10px] font-mono font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-zinc-800/50 px-2.5 py-1.5 rounded-lg w-fit flex items-center gap-1.5 border border-slate-200/50 dark:border-zinc-700/50">
-                      <ShieldCheck size={12} className="text-indigo-500" /> {contact.licenseNo}
+                    <div className="text-xs font-mono text-muted-foreground bg-muted px-2.5 py-1.5 rounded-md w-fit flex items-center gap-1.5">
+                      <ShieldCheck size={11} /> {contact.licenseNo}
                     </div>
                   )}
-                  {contact.notes && <p className="text-xs text-muted-foreground/80 leading-relaxed font-medium line-clamp-2 mb-4 flex-1">{contact.notes}</p>}
-                  <div className="space-y-2 pt-4 border-t border-border/40 mt-auto">
-                    <button onClick={() => copyToClipboard(contact.phone, `${contact.id}-phone`)} className="w-full flex items-center justify-between gap-2 text-xs font-bold text-foreground hover:bg-indigo-50 dark:hover:bg-indigo-950/20 px-2 py-1.5 rounded-lg transition-colors group/copy">
-                      <span className="flex items-center gap-2"><div className="w-5 h-5 rounded-md bg-indigo-50 dark:bg-indigo-950/30 flex items-center justify-center text-indigo-600"><Phone size={10} /></div>{contact.phone}</span>
-                      {copiedKey === `${contact.id}-phone` ? <Check size={12} className="text-emerald-500" /> : <Copy size={11} className="text-slate-300 group-hover/copy:text-indigo-400 transition-colors" />}
+                  {contact.notes && (
+                    <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{contact.notes}</p>
+                  )}
+                  <button onClick={() => copyToClipboard(contact.phone, `${contact.id}-phone`)} className="w-full flex items-center justify-between gap-2 text-xs text-foreground hover:bg-accent hover:text-accent-foreground px-2 py-1.5 rounded-md transition-colors group/copy">
+                    <span className="flex items-center gap-2"><Phone size={11} className="text-muted-foreground shrink-0" />{contact.phone}</span>
+                    {copiedKey === `${contact.id}-phone` ? <Check size={12} /> : <Copy size={11} className="text-muted-foreground/40 group-hover/copy:text-muted-foreground transition-colors" />}
+                  </button>
+                  {contact.email && contact.email !== '-' && (
+                    <button onClick={() => copyToClipboard(contact.email, `${contact.id}-email`)} className="w-full flex items-center justify-between gap-2 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground px-2 py-1.5 rounded-md transition-colors group/copy">
+                      <span className="flex items-center gap-2 truncate"><Mail size={11} className="shrink-0" /><span className="truncate">{contact.email}</span></span>
+                      {copiedKey === `${contact.id}-email` ? <Check size={12} className="shrink-0" /> : <Copy size={11} className="text-muted-foreground/40 group-hover/copy:text-muted-foreground transition-colors shrink-0" />}
                     </button>
-                    {contact.email && contact.email !== '-' && (
-                      <button onClick={() => copyToClipboard(contact.email, `${contact.id}-email`)} className="w-full flex items-center justify-between gap-2 text-xs font-medium text-muted-foreground hover:bg-slate-50 dark:hover:bg-zinc-800/50 px-2 py-1.5 rounded-lg transition-colors group/copy">
-                        <span className="flex items-center gap-2 truncate"><div className="w-5 h-5 rounded-md bg-slate-50 dark:bg-zinc-800/50 flex items-center justify-center text-slate-400 shrink-0"><Mail size={10} /></div><span className="truncate">{contact.email}</span></span>
-                        {copiedKey === `${contact.id}-email` ? <Check size={12} className="text-emerald-500 shrink-0" /> : <Copy size={11} className="text-slate-300 group-hover/copy:text-slate-400 transition-colors shrink-0" />}
-                      </button>
+                  )}
+                </div>
+                {/* Card Footer */}
+                <div className="px-4 py-3 border-t flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground"><MapPin size={11} /> {contact.city}</div>
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onClick={() => openEditModal(contact)} className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors"><Edit3 size={13} /></button>
+                    {isSuperAdmin && (
+                      <button onClick={() => setDeleteConfirm(contact)} title="Delete Contact" className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors"><Trash2 size={13} /></button>
                     )}
-                    <div className="flex items-center justify-between pt-1">
-                      <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-widest"><MapPin size={11} /> {contact.city}</div>
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => openEditModal(contact)} className="p-1.5 text-slate-400 hover:text-indigo-600 bg-slate-50 hover:bg-indigo-50 dark:bg-zinc-800 dark:hover:bg-indigo-950/50 rounded-lg transition-colors"><Edit3 size={13} /></button>
-                        {isSuperAdmin && (
-                          <button onClick={() => setDeleteConfirm(contact)} title="Delete Contact (Super Admin Only)" className="p-1.5 text-slate-400 hover:text-red-600 bg-slate-50 hover:bg-red-50 dark:bg-zinc-800 dark:hover:bg-red-950/40 rounded-lg transition-colors"><Trash2 size={13} /></button>
-                        )}
-                      </div>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -633,56 +664,56 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
         </div>
       ) : (
         /* ── TABLE VIEW ── */
-        <div className="bg-card border border-border/40 rounded-3xl shadow-sm overflow-hidden">
+        <div className="rounded-lg border bg-card overflow-hidden">
           <Table>
-            <TableHeader className="bg-muted/30">
-              <TableRow className="border-border/30">
-                <TableHead className="font-extrabold text-[10px] uppercase text-muted-foreground tracking-widest pl-6">Contact Details</TableHead>
-                <TableHead className="font-extrabold text-[10px] uppercase text-muted-foreground tracking-widest">Category</TableHead>
-                <TableHead className="font-extrabold text-[10px] uppercase text-muted-foreground tracking-widest">Phone</TableHead>
-                <TableHead className="font-extrabold text-[10px] uppercase text-muted-foreground tracking-widest">Email</TableHead>
-                <TableHead className="font-extrabold text-[10px] uppercase text-muted-foreground tracking-widest">City</TableHead>
-                <TableHead className="font-extrabold text-[10px] uppercase text-muted-foreground tracking-widest text-right pr-6">Actions</TableHead>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Contact Details</TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead>Phone</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>City</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {paginatedContacts.map(contact => {
                 const getInitials = (name: string) => name.replace(/(Adv\.|S\.H\.|M\.H\.|Dra\.|PT|Kantor Notaris)/gi, '').trim().substring(0, 2).toUpperCase();
-                const catColors = { Lawyer: 'text-purple-600 bg-purple-50 dark:bg-purple-950/30', Government: 'text-amber-600 bg-amber-50 dark:bg-amber-950/30', Vendor: 'text-blue-600 bg-blue-50 dark:bg-blue-950/30', Other: 'text-slate-600 bg-slate-50 dark:bg-zinc-800' };
+                const catColors: Record<string, string> = { Lawyer: 'bg-muted text-muted-foreground', Government: 'bg-muted text-muted-foreground', Vendor: 'bg-muted text-muted-foreground', Other: 'bg-muted text-muted-foreground' };
                 return (
                 <TableRow key={contact.id} className="border-border/20 hover:bg-muted/30 transition-colors group">
                   <TableCell className="py-4 pl-6">
                     <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm border border-white/50 ${catColors[contact.category] || catColors['Other']}`}>{getInitials(contact.name)}</div>
+                      <div className="w-9 h-9 rounded-md border bg-muted flex items-center justify-center text-sm font-semibold text-muted-foreground shrink-0">{getInitials(contact.name)}</div>
                       <div>
-                        <div className="font-bold text-sm text-foreground tracking-tight group-hover:text-indigo-600 transition-colors">{contact.name}</div>
-                        <div className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5 font-medium"><Building2 size={11} className="text-muted-foreground/60" /> {contact.organization}</div>
+                        <div className="font-medium text-sm text-foreground">{contact.name}</div>
+                        <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5"><Building2 size={11} /> {contact.organization}</div>
                       </div>
                     </div>
                   </TableCell>
                   <TableCell className="py-4">
-                    <span className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-lg ${ contact.category === 'Lawyer' ? 'bg-purple-100 text-purple-700 dark:bg-purple-950/50 dark:text-purple-300' : contact.category === 'Government' ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300' : contact.category === 'Vendor' ? 'bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300' : 'bg-slate-100 text-slate-700 dark:bg-zinc-800 dark:text-zinc-300'}`}>{contact.category}</span>
+                    <span className="inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium text-muted-foreground">{contact.category}</span>
                   </TableCell>
                   <TableCell className="py-4">
-                    <button onClick={() => copyToClipboard(contact.phone, `${contact.id}-phone`)} className="flex items-center gap-1.5 font-mono text-xs font-bold text-foreground hover:text-indigo-600 transition-colors group/cp">
+                    <button onClick={() => copyToClipboard(contact.phone, `${contact.id}-phone`)} className="flex items-center gap-1.5 font-mono text-xs text-foreground hover:text-foreground/70 transition-colors group/cp">
                       {contact.phone}
-                      {copiedKey === `${contact.id}-phone` ? <Check size={12} className="text-emerald-500" /> : <Copy size={11} className="text-slate-300 group-hover/cp:text-indigo-400 transition-colors" />}
+                      {copiedKey === `${contact.id}-phone` ? <Check size={12} className="text-foreground" /> : <Copy size={11} className="text-muted-foreground/40 group-hover/cp:text-muted-foreground transition-colors" />}
                     </button>
                   </TableCell>
                   <TableCell className="py-4 text-xs">
                     {contact.email && contact.email !== '-' ? (
-                      <button onClick={() => copyToClipboard(contact.email, `${contact.id}-email`)} className="flex items-center gap-1.5 text-muted-foreground hover:text-indigo-600 transition-colors group/ce font-medium">
+                      <button onClick={() => copyToClipboard(contact.email, `${contact.id}-email`)} className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors group/ce">
                         {contact.email}
-                        {copiedKey === `${contact.id}-email` ? <Check size={12} className="text-emerald-500" /> : <Copy size={11} className="text-slate-300 group-hover/ce:text-indigo-400 transition-colors" />}
+                        {copiedKey === `${contact.id}-email` ? <Check size={12} className="text-foreground" /> : <Copy size={11} className="text-muted-foreground/40 group-hover/ce:text-muted-foreground transition-colors" />}
                       </button>
-                    ) : '—'}
+                    ) : <span className="text-muted-foreground/40">—</span>}
                   </TableCell>
-                  <TableCell className="py-4 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">{contact.city}</TableCell>
+                  <TableCell className="py-4 text-xs text-muted-foreground">{contact.city}</TableCell>
                   <TableCell className="py-4 text-right pr-6">
                     <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => openEditModal(contact)} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded-lg transition-colors"><Edit3 size={15} /></button>
+                      <button onClick={() => openEditModal(contact)} className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors"><Edit3 size={14} /></button>
                       {isSuperAdmin && (
-                        <button onClick={() => setDeleteConfirm(contact)} title="Delete Contact (Super Admin Only)" className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors"><Trash2 size={15} /></button>
+                        <button onClick={() => setDeleteConfirm(contact)} title="Delete Contact (Super Admin Only)" className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors"><Trash2 size={14} /></button>
                       )}
                     </div>
                   </TableCell>
@@ -742,27 +773,21 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
 
       {/* ── ADD / EDIT CONTACT MODAL ── */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-lg p-0 overflow-hidden font-sans border border-border/60 shadow-2xl rounded-2xl">
-          <DialogHeader className="p-6 pb-4 border-b border-border/30 bg-muted/20">
-            <div className="flex items-center gap-2 text-indigo-600 mb-1">
-              <UserPlus size={20} />
-              <span className="text-[10px] font-black uppercase tracking-widest">Phone Directory</span>
-            </div>
-            <DialogTitle className="text-xl font-black text-foreground">
-              {editingContact ? 'Edit Contact' : 'Add New Contact'}
-            </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground mt-1">
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{editingContact ? 'Edit Contact' : 'Add New Contact'}</DialogTitle>
+            <DialogDescription>
               {editingContact ? 'Update contact details in the directory.' : 'Add legal counsel, notary, vendor, or government contact.'}
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleFormSubmit} className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
-            <div>
-              <label className="text-[11px] font-bold text-foreground mb-1 block">Category *</label>
+          <form onSubmit={handleFormSubmit} className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Category <span className="text-destructive">*</span></label>
               <select
                 value={formData.category}
                 onChange={e => setFormData({ ...formData, category: e.target.value as any })}
-                className="w-full h-10 px-3 text-sm bg-muted/30 border border-border/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 font-semibold"
+                className="w-full h-9 px-3 text-sm rounded-md border border-input bg-transparent focus:outline-none focus:ring-1 focus:ring-ring"
               >
                 <option value="Lawyer">Lawyer / Notary</option>
                 <option value="Government">Government Agency</option>
@@ -771,76 +796,71 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
               </select>
             </div>
 
-            <div>
-              <label className="text-[11px] font-bold text-foreground mb-1 block">Full Name / Title *</label>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Full Name / Title <span className="text-destructive">*</span></label>
               <Input
                 required
                 placeholder="e.g. Adv. Herman Suryadi, S.H., M.H."
                 value={formData.name}
                 onChange={e => setFormData({ ...formData, name: e.target.value })}
-                className="h-10 text-sm bg-muted/30"
               />
             </div>
 
-            <div>
-              <label className="text-[11px] font-bold text-foreground mb-1 block">Organization / Law Firm</label>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Organization / Law Firm</label>
               <Input
-                placeholder="e.g. Herman & Partners Law Firm / Kemenkumham"
+                placeholder="e.g. Herman & Partners Law Firm"
                 value={formData.organization}
                 onChange={e => setFormData({ ...formData, organization: e.target.value })}
-                className="h-10 text-sm bg-muted/30"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-[11px] font-bold text-foreground mb-1 block">Phone Number *</label>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Phone Number <span className="text-destructive">*</span></label>
                 <Input
                   required
                   placeholder="+62 811-xxx-xxx"
                   value={formData.phone}
                   onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                  className="h-10 text-sm bg-muted/30 font-mono"
+                  className="font-mono"
                 />
               </div>
-
-              <div>
-                <label className="text-[11px] font-bold text-foreground mb-1 block">City</label>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">City</label>
                 <Input
-                  placeholder="e.g. Jakarta Selatan"
+                  placeholder="Jakarta"
                   value={formData.city}
                   onChange={e => setFormData({ ...formData, city: e.target.value })}
-                  className="h-10 text-sm bg-muted/30"
                 />
               </div>
             </div>
 
-            <div>
-              <label className="text-[11px] font-bold text-foreground mb-1 block">Email Address</label>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Email Address</label>
               <Input
                 type="email"
                 placeholder="info@firm.co.id"
                 value={formData.email}
                 onChange={e => setFormData({ ...formData, email: e.target.value })}
-                className="h-10 text-sm bg-muted/30"
               />
             </div>
 
-            <div>
-              <label className="text-[11px] font-bold text-foreground mb-1 block">Notes / Specialization</label>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Notes / Specialization</label>
               <textarea
                 rows={3}
                 placeholder="Specialization, deed services, OSS permits..."
                 value={formData.notes}
                 onChange={e => setFormData({ ...formData, notes: e.target.value })}
-                className="w-full p-3 text-xs bg-muted/30 border border-border/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium resize-none"
+                className="w-full px-3 py-2 text-sm rounded-md border border-input bg-transparent placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring resize-none"
               />
             </div>
 
-            <DialogFooter className="pt-4 border-t border-border/30 gap-2 flex sm:justify-end">
-              <Button type="button" variant="outline" size="sm" onClick={() => setIsModalOpen(false)} className="text-xs font-bold rounded-xl h-9">Cancel</Button>
-              <Button type="submit" disabled={isSubmitting} size="sm" className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl h-9 px-5">
-                <Save size={14} className="mr-1.5" /> {isSubmitting ? 'Saving...' : 'Save Contact'}
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>Cancel</Button>
+              <Button type="submit" disabled={isSubmitting}>
+                <Save size={14} className="mr-2" /> {isSubmitting ? 'Saving...' : 'Save Contact'}
               </Button>
             </DialogFooter>
           </form>
@@ -849,20 +869,16 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
 
       {/* ── DELETE CONFIRMATION DIALOG ── */}
       <Dialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
-        <DialogContent className="sm:max-w-md font-sans border border-border/60 shadow-2xl rounded-2xl">
-          <DialogHeader className="p-6 pb-4 border-b border-border/30 bg-muted/20">
-            <div className="flex items-center gap-2 text-red-500 mb-1">
-              <AlertTriangle size={20} />
-              <span className="text-[10px] font-black uppercase tracking-widest text-red-500">Delete Confirmation</span>
-            </div>
-            <DialogTitle className="text-xl font-black text-foreground">Delete Contact?</DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground mt-1">
-              Are you sure you want to delete <strong>{deleteConfirm?.name}</strong> from the directory?
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Delete Contact?</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete <strong>{deleteConfirm?.name}</strong> from the directory? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="p-6 pt-4 border-t border-border/30 gap-2 flex sm:justify-end">
-            <Button variant="outline" size="sm" onClick={() => setDeleteConfirm(null)} className="text-xs font-bold rounded-xl h-9">Cancel</Button>
-            <Button onClick={handleConfirmDelete} size="sm" className="bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-xl h-9 px-5">Confirm Delete</Button>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteConfirm(null)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleConfirmDelete}>Delete Contact</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
