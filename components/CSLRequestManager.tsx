@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Search, RefreshCcw, Clock, CheckCircle2, AlertTriangle, BarChart2, Star, MessageSquare, Send, Plus, Paperclip, Upload, Link, X, FolderOpen, ExternalLink, Shield, Trash2, FileText, Activity, Pencil } from 'lucide-react';
+import { Search, RefreshCcw, Clock, CheckCircle2, AlertTriangle, BarChart2, Star, MessageSquare, Send, Plus, Paperclip, Upload, Link, X, FolderOpen, ExternalLink, Shield, Trash2, FileText, Activity, Pencil, Loader2, TrendingUp, Users, Calendar, Info, Settings2, ChevronRight, Ticket, Filter, SlidersHorizontal, UserCircle2, Building, ArrowUpRight, MoreVertical, Eye, Target } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase, supabaseAdmin } from '../lib/supabaseClient';
 import { UserAccount } from '../types';
@@ -8,10 +8,21 @@ import { notifyRequestUpdate, notifyUserMentioned } from '../utils/cslNotificati
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Separator } from '@/components/ui/separator';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import { CSLCreateRequest } from './CSLCreateRequest';
 
@@ -62,35 +73,43 @@ interface CSLRequestManagerProps {
   view?: 'all' | 'mine' | 'categories';
 }
 
-// ── SLA Status Styling ────────────────────────────────────────────────────────
+// ── SLA & Status Styling (Modern Informative Badge Style) ───────────────
 const SLA_BADGE: Record<SLAStatus, { label: string; className: string }> = {
-  ON_TRACK: { label: 'On Track', className: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300' },
-  DUE_SOON: { label: 'Due Soon', className: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' },
-  DUE_TODAY: { label: 'Due Today', className: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300' },
-  OVERDUE: { label: 'Overdue', className: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' },
-  COMPLETED_ON_TIME: { label: 'Completed ✓', className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' },
-  COMPLETED_LATE: { label: 'Completed Late', className: 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400' },
+  ON_TRACK: { label: 'On Track', className: 'border-emerald-500/20 text-emerald-700 dark:text-emerald-300 bg-emerald-500/10' },
+  DUE_SOON: { label: 'Due Soon', className: 'border-amber-500/20 text-amber-700 dark:text-amber-300 bg-amber-500/10 font-medium' },
+  DUE_TODAY: { label: 'Due Today', className: 'border-orange-500/30 text-orange-700 dark:text-orange-300 bg-orange-500/15 font-semibold' },
+  OVERDUE: { label: 'Overdue', className: 'border-rose-500/30 bg-rose-500/15 text-rose-700 dark:text-rose-300 font-semibold' },
+  COMPLETED_ON_TIME: { label: 'Completed ✓', className: 'border-emerald-500/20 text-emerald-700 dark:text-emerald-300 bg-emerald-500/10' },
+  COMPLETED_LATE: { label: 'Completed Late', className: 'border-zinc-500/20 text-zinc-600 dark:text-zinc-400 bg-zinc-500/10' },
 };
 
 const STATUS_BADGE: Record<string, string> = {
-  DRAFT: 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300',
-  SUBMITTED: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
-  ACKNOWLEDGED: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300',
-  IN_REVIEW: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300',
-  REVIEW_USER: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
-  PROCESSING: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300',
-  COMPLETED: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
-  RESPONDED: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300',
-  CLOSED: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
-  REJECTED: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
-  CANCELLED: 'bg-zinc-100 text-zinc-500',
+  DRAFT: 'border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 bg-zinc-100/80 dark:bg-zinc-800/60',
+  SUBMITTED: 'border-sky-500/25 text-sky-700 dark:text-sky-300 bg-sky-500/10 font-medium',
+  ACKNOWLEDGED: 'border-indigo-500/25 text-indigo-700 dark:text-indigo-300 bg-indigo-500/10 font-medium',
+  IN_REVIEW: 'border-blue-500/25 text-blue-700 dark:text-blue-300 bg-blue-500/10 font-medium',
+  REVIEW_USER: 'border-purple-500/25 text-purple-700 dark:text-purple-300 bg-purple-500/10 font-medium',
+  PROCESSING: 'border-amber-500/25 text-amber-700 dark:text-amber-300 bg-amber-500/10 font-medium',
+  COMPLETED: 'border-emerald-500/25 text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 font-semibold',
+  RESPONDED: 'border-teal-500/25 text-teal-700 dark:text-teal-300 bg-teal-500/10 font-medium',
+  CLOSED: 'border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 font-medium',
+  REJECTED: 'border-rose-500/25 text-rose-700 dark:text-rose-300 bg-rose-500/10 font-medium',
+  CANCELLED: 'border-zinc-400 dark:border-zinc-600 text-muted-foreground bg-muted/40 line-through font-medium',
 };
 
 const PRIORITY_BADGE: Record<string, string> = {
-  Low: 'bg-slate-100 text-slate-600',
-  Medium: 'bg-blue-100 text-blue-700',
-  High: 'bg-amber-100 text-amber-700',
-  Critical: 'bg-red-100 text-red-700',
+  Low: 'border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 bg-zinc-100/80 dark:bg-zinc-800/60',
+  Medium: 'border-blue-500/25 text-blue-700 dark:text-blue-300 bg-blue-500/10',
+  High: 'border-amber-500/25 text-amber-700 dark:text-amber-300 bg-amber-500/10 font-medium',
+  Critical: 'border-rose-500/30 text-rose-700 dark:text-rose-300 bg-rose-500/15 font-semibold',
+};
+
+const formatStatusText = (status: string) => {
+  if (!status) return '';
+  return status
+    .split('_')
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(' ');
 };
 
 // ── MOCK DATA (used when DB is offline) ──────────────────────────────────────
@@ -119,55 +138,51 @@ const MOCK_REQUESTS: CSLRequest[] = [
     request_number: 'CSL-202608-0002',
     category_id: 2,
     category_name: 'Legal Review',
-    requester_name: 'Rina Agustina',
-    requester_email: 'rina@gesit.co.id',
-    department: 'Operations',
+    requester_name: 'Dewi Lestari',
+    requester_email: 'dewi@gesit.co.id',
+    department: 'HR & GA',
     company: 'PT GESIT',
-    assigned_pic_name: undefined,
+    assigned_pic_name: 'Senior Counsel',
     priority: 'Medium',
-    status: 'SUBMITTED',
-    description: 'Review vendor NDA draft from PT Teknologi Maju.',
-    progress: 0,
-    sla_target_days: 3,
-    sla_due_date: new Date(Date.now() - 1 * 86400000).toISOString(),
+    status: 'PROCESSING',
+    description: 'Draft employment contract template for management level.',
+    progress: 70,
+    sla_target_days: 5,
+    sla_due_date: new Date(Date.now() + 1 * 86400000).toISOString(),
     created_at: new Date(Date.now() - 4 * 86400000).toISOString(),
     updated_at: new Date().toISOString(),
   },
   {
     id: 3,
     request_number: 'CSL-202608-0003',
-    category_id: 3,
-    category_name: 'Corporate Secretary',
-    requester_name: 'Ahmad Fauzi',
-    requester_email: 'ahmad@gesit.co.id',
-    department: 'Management',
+    category_id: 8,
+    category_name: 'Document Request',
+    requester_name: 'Agus Purnomo',
+    requester_email: 'agus@gesit.co.id',
+    department: 'Operations',
     company: 'PT GESIT',
-    assigned_pic_name: 'Secretary Officer',
     priority: 'Low',
-    status: 'COMPLETED',
-    description: 'Prepare board resolution for new bank account opening.',
-    progress: 100,
-    sla_target_days: 5,
-    sla_due_date: new Date(Date.now() - 2 * 86400000).toISOString(),
-    completed_at: new Date(Date.now() - 3 * 86400000).toISOString(),
-    created_at: new Date(Date.now() - 7 * 86400000).toISOString(),
+    status: 'SUBMITTED',
+    description: 'Permintaan salinan Akta Perubahan Direksi tahun 2024.',
+    progress: 0,
+    sla_target_days: 2,
+    sla_due_date: new Date(Date.now() - 1 * 86400000).toISOString(),
+    created_at: new Date(Date.now() - 3 * 86400000).toISOString(),
     updated_at: new Date().toISOString(),
-    csl_response: 'Board resolution has been drafted and signed.',
-    csl_response_at: new Date(Date.now() - 3 * 86400000).toISOString(),
   },
 ];
 
 const MOCK_CATEGORIES: CSLCategory[] = [
-  { id: 1, code: 'AGR', name: 'Agreement', sla_days: 5, description: 'Contract drafting, revision, and review requests' },
-  { id: 2, code: 'LREV', name: 'Legal Review', sla_days: 5, description: 'Review of external templates and business documents' },
-  { id: 3, code: 'CORPSECR', name: 'Corporate Secretary', sla_days: 5, description: 'Board minutes, resolutions, and statutory filings' },
-  { id: 4, code: 'OSS', name: 'OSS', sla_days: 14, description: 'OSS system permits and licensing registration' },
-  { id: 5, code: 'LIC', name: 'Licensing', sla_days: 10, description: 'General regional and sector-specific licenses' },
-  { id: 6, code: 'NOTARY', name: 'Notary', sla_days: 7, description: 'Deed preparation and notarization coordination' },
-  { id: 7, code: 'LEGALOP', name: 'Legal Opinion', sla_days: 5, description: 'Formal written legal analysis and advisory opinions' },
-  { id: 8, code: 'DOCREQ', name: 'Document Request', sla_days: 2, description: 'Retrieval of corporate documents or permits' },
-  { id: 9, code: 'COMPLIANCE', name: 'Compliance', sla_days: 5, description: 'Regulatory reports and compliance reviews' },
-  { id: 10, code: 'OTHER', name: 'Other', sla_days: 5, description: 'General and miscellaneous support' },
+  { id: 1, code: 'AGR', name: 'Agreement', sla_days: 5, description: 'Penyusunan & review perjanjian kerjasama bisnis' },
+  { id: 2, code: 'LREV', name: 'Legal Review', sla_days: 5, description: 'Kajian hukum dokumen operasional & regulasi' },
+  { id: 3, code: 'CORPSECR', name: 'Corporate Secretary', sla_days: 5, description: 'Rapat Direksi/Komisaris, RUPS, perizinan korporasi' },
+  { id: 4, code: 'OSS', name: 'OSS & Perizinan', sla_days: 14, description: 'Pengurusan NIB, izin usaha melalui sistem OSS' },
+  { id: 5, code: 'LIC', name: 'Licensing', sla_days: 10, description: 'Perpanjangan izin operasional, sertifikasi & lisensi' },
+  { id: 6, code: 'NOTARY', name: 'Notaris & Akta', sla_days: 7, description: 'Pengurusan akta notaris, pendaftaran Kemenkumham' },
+  { id: 7, code: 'LEGALOP', name: 'Legal Opinion', sla_days: 5, description: 'Pendapat hukum formal untuk transaksi strategis' },
+  { id: 8, code: 'DOCREQ', name: 'Permintaan Dokumen', sla_days: 2, description: 'Salinan akta, legalitas perusahaan, SK Kemenkumham' },
+  { id: 9, code: 'COMPLIANCE', name: 'Kepatuhan Hukum', sla_days: 5, description: 'Monitoring kepatuhan regulasi industri terkini' },
+  { id: 10, code: 'OTHER', name: 'Lainnya', sla_days: 5, description: 'Konsultasi hukum & kebutuhan administrasi legal lainnya' },
 ];
 
 // ── Categories View ───────────────────────────────────────────────────────────
@@ -176,17 +191,19 @@ const CategoriesView: React.FC<{ categories: CSLCategory[] }> = ({ categories })
     <PageHeader title="Request Categories" description="SLA configuration by request type" />
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {categories.map(cat => (
-        <div key={cat.id} className="bg-card border border-border/10 rounded-xl p-5 hover:shadow-md transition-all">
-          <div className="flex items-start justify-between mb-3">
-            <div>
-              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{cat.code}</span>
-              <h3 className="text-sm font-bold text-foreground mt-0.5">{cat.name}</h3>
+        <div key={cat.id} className="rounded-lg border bg-card p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+          <div>
+            <div className="flex items-start justify-between gap-2 mb-2">
+              <span className="font-mono text-xs text-muted-foreground font-semibold px-2 py-0.5 rounded-md bg-muted border">
+                {cat.code}
+              </span>
+              <span className="inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                {cat.sla_days}d SLA
+              </span>
             </div>
-            <span className="text-xs font-black text-primary bg-primary/10 rounded-lg px-2.5 py-1">
-              {cat.sla_days}d SLA
-            </span>
+            <h3 className="text-sm font-semibold text-foreground leading-snug">{cat.name}</h3>
+            <p className="text-xs text-muted-foreground mt-2 leading-relaxed line-clamp-3">{cat.description}</p>
           </div>
-          <p className="text-xs text-muted-foreground leading-relaxed">{cat.description}</p>
         </div>
       ))}
     </div>
@@ -217,8 +234,10 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
 
   // New Comment State
   const [newComment, setNewComment] = useState('');
+  const [isInternalComment, setIsInternalComment] = useState(false);
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [mentionState, setMentionState] = useState<{ active: boolean, query: string, index: number }>({ active: false, query: '', index: 0 });
+  const chatEndRef = useRef<HTMLDivElement>(null);
 
   // Document Upload State (GDrive)
   const [requestDocuments, setRequestDocuments] = useState<any[]>([]);
@@ -226,6 +245,8 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
   const [docFile, setDocFile] = useState<File | null>(null);
   const docFileRef = useRef<HTMLInputElement>(null);
   const [isSubmittingDoc, setIsSubmittingDoc] = useState(false);
+  const [docUploadProgress, setDocUploadProgress] = useState(0);
+  const [docUploadStatus, setDocUploadStatus] = useState('');
   const [showDocForm, setShowDocForm] = useState(false);
 
   const roleLower = (currentUser?.role || '').trim().toLowerCase();
@@ -246,7 +267,7 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
     return isSuperAdmin || isAdmin || isStaff || (currentUser?.groups || []).some(g => ['admin', 'csl_admin', 'csl_staff'].includes(g.toLowerCase()));
   }, [isSuperAdmin, isAdmin, isStaff, currentUser]);
 
-  const canDelete = isSuperAdmin;
+  const canDelete = isSuperAdmin || isAdmin;
   const canEdit = isSuperAdmin || isAdmin;
   const canApprove = isSuperAdmin || isAdmin;
 
@@ -591,7 +612,7 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
 
     try {
       const hasSpecificMention = cslStaffUsers.some(u => newComment.includes(`@${u.fullName}`));
-      const isInternal = isCslTeam && (newComment.includes('@admin') || hasSpecificMention);
+      const isInternal = isInternalComment || (isCslTeam && (newComment.includes('@admin') || hasSpecificMention));
       if (!useMock) {
         const { error: insertErr } = await supabase.from('csl_request_logs').insert([{
           request_id: selectedRequest.id,
@@ -603,7 +624,7 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
           is_internal: isInternal,
         }]);
         if (insertErr) {
-          alert(`Gagal mengirim komentar: ${insertErr.message}`);
+          toast.error(`Gagal mengirim komentar: ${insertErr.message}`);
           setIsSubmittingComment(false);
           return;
         }
@@ -619,7 +640,6 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
           // If it's an internal note, notify specifically mentioned users
           const mentionedUsers = cslStaffUsers.filter(u => newComment.includes(`@${u.fullName}`));
           for (const u of mentionedUsers) {
-            // Avoid sending email to oneself if they somehow tag themselves
             if (u.email !== currentUser?.email) {
               await notifyUserMentioned(
                 selectedRequest,
@@ -655,8 +675,12 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
         }]);
       }
       setNewComment('');
+      setIsInternalComment(false);
+      setTimeout(() => {
+        chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
     } catch (err: any) {
-      alert(`Error tidak terduga: ${err?.message || 'Unknown error'}`);
+      toast.error(`Error tidak terduga: ${err?.message || 'Unknown error'}`);
     } finally {
       setIsSubmittingComment(false);
     }
@@ -667,6 +691,8 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
     if (!docForm.gdrive_url.trim() && !docFile) return;
 
     setIsSubmittingDoc(true);
+    setDocUploadProgress(15);
+    setDocUploadStatus('Menyiapkan berkas...');
 
     try {
       if (!useMock) {
@@ -674,6 +700,9 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
         let fileId = null;
 
         if (docFile) {
+          setDocUploadProgress(30);
+          setDocUploadStatus(`Membaca ${docFile.name}...`);
+
           // Convert to Base64
           const toBase64 = (file: File) => new Promise<string>((resolve, reject) => {
             const reader = new FileReader();
@@ -683,6 +712,9 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
           });
 
           const base64 = await toBase64(docFile);
+
+          setDocUploadProgress(55);
+          setDocUploadStatus('Mengunggah ke Google Drive...');
 
           // Call edge function
           const { data: uploadData, error: uploadError } = await supabase.functions.invoke('upload-to-gdrive', {
@@ -699,6 +731,8 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
             throw new Error(uploadError?.message || uploadData?.error || 'Gagal upload ke Google Drive');
           }
 
+          setDocUploadProgress(85);
+          setDocUploadStatus('Menyimpan informasi dokumen...');
           finalGdriveUrl = uploadData.gdriveUrl;
           fileId = uploadData.fileId;
         }
@@ -719,6 +753,9 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
           setIsSubmittingDoc(false);
           return;
         }
+
+        setDocUploadProgress(100);
+        setDocUploadStatus('Selesai!');
 
         // Notify requester or CSL staff about new document
         const attachment = { name: docForm.doc_name.trim(), url: finalGdriveUrl };
@@ -753,15 +790,33 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
           .eq('request_id', selectedRequest.id)
           .order('created_at', { ascending: true });
         if (logs) setRequestLogs(logs);
+      } else {
+        setDocUploadProgress(100);
+        setDocUploadStatus('Selesai (Mock)!');
+        setRequestDocuments(prev => [{
+          id: Date.now(),
+          request_id: selectedRequest.id,
+          doc_name: docForm.doc_name.trim(),
+          doc_type: docForm.doc_type || 'Lainnya',
+          doc_url: docForm.gdrive_url || '#',
+          gdrive_url: docForm.gdrive_url || '#',
+          uploaded_by_name: currentUser?.fullName || 'Staff CSL',
+          created_at: new Date().toISOString(),
+        }, ...prev]);
       }
 
       setDocForm({ doc_name: '', doc_type: '', gdrive_url: '' });
       setDocFile(null);
       setShowDocForm(false);
+      toast.success('Dokumen berhasil dilampirkan.');
     } catch (err: any) {
       alert(`Error tidak terduga: ${err?.message || 'Unknown error'}`);
     } finally {
       setIsSubmittingDoc(false);
+      setTimeout(() => {
+        setDocUploadProgress(0);
+        setDocUploadStatus('');
+      }, 800);
     }
   };
 
@@ -815,119 +870,246 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
         </div>
       </PageHeader>
 
-      {/* SLA Stat Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/25 rounded-xl p-4">
-          <div className="flex items-center gap-2 mb-1">
-            <CheckCircle2 size={16} className="text-emerald-600 dark:text-emerald-400" />
-            <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700 dark:text-emerald-300">On Track</span>
+      {/* SLA Stat Cards (Exact Shadcn Card style from Directory) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          {
+            label: 'On Track',
+            value: slaStats.onTrack,
+            icon: CheckCircle2,
+            sub: 'Active, within SLA',
+          },
+          {
+            label: 'Due Soon',
+            value: slaStats.dueSoon + slaStats.dueToday,
+            icon: Clock,
+            sub: 'Approaching deadline',
+          },
+          {
+            label: 'Overdue',
+            value: slaStats.overdue,
+            icon: AlertTriangle,
+            sub: 'Past SLA deadline',
+          },
+          {
+            label: 'Total Requests',
+            value: slaStats.total,
+            icon: BarChart2,
+            sub: `${slaStats.onTime} completed on time`,
+          },
+        ].map(({ label, value, icon: Icon, sub }) => (
+          <div key={label} className="bg-card border border-border/40 p-5 rounded-xl shadow-sm flex flex-col justify-between">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-muted-foreground">{label}</span>
+              <Icon size={16} className="text-muted-foreground" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold mt-2 text-foreground">{value}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>
+            </div>
           </div>
-          <p className="text-3xl font-black text-emerald-700 dark:text-emerald-300">{slaStats.onTrack}</p>
-        </div>
-        <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/25 rounded-xl p-4">
-          <div className="flex items-center gap-2 mb-1">
-            <Clock size={16} className="text-amber-600 dark:text-amber-400" />
-            <span className="text-[10px] font-black uppercase tracking-widest text-amber-700 dark:text-amber-300">Due Soon</span>
-          </div>
-          <p className="text-3xl font-black text-amber-700 dark:text-amber-300">{slaStats.dueSoon + slaStats.dueToday}</p>
-        </div>
-        <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/25 rounded-xl p-4">
-          <div className="flex items-center gap-2 mb-1">
-            <AlertTriangle size={16} className="text-red-600 dark:text-red-400" />
-            <span className="text-[10px] font-black uppercase tracking-widest text-red-700 dark:text-red-300">Overdue</span>
-          </div>
-          <p className="text-3xl font-black text-red-700 dark:text-red-300">{slaStats.overdue}</p>
-        </div>
-        <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/25 rounded-xl p-4">
-          <div className="flex items-center gap-2 mb-1">
-            <BarChart2 size={16} className="text-blue-600 dark:text-blue-400" />
-            <span className="text-[10px] font-black uppercase tracking-widest text-blue-700 dark:text-blue-300">Total</span>
-          </div>
-          <p className="text-3xl font-black text-blue-700 dark:text-blue-300">{slaStats.total}</p>
-        </div>
+        ))}
       </div>
 
-      {/* Filter Bar */}
-      <div className="flex flex-col md:flex-row items-center gap-3 bg-card border border-border/10 rounded-xl p-4">
-        <div className="relative flex-1 w-full">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/50" />
-          <Input
-            placeholder="Search by number, requester, category..."
-            className="pl-9 text-sm bg-muted/30 border-none focus-visible:ring-0"
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-          />
-        </div>
-        <div className="flex gap-2 flex-wrap">
-          {['ALL', 'SUBMITTED', 'IN_REVIEW', 'PROCESSING', 'REVIEW_USER', 'COMPLETED', 'OVERDUE'].map(s => (
-            <button
-              key={s}
-              onClick={() => setStatusFilter(s)}
-              className={`text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg border transition-all ${statusFilter === s
-                ? 'bg-primary text-primary-foreground border-primary'
-                : 'border-border/20 text-muted-foreground hover:border-primary/40'
+      {/* Search & Filter Toolbar (Exact Shadcn Style as Directory) */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+        {/* Left Side: Search + Filter Tabs */}
+        <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
+          {/* Search Bar */}
+          <div className="relative w-full sm:w-80">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input 
+              placeholder="Search by number, requester, description..." 
+              className="pl-9 h-9 text-sm rounded-md"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+
+          {/* Shadcn Tabs style for status */}
+          <div className="inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground w-full sm:w-auto overflow-x-auto hide-scrollbar">
+            {[
+              { id: 'ALL', label: 'All' },
+              { id: 'SUBMITTED', label: 'Submitted' },
+              { id: 'IN_REVIEW', label: 'In Review' },
+              { id: 'PROCESSING', label: 'Processing' },
+              { id: 'REVIEW_USER', label: 'Review User' },
+              { id: 'COMPLETED', label: 'Completed' },
+              { id: 'OVERDUE', label: 'Overdue' }
+            ].map(cat => (
+              <button
+                key={cat.id}
+                onClick={() => setStatusFilter(cat.id)}
+                className={`inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                  statusFilter === cat.id 
+                    ? 'bg-background text-foreground shadow-sm' 
+                    : 'hover:text-foreground'
                 }`}
-            >
-              {s === 'ALL' ? 'All' : s.replace(/_/g, ' ')}
-            </button>
-          ))}
+              >
+                {cat.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Requests Table */}
+      {/* Content Rendering: Table */}
       {isLoading ? (
-        <div className="py-20 flex flex-col items-center gap-3 text-muted-foreground">
-          <RefreshCcw className="animate-spin" size={28} />
-          <p className="text-[10px] font-bold uppercase tracking-widest">Loading requests...</p>
+        <div className="bg-card border border-border/40 rounded-xl p-12 text-center text-muted-foreground flex items-center justify-center gap-2 font-medium text-sm">
+          <Loader2 className="h-5 w-5 animate-spin text-primary" /> Loading requests...
         </div>
       ) : filtered.length === 0 ? (
-        <div className="py-20 text-center text-muted-foreground/50 text-[10px] font-bold uppercase tracking-widest">
-          No requests found.
+        <div className="bg-card border border-border/40 rounded-xl p-12 text-center text-muted-foreground flex flex-col items-center justify-center gap-2">
+          <Ticket size={32} className="opacity-30" />
+          <p className="font-semibold text-sm text-foreground">No requests found</p>
+          <p className="text-xs text-muted-foreground">Try adjusting your search query or filter criteria.</p>
         </div>
       ) : (
-        <div className="bg-card border border-border/10 rounded-xl overflow-hidden shadow-sm">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader className="bg-muted/30">
-                <TableRow className="border-border/10">
-                  {view === 'mine' ? (
-                    [...['Request No.', 'Deskripsi', 'PIC', 'Tanggal Request', 'Status', 'SLA Due'], ...((canEdit || canDelete) ? ['Actions'] : [])].map(h => (
-                      <TableHead key={h} className={`text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground/70 whitespace-nowrap ${h === 'Actions' ? 'text-right' : ''}`}>{h}</TableHead>
-                    ))
-                  ) : (
-                    [...['Request No.', 'Deskripsi', 'Pemohon', 'PIC', 'Status', 'SLA Due', 'SLA Status'], ...((canEdit || canDelete) ? ['Actions'] : [])].map(h => (
-                      <TableHead key={h} className={`text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground/70 whitespace-nowrap ${h === 'Actions' ? 'text-right' : ''}`}>{h}</TableHead>
-                    ))
-                  )}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.map(req => {
-                  const displaySlaDueDate = req.required_date || req.sla_due_date;
-                  const slaStatus = getSlaStatus(displaySlaDueDate, req.status, req.completed_at);
-                  const slaBadge = SLA_BADGE[slaStatus];
-                  const dueDate = new Date(displaySlaDueDate).toLocaleDateString('en-GB');
-                  const requestDate = new Date(req.created_at).toLocaleDateString('en-GB');
-                  const catName = categories.find(c => c.id === req.category_id)?.name || req.category_name || '-';
+        <div className="rounded-xl border border-border/80 bg-card shadow-sm overflow-hidden">
+          {/* Card Header */}
+          <div className="px-6 py-4 border-b border-border/60 flex flex-wrap items-center justify-between gap-3 bg-card">
+            <div>
+              <h3 className="font-semibold text-sm text-foreground">Daftar Permintaan CSL</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">Kelola dan pantau seluruh tiket permintaan Legal &amp; Corporate Secretary</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-mono text-muted-foreground bg-muted/50 border border-border/50 px-2.5 py-1 rounded-md">
+                {filtered.length} Request
+              </span>
+            </div>
+          </div>
 
-                  if (view === 'mine') {
-                    return (
-                      <TableRow key={req.id} onClick={() => handleRowClick(req)} className="group border-border/10 hover:bg-muted/30 transition-colors cursor-pointer">
-                        <TableCell className="font-mono text-xs font-bold text-primary">{req.request_number}</TableCell>
-                        <TableCell className="text-xs max-w-xs truncate font-medium text-foreground">{req.description}</TableCell>
-                        <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{req.assigned_pic_name || <span className="italic opacity-40">Unassigned</span>}</TableCell>
-                        <TableCell className="font-mono text-xs text-muted-foreground">{requestDate}</TableCell>
-                        <TableCell>
-                          <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md ${STATUS_BADGE[req.status] || ''}`}>
-                            {req.status.replace(/_/g, ' ')}
-                          </span>
-                        </TableCell>
-                        <TableCell className="font-mono text-xs text-muted-foreground">{dueDate}</TableCell>
-                        {(canEdit || canDelete) && (
-                          <TableCell className="text-right">
-                            <div className="flex items-center justify-end gap-1">
-                              {canEdit && (
-                                <Button size="icon" variant="ghost" title="Edit Request" className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={(e) => {
+          <Table>
+            <TableHeader>
+              <TableRow className="border-border/60 hover:bg-transparent bg-muted/20">
+                <TableHead className="py-3 pl-6 font-semibold text-xs text-foreground/80 w-12 text-center">#</TableHead>
+                <TableHead className="py-3 font-semibold text-xs text-foreground/80 min-w-[300px]">Permintaan</TableHead>
+                {view !== 'mine' && (
+                  <TableHead className="py-3 font-semibold text-xs text-foreground/80 min-w-[160px]">Pemohon</TableHead>
+                )}
+                <TableHead className="py-3 font-semibold text-xs text-foreground/80 min-w-[130px]">PIC Assigned</TableHead>
+                <TableHead className="py-3 font-semibold text-xs text-foreground/80 min-w-[100px]">Status</TableHead>
+                <TableHead className="py-3 font-semibold text-xs text-foreground/80 min-w-[140px]">Progress</TableHead>
+                <TableHead className="py-3 pr-6 text-right font-semibold text-xs text-foreground/80 w-20">Aksi</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filtered.map((req, idx) => {
+                const displaySlaDueDate = req.required_date || req.sla_due_date;
+                const slaStatus = getSlaStatus(displaySlaDueDate, req.status, req.completed_at);
+                const slaBadge = SLA_BADGE[slaStatus];
+                const dueDate = new Date(displaySlaDueDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+                const requestDate = new Date(req.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+                const catName = categories.find(c => c.id === req.category_id)?.name || req.category_name || 'Permintaan';
+                const getInitials = (name: string) => name.replace(/(Adv\.|S\.H\.|M\.H\.|Dra\.|PT)/gi, '').trim().substring(0, 2).toUpperCase();
+                const progressValue = req.progress || (req.status === 'COMPLETED' ? 100 : req.status === 'PROCESSING' ? 60 : req.status === 'IN_REVIEW' ? 40 : 15);
+
+                return (
+                  <TableRow
+                    key={req.id}
+                    onClick={() => handleRowClick(req)}
+                    className="border-border/30 hover:bg-muted/30 transition-colors cursor-pointer group"
+                  >
+                    {/* # Index */}
+                    <TableCell className="py-3.5 pl-6 text-center text-xs font-mono text-muted-foreground">
+                      {idx + 1}
+                    </TableCell>
+
+                    {/* Deskripsi & Meta */}
+                    <TableCell className="py-3.5">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-muted/60 border border-border/60 flex items-center justify-center text-muted-foreground shrink-0 group-hover:border-foreground/30 transition-colors">
+                          <FileText size={15} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold text-xs text-foreground truncate group-hover:text-primary transition-colors" title={req.description}>
+                            {req.description}
+                          </p>
+                          <p className="text-[11px] text-foreground/75 truncate mt-0.5">
+                            {requestDate} · <span className="font-mono">{req.request_number}</span> · {catName}
+                          </p>
+                        </div>
+                      </div>
+                    </TableCell>
+
+                    {/* Pemohon */}
+                    {view !== 'mine' && (
+                      <TableCell className="py-3.5">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-full bg-muted border border-border flex items-center justify-center text-xs font-semibold text-foreground shrink-0">
+                            {getInitials(req.requester_name)}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-medium text-xs text-foreground truncate max-w-[130px]">{req.requester_name}</p>
+                            <p className="text-[11px] text-muted-foreground truncate max-w-[130px]">{req.requester_email || req.department}</p>
+                          </div>
+                        </div>
+                      </TableCell>
+                    )}
+
+                    {/* PIC Assigned */}
+                    <TableCell className="py-3.5">
+                      <div className="min-w-0">
+                        <p className="text-xs font-medium text-foreground truncate">
+                          {req.assigned_pic_name || <span className="text-muted-foreground italic">Belum di-assign</span>}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground truncate">
+                          {req.assigned_pic_name ? 'Legal Officer' : '-'}
+                        </p>
+                      </div>
+                    </TableCell>
+
+                    {/* Status */}
+                    <TableCell className="py-3.5">
+                      <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium whitespace-nowrap ${STATUS_BADGE[req.status] || ''}`}>
+                        {formatStatusText(req.status)}
+                      </span>
+                    </TableCell>
+
+                    {/* Progress */}
+                    <TableCell className="py-3.5">
+                      <div className="space-y-1">
+                        <div className="w-24 bg-muted rounded-full h-1.5 overflow-hidden border border-border/40">
+                          <div
+                            className="bg-foreground h-full rounded-full transition-all"
+                            style={{ width: `${progressValue}%` }}
+                          />
+                        </div>
+                        <div className="flex items-center justify-between text-[10px] text-muted-foreground w-24">
+                          <span className="font-mono">{progressValue}%</span>
+                          <span>Due {dueDate}</span>
+                        </div>
+                      </div>
+                    </TableCell>
+
+                    {/* Aksi */}
+                    <TableCell className="py-3.5 pr-6 text-right" onClick={(e) => e.stopPropagation()}>
+                      {canEdit || canDelete ? (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger
+                            render={
+                              <button
+                                className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors inline-flex items-center justify-center cursor-pointer"
+                                title="Menu Aksi"
+                              />
+                            }
+                          >
+                            <MoreVertical size={14} />
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-44">
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRowClick(req);
+                              }}
+                              className="cursor-pointer text-xs"
+                            >
+                              <Eye size={13} className="mr-2" />
+                              <span>Lihat Detail</span>
+                            </DropdownMenuItem>
+                            {canEdit && (
+                              <DropdownMenuItem
+                                onClick={(e) => {
                                   e.stopPropagation();
                                   setEditForm({
                                     id: req.id,
@@ -937,657 +1119,855 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                                     department: req.department,
                                     assigned_pic_id: req.assigned_pic_id || '',
                                     assigned_pic_name: req.assigned_pic_name || '',
-                                    description: req.description
+                                    description: req.description,
                                   });
                                   setIsEditDialogOpen(true);
-                                }}>
-                                  <Pencil className="w-3.5 h-3.5" />
-                                </Button>
-                              )}
-                              {canDelete && (
-                                <Button size="icon" variant="ghost" title="Delete Request (Super Admin Only)" className="h-7 w-7 text-muted-foreground hover:text-red-500" onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteRequest(req.id);
-                                }}>
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </Button>
-                              )}
-                            </div>
-                          </TableCell>
-                        )}
-                      </TableRow>
-                    );
-                  }
-
-                  return (
-                    <TableRow key={req.id} onClick={() => handleRowClick(req)} className="group border-border/10 hover:bg-muted/30 transition-colors cursor-pointer">
-                      <TableCell className="font-mono text-xs font-bold text-primary whitespace-nowrap">{req.request_number}</TableCell>
-                      <TableCell className="text-xs text-foreground max-w-[220px]">
-                        <span className="block truncate font-medium" title={req.description}>{req.description}</span>
-                        <span className="text-[10px] text-muted-foreground">{requestDate}</span>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <p className="text-xs font-semibold text-foreground">{req.requester_name}</p>
-                          <p className="text-[10px] text-muted-foreground truncate max-w-[140px]">{req.requester_email}</p>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{req.assigned_pic_name || <span className="italic opacity-40">Unassigned</span>}</TableCell>
-                      <TableCell>
-                        <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md whitespace-nowrap ${STATUS_BADGE[req.status] || ''}`}>
-                          {req.status.replace(/_/g, ' ')}
-                        </span>
-                      </TableCell>
-                      <TableCell className="font-mono text-xs text-muted-foreground whitespace-nowrap">{dueDate}</TableCell>
-                      <TableCell>
-                        <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md whitespace-nowrap ${slaBadge.className}`}>
-                          {slaBadge.label}
-                        </span>
-                      </TableCell>
-                      {(canEdit || canDelete) && (
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            {canEdit && (
-                              <Button size="icon" variant="ghost" title="Edit Request" className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={(e) => {
-                                e.stopPropagation();
-                                setEditForm({
-                                  id: req.id,
-                                  category_id: req.category_id,
-                                  priority: req.priority,
-                                  status: req.status,
-                                  department: req.department,
-                                  assigned_pic_id: req.assigned_pic_id || '',
-                                  assigned_pic_name: req.assigned_pic_name || '',
-                                  description: req.description
-                                });
-                                setIsEditDialogOpen(true);
-                              }}>
-                                <Pencil className="w-3.5 h-3.5" />
-                              </Button>
+                                }}
+                                className="cursor-pointer text-xs"
+                              >
+                                <Pencil size={13} className="mr-2" />
+                                <span>Edit Request</span>
+                              </DropdownMenuItem>
                             )}
                             {canDelete && (
-                              <Button size="icon" variant="ghost" title="Delete Request (Super Admin Only)" className="h-7 w-7 text-muted-foreground hover:text-red-500" onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteRequest(req.id);
-                              }}>
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </Button>
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  variant="destructive"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteRequest(req.id);
+                                  }}
+                                  className="cursor-pointer text-xs text-destructive focus:text-destructive"
+                                >
+                                  <Trash2 size={13} className="mr-2 text-destructive" />
+                                  <span>Hapus Request</span>
+                                </DropdownMenuItem>
+                              </>
                             )}
-                          </div>
-                        </TableCell>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      ) : (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRowClick(req);
+                          }}
+                          className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors inline-flex items-center justify-center cursor-pointer"
+                          title="Lihat Detail"
+                        >
+                          <Eye size={14} />
+                        </button>
                       )}
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
-          <div className="px-5 py-3 bg-muted/20 border-t border-border/10">
-            <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">
-              Showing {filtered.length} of {requests.length} requests
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+
+          {/* Table Footer */}
+          <div className="px-6 py-3.5 bg-muted/20 border-t border-border/40 flex items-center justify-between">
+            <p className="text-xs text-muted-foreground">
+              Showing <span className="font-semibold text-foreground">{filtered.length}</span> of <span className="font-semibold text-foreground">{requests.length}</span> requests
             </p>
+            {useMock && <Badge variant="outline" className="text-xs font-medium text-muted-foreground border-border bg-muted/40">Demo Data</Badge>}
           </div>
         </div>
       )}
 
-      {/* Detail Dialog */}
+      {/* Detail Dialog (Shadcn Monochromatic / Neutral Professional UI) */}
       <Dialog open={!!selectedRequest} onOpenChange={(open) => !open && setSelectedRequest(null)}>
-        <DialogContent className="sm:max-w-4xl xl:max-w-5xl p-0 overflow-hidden bg-transparent border-none shadow-none">
+        <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col p-0 overflow-hidden rounded-xl border bg-background shadow-2xl">
           {selectedRequest && (() => {
             const displaySlaDueDate = selectedRequest.required_date || selectedRequest.sla_due_date;
             const sla = getSlaStatus(displaySlaDueDate, selectedRequest.status, selectedRequest.completed_at);
             const slaBadge = SLA_BADGE[sla];
 
+            const oldAttachments: string[] = (() => {
+              try { return JSON.parse((selectedRequest as any).attachments || '[]'); } catch { return []; }
+            })();
+            const responseFilesList: any[] = (() => {
+              try { return JSON.parse((selectedRequest as any).csl_response_files || '[]'); } catch { return []; }
+            })();
+            const hasDocuments = oldAttachments.length > 0 || requestDocuments.length > 0 || responseFilesList.length > 0;
+            const totalDocCount = oldAttachments.length + requestDocuments.length + responseFilesList.length;
+
+            const fallbackEvents: { date: string; status: string; actor: string; note?: string; hasFiles?: boolean; isInternal?: boolean }[] =
+              requestLogs.length === 0
+                ? [{ date: selectedRequest.created_at, status: 'SUBMITTED', actor: selectedRequest.requester_name, note: 'Permintaan diajukan oleh pemohon' }]
+                : [];
+            const allEvents = [
+              ...fallbackEvents,
+              ...requestLogs.map((l: any) => ({
+                date: l.created_at,
+                status: l.status,
+                actor: l.actor_name,
+                note: l.note,
+                hasFiles: l.has_files,
+                isInternal: l.is_internal,
+              }))
+            ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+              .filter(evt => isCslTeam || !evt.isInternal);
+
+            const renderDocIcon = (name: string) => {
+              const ext = (name.split('.').pop() || '').toLowerCase();
+              if (['pdf'].includes(ext)) return <FileText size={15} className="text-red-500 shrink-0" />;
+              if (['doc', 'docx'].includes(ext)) return <FileText size={15} className="text-blue-500 shrink-0" />;
+              if (['xls', 'xlsx', 'csv'].includes(ext)) return <FileText size={15} className="text-emerald-500 shrink-0" />;
+              if (['png', 'jpg', 'jpeg', 'webp', 'gif'].includes(ext)) return <Paperclip size={15} className="text-amber-500 shrink-0" />;
+              return <Paperclip size={15} className="text-muted-foreground shrink-0" />;
+            };
+
             return (
-              <div className="bg-background rounded-xl shadow-xl w-full flex flex-col max-h-[90vh]">
+              <div className="w-full flex flex-col max-h-[90vh] overflow-hidden">
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-muted/20">
-                  <div>
-                    <div className="flex items-center gap-3">
-                      <h2 className="text-xl font-black text-foreground font-mono">{selectedRequest.request_number}</h2>
-                      <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md ${STATUS_BADGE[selectedRequest.status] || ''}`}>
-                        {selectedRequest.status.replace(/_/g, ' ')}
+                <DialogHeader className="px-6 py-4 border-b border-border bg-card/40 shrink-0">
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      <DialogTitle className="text-xl font-bold font-mono tracking-tight text-foreground">
+                        {selectedRequest.request_number}
+                      </DialogTitle>
+                      <span className={`inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold ${STATUS_BADGE[selectedRequest.status] || ''}`}>
+                        {formatStatusText(selectedRequest.status)}
                       </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      Masuk {new Date(selectedRequest.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Body Content */}
-                <div className="px-6 py-6 overflow-y-auto space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Left Column: Identitas & SLA */}
-                    <div className="space-y-6">
-                      {/* Informasi Pemohon */}
-                      <div className="bg-card border border-border rounded-xl overflow-hidden">
-                        <div className="px-4 py-2.5 bg-muted/30 border-b border-border">
-                          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Informasi Pemohon</p>
-                        </div>
-                        <div className="p-4 grid grid-cols-2 gap-3">
-                          <div>
-                            <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide mb-0.5">Nama</p>
-                            <p className="text-xs font-bold text-foreground">{selectedRequest.requester_name}</p>
-                          </div>
-                          <div>
-                            <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide mb-0.5">Email</p>
-                            <p className="text-xs font-medium text-foreground truncate">{selectedRequest.requester_email}</p>
-                          </div>
-                          <div>
-                            <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide mb-0.5">Divisi</p>
-                            <p className="text-xs font-medium text-foreground">{selectedRequest.department}</p>
-                          </div>
-                          <div>
-                            <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide mb-0.5">Perusahaan</p>
-                            <p className="text-xs font-medium text-foreground">{selectedRequest.company}</p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* SLA Info */}
-                      <div className="grid grid-cols-3 gap-3">
-                        <div className="bg-card border border-border rounded-xl p-3 text-center">
-                          <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide mb-1">SLA Target</p>
-                          <p className="text-lg font-black text-foreground">
-                            {selectedRequest.required_date
-                              ? Math.max(1, Math.ceil((new Date(selectedRequest.required_date).getTime() - new Date(selectedRequest.created_at).getTime()) / (1000 * 60 * 60 * 24)))
-                              : selectedRequest.sla_target_days}d
-                          </p>
-                        </div>
-                        <div className="bg-card border border-border rounded-xl p-3 text-center">
-                          <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide mb-1">SLA Due</p>
-                          <p className="text-xs font-black text-foreground">
-                            {new Date(displaySlaDueDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
-                          </p>
-                        </div>
-                        <div className={`rounded-xl p-3 text-center ${slaBadge.className}`}>
-                          <p className="text-[10px] font-semibold uppercase tracking-wide mb-1 opacity-70">SLA</p>
-                          <p className="text-xs font-black">{slaBadge.label}</p>
-                        </div>
-                      </div>
-
-                      {/* PIC */}
-                      <div className="bg-card border border-border rounded-xl overflow-hidden">
-                        <div className="px-4 py-2.5 bg-muted/30 border-b border-border">
-                          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">PIC Assigned</p>
-                        </div>
-                        <div className="p-4">
-                          <p className="text-xs font-bold text-foreground">
-                            {selectedRequest.assigned_pic_name || <span className="text-muted-foreground italic font-normal">Belum di-assign</span>}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Right Column: Deskripsi, Tujuan, Required Date */}
-                    <div className="space-y-6">
-                      {/* Tanggal dibutuhkan */}
-                      {selectedRequest.required_date && (
-                        <div className="flex items-center gap-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/30 rounded-xl px-4 py-3">
-                          <Clock size={15} className="text-amber-600 shrink-0" />
-                          <div>
-                            <p className="text-[10px] font-black uppercase text-amber-700 dark:text-amber-400">Dibutuhkan Paling Lambat</p>
-                            <p className="text-xs font-bold text-amber-800 dark:text-amber-300">
-                              {new Date(selectedRequest.required_date).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-                            </p>
-                          </div>
-                        </div>
+                      <span className={`inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-medium ${slaBadge.className}`}>
+                        {slaBadge.label}
+                      </span>
+                      {selectedRequest.priority && ['High', 'Critical'].includes(selectedRequest.priority) && (
+                        <span className={`inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-medium ${PRIORITY_BADGE[selectedRequest.priority] || ''}`}>
+                          Prioritas {selectedRequest.priority}
+                        </span>
                       )}
+                    </div>
+                    <DialogDescription className="text-xs text-muted-foreground">
+                      Diajukan oleh <span className="font-semibold text-foreground">{selectedRequest.requester_name}</span> · {selectedRequest.department} ({selectedRequest.company}) · {new Date(selectedRequest.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    </DialogDescription>
+                  </div>
+                </DialogHeader>
 
-                      {/* Deskripsi */}
-                      <div className="bg-card border border-border rounded-xl overflow-hidden">
-                        <div className="px-4 py-2.5 bg-muted/30 border-b border-border">
-                          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Deskripsi Permintaan</p>
-                        </div>
-                        <div className="p-4 max-h-40 overflow-y-auto">
-                          <p className="text-xs text-foreground leading-relaxed whitespace-pre-wrap">{selectedRequest.description}</p>
-                        </div>
-                      </div>
-
-                      {/* Tujuan */}
-                      {(selectedRequest as any).tujuan && (
-                        <div className="bg-card border border-border rounded-xl overflow-hidden">
-                          <div className="px-4 py-2.5 bg-muted/30 border-b border-border">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Tujuan Permintaan</p>
-                          </div>
-                          <div className="p-4 max-h-40 overflow-y-auto">
-                            <p className="text-xs text-foreground leading-relaxed whitespace-pre-wrap">{(selectedRequest as any).tujuan}</p>
-                          </div>
-                        </div>
+                {/* Tabs Navigation */}
+                <Tabs defaultValue="overview" className="flex-1 flex flex-col min-h-0 overflow-hidden">
+                  <div className="px-6 border-b border-border bg-muted/20 shrink-0">
+                    <TabsList className="bg-transparent h-11 p-0 gap-6 border-b-0">
+                      <TabsTrigger
+                        value="overview"
+                        className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent px-1 pb-3 pt-2 text-xs font-semibold text-muted-foreground data-[state=active]:text-foreground transition-all"
+                      >
+                        Detail Permintaan
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="activity"
+                        className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent px-1 pb-3 pt-2 text-xs font-semibold text-muted-foreground data-[state=active]:text-foreground transition-all flex items-center gap-1.5"
+                      >
+                        Log &amp; Diskusi
+                        {allEvents.length > 0 && (
+                          <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-muted border border-border text-foreground font-mono">
+                            {allEvents.length}
+                          </span>
+                        )}
+                      </TabsTrigger>
+                      {isCslTeam && !['COMPLETED', 'CLOSED'].includes(selectedRequest.status) && (
+                        <TabsTrigger
+                          value="action"
+                          className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent px-1 pb-3 pt-2 text-xs font-semibold text-muted-foreground data-[state=active]:text-foreground transition-all flex items-center gap-1.5"
+                        >
+                          Tindakan CSL
+                          <span className="w-1.5 h-1.5 rounded-full bg-foreground" />
+                        </TabsTrigger>
                       )}
-
-                      {/* Dokumen Lampiran (Combined Old & GDrive) */}
-                      {(() => {
-                        const oldAttachments: string[] = (() => {
-                          try { return JSON.parse((selectedRequest as any).attachments || '[]'); } catch { return []; }
-                        })();
-                        const responseFiles: any[] = (() => {
-                          try { return JSON.parse((selectedRequest as any).csl_response_files || '[]'); } catch { return []; }
-                        })();
-                        const hasDocuments = oldAttachments.length > 0 || requestDocuments.length > 0 || responseFiles.length > 0;
-                        const isVisibleToUser = ['REVIEW_USER', 'COMPLETED', 'CLOSED'].includes(selectedRequest.status);
-
-                        // CSL Team sees documents if they exist. Requester only sees them if status allows AND they exist.
-                        if (isCslTeam && !hasDocuments) return null;
-                        if (!isCslTeam && (!hasDocuments || !isVisibleToUser)) return null;
-
-                        return (
-                          <div className="bg-card border border-border rounded-xl overflow-hidden">
-                            <div className="px-4 py-2.5 bg-muted/30 border-b border-border flex justify-between items-center">
-                              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-                                {(() => {
-                                  const totalCount = oldAttachments.length + requestDocuments.length + responseFiles.length;
-                                  return <><FolderOpen size={12} /> Dokumen Lampiran ({totalCount})</>;
-                                })()}
-                              </p>
-                              {isCslTeam && !['COMPLETED', 'CLOSED'].includes(selectedRequest.status) && (
-                                <button
-                                  onClick={() => setShowDocForm(!showDocForm)}
-                                  className="text-[10px] font-bold text-blue-600 bg-blue-100 hover:bg-blue-200 px-2 py-1 rounded transition-colors"
-                                >
-                                  {showDocForm ? 'Batal' : '+ Tambah Dokumen'}
-                                </button>
-                              )}
-                            </div>
-
-                            <div className="p-3 space-y-1.5">
-                              {/* Old Attachments */}
-                              {oldAttachments.map((url, i) => {
-                                const name = decodeURIComponent(url.split('/').pop()?.split('_').slice(1).join('_') || `File ${i + 1}`);
-                                const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(name);
-                                return (
-                                  <a key={`old-${i}`} href={url} target="_blank" rel="noopener noreferrer"
-                                    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/40 border border-border/60 hover:bg-blue-50 dark:hover:bg-blue-950/20 hover:border-blue-200 transition-colors group">
-                                    <Paperclip size={12} className="text-blue-500 shrink-0" />
-                                    <span className="text-xs font-semibold text-foreground truncate group-hover:text-blue-600 min-w-0">{name}</span>
-                                    {isImage && <span className="text-[10px] text-muted-foreground ml-auto shrink-0">Gambar</span>}
-                                  </a>
-                                );
-                              })}
-
-                              {/* GDrive & Response Documents */}
-                              {requestDocuments.map((doc, i) => (
-                                <div key={`gdrive-${i}`} className="flex items-center justify-between px-3 py-2 rounded-lg bg-muted/40 border border-border/60 hover:bg-blue-50 dark:hover:bg-blue-950/20 hover:border-blue-200 transition-colors group">
-                                  <a href={doc.doc_url || (doc as any).gdrive_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 min-w-0 flex-1">
-                                    <div className="w-6 h-6 rounded-md bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
-                                      <Link size={10} className="text-blue-600 dark:text-blue-400" />
-                                    </div>
-                                    <span className="text-xs font-bold text-foreground truncate group-hover:text-blue-600">{doc.doc_name}</span>
-                                  </a>
-                                  <div className="flex items-center gap-2 ml-2 shrink-0">
-                                    {doc.doc_type && <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{doc.doc_type}</span>}
-                                    <span className="text-[10px] text-muted-foreground hidden sm:inline">Oleh {doc.uploaded_by_name?.split(' ')[0] || 'Pemohon'}</span>
-                                  </div>
-                                </div>
-                              ))}
-
-                              {/* Response Files (csl_response_files) */}
-                              {(() => {
-                                return responseFiles.map((f, i) => (
-                                  <div key={`resp-${i}`} className="flex items-center justify-between px-3 py-2 rounded-lg bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-800/30 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors group">
-                                    <a href={f.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 min-w-0 flex-1">
-                                      <div className="w-6 h-6 rounded-md bg-white dark:bg-zinc-800 flex items-center justify-center shrink-0 shadow-sm border border-slate-200 dark:border-zinc-700">
-                                        <Link size={10} className="text-blue-600 dark:text-blue-400" />
-                                      </div>
-                                      <span className="text-xs font-bold text-blue-700 dark:text-blue-300 truncate group-hover:text-blue-800">{f.name || 'Lampiran Tim CSL'}</span>
-                                    </a>
-                                    <div className="flex items-center gap-2 ml-2 shrink-0">
-                                      <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-blue-200 dark:bg-blue-800/50 text-blue-700 dark:text-blue-300">Respon CSL</span>
-                                    </div>
-                                  </div>
-                                ));
-                              })()}
-
-                              {!hasDocuments && <p className="text-xs text-muted-foreground italic text-center py-2">Belum ada dokumen lampiran.</p>}
-                            </div>
-
-                            {/* Add Document Form (Moved here from bottom) */}
-                            {showDocForm && (
-                              <div className="bg-blue-50/50 dark:bg-blue-950/20 p-4 border-t border-border space-y-3">
-                                <div className="grid grid-cols-2 gap-3">
-                                  <div>
-                                    <label className="text-[10px] font-bold uppercase text-muted-foreground">Nama Dokumen *</label>
-                                    <input type="text" placeholder="Cth: Surat Kuasa Final" value={docForm.doc_name} onChange={e => setDocForm({ ...docForm, doc_name: e.target.value })} className="w-full mt-1 px-3 py-1.5 text-sm bg-background border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500" />
-                                  </div>
-                                  <div>
-                                    <label className="text-[10px] font-bold uppercase text-muted-foreground">Jenis</label>
-                                    <input type="text" placeholder="Cth: Akta, Draft" value={docForm.doc_type} onChange={e => setDocForm({ ...docForm, doc_type: e.target.value })} className="w-full mt-1 px-3 py-1.5 text-sm bg-background border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500" />
-                                  </div>
-                                </div>
-                                <div className="pt-2">
-                                  <label className="text-[10px] font-bold uppercase text-muted-foreground block mb-2">Upload File (Otomatis ke GDrive)</label>
-                                  <div className="flex flex-col gap-2">
-                                    <input type="file" ref={docFileRef} className="hidden" onChange={e => { if (e.target.files && e.target.files.length > 0) { setDocFile(e.target.files[0]); setDocForm({ ...docForm, gdrive_url: '' }); } }} />
-                                    <div onClick={() => docFileRef.current?.click()} className="flex items-center gap-2 border border-dashed border-blue-300 bg-blue-50 hover:bg-blue-100 dark:border-blue-800 dark:bg-blue-900/10 px-4 py-3 rounded-xl cursor-pointer transition-colors">
-                                      <Upload size={14} className="text-blue-500" />
-                                      <div className="flex-1 min-w-0">
-                                        {docFile ? <span className="text-xs font-semibold text-blue-700 dark:text-blue-300 truncate block">{docFile.name}</span> : <span className="text-xs font-medium text-blue-600/70">Klik untuk pilih file...</span>}
-                                      </div>
-                                    </div>
-                                    <div className="flex items-center gap-3 my-1">
-                                      <div className="flex-1 h-px bg-border/60"></div><span className="text-[9px] font-black uppercase text-muted-foreground">ATAU</span><div className="flex-1 h-px bg-border/60"></div>
-                                    </div>
-                                    <div>
-                                      <label className="text-[10px] font-bold uppercase text-muted-foreground">Link Google Drive (Manual)</label>
-                                      <input type="url" placeholder="https://drive.google.com/..." value={docForm.gdrive_url} onChange={e => { setDocForm({ ...docForm, gdrive_url: e.target.value }); if (e.target.value) setDocFile(null); }} className="w-full mt-1 px-3 py-1.5 text-sm bg-background border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500" />
-                                    </div>
-                                  </div>
-                                </div>
-                                <div className="flex justify-end pt-3">
-                                  <Button size="sm" onClick={submitDocument} disabled={isSubmittingDoc || !docForm.doc_name.trim() || (!docForm.gdrive_url.trim() && !docFile)} className="bg-blue-600 hover:bg-blue-500 text-xs h-8">{isSubmittingDoc ? 'Menyimpan...' : 'Simpan Dokumen'}</Button>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })()}
-                    </div>
+                    </TabsList>
                   </div>
 
-                  {/* Activity Log / Timeline */}
-                  <div className="bg-card border border-border rounded-xl overflow-hidden">
-                    <div className="px-4 py-2.5 bg-muted/30 border-b border-border">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Log Proses</p>
-                    </div>
-                    <div className="p-4">
-                      {(() => {
-                        // Gunakan data dari DB jika ada, fallback ke derived jika DB kosong
-                        const fallbackEvents: { date: string; status: string; actor: string; note?: string; hasFiles?: boolean; isInternal?: boolean }[] =
-                          requestLogs.length === 0
-                            ? [{ date: selectedRequest.created_at, status: 'SUBMITTED', actor: selectedRequest.requester_name, note: 'Permintaan diajukan' }]
-                            : [];
-                        const allEvents = [
-                          ...fallbackEvents,
-                          ...requestLogs.map((l: any) => ({
-                            date: l.created_at,
-                            status: l.status,
-                            actor: l.actor_name,
-                            note: l.note,
-                            hasFiles: l.has_files,
-                            isInternal: l.is_internal,
-                          }))
-                        ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-                          .filter(evt => isCslTeam || !evt.isInternal);
-
-                        const dotColor: Record<string, string> = {
-                          SUBMITTED: 'bg-blue-500',
-                          ACKNOWLEDGED: 'bg-sky-500',
-                          IN_REVIEW: 'bg-violet-500',
-                          PROCESSING: 'bg-amber-500',
-                          REVIEW_USER: 'bg-orange-500',
-                          COMPLETED: 'bg-emerald-500',
-                          REJECTED: 'bg-red-500',
-                          CLOSED: 'bg-slate-400',
-                        };
-
-                        return (
-                          <div className="relative pt-2">
-                            <div className="space-y-0">
-                              {allEvents.map((evt, i) => {
-                                const isSystemNote = evt.note && (
-                                  evt.note.includes('Permintaan diajukan') ||
-                                  evt.note.includes('Dokumen ditambahkan:') ||
-                                  evt.note.includes('Status diubah')
-                                );
-                                const isFinal = i === allEvents.length - 1;
-
-                                return (
-                                  <div key={i} className="relative flex gap-4 pl-1 group">
-                                    {/* Timeline Line */}
-                                    {!isFinal && <div className="absolute left-[15px] top-6 bottom-[-24px] w-[2px] bg-border/50 group-hover:bg-primary/30 transition-colors z-0" />}
-
-                                    {/* Timeline Dot */}
-                                    <div className={`relative z-10 w-7 h-7 rounded-full shrink-0 mt-0.5 flex items-center justify-center border-[3px] border-background shadow-sm ${dotColor[evt.status] || 'bg-muted'}`}>
-                                      {isSystemNote ? (
-                                        <div className="w-1.5 h-1.5 rounded-full bg-background" />
-                                      ) : (
-                                        <MessageSquare size={10} className="text-background fill-background/20" />
-                                      )}
-                                    </div>
-
-                                    <div className="flex-1 min-w-0 pb-7">
-                                      <div className="flex items-center gap-2 mb-1.5">
-                                        <p className="text-xs font-bold text-foreground">{evt.actor}</p>
-                                        <span className="text-[10px] text-muted-foreground/50">•</span>
-                                        <span className="text-[10px] text-muted-foreground font-medium">
-                                          {new Date(evt.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                                        </span>
-                                        {evt.status && (
-                                          <span className={`ml-auto text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md ${STATUS_BADGE[evt.status] || 'bg-muted text-muted-foreground'}`}>
-                                            {evt.status.replace(/_/g, ' ')}
-                                          </span>
-                                        )}
-                                      </div>
-
-                                      {evt.note && (
-                                        isSystemNote ? (
-                                          <div className="flex items-start gap-1.5 mt-1">
-                                            {evt.note.includes('Dokumen') ? (
-                                              <FileText size={12} className="text-blue-500 mt-0.5 shrink-0" />
-                                            ) : (
-                                              <Activity size={12} className="text-muted-foreground/50 mt-0.5 shrink-0" />
-                                            )}
-                                            <p className="text-xs text-muted-foreground/80 italic font-medium leading-relaxed">
-                                              {evt.note}
-                                            </p>
-                                          </div>
-                                        ) : (
-                                          <div className={`mt-1.5 px-3.5 py-2.5 rounded-2xl rounded-tl-sm border inline-block shadow-sm leading-relaxed text-[13px] ${evt.isInternal
-                                            ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-900 dark:text-amber-100 border-amber-200/50'
-                                            : 'bg-muted/40 dark:bg-muted/20 text-foreground/90 border-border/40'
-                                            }`}>
-                                            {evt.isInternal && <span className="text-[10px] font-bold uppercase text-amber-600 block mb-1">Internal Note</span>}
-                                            {evt.note}
-                                          </div>
-                                        )
-                                      )}
-
-                                      {(() => {
-                                        if (!evt.hasFiles || isSystemNote) return null;
-
-                                        const allFiles = (() => {
-                                          try { return JSON.parse((selectedRequest as any).csl_response_files || '[]'); } catch { return []; }
-                                        })();
-
-                                        const logTime = new Date(evt.date).getTime();
-                                        const eventFiles = allFiles.filter((f: any) => {
-                                          const fileTime = new Date(f.added_at).getTime();
-                                          // Match if file was added within 5 minutes before this log
-                                          return fileTime <= logTime && (logTime - fileTime) < 300000;
-                                        });
-
-                                        if (eventFiles.length === 0) {
-                                          return (
-                                            <div className="mt-2.5 inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-50/80 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg border border-blue-100 dark:border-blue-800/30 text-[10px] font-bold shadow-sm cursor-not-allowed" title="File mungkin sudah tidak tersedia">
-                                              <Paperclip size={12} />
-                                              <span>Terdapat Lampiran</span>
-                                            </div>
-                                          );
-                                        }
-
-                                        return (
-                                          <div className="mt-2.5 flex flex-wrap gap-2">
-                                            {eventFiles.map((f: any, idx: number) => (
-                                              <a key={idx} href={f.url} target="_blank" rel="noopener noreferrer"
-                                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-50/80 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/40 text-blue-600 dark:text-blue-400 rounded-lg border border-blue-100 dark:border-blue-800/30 text-[10px] font-bold shadow-sm transition-colors cursor-pointer">
-                                                <Paperclip size={12} />
-                                                <span className="truncate max-w-[150px]">{f.name || 'Lampiran'}</span>
-                                              </a>
-                                            ))}
-                                          </div>
-                                        );
-                                      })()}
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        );
-                      })()}
-                    </div>
-                    {/* Comment Input */}
-                    {!['CLOSED', 'COMPLETED', 'REJECTED'].includes(selectedRequest.status) && (
-                      <div className="bg-white dark:bg-card border-t-2 border-border px-4 py-3 z-10 relative">
-                        <div className="flex gap-2.5 items-end">
-                          {/* Avatar */}
-                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center shrink-0 mb-0.5 shadow ring-2 ring-background">
-                            <span className="text-[11px] font-extrabold text-white tracking-wide">
-                              {currentUser?.fullName?.charAt(0).toUpperCase() || 'U'}
-                            </span>
-                          </div>
-
-                          {/* Input Wrapper */}
-                          <div className="flex-1 flex items-end gap-2.5 transition-all duration-200 relative">
-                            {/* Mention Dropdown */}
-                            {mentionState.active && (
-                              <div className="absolute bottom-full left-0 mb-2 w-64 max-h-48 overflow-y-auto bg-card border border-border rounded-xl shadow-xl z-[100] py-1 animate-in fade-in slide-in-from-bottom-2">
-                                <p className="text-[10px] font-black uppercase text-muted-foreground px-3 py-1.5 border-b border-border/50 bg-muted/20">Pilih Tim CSL</p>
-                                {cslStaffUsers
-                                  .filter(u => u.fullName.toLowerCase().includes(mentionState.query.toLowerCase()))
-                                  .map((u, idx) => (
-                                    <button
-                                      key={u.id}
-                                      type="button"
-                                      className={`w-full text-left px-3 py-2 text-sm font-semibold hover:bg-muted/50 transition-colors flex items-center justify-between ${idx === 0 ? 'bg-muted/30' : ''}`}
-                                      onClick={() => {
-                                        const before = newComment.slice(0, mentionState.index);
-                                        const after = newComment.slice(mentionState.index + mentionState.query.length + 1);
-                                        setNewComment(`${before}@${u.fullName} ${after}`);
-                                        setMentionState({ active: false, query: '', index: 0 });
-                                      }}
-                                    >
-                                      <span className="truncate">{u.fullName}</span>
-                                      <span className="text-[9px] font-black text-muted-foreground uppercase shrink-0 ml-2">{u.role}</span>
-                                    </button>
-                                  ))}
-                                {cslStaffUsers.filter(u => u.fullName.toLowerCase().includes(mentionState.query.toLowerCase())).length === 0 && (
-                                  <div className="px-3 py-2 text-xs text-muted-foreground italic">Tidak ditemukan</div>
-                                )}
-                              </div>
-                            )}
-
-                            <textarea
-                              rows={1}
-                              placeholder="Ketik pesan atau update (ketik @ untuk tag)..."
-                              value={newComment}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                setNewComment(val);
-                                e.target.style.height = 'auto';
-                                e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
-
-                                const cursorPos = e.target.selectionStart;
-                                const textBeforeCursor = val.slice(0, cursorPos);
-                                const match = textBeforeCursor.match(/(?:^|\s)@([a-zA-Z0-9_ ]*)$/);
-
-                                if (match && isCslTeam) {
-                                  // match.index is where the (?:^|\s) matched. 
-                                  // The actual @ is either at match.index (if ^) or match.index + 1 (if \s)
-                                  const atIndex = match[0].startsWith(' ') ? match.index! + 1 : match.index!;
-                                  setMentionState({ active: true, query: match[1], index: atIndex });
-                                } else {
-                                  setMentionState({ active: false, query: '', index: 0 });
-                                }
-                              }}
-                              onKeyDown={(e) => {
-                                if (mentionState.active && (e.key === 'Enter' || e.key === 'Tab')) {
-                                  e.preventDefault();
-                                  const matches = cslStaffUsers.filter(u => u.fullName.toLowerCase().includes(mentionState.query.toLowerCase()));
-                                  if (matches.length > 0) {
-                                    const u = matches[0];
-                                    const before = newComment.slice(0, mentionState.index);
-                                    const after = newComment.slice(mentionState.index + mentionState.query.length + 1);
-                                    setNewComment(`${before}@${u.fullName} ${after}`);
-                                    setMentionState({ active: false, query: '', index: 0 });
-                                  }
-                                } else if (mentionState.active && e.key === 'Escape') {
-                                  setMentionState({ active: false, query: '', index: 0 });
-                                } else if (e.key === 'Enter' && !e.shiftKey && !mentionState.active) {
-                                  e.preventDefault();
-                                  submitComment();
-                                }
-                              }}
-                              style={{ minHeight: '42px', maxHeight: '120px' }}
-                              className="flex-1 text-[13px] bg-muted/30 border border-border/60 focus:border-blue-400 focus:bg-white dark:focus:bg-card focus:ring-4 focus:ring-blue-500/10 rounded-2xl px-4 py-3 outline-none resize-none text-foreground placeholder:text-muted-foreground/50 transition-all shadow-sm leading-relaxed"
-                            />
-                            <Button
-                              size="icon"
-                              disabled={isSubmittingComment || !newComment.trim()}
-                              onClick={submitComment}
-                              className={`h-10 w-10 rounded-full shrink-0 transition-all duration-300 mb-[1px] flex items-center justify-center ${newComment.trim()
-                                ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/30 hover:scale-105'
-                                : 'bg-muted text-muted-foreground/40 cursor-not-allowed'
-                                }`}
-                            >
-                              {isSubmittingComment
-                                ? <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                                : <Send size={16} className="-ml-0.5 mt-0.5" />
-                              }
-                            </Button>
-                          </div>
+                  {/* TAB 1: OVERVIEW */}
+                  <TabsContent value="overview" className="flex-1 overflow-y-auto p-6 space-y-4 m-0 data-[state=inactive]:hidden">
+                    {/* Status Lifecycle Stepper */}
+                    <div className="p-4 rounded-xl border border-border bg-card space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Activity size={14} className="text-muted-foreground" />
+                          <span className="text-xs font-semibold text-foreground">Tahapan Pengerjaan Permintaan</span>
                         </div>
-                        <p className="text-[10px] text-muted-foreground/40 text-right mt-1.5 pr-1">Enter untuk kirim · Shift+Enter baris baru</p>
+                        <span className="text-xs font-mono font-medium text-foreground bg-muted px-2.5 py-0.5 rounded border border-border/50">
+                          Progress: {selectedRequest.progress || (selectedRequest.status === 'COMPLETED' ? 100 : selectedRequest.status === 'PROCESSING' ? 60 : selectedRequest.status === 'IN_REVIEW' ? 40 : 15)}%
+                        </span>
                       </div>
-                    )}
-                  </div>
 
-                  {/* CSL Response Display */}
-                  {selectedRequest.csl_response && (
-                    <div className="bg-primary/5 p-4 rounded-xl border border-primary/20">
-                      <div className="flex items-center gap-2 mb-2">
-                        <MessageSquare size={14} className="text-primary" />
-                        <h4 className="text-xs font-bold uppercase text-primary">Balasan CSL</h4>
-                      </div>
-                      <p className="text-xs text-foreground/80 leading-relaxed">{selectedRequest.csl_response}</p>
-                      <p className="text-[10px] text-muted-foreground mt-2">
-                        Dijawab pada {new Date(selectedRequest.csl_response_at!).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Feedback Display */}
-                  {selectedRequest.feedback_submitted_at && (
-                    <div className="bg-amber-50/50 dark:bg-amber-900/10 p-4 rounded-xl border border-amber-200/50 dark:border-amber-900/30">
-                      <div className="flex items-center gap-2 mb-3">
-                        <Star size={14} className="text-amber-500" />
-                        <h4 className="text-xs font-bold uppercase text-amber-700 dark:text-amber-500">Feedback Pemohon</h4>
-                      </div>
-                      <div className="grid grid-cols-3 gap-2 mb-3">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 pt-1">
                         {[
-                          { label: 'Overall', val: selectedRequest.feedback_overall_rating },
-                          { label: 'Kecepatan', val: selectedRequest.feedback_response_time_rating },
-                          { label: 'Kualitas', val: selectedRequest.feedback_service_quality_rating },
-                        ].map(f => (
-                          <div key={f.label} className="text-center p-2 bg-background rounded-lg border border-border/10">
-                            <p className="text-[10px] uppercase text-muted-foreground mb-1">{f.label}</p>
-                            <p className="font-black text-amber-600 text-sm">{f.val}/5</p>
+                          { step: 1, label: 'Diajukan', desc: 'Permintaan Masuk', isDone: true, isActive: selectedRequest.status === 'SUBMITTED' },
+                          { step: 2, label: 'Peninjauan', desc: 'Review & Penugasan', isDone: ['ACKNOWLEDGED', 'IN_REVIEW', 'PROCESSING', 'REVIEW_USER', 'COMPLETED', 'CLOSED'].includes(selectedRequest.status), isActive: ['ACKNOWLEDGED', 'IN_REVIEW'].includes(selectedRequest.status) },
+                          { step: 3, label: 'Pengerjaan', desc: 'Draft & Tindakan CSL', isDone: ['PROCESSING', 'REVIEW_USER', 'COMPLETED', 'CLOSED'].includes(selectedRequest.status), isActive: ['PROCESSING', 'REVIEW_USER'].includes(selectedRequest.status) },
+                          { step: 4, label: 'Selesai', desc: 'Hasil Final Tuntas', isDone: ['COMPLETED', 'CLOSED'].includes(selectedRequest.status), isActive: ['COMPLETED', 'CLOSED'].includes(selectedRequest.status) },
+                        ].map((s) => (
+                          <div key={s.step} className="flex flex-col gap-1.5 p-2 rounded-lg bg-muted/20 border border-border/40">
+                            <div className={`h-1.5 rounded-full transition-all ${s.isDone ? 'bg-primary' : 'bg-muted border border-border/50'}`} />
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${s.isActive ? 'bg-primary text-primary-foreground' : s.isDone ? 'bg-muted text-foreground border border-border' : 'bg-muted/40 text-muted-foreground'}`}>
+                                {s.isDone && !s.isActive ? '✓' : s.step}
+                              </span>
+                              <div className="min-w-0 flex-1">
+                                <p className={`text-xs font-medium truncate ${s.isActive ? 'text-foreground font-semibold' : s.isDone ? 'text-foreground' : 'text-muted-foreground'}`}>
+                                  {s.label}
+                                </p>
+                                <p className="text-[10px] text-muted-foreground truncate">{s.desc}</p>
+                              </div>
+                            </div>
                           </div>
                         ))}
                       </div>
-                      {selectedRequest.feedback_comment && (
-                        <p className="text-xs italic text-muted-foreground">"{selectedRequest.feedback_comment}"</p>
-                      )}
                     </div>
-                  )}
 
-                  {/* CSL Action Form */}
-                  {isCslTeam && !['COMPLETED', 'CLOSED'].includes(selectedRequest.status) && (
-                    <div className="bg-card border border-border rounded-xl overflow-hidden">
-                      <div className="px-4 py-2.5 bg-blue-50 dark:bg-blue-900/20 border-b border-border">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-blue-700 dark:text-blue-400">Update Status Request</p>
-                      </div>
-                      <div className="p-4 space-y-4">
-                        {/* Status */}
+                    {/* Key Metrics Grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                      {/* Pemohon */}
+                      <div className="p-3.5 rounded-xl border border-border bg-card space-y-2">
+                        <div className="flex items-center justify-between text-muted-foreground">
+                          <span className="text-[11px] font-medium">Pemohon</span>
+                          <UserCircle2 size={14} />
+                        </div>
                         <div>
-                          <label className="text-[10px] font-black uppercase text-muted-foreground">Status Baru</label>
+                          <p className="text-xs font-bold text-foreground truncate">{selectedRequest.requester_name}</p>
+                          <p className="text-[11px] text-muted-foreground truncate">{selectedRequest.requester_email}</p>
+                        </div>
+                        <div className="text-[10px] text-muted-foreground bg-muted/50 px-2 py-0.5 rounded truncate border border-border/40">
+                          {selectedRequest.department} · {selectedRequest.company}
+                        </div>
+                      </div>
+
+                      {/* PIC Legal Assigned */}
+                      <div className="p-3.5 rounded-xl border border-border bg-card space-y-2">
+                        <div className="flex items-center justify-between text-muted-foreground">
+                          <span className="text-[11px] font-medium">PIC Legal Assigned</span>
+                          <Shield size={14} />
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-foreground truncate">
+                            {selectedRequest.assigned_pic_name || <span className="text-muted-foreground italic font-normal">Belum Ditugaskan</span>}
+                          </p>
+                          <p className="text-[11px] text-muted-foreground truncate">
+                            {selectedRequest.assigned_pic_name ? 'Legal Officer / Counsel' : 'Menunggu penugasan CSL'}
+                          </p>
+                        </div>
+                        <div className="text-[10px] text-muted-foreground bg-muted/50 px-2 py-0.5 rounded truncate border border-border/40">
+                          Kategori: {selectedRequest.category_name || categories.find(c => c.id === selectedRequest.category_id)?.name || 'Permintaan'}
+                        </div>
+                      </div>
+
+                      {/* Target SLA & Due */}
+                      <div className="p-3.5 rounded-xl border border-border bg-card space-y-2">
+                        <div className="flex items-center justify-between text-muted-foreground">
+                          <span className="text-[11px] font-medium">Target SLA &amp; Due</span>
+                          <Clock size={14} />
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-foreground">
+                            Due: {new Date(displaySlaDueDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          </p>
+                          <p className="text-[11px] text-muted-foreground">
+                            {selectedRequest.required_date
+                              ? `Target pemohon (${slaBadge.label})`
+                              : `${selectedRequest.sla_target_days || 5} hari kerja`}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className={`text-[10px] font-medium px-2 py-0.5 rounded border ${slaBadge.className}`}>
+                            {slaBadge.label}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Info Kategori & Tanggal */}
+                      <div className="p-3.5 rounded-xl border border-border bg-card space-y-2">
+                        <div className="flex items-center justify-between text-muted-foreground">
+                          <span className="text-[11px] font-medium">Kategori Permintaan</span>
+                          <FileText size={14} />
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-foreground truncate">
+                            {selectedRequest.category_name || categories.find(c => c.id === selectedRequest.category_id)?.name || 'Permintaan Legal'}
+                          </p>
+                          <p className="text-[11px] text-muted-foreground">
+                            Prioritas: <span className="font-medium text-foreground">{selectedRequest.priority || 'Normal'}</span>
+                          </p>
+                        </div>
+                        <div className="text-[10px] text-muted-foreground bg-muted/50 px-2 py-0.5 rounded truncate border border-border/40">
+                          Dibuat: {new Date(selectedRequest.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Required Date Banner */}
+                    {selectedRequest.required_date && (
+                      <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl border border-border bg-muted/20 text-xs">
+                        <Clock size={15} className="text-foreground shrink-0" />
+                        <div className="flex-1 flex flex-wrap items-center justify-between gap-2">
+                          <div>
+                            <span className="text-muted-foreground">Target Kebutuhan Pemohon: </span>
+                            <span className="font-semibold text-foreground">
+                              {new Date(selectedRequest.required_date).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                            </span>
+                          </div>
+                          <span className="text-[11px] text-muted-foreground">
+                            SLA Sistem: {selectedRequest.sla_target_days || 5} hari kerja
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Deskripsi Permintaan */}
+                    <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
+                      <div className="px-4 py-2.5 bg-muted/30 border-b border-border flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <FileText size={14} className="text-muted-foreground" />
+                          <span className="text-xs font-semibold text-foreground">Rincian Deskripsi Permintaan</span>
+                        </div>
+                        <span className="text-[11px] font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded border border-border/40">
+                          {selectedRequest.category_name || categories.find(c => c.id === selectedRequest.category_id)?.name || 'Legal Request'}
+                        </span>
+                      </div>
+                      <div className="p-4 bg-background">
+                        <div className="border-l-2 border-primary/40 pl-3.5 py-0.5">
+                          <p className="text-xs md:text-sm text-foreground leading-relaxed whitespace-pre-wrap">
+                            {selectedRequest.description}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Tujuan Permintaan */}
+                    {(selectedRequest as any).tujuan && (
+                      <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
+                        <div className="px-4 py-2.5 bg-muted/30 border-b border-border flex items-center gap-2">
+                          <Target size={14} className="text-muted-foreground" />
+                          <span className="text-xs font-semibold text-foreground">Tujuan Permintaan</span>
+                        </div>
+                        <div className="p-4 bg-background">
+                          <div className="border-l-2 border-primary/40 pl-3.5 py-0.5">
+                            <p className="text-xs md:text-sm text-foreground leading-relaxed whitespace-pre-wrap">
+                              {(selectedRequest as any).tujuan}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Dokumen Lampiran */}
+                    {(() => {
+                      const isVisibleToUser = ['REVIEW_USER', 'COMPLETED', 'CLOSED'].includes(selectedRequest.status);
+                      if (isCslTeam && !hasDocuments && !showDocForm) return null;
+                      if (!isCslTeam && (!hasDocuments || !isVisibleToUser)) return null;
+
+                      return (
+                        <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
+                          <div className="px-4 py-2.5 bg-muted/30 border-b border-border flex justify-between items-center">
+                            <div className="flex items-center gap-2">
+                              <FolderOpen size={14} className="text-muted-foreground" />
+                              <span className="text-xs font-semibold text-foreground">Dokumen Lampiran &amp; Berkas ({totalDocCount})</span>
+                            </div>
+                            {isCslTeam && !['COMPLETED', 'CLOSED'].includes(selectedRequest.status) && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setShowDocForm(!showDocForm)}
+                                className="h-7 text-xs px-2.5 text-foreground hover:bg-muted font-medium"
+                              >
+                                {showDocForm ? 'Batal' : '+ Tambah Dokumen'}
+                              </Button>
+                            )}
+                          </div>
+
+                          <div className="p-4 space-y-2">
+                            {/* Old Attachments */}
+                            {oldAttachments.map((url, i) => {
+                              const name = decodeURIComponent(url.split('/').pop()?.split('_').slice(1).join('_') || `File ${i + 1}`);
+                              return (
+                                <a
+                                  key={`old-${i}`}
+                                  href={url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center justify-between px-3.5 py-2.5 rounded-lg border border-border bg-background hover:bg-muted/40 transition-colors group"
+                                >
+                                  <div className="flex items-center gap-2.5 min-w-0">
+                                    {renderDocIcon(name)}
+                                    <span className="text-xs font-medium text-foreground truncate group-hover:underline">{name}</span>
+                                  </div>
+                                  <div className="flex items-center gap-2 shrink-0 ml-2">
+                                    <span className="text-[10px] font-medium px-2 py-0.5 rounded border border-border bg-muted/40 text-muted-foreground">Lampiran</span>
+                                    <ArrowUpRight size={13} className="text-muted-foreground group-hover:text-foreground" />
+                                  </div>
+                                </a>
+                              );
+                            })}
+
+                            {/* GDrive & Request Documents */}
+                            {requestDocuments.map((doc, i) => (
+                              <div key={`gdrive-${i}`} className="flex items-center justify-between px-3.5 py-2.5 rounded-lg border border-border bg-background hover:bg-muted/40 transition-colors group">
+                                <a href={doc.doc_url || (doc as any).gdrive_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 min-w-0 flex-1">
+                                  {renderDocIcon(doc.doc_name)}
+                                  <span className="text-xs font-medium text-foreground truncate group-hover:underline">{doc.doc_name}</span>
+                                </a>
+                                <div className="flex items-center gap-2 shrink-0 ml-2">
+                                  {doc.doc_type && (
+                                    <span className="text-[10px] font-medium px-2 py-0.5 rounded border border-border bg-muted/40 text-muted-foreground">
+                                      {doc.doc_type}
+                                    </span>
+                                  )}
+                                  <span className="text-[10px] text-muted-foreground hidden sm:inline">
+                                    {doc.uploaded_by_name?.split(' ')[0] || 'Pemohon'}
+                                  </span>
+                                  <ArrowUpRight size={13} className="text-muted-foreground group-hover:text-foreground" />
+                                </div>
+                              </div>
+                            ))}
+
+                            {/* Response Files */}
+                            {responseFilesList.map((f, i) => (
+                              <div key={`resp-${i}`} className="flex items-center justify-between px-3.5 py-2.5 rounded-lg border border-border bg-muted/20 hover:bg-muted/40 transition-colors group">
+                                <a href={f.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 min-w-0 flex-1">
+                                  {renderDocIcon(f.name || 'file')}
+                                  <span className="text-xs font-medium text-foreground truncate group-hover:underline">{f.name || 'Lampiran Tim CSL'}</span>
+                                </a>
+                                <div className="flex items-center gap-2 shrink-0 ml-2">
+                                  <span className="text-[10px] font-medium px-2 py-0.5 rounded border border-border bg-card text-foreground">Respon CSL</span>
+                                  <ArrowUpRight size={13} className="text-muted-foreground group-hover:text-foreground" />
+                                </div>
+                              </div>
+                            ))}
+
+                            {!hasDocuments && <p className="text-xs text-muted-foreground italic text-center py-2">Belum ada dokumen lampiran.</p>}
+                          </div>
+
+                          {/* Add Document Form */}
+                          {showDocForm && (
+                            <div className="p-4 border-t border-border bg-muted/10 space-y-3">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div className="space-y-1">
+                                  <label className="text-[11px] font-semibold text-foreground">Nama Dokumen *</label>
+                                  <Input
+                                    placeholder="Cth: Surat Kuasa Final"
+                                    value={docForm.doc_name}
+                                    onChange={e => setDocForm({ ...docForm, doc_name: e.target.value })}
+                                    className="h-8 text-xs bg-background"
+                                    disabled={isSubmittingDoc}
+                                  />
+                                </div>
+                                <div className="space-y-1">
+                                  <label className="text-[11px] font-semibold text-foreground">Jenis Dokumen</label>
+                                  <Input
+                                    placeholder="Cth: Akta, Draft, Form"
+                                    value={docForm.doc_type}
+                                    onChange={e => setDocForm({ ...docForm, doc_type: e.target.value })}
+                                    className="h-8 text-xs bg-background"
+                                    disabled={isSubmittingDoc}
+                                  />
+                                </div>
+                              </div>
+                              <div className="space-y-2 pt-1">
+                                <label className="text-[11px] font-semibold text-foreground block">Upload File Fisik atau Tautan</label>
+                                <input
+                                  type="file"
+                                  ref={docFileRef}
+                                  className="hidden"
+                                  disabled={isSubmittingDoc}
+                                  onChange={e => {
+                                    if (e.target.files && e.target.files.length > 0) {
+                                      const selected = e.target.files[0];
+                                      setDocFile(selected);
+                                      if (!docForm.doc_name.trim()) {
+                                        setDocForm(prev => ({ ...prev, doc_name: selected.name, gdrive_url: '' }));
+                                      } else {
+                                        setDocForm(prev => ({ ...prev, gdrive_url: '' }));
+                                      }
+                                    }
+                                  }}
+                                />
+                                <div
+                                  onClick={() => !isSubmittingDoc && docFileRef.current?.click()}
+                                  className={`flex items-center justify-center gap-2 border-2 border-dashed border-border hover:border-foreground/40 bg-background hover:bg-muted/20 px-4 py-3 rounded-lg cursor-pointer transition-colors text-center ${isSubmittingDoc ? 'opacity-50 pointer-events-none' : ''}`}
+                                >
+                                  <Upload size={14} className="text-muted-foreground" />
+                                  <span className="text-xs font-medium text-foreground">
+                                    {docFile ? `${docFile.name} (${(docFile.size / 1024).toFixed(0)} KB)` : 'Klik untuk pilih file dari komputer...'}
+                                  </span>
+                                </div>
+
+                                {/* Upload Progress Bar */}
+                                {isSubmittingDoc && (
+                                  <div className="space-y-1.5 p-3 rounded-lg bg-background border border-border/80 shadow-xs">
+                                    <div className="flex items-center justify-between text-xs">
+                                      <span className="font-medium text-foreground flex items-center gap-1.5">
+                                        <Loader2 size={13} className="animate-spin text-primary" />
+                                        {docUploadStatus || 'Mengunggah file...'}
+                                      </span>
+                                      <span className="font-mono text-xs font-semibold text-foreground">{docUploadProgress}%</span>
+                                    </div>
+                                    <div className="w-full bg-muted rounded-full h-2 overflow-hidden border border-border/50">
+                                      <div
+                                        className="bg-primary h-full transition-all duration-300 rounded-full"
+                                        style={{ width: `${docUploadProgress}%` }}
+                                      />
+                                    </div>
+                                  </div>
+                                )}
+
+                                <div className="flex items-center gap-3 my-1">
+                                  <div className="flex-1 h-px bg-border"></div>
+                                  <span className="text-[10px] font-semibold text-muted-foreground">ATAU</span>
+                                  <div className="flex-1 h-px bg-border"></div>
+                                </div>
+                                <div className="space-y-1">
+                                  <label className="text-[11px] font-semibold text-foreground">Link Google Drive</label>
+                                  <Input
+                                    type="url"
+                                    placeholder="https://drive.google.com/..."
+                                    value={docForm.gdrive_url}
+                                    disabled={isSubmittingDoc}
+                                    onChange={e => {
+                                      setDocForm({ ...docForm, gdrive_url: e.target.value });
+                                      if (e.target.value) setDocFile(null);
+                                    }}
+                                    className="h-8 text-xs bg-background"
+                                  />
+                                </div>
+                              </div>
+                              <div className="flex justify-end gap-2 pt-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setShowDocForm(false)}
+                                  disabled={isSubmittingDoc}
+                                  className="h-8 text-xs"
+                                >
+                                  Batal
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  onClick={submitDocument}
+                                  disabled={isSubmittingDoc || !docForm.doc_name.trim() || (!docForm.gdrive_url.trim() && !docFile)}
+                                  className="h-8 text-xs"
+                                >
+                                  {isSubmittingDoc ? (
+                                    <>
+                                      <Loader2 size={13} className="animate-spin mr-1.5" />
+                                      Mengunggah...
+                                    </>
+                                  ) : (
+                                    'Simpan Dokumen'
+                                  )}
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
+
+                    {/* Balasan CSL Display */}
+                    {selectedRequest.csl_response && (
+                      <div className="rounded-lg border border-border bg-muted/20 p-4 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <MessageSquare size={14} className="text-foreground" />
+                          <span className="text-xs font-semibold text-foreground">Balasan Resmi Tim CSL</span>
+                          {selectedRequest.csl_response_at && (
+                            <span className="text-[11px] text-muted-foreground ml-auto">
+                              {new Date(selectedRequest.csl_response_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs md:text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap">{selectedRequest.csl_response}</p>
+                      </div>
+                    )}
+
+                    {/* Feedback Display */}
+                    {selectedRequest.feedback_submitted_at && (
+                      <div className="rounded-lg border border-border bg-card p-4 space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Star size={14} className="text-foreground fill-foreground" />
+                          <span className="text-xs font-semibold text-foreground">Feedback Pemohon</span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-3">
+                          {[
+                            { label: 'Overall', val: selectedRequest.feedback_overall_rating },
+                            { label: 'Kecepatan', val: selectedRequest.feedback_response_time_rating },
+                            { label: 'Kualitas', val: selectedRequest.feedback_service_quality_rating },
+                          ].map(f => (
+                            <div key={f.label} className="text-center p-2.5 bg-muted/30 rounded-md border border-border">
+                              <p className="text-[10px] font-medium text-muted-foreground mb-0.5">{f.label}</p>
+                              <p className="font-bold text-foreground text-sm">{f.val} / 5</p>
+                            </div>
+                          ))}
+                        </div>
+                        {selectedRequest.feedback_comment && (
+                          <p className="text-xs italic text-muted-foreground border-t border-border pt-2.5">
+                            "{selectedRequest.feedback_comment}"
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Feedback Form (Requester) */}
+                    {!isCslTeam && ['COMPLETED', 'CLOSED'].includes(selectedRequest.status) && !selectedRequest.feedback_submitted_at && (
+                      <div className="rounded-lg border border-border bg-card overflow-hidden">
+                        <div className="px-4 py-2.5 bg-muted/30 border-b border-border">
+                          <span className="text-xs font-semibold text-foreground">Beri Feedback Layanan</span>
+                        </div>
+                        <div className="p-4 space-y-3">
+                          <p className="text-xs text-muted-foreground">Bagaimana pengalaman Anda terhadap pelayanan tim CSL untuk tiket ini?</p>
+                          {[
+                            { key: 'overall', label: 'Overall' },
+                            { key: 'responseTime', label: 'Kecepatan Respon' },
+                            { key: 'quality', label: 'Kualitas Layanan' }
+                          ].map(field => (
+                            <div key={field.key} className="flex items-center justify-between">
+                              <span className="text-xs font-medium text-foreground">{field.label}</span>
+                              <div className="flex gap-1.5">
+                                {[1, 2, 3, 4, 5].map(rating => (
+                                  <button key={rating} type="button" onClick={() => setFeedbackForm({ ...feedbackForm, [field.key]: rating })} className="p-1 hover:scale-110 transition-transform">
+                                    <Star size={16} className={rating <= (feedbackForm as any)[field.key] ? "fill-foreground text-foreground" : "text-muted-foreground/30"} />
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                          <Textarea rows={2} className="w-full text-xs" placeholder="Komentar tambahan untuk perbaikan (opsional)..." value={feedbackForm.comment} onChange={e => setFeedbackForm({ ...feedbackForm, comment: e.target.value })} />
+                          <Button onClick={submitFeedback} disabled={isSubmitting} className="w-full h-8 text-xs font-semibold">
+                            Kirim Feedback
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  {/* TAB 2: LOG PROSES & DISKUSI (CHAT INTERFACE) */}
+                  <TabsContent value="activity" className="flex-1 flex flex-col min-h-0 m-0 data-[state=inactive]:hidden bg-muted/15">
+                    {/* Chat Messages Stream */}
+                    <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3.5">
+                      {allEvents.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center h-full py-12 text-center text-muted-foreground space-y-2">
+                          <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                            <MessageSquare size={18} className="text-muted-foreground" />
+                          </div>
+                          <p className="text-xs font-semibold text-foreground">Belum Ada Percakapan</p>
+                          <p className="text-[11px] text-muted-foreground max-w-xs">
+                            Mulai diskusi atau tanyakan perkembangan permintaan ini pada kolom pesan di bawah.
+                          </p>
+                        </div>
+                      ) : (
+                        allEvents.map((evt, i) => {
+                          const isSystemNote = evt.note && (
+                            evt.note.includes('Permintaan diajukan') ||
+                            evt.note.includes('Dokumen ditambahkan:') ||
+                            evt.note.includes('Status/PIC diperbarui') ||
+                            evt.note.includes('Status diubah')
+                          );
+
+                          // System Event Pill (Centered)
+                          if (isSystemNote) {
+                            return (
+                              <div key={i} className="flex items-center justify-center my-2.5">
+                                <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-background border border-border/70 text-[11px] text-muted-foreground shadow-2xs">
+                                  <Activity size={11} className="text-muted-foreground shrink-0" />
+                                  <span>{evt.note}</span>
+                                  <span className="text-[10px] text-muted-foreground/60 ml-1">
+                                    {new Date(evt.date).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          }
+
+                          const isMe = (currentUser?.fullName && evt.actor?.toLowerCase() === currentUser.fullName.toLowerCase()) ||
+                            (currentUser?.email && evt.actor?.toLowerCase() === currentUser.email.toLowerCase());
+
+                          // Chat Message: Right Aligned (Sent by Current User)
+                          if (isMe) {
+                            return (
+                              <div key={i} className="flex flex-col items-end gap-1 pl-12">
+                                <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground pr-1">
+                                  <span className="font-semibold text-foreground">Anda</span>
+                                  <span>•</span>
+                                  <span>
+                                    {new Date(evt.date).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                                  </span>
+                                </div>
+                                <div
+                                  className={`relative max-w-[85%] rounded-2xl rounded-tr-xs px-4 py-2.5 text-xs shadow-xs leading-relaxed ${
+                                    evt.isInternal
+                                      ? 'bg-amber-500/10 border border-amber-500/30 text-foreground'
+                                      : 'bg-primary text-primary-foreground'
+                                  }`}
+                                >
+                                  {evt.isInternal && (
+                                    <div className="flex items-center gap-1 text-[10px] font-semibold text-amber-600 dark:text-amber-400 mb-1 pb-1 border-b border-amber-500/20">
+                                      <Shield size={10} />
+                                      <span>Catatan Internal CSL</span>
+                                    </div>
+                                  )}
+                                  <p className="whitespace-pre-wrap">{evt.note}</p>
+                                </div>
+                              </div>
+                            );
+                          }
+
+                          // Chat Message: Left Aligned (Other Participants / Staff)
+                          return (
+                            <div key={i} className="flex items-start gap-2.5 pr-12">
+                              {/* Avatar */}
+                              <div className="w-8 h-8 rounded-full bg-background border border-border flex items-center justify-center text-xs font-semibold text-foreground shrink-0 shadow-2xs mt-0.5">
+                                {evt.actor ? evt.actor.replace(/(Adv\.|S\.H\.|PT)/gi, '').trim().substring(0, 2).toUpperCase() : 'U'}
+                              </div>
+                              <div className="flex flex-col gap-1 flex-1 min-w-0">
+                                <div className="flex items-center gap-1.5 pl-1">
+                                  <span className="text-xs font-bold text-foreground truncate">{evt.actor}</span>
+                                  {evt.isInternal ? (
+                                    <span className="text-[9px] font-semibold px-1.5 py-0.2 rounded border border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300">
+                                      Internal CSL
+                                    </span>
+                                  ) : (
+                                    <span className="text-[9px] font-medium px-1.5 py-0.2 rounded border border-border bg-muted/40 text-muted-foreground">
+                                      {evt.actor === selectedRequest.requester_name ? 'Pemohon' : 'Tim CSL'}
+                                    </span>
+                                  )}
+                                  <span className="text-[10px] text-muted-foreground ml-auto">
+                                    {new Date(evt.date).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                                  </span>
+                                </div>
+                                <div
+                                  className={`rounded-2xl rounded-tl-xs px-4 py-2.5 text-xs shadow-xs leading-relaxed border ${
+                                    evt.isInternal
+                                      ? 'bg-amber-500/5 border-amber-500/25 text-foreground'
+                                      : 'bg-card border-border text-foreground'
+                                  }`}
+                                >
+                                  <p className="whitespace-pre-wrap">{evt.note}</p>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                      <div ref={chatEndRef} />
+                    </div>
+
+                    {/* Chat Input Bar */}
+                    {!['CLOSED', 'COMPLETED', 'REJECTED'].includes(selectedRequest.status) && (
+                      <div className="p-3.5 border-t border-border bg-card shrink-0 space-y-2">
+                        {isCslTeam && (
+                          <div className="flex items-center justify-between px-1 text-[11px]">
+                            <label className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground cursor-pointer select-none">
+                              <input
+                                type="checkbox"
+                                checked={isInternalComment}
+                                onChange={e => setIsInternalComment(e.target.checked)}
+                                className="rounded border-border h-3.5 w-3.5 accent-primary"
+                              />
+                              <span>Kirim sebagai <strong className="font-semibold text-foreground">Catatan Internal</strong> (hanya tim CSL)</span>
+                            </label>
+                            <span className="text-[10px] text-muted-foreground hidden sm:inline">Ketik @ untuk mention staff</span>
+                          </div>
+                        )}
+
+                        <div className="flex items-end gap-2 relative">
+                          {/* Mention Popup */}
+                          {mentionState.active && (
+                            <div className="absolute bottom-full left-0 mb-2 w-64 max-h-48 overflow-y-auto bg-card border border-border rounded-lg shadow-xl z-50 py-1">
+                              <p className="text-[10px] font-semibold uppercase text-muted-foreground px-3 py-1 border-b border-border bg-muted/20">Tag Tim CSL</p>
+                              {cslStaffUsers
+                                .filter(u => u.fullName.toLowerCase().includes(mentionState.query.toLowerCase()))
+                                .map((u) => (
+                                  <button
+                                    key={u.id}
+                                    type="button"
+                                    className="w-full text-left px-3 py-1.5 text-xs font-medium hover:bg-muted transition-colors flex items-center justify-between"
+                                    onClick={() => {
+                                      const before = newComment.slice(0, mentionState.index);
+                                      const after = newComment.slice(mentionState.index + mentionState.query.length + 1);
+                                      setNewComment(`${before}@${u.fullName} ${after}`);
+                                      setMentionState({ active: false, query: '', index: 0 });
+                                    }}
+                                  >
+                                    <span className="truncate">{u.fullName}</span>
+                                    <span className="text-[9px] text-muted-foreground font-mono ml-2 uppercase">{u.role}</span>
+                                  </button>
+                                ))}
+                            </div>
+                          )}
+
+                          <Textarea
+                            rows={1}
+                            placeholder={isInternalComment ? "Tulis catatan internal untuk tim CSL..." : "Ketik pesan atau balasan diskusi... (Enter untuk kirim)"}
+                            value={newComment}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setNewComment(val);
+                              e.target.style.height = 'auto';
+                              e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
+
+                              const cursorPos = e.target.selectionStart;
+                              const textBeforeCursor = val.slice(0, cursorPos);
+                              const match = textBeforeCursor.match(/(?:^|\s)@([a-zA-Z0-9_ ]*)$/);
+
+                              if (match && isCslTeam) {
+                                const atIndex = match[0].startsWith(' ') ? match.index! + 1 : match.index!;
+                                setMentionState({ active: true, query: match[1], index: atIndex });
+                              } else {
+                                setMentionState({ active: false, query: '', index: 0 });
+                              }
+                            }}
+                            onKeyDown={(e) => {
+                              if (mentionState.active && (e.key === 'Enter' || e.key === 'Tab')) {
+                                e.preventDefault();
+                                const matches = cslStaffUsers.filter(u => u.fullName.toLowerCase().includes(mentionState.query.toLowerCase()));
+                                if (matches.length > 0) {
+                                  const u = matches[0];
+                                  const before = newComment.slice(0, mentionState.index);
+                                  const after = newComment.slice(mentionState.index + mentionState.query.length + 1);
+                                  setNewComment(`${before}@${u.fullName} ${after}`);
+                                  setMentionState({ active: false, query: '', index: 0 });
+                                }
+                              } else if (mentionState.active && e.key === 'Escape') {
+                                setMentionState({ active: false, query: '', index: 0 });
+                              } else if (e.key === 'Enter' && !e.shiftKey && !mentionState.active) {
+                                e.preventDefault();
+                                submitComment();
+                              }
+                            }}
+                            style={{ minHeight: '40px', maxHeight: '120px' }}
+                            className="flex-1 text-xs bg-background rounded-xl resize-none py-2.5 px-3.5 border-border shadow-xs focus-visible:ring-1"
+                          />
+                          <Button
+                            size="icon"
+                            disabled={isSubmittingComment || !newComment.trim()}
+                            onClick={submitComment}
+                            className="h-10 w-10 shrink-0 rounded-xl bg-primary text-primary-foreground hover:opacity-90 transition-all shadow-xs"
+                            title="Kirim Pesan"
+                          >
+                            {isSubmittingComment ? <Loader2 size={14} className="animate-spin" /> : <Send size={15} />}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  {/* TAB 3: TINDAKAN CSL (UPDATE STATUS) */}
+                  {isCslTeam && !['COMPLETED', 'CLOSED'].includes(selectedRequest.status) && (
+                    <TabsContent value="action" className="flex-1 overflow-y-auto p-6 space-y-4 m-0 data-[state=inactive]:hidden">
+                      <div className="rounded-lg border border-border bg-card p-5 space-y-4">
+                        <div>
+                          <h4 className="text-sm font-semibold text-foreground">Update Status &amp; Tindak Lanjut</h4>
+                          <p className="text-xs text-muted-foreground mt-0.5">Pilih status pemrosesan permintaan dan lampirkan dokumen hasil jika ada.</p>
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-semibold text-foreground">Status Baru</label>
                           <select
-                            className="w-full mt-1.5 px-3 py-2 text-sm bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                            className="h-9 w-full rounded-md border border-input bg-background px-3 text-xs shadow-sm focus:outline-none focus:ring-1 focus:ring-ring text-foreground"
                             value={responseForm.status}
                             onChange={e => setResponseForm({ ...responseForm, status: e.target.value })}
                           >
-                            <option value="">— Pilih Status —</option>
+                            <option value="">— Pilih Status Pemrosesan —</option>
                             <option value="ACKNOWLEDGED">Acknowledged</option>
                             <option value="IN_REVIEW">In Review</option>
                             <option value="PROCESSING">Processing</option>
@@ -1597,140 +1977,94 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                           </select>
                         </div>
 
-                        {/* Catatan */}
                         {['COMPLETED', 'REJECTED', 'REVIEW_USER', 'RESPONDED'].includes(responseForm.status) && (
-                          <div>
-                            <label className="text-[10px] font-black uppercase text-muted-foreground">Catatan / Balasan</label>
-                            <textarea
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-foreground">Catatan / Balasan untuk Pemohon</label>
+                            <Textarea
                               rows={3}
-                              className="w-full mt-1.5 px-3 py-2 text-sm bg-background border border-border rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/30"
-                              placeholder="Tulis catatan atau balasan untuk pemohon..."
+                              className="text-xs"
+                              placeholder="Tuliskan catatan, rekomendasi, atau kesimpulan untuk pemohon..."
                               value={responseForm.response}
                               onChange={e => setResponseForm({ ...responseForm, response: e.target.value })}
                             />
                           </div>
                         )}
 
-                        {/* Divider Dokumen Fisik */}
-                        <div className="border-t border-border/60 pt-3">
-                          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-3">Lampirkan File Fisik (Opsional)</p>
-
-                          {/* File Upload */}
-                          <div>
-                            <div
-                              onClick={() => responseFileRef.current?.click()}
-                              onDragOver={e => { e.preventDefault(); setIsDraggingResponse(true); }}
-                              onDragLeave={() => setIsDraggingResponse(false)}
-                              onDrop={e => {
-                                e.preventDefault(); setIsDraggingResponse(false);
-                                const files = Array.from(e.dataTransfer.files);
+                        <div className="space-y-2 pt-2 border-t border-border">
+                          <label className="text-xs font-semibold text-foreground block">Lampirkan File Fisik (Opsional)</label>
+                          <div
+                            onClick={() => responseFileRef.current?.click()}
+                            onDragOver={e => { e.preventDefault(); setIsDraggingResponse(true); }}
+                            onDragLeave={() => setIsDraggingResponse(false)}
+                            onDrop={e => {
+                              e.preventDefault(); setIsDraggingResponse(false);
+                              const files = Array.from(e.dataTransfer.files);
+                              setResponseFiles(prev => {
+                                const names = new Set(prev.map(f => f.name));
+                                return [...prev, ...files.filter(f => !names.has(f.name))];
+                              });
+                            }}
+                            className={`border-2 border-dashed rounded-lg p-4 flex flex-col items-center justify-center gap-1 cursor-pointer transition-colors ${
+                              isDraggingResponse ? 'border-foreground bg-muted/40' : 'border-border hover:border-foreground/40 bg-background hover:bg-muted/20'
+                            }`}
+                          >
+                            <Paperclip size={16} className="text-muted-foreground" />
+                            <p className="text-xs font-semibold text-foreground">Klik atau seret file ke sini</p>
+                            <p className="text-[10px] text-muted-foreground">PDF, DOCX, XLSX, JPG, PNG — maks. 10MB</p>
+                            <input ref={responseFileRef} type="file" multiple
+                              accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+                              className="hidden"
+                              onChange={e => {
+                                const files = Array.from(e.target.files || []);
                                 setResponseFiles(prev => {
                                   const names = new Set(prev.map(f => f.name));
                                   return [...prev, ...files.filter(f => !names.has(f.name))];
                                 });
                               }}
-                              className={`border-2 border-dashed rounded-xl p-4 flex flex-col items-center justify-center gap-1 cursor-pointer transition-colors ${isDraggingResponse ? 'border-blue-400 bg-blue-50 dark:bg-blue-950/20' : 'border-border hover:border-blue-300 hover:bg-muted/20'
-                                }`}
-                            >
-                              <Paperclip size={18} className="text-blue-400" />
-                              <p className="text-xs font-bold text-blue-600">Klik atau seret file ke sini</p>
-                              <p className="text-[10px] text-muted-foreground">PDF, DOCX, XLSX, JPG, PNG — maks. 10MB</p>
-                              <input ref={responseFileRef} type="file" multiple
-                                accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
-                                className="hidden"
-                                onChange={e => {
-                                  const files = Array.from(e.target.files || []);
-                                  setResponseFiles(prev => {
-                                    const names = new Set(prev.map(f => f.name));
-                                    return [...prev, ...files.filter(f => !names.has(f.name))];
-                                  });
-                                }}
-                              />
-                            </div>
-                            {responseFiles.length > 0 && (
-                              <div className="mt-2 space-y-1.5">
-                                {responseFiles.map(file => (
-                                  <div key={file.name} className="flex items-center justify-between bg-muted/40 border border-border/60 rounded-lg px-3 py-2">
-                                    <div className="flex items-center gap-2 min-w-0">
-                                      <Paperclip size={11} className="text-blue-500 shrink-0" />
-                                      <span className="text-xs font-semibold text-foreground truncate">{file.name}</span>
-                                    </div>
-                                    <button type="button" onClick={() => setResponseFiles(prev => prev.filter(f => f.name !== file.name))}
-                                      className="p-1 rounded hover:bg-red-100 text-muted-foreground hover:text-red-500 transition-colors shrink-0 ml-1">
-                                      <X size={11} />
-                                    </button>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
+                            />
                           </div>
 
-                          {/* Existing response files preview */}
-                          {(() => {
-                            const existing: any[] = (() => {
-                              try { return JSON.parse((selectedRequest as any).csl_response_files || '[]'); } catch { return []; }
-                            })();
-                            if (!existing.length) return null;
-                            return (
-                              <div className="mt-3">
-                                <p className="text-[10px] font-black uppercase text-muted-foreground mb-1.5">Dokumen Sebelumnya</p>
-                                <div className="space-y-1.5">
-                                  {existing.map((item: any, i: number) => (
-                                    <a key={i} href={item.url} target="_blank" rel="noopener noreferrer"
-                                      className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/30 border border-border/60 hover:bg-blue-50 dark:hover:bg-blue-950/20 transition-colors group">
-                                      {item.type === 'gdrive'
-                                        ? <Link size={11} className="text-blue-500 shrink-0" />
-                                        : <Paperclip size={11} className="text-blue-500 shrink-0" />}
-                                      <span className="text-xs font-semibold truncate group-hover:text-blue-600">{item.name}</span>
-                                    </a>
-                                  ))}
+                          {responseFiles.length > 0 && (
+                            <div className="space-y-1.5 pt-1">
+                              {responseFiles.map(file => (
+                                <div key={file.name} className="flex items-center justify-between bg-muted/30 border border-border rounded-md px-3 py-2">
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    <Paperclip size={12} className="text-muted-foreground shrink-0" />
+                                    <span className="text-xs font-medium text-foreground truncate">{file.name}</span>
+                                  </div>
+                                  <button type="button" onClick={() => setResponseFiles(prev => prev.filter(f => f.name !== file.name))}
+                                    className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors shrink-0">
+                                    <X size={12} />
+                                  </button>
                                 </div>
-                              </div>
-                            );
-                          })()}
-                        </div>
-
-                        <Button onClick={submitResponse} disabled={isSubmitting || !responseForm.status} className="w-full h-10 bg-blue-600 hover:bg-blue-500 font-bold text-sm">
-                          <Send size={14} className="mr-2" /> Simpan Update
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-
-
-
-                  {/* Feedback Form (Requester) */}
-                  {!isCslTeam && ['COMPLETED', 'CLOSED'].includes(selectedRequest.status) && !selectedRequest.feedback_submitted_at && (
-                    <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 rounded-xl overflow-hidden">
-                      <div className="px-4 py-2.5 bg-amber-100 dark:bg-amber-900/40 border-b border-amber-200 dark:border-amber-800/40">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-amber-700 dark:text-amber-400">Beri Feedback</p>
-                      </div>
-                      <div className="p-4 space-y-3">
-                        <p className="text-xs text-muted-foreground">Bagaimana performa tim CSL untuk permintaan ini?</p>
-                        {[
-                          { key: 'overall', label: 'Overall' },
-                          { key: 'responseTime', label: 'Kecepatan Respon' },
-                          { key: 'quality', label: 'Kualitas Layanan' }
-                        ].map(field => (
-                          <div key={field.key} className="flex items-center justify-between">
-                            <span className="text-xs font-semibold">{field.label}</span>
-                            <div className="flex gap-1">
-                              {[1, 2, 3, 4, 5].map(rating => (
-                                <button key={rating} onClick={() => setFeedbackForm({ ...feedbackForm, [field.key]: rating })} className="p-0.5 hover:scale-110 transition-transform">
-                                  <Star size={18} className={rating <= (feedbackForm as any)[field.key] ? "fill-amber-400 text-amber-400" : "text-muted-foreground/30"} />
-                                </button>
                               ))}
                             </div>
-                          </div>
-                        ))}
-                        <textarea rows={2} className="w-full mt-1 px-3 py-2 text-sm bg-background border border-border rounded-xl resize-none" placeholder="Komentar tambahan (opsional)..." value={feedbackForm.comment} onChange={e => setFeedbackForm({ ...feedbackForm, comment: e.target.value })} />
-                        <Button onClick={submitFeedback} disabled={isSubmitting} variant="outline" className="w-full border-amber-300 text-amber-700 hover:bg-amber-100">
-                          Kirim Feedback
+                          )}
+
+                          {/* Existing Response Files Preview */}
+                          {responseFilesList.length > 0 && (
+                            <div className="pt-2">
+                              <p className="text-[11px] font-semibold uppercase text-muted-foreground mb-1.5">File Respon Sebelumnya</p>
+                              <div className="space-y-1.5">
+                                {responseFilesList.map((item: any, i: number) => (
+                                  <a key={i} href={item.url} target="_blank" rel="noopener noreferrer"
+                                    className="flex items-center gap-2 px-3 py-2 rounded-md bg-muted/20 border border-border hover:bg-muted/40 transition-colors group">
+                                    <Paperclip size={12} className="text-muted-foreground shrink-0" />
+                                    <span className="text-xs font-medium truncate group-hover:underline">{item.name}</span>
+                                  </a>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        <Button onClick={submitResponse} disabled={isSubmitting || !responseForm.status} className="w-full h-10 font-semibold text-xs mt-2">
+                          <Send size={14} className="mr-2" /> Simpan Update Status
                         </Button>
                       </div>
-                    </div>
+                    </TabsContent>
                   )}
-                </div>
+                </Tabs>
               </div>
             );
           })()}
@@ -1738,39 +2072,39 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
       </Dialog>
 
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-        <DialogContent className="sm:max-w-4xl xl:max-w-5xl p-0 overflow-hidden bg-transparent border-none shadow-none">
-          <div className="bg-background rounded-xl shadow-xl w-full">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-muted/20">
-              <div>
-                <h2 className="text-xl font-black text-foreground">Buat Permintaan Baru</h2>
-              </div>
-            </div>
-            <div className="px-6 py-6 max-h-[85vh] overflow-y-auto">
-              <CSLCreateRequest
-                currentUser={currentUser}
-                onClose={() => setIsCreateOpen(false)}
-                onSuccess={() => {
-                  fetchData();
-                  // No need to close immediately if they want to 'Buat Permintaan Lain', but if they click 'Tutup' the child closes it
-                }}
-              />
-            </div>
+        <DialogContent className="sm:max-w-3xl max-h-[90vh] flex flex-col p-0 overflow-hidden rounded-xl border bg-card shadow-xl">
+          <DialogHeader className="px-6 py-4 border-b border-border bg-muted/20">
+            <DialogTitle className="text-lg font-semibold text-foreground">Buat Permintaan Baru</DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              Ajukan permintaan ke tim Legal &amp; Corporate Secretary
+            </DialogDescription>
+          </DialogHeader>
+          <div className="px-6 py-5 overflow-y-auto flex-1">
+            <CSLCreateRequest
+              currentUser={currentUser}
+              onClose={() => setIsCreateOpen(false)}
+              onSuccess={() => {
+                fetchData();
+              }}
+            />
           </div>
         </DialogContent>
       </Dialog>
 
       {/* Edit Dialog for Admin */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-md p-0 overflow-hidden rounded-2xl">
-          <DialogHeader className="p-6 pb-4 border-b bg-muted/20">
-            <DialogTitle className="text-xl font-black">Edit Status &amp; Penugasan PIC</DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">Khusus Admin: Koreksi status secara paksa &amp; alihkan penugasan ke Staff CSL.</DialogDescription>
+        <DialogContent className="sm:max-w-md p-0 overflow-hidden rounded-xl border bg-card shadow-xl">
+          <DialogHeader className="px-6 py-4 border-b bg-muted/20">
+            <DialogTitle className="text-base font-semibold">Edit Status &amp; Penugasan PIC</DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              Khusus Admin: Koreksi status secara paksa &amp; alihkan penugasan ke Staff CSL.
+            </DialogDescription>
           </DialogHeader>
           <div className="p-6 space-y-4">
-            <div className="space-y-2">
-              <label className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground block mb-1">Status Request</label>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-foreground">Status Request</label>
               <select
-                className="w-full text-sm border border-border bg-background rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500/30 font-medium"
+                className="h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring text-foreground"
                 value={editForm.status || ''}
                 onChange={e => setEditForm({ ...editForm, status: e.target.value })}
               >
@@ -1778,10 +2112,10 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
               </select>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground block mb-1">Tugaskan ke Staff (PIC)</label>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-foreground">Tugaskan ke Staff (PIC)</label>
               <select
-                className="w-full text-sm border border-border bg-background rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500/30 font-medium"
+                className="h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring text-foreground"
                 value={editForm.assigned_pic_id || ''}
                 onChange={e => {
                   const staff = cslStaffUsers.find(s => s.id === e.target.value);
@@ -1801,11 +2135,11 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
               </select>
             </div>
           </div>
-          <DialogFooter className="p-4 border-t bg-muted/10 gap-2 flex sm:justify-end">
-            <Button variant="outline" size="sm" onClick={() => setIsEditDialogOpen(false)} className="text-xs font-bold rounded-xl h-9">
+          <DialogFooter className="px-6 py-3.5 border-t bg-muted/10 gap-2 flex sm:justify-end">
+            <Button variant="outline" size="sm" onClick={() => setIsEditDialogOpen(false)} className="text-xs h-9">
               Batal
             </Button>
-            <Button size="sm" onClick={handleEditSave} disabled={isSubmitting} className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl h-9 px-5">
+            <Button size="sm" onClick={handleEditSave} disabled={isSubmitting} className="text-xs h-9">
               {isSubmitting ? 'Menyimpan...' : 'Simpan Perubahan'}
             </Button>
           </DialogFooter>

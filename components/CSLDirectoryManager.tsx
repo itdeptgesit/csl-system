@@ -506,33 +506,33 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
       {/* KPI Cards when in All View */}
       {activeCategory === 'all' && (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-card border border-border/40 p-5 rounded-xl shadow-sm flex flex-col justify-between">
+          <div className="bg-card border border-border/40 p-5 rounded-xl shadow-sm flex flex-col justify-between hover:border-border/80 transition-colors">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-muted-foreground">Total Directory</span>
               <Phone size={16} className="text-muted-foreground" />
             </div>
-            <p className="text-2xl font-bold mt-2">{contacts.length}</p>
+            <p className="text-2xl font-bold font-mono text-foreground mt-2">{contacts.length}</p>
           </div>
-          <div className="bg-card border border-border/40 p-5 rounded-xl shadow-sm flex flex-col justify-between">
+          <div className="bg-card border border-border/40 p-5 rounded-xl shadow-sm flex flex-col justify-between hover:border-border/80 transition-colors">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-muted-foreground">Lawyers & Notaries</span>
               <Scale size={16} className="text-muted-foreground" />
             </div>
-            <p className="text-2xl font-bold mt-2">{contacts.filter(c => c.category === 'Lawyer').length}</p>
+            <p className="text-2xl font-bold font-mono text-foreground mt-2">{contacts.filter(c => c.category === 'Lawyer').length}</p>
           </div>
-          <div className="bg-card border border-border/40 p-5 rounded-xl shadow-sm flex flex-col justify-between">
+          <div className="bg-card border border-border/40 p-5 rounded-xl shadow-sm flex flex-col justify-between hover:border-border/80 transition-colors">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-muted-foreground">Govt Agencies</span>
               <Landmark size={16} className="text-muted-foreground" />
             </div>
-            <p className="text-2xl font-bold mt-2">{contacts.filter(c => c.category === 'Government').length}</p>
+            <p className="text-2xl font-bold font-mono text-foreground mt-2">{contacts.filter(c => c.category === 'Government').length}</p>
           </div>
-          <div className="bg-card border border-border/40 p-5 rounded-xl shadow-sm flex flex-col justify-between">
+          <div className="bg-card border border-border/40 p-5 rounded-xl shadow-sm flex flex-col justify-between hover:border-border/80 transition-colors">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-muted-foreground">Legal Vendors</span>
               <Store size={16} className="text-muted-foreground" />
             </div>
-            <p className="text-2xl font-bold mt-2">{contacts.filter(c => c.category === 'Vendor').length}</p>
+            <p className="text-2xl font-bold font-mono text-foreground mt-2">{contacts.filter(c => c.category === 'Vendor').length}</p>
           </div>
         </div>
       )}
@@ -667,48 +667,47 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
         <div className="rounded-lg border bg-card overflow-hidden">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Contact Details</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Phone</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>City</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+              <TableRow className="hover:bg-transparent border-b border-border/40">
+                <TableHead className="text-xs font-semibold text-foreground/80 pl-6">Contact Details</TableHead>
+                <TableHead className="text-xs font-semibold text-foreground/80">Category</TableHead>
+                <TableHead className="text-xs font-semibold text-foreground/80">Phone</TableHead>
+                <TableHead className="text-xs font-semibold text-foreground/80">Email</TableHead>
+                <TableHead className="text-xs font-semibold text-foreground/80">City</TableHead>
+                <TableHead className="text-xs font-semibold text-foreground/80 text-right pr-6">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {paginatedContacts.map(contact => {
                 const getInitials = (name: string) => name.replace(/(Adv\.|S\.H\.|M\.H\.|Dra\.|PT|Kantor Notaris)/gi, '').trim().substring(0, 2).toUpperCase();
-                const catColors: Record<string, string> = { Lawyer: 'bg-muted text-muted-foreground', Government: 'bg-muted text-muted-foreground', Vendor: 'bg-muted text-muted-foreground', Other: 'bg-muted text-muted-foreground' };
                 return (
-                <TableRow key={contact.id} className="border-border/20 hover:bg-muted/30 transition-colors group">
+                <TableRow key={contact.id} className="border-border/30 hover:bg-muted/30 transition-colors group">
                   <TableCell className="py-4 pl-6">
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 rounded-md border bg-muted flex items-center justify-center text-sm font-semibold text-muted-foreground shrink-0">{getInitials(contact.name)}</div>
                       <div>
                         <div className="font-medium text-sm text-foreground">{contact.name}</div>
-                        <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5"><Building2 size={11} /> {contact.organization}</div>
+                        <div className="text-xs text-foreground/75 flex items-center gap-1 mt-0.5"><Building2 size={11} /> {contact.organization}</div>
                       </div>
                     </div>
                   </TableCell>
                   <TableCell className="py-4">
-                    <span className="inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium text-muted-foreground">{contact.category}</span>
+                    <span className="inline-flex items-center rounded-md border border-border/70 px-2 py-0.5 text-xs font-medium bg-muted/60 text-foreground">{contact.category}</span>
                   </TableCell>
                   <TableCell className="py-4">
-                    <button onClick={() => copyToClipboard(contact.phone, `${contact.id}-phone`)} className="flex items-center gap-1.5 font-mono text-xs text-foreground hover:text-foreground/70 transition-colors group/cp">
+                    <button onClick={() => copyToClipboard(contact.phone, `${contact.id}-phone`)} className="flex items-center gap-1.5 font-mono text-xs text-foreground hover:text-foreground/80 transition-colors group/cp">
                       {contact.phone}
-                      {copiedKey === `${contact.id}-phone` ? <Check size={12} className="text-foreground" /> : <Copy size={11} className="text-muted-foreground/40 group-hover/cp:text-muted-foreground transition-colors" />}
+                      {copiedKey === `${contact.id}-phone` ? <Check size={12} className="text-foreground" /> : <Copy size={11} className="text-muted-foreground/60 group-hover/cp:text-foreground transition-colors" />}
                     </button>
                   </TableCell>
                   <TableCell className="py-4 text-xs">
                     {contact.email && contact.email !== '-' ? (
-                      <button onClick={() => copyToClipboard(contact.email, `${contact.id}-email`)} className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors group/ce">
+                      <button onClick={() => copyToClipboard(contact.email, `${contact.id}-email`)} className="flex items-center gap-1.5 text-foreground hover:text-foreground/80 transition-colors group/ce">
                         {contact.email}
-                        {copiedKey === `${contact.id}-email` ? <Check size={12} className="text-foreground" /> : <Copy size={11} className="text-muted-foreground/40 group-hover/ce:text-muted-foreground transition-colors" />}
+                        {copiedKey === `${contact.id}-email` ? <Check size={12} className="text-foreground" /> : <Copy size={11} className="text-muted-foreground/60 group-hover/ce:text-foreground transition-colors" />}
                       </button>
                     ) : <span className="text-muted-foreground/40">—</span>}
                   </TableCell>
-                  <TableCell className="py-4 text-xs text-muted-foreground">{contact.city}</TableCell>
+                  <TableCell className="py-4 text-xs text-foreground">{contact.city}</TableCell>
                   <TableCell className="py-4 text-right pr-6">
                     <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button onClick={() => openEditModal(contact)} className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors"><Edit3 size={14} /></button>
@@ -773,96 +772,182 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
 
       {/* ── ADD / EDIT CONTACT MODAL ── */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>{editingContact ? 'Edit Contact' : 'Add New Contact'}</DialogTitle>
-            <DialogDescription>
-              {editingContact ? 'Update contact details in the directory.' : 'Add legal counsel, notary, vendor, or government contact.'}
-            </DialogDescription>
-          </DialogHeader>
-
-          <form onSubmit={handleFormSubmit} className="space-y-4">
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Category <span className="text-destructive">*</span></label>
-              <select
-                value={formData.category}
-                onChange={e => setFormData({ ...formData, category: e.target.value as any })}
-                className="w-full h-9 px-3 text-sm rounded-md border border-input bg-transparent focus:outline-none focus:ring-1 focus:ring-ring"
-              >
-                <option value="Lawyer">Lawyer / Notary</option>
-                <option value="Government">Government Agency</option>
-                <option value="Vendor">Legal Vendor / Translator</option>
-                <option value="Other">Other Contact</option>
-              </select>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Full Name / Title <span className="text-destructive">*</span></label>
-              <Input
-                required
-                placeholder="e.g. Adv. Herman Suryadi, S.H., M.H."
-                value={formData.name}
-                onChange={e => setFormData({ ...formData, name: e.target.value })}
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Organization / Law Firm</label>
-              <Input
-                placeholder="e.g. Herman & Partners Law Firm"
-                value={formData.organization}
-                onChange={e => setFormData({ ...formData, organization: e.target.value })}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium">Phone Number <span className="text-destructive">*</span></label>
-                <Input
-                  required
-                  placeholder="+62 811-xxx-xxx"
-                  value={formData.phone}
-                  onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                  className="font-mono"
-                />
+        <DialogContent className="sm:max-w-[520px] p-0 overflow-hidden gap-0">
+          {/* Gradient Header */}
+          <div className="relative px-6 pt-6 pb-5 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border-b border-border/50">
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-primary/15 border border-primary/20 flex items-center justify-center shadow-sm">
+                {editingContact
+                  ? <Edit3 size={20} className="text-primary" />
+                  : <UserPlus size={20} className="text-primary" />}
               </div>
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium">City</label>
-                <Input
-                  placeholder="Jakarta"
-                  value={formData.city}
-                  onChange={e => setFormData({ ...formData, city: e.target.value })}
-                />
+              <div className="flex-1 min-w-0">
+                <DialogTitle className="text-lg font-bold leading-tight">
+                  {editingContact ? 'Edit Contact' : 'Add New Contact'}
+                </DialogTitle>
+                <DialogDescription className="text-xs mt-0.5 leading-relaxed">
+                  {editingContact
+                    ? 'Update contact details in the directory.'
+                    : 'Add legal counsel, notary, vendor, or government contact.'}
+                </DialogDescription>
               </div>
             </div>
+          </div>
 
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Email Address</label>
-              <Input
-                type="email"
-                placeholder="info@firm.co.id"
-                value={formData.email}
-                onChange={e => setFormData({ ...formData, email: e.target.value })}
-              />
+          <form onSubmit={handleFormSubmit}>
+            <div className="px-6 py-5 space-y-5 max-h-[65vh] overflow-y-auto">
+
+              {/* Category Selector Cards */}
+              <div className="space-y-2">
+                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Category <span className="text-destructive normal-case tracking-normal font-bold">*</span>
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { value: 'Lawyer',     label: 'Lawyer / Notary',         icon: Scale,    color: 'blue' },
+                    { value: 'Government', label: 'Government Agency',        icon: Landmark, color: 'amber' },
+                    { value: 'Vendor',     label: 'Vendor / Translator',      icon: Store,    color: 'violet' },
+                    { value: 'Other',      label: 'Other Contact',            icon: User,     color: 'slate' },
+                  ].map(({ value, label, icon: Icon, color }) => {
+                    const isSelected = formData.category === value;
+                    const colorMap: Record<string, string> = {
+                      blue:   isSelected ? 'border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-400'   : 'border-border hover:border-blue-300 hover:bg-blue-50/50 dark:hover:bg-blue-950/20',
+                      amber:  isSelected ? 'border-amber-500 bg-amber-500/10 text-amber-600 dark:text-amber-400' : 'border-border hover:border-amber-300 hover:bg-amber-50/50 dark:hover:bg-amber-950/20',
+                      violet: isSelected ? 'border-violet-500 bg-violet-500/10 text-violet-600 dark:text-violet-400' : 'border-border hover:border-violet-300 hover:bg-violet-50/50 dark:hover:bg-violet-950/20',
+                      slate:  isSelected ? 'border-slate-500 bg-slate-500/10 text-slate-600 dark:text-slate-300'  : 'border-border hover:border-slate-300 hover:bg-slate-50/50 dark:hover:bg-slate-800/30',
+                    };
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, category: value as any })}
+                        className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg border text-sm font-medium transition-all duration-150 text-left ${colorMap[color]}`}
+                      >
+                        <Icon size={15} className="flex-shrink-0" />
+                        <span className="leading-tight">{label}</span>
+                        {isSelected && <Check size={13} className="ml-auto flex-shrink-0" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Full Name */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Full Name / Title <span className="text-destructive normal-case tracking-normal font-bold">*</span>
+                </label>
+                <div className="relative">
+                  <User size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/60" />
+                  <Input
+                    required
+                    placeholder="e.g. Adv. Herman Suryadi, S.H., M.H."
+                    value={formData.name}
+                    onChange={e => setFormData({ ...formData, name: e.target.value })}
+                    className="pl-9"
+                  />
+                </div>
+              </div>
+
+              {/* Organization */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Organization / Law Firm</label>
+                <div className="relative">
+                  <Building2 size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/60" />
+                  <Input
+                    placeholder="e.g. Herman & Partners Law Firm"
+                    value={formData.organization}
+                    onChange={e => setFormData({ ...formData, organization: e.target.value })}
+                    className="pl-9"
+                  />
+                </div>
+              </div>
+
+              {/* Phone & City */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Phone <span className="text-destructive normal-case tracking-normal font-bold">*</span>
+                  </label>
+                  <div className="relative">
+                    <Phone size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/60" />
+                    <Input
+                      required
+                      placeholder="+62 811-xxx-xxx"
+                      value={formData.phone}
+                      onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                      className="pl-9 font-mono text-sm"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">City</label>
+                  <div className="relative">
+                    <MapPin size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/60" />
+                    <Input
+                      placeholder="Jakarta"
+                      value={formData.city}
+                      onChange={e => setFormData({ ...formData, city: e.target.value })}
+                      className="pl-9"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Email */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Email Address</label>
+                <div className="relative">
+                  <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/60" />
+                  <Input
+                    type="email"
+                    placeholder="info@firm.co.id"
+                    value={formData.email}
+                    onChange={e => setFormData({ ...formData, email: e.target.value })}
+                    className="pl-9"
+                  />
+                </div>
+              </div>
+
+              {/* Notes */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Notes / Specialization</label>
+                <textarea
+                  rows={3}
+                  placeholder="Specialization, deed services, OSS permits..."
+                  value={formData.notes}
+                  onChange={e => setFormData({ ...formData, notes: e.target.value })}
+                  className="w-full px-3 py-2.5 text-sm rounded-lg border border-input bg-transparent placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-ring/50 focus:border-ring resize-none transition-colors"
+                />
+              </div>
+
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Notes / Specialization</label>
-              <textarea
-                rows={3}
-                placeholder="Specialization, deed services, OSS permits..."
-                value={formData.notes}
-                onChange={e => setFormData({ ...formData, notes: e.target.value })}
-                className="w-full px-3 py-2 text-sm rounded-md border border-input bg-transparent placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring resize-none"
-              />
+            {/* Footer */}
+            <div className="flex items-center justify-between gap-3 px-6 py-4 border-t border-border/50 bg-muted/30">
+              <p className="text-xs text-muted-foreground"><span className="text-destructive font-bold">*</span> Required fields</p>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-4"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  size="sm"
+                  disabled={isSubmitting}
+                  className="px-5 gap-2"
+                >
+                  {isSubmitting
+                    ? <><Loader2 size={14} className="animate-spin" /> Saving...</>
+                    : <><Save size={14} /> {editingContact ? 'Update Contact' : 'Save Contact'}</>}
+                </Button>
+              </div>
             </div>
-
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>Cancel</Button>
-              <Button type="submit" disabled={isSubmitting}>
-                <Save size={14} className="mr-2" /> {isSubmitting ? 'Saving...' : 'Save Contact'}
-              </Button>
-            </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>

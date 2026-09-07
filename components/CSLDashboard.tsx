@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { UserAccount } from '../types';
-import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { supabase } from '@/lib/supabaseClient';
 import { 
   Kanban, 
   Calendar, 
-  FolderOpen, 
   Wallet, 
   Clock, 
   CheckCircle2, 
@@ -17,14 +17,35 @@ import {
   ShieldCheck, 
   PhoneCall, 
   ArrowUpRight,
-  DollarSign,
-  Activity
+  Globe,
+  CheckSquare,
+  Layers,
+  Sparkles,
+  Receipt,
+  UserCheck,
+  ArrowRight
 } from 'lucide-react';
 
 interface CSLDashboardProps {
   currentUser: UserAccount | null;
   onNavigate: (path: string) => void;
 }
+
+const STATUS_STYLE: Record<string, string> = {
+  DRAFT:        'border-zinc-500/25 text-zinc-600 dark:text-zinc-400 bg-zinc-500/10 font-medium',
+  SUBMITTED:    'border-blue-500/25 text-blue-700 dark:text-blue-300 bg-blue-500/10 font-medium',
+  PROCESSING:   'border-amber-500/25 text-amber-700 dark:text-amber-300 bg-amber-500/10 font-medium',
+  REVIEW_USER:  'border-purple-500/25 text-purple-700 dark:text-purple-300 bg-purple-500/10 font-medium',
+  COMPLETED:    'border-emerald-500/25 text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 font-medium',
+  CLOSED:       'border-emerald-500/25 text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 font-medium',
+  REJECTED:     'border-rose-500/25 text-rose-700 dark:text-rose-300 bg-rose-500/10 font-medium',
+};
+
+const formatStatus = (s: string) => {
+  if (!s) return '';
+  if (s === 'REVIEW_USER') return 'Review';
+  return s.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+};
 
 export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavigate }) => {
   const firstName = currentUser?.fullName?.split(' ')[0] || 'User';
@@ -33,9 +54,10 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
     activeRequests: 0,
     pendingTasks: 0,
     pendingExpenses: 0,
+    pendingOffshore: 0,
     completedRequests: 0,
     totalRequests: 0,
-    slaCompliantRequests: 0
+    slaCompliantRequests: 0,
   });
 
   const [statusCounts, setStatusCounts] = useState<Record<string, number>>({
@@ -43,80 +65,80 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
   });
 
   const [myActionItems, setMyActionItems] = useState<any[]>([]);
-
   const [recentRequests, setRecentRequests] = useState<any[]>([]);
   const [upcomingTasks, setUpcomingTasks] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        // Fetch requests
-        const { data: requests } = await supabase
-          .from('csl_requests')
-          .select('*')
-          .order('created_at', { ascending: false });
-        
+        const [
+          { data: requests },
+          { data: tasks },
+          { data: expenses },
+          { data: offshoreInvoices },
+        ] = await Promise.all([
+          supabase.from('csl_requests').select('*').order('created_at', { ascending: false }),
+          supabase.from('csl_tasks').select('*').order('created_at', { ascending: false }),
+          supabase.from('csl_expense_approvals').select('*'),
+          supabase.from('csl_offshore_invoices').select('*'),
+        ]);
+
         if (requests) {
           const active = requests.filter(r => !['COMPLETED', 'CLOSED', 'REJECTED'].includes(r.status));
           const completed = requests.filter(r => r.status === 'COMPLETED' || r.status === 'CLOSED');
-          
-          // Basic SLA Logic
+
+          // SLA Compliance calculation
           let compliantCount = 0;
           completed.forEach(r => {
-             if (r.sla_due_date) {
-               if (new Date(r.updated_at) <= new Date(r.sla_due_date)) compliantCount++;
-             } else {
-               compliantCount++;
-             }
+            if (r.sla_due_date) {
+              if (new Date(r.updated_at || r.created_at) <= new Date(r.sla_due_date)) compliantCount++;
+            } else {
+              compliantCount++;
+            }
           });
 
           // Status breakdown
           const counts: Record<string, number> = { DRAFT: 0, SUBMITTED: 0, PROCESSING: 0, REVIEW_USER: 0, COMPLETED: 0 };
           requests.forEach(r => {
-             if (counts[r.status] !== undefined) counts[r.status]++;
-             else if (r.status === 'CLOSED') counts.COMPLETED++; 
+            if (counts[r.status] !== undefined) counts[r.status]++;
+            else if (r.status === 'CLOSED') counts.COMPLETED++;
           });
           setStatusCounts(counts);
 
           // Action items for current user
-          const myId = currentUser?.id || '';
+          const myId = currentUser?.id ? String(currentUser.id) : '';
           const myName = currentUser?.fullName || '';
-          const actionItems = requests.filter(r => 
-             !['COMPLETED', 'CLOSED', 'REJECTED'].includes(r.status) &&
-             (r.assigned_pic_id === myId || r.assigned_pic_name === myName || (r.status === 'REVIEW_USER' && r.requester_email === currentUser?.email))
+          const actionItems = requests.filter(r =>
+            !['COMPLETED', 'CLOSED', 'REJECTED'].includes(r.status) &&
+            (r.assigned_pic_id === myId || r.assigned_pic_name === myName || (r.status === 'REVIEW_USER' && r.requester_email === currentUser?.email))
           );
-          setMyActionItems(actionItems.slice(0, 4));
+          setMyActionItems(actionItems.slice(0, 5));
 
           setStats(prev => ({
             ...prev,
             activeRequests: active.length,
             completedRequests: completed.length,
             totalRequests: requests.length,
-            slaCompliantRequests: compliantCount
+            slaCompliantRequests: compliantCount,
           }));
-          
-          setRecentRequests(requests.slice(0, 5));
+
+          setRecentRequests(requests.slice(0, 6));
         }
 
-        // Fetch tasks
-        const { data: tasks } = await supabase
-          .from('csl_tasks')
-          .select('*')
-          .order('created_at', { ascending: false });
-        
         if (tasks) {
           const pending = tasks.filter(t => t.status !== 'Completed');
           setStats(prev => ({ ...prev, pendingTasks: pending.length }));
-          setUpcomingTasks(pending.slice(0, 3));
+          setUpcomingTasks(pending.slice(0, 4));
         }
 
-        // Fetch expenses
-        const { data: expenses } = await supabase
-          .from('csl_expense_approvals')
-          .select('*');
         if (expenses) {
-          const pendingEx = expenses.filter(e => e.status === 'Pending');
+          const pendingEx = expenses.filter(e => e.status === 'PENDING_APPROVAL');
           setStats(prev => ({ ...prev, pendingExpenses: pendingEx.length }));
+        }
+
+        if (offshoreInvoices) {
+          const pendingOff = offshoreInvoices.filter(i => i.status === 'PENDING_APPROVAL');
+          setStats(prev => ({ ...prev, pendingOffshore: pendingOff.length }));
         }
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
@@ -124,282 +146,380 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
     };
 
     fetchDashboardData();
-  }, []);
+  }, [currentUser]);
 
-  const slaPercentage = stats.completedRequests > 0 
-    ? Math.round((stats.slaCompliantRequests / stats.completedRequests) * 100) 
+  const slaPercentage = stats.completedRequests > 0
+    ? Math.round((stats.slaCompliantRequests / stats.completedRequests) * 100)
     : 100;
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 pb-12 font-sans">
-      {/* Hero Welcome Banner */}
-      <div className="relative overflow-hidden rounded-2xl p-8 text-white shadow-xl"
-           style={{ background: 'linear-gradient(160deg, #0B1A35 0%, #0D2145 50%, #0a1830 100%)' }}>
-        <div className="absolute -right-10 -top-10 h-64 w-64 rounded-full bg-white/5 blur-3xl" />
-        <div className="absolute right-40 -bottom-10 h-48 w-48 rounded-full bg-[#C9A84C]/10 blur-2xl" />
+    <div className="space-y-6 animate-in fade-in duration-500 pb-12 font-sans">
+      
+      {/* ── Hero Welcome Banner ── */}
+      <div className="relative overflow-hidden rounded-xl border border-border/60 bg-card p-6 md:p-8 shadow-sm">
+        <div className="absolute -right-12 -top-12 h-56 w-56 rounded-full bg-primary/5 blur-3xl" />
+        <div className="absolute right-32 -bottom-10 h-44 w-44 rounded-full bg-amber-500/5 blur-2xl" />
 
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-bold tracking-wide uppercase backdrop-blur-md border border-white/10"
-                 style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#C9A84C' }}>
-              <ShieldCheck className="h-3.5 w-3.5" />
-              <span>Corporate Secretary & Legal ERP</span>
+          <div className="space-y-2 max-w-2xl">
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-border/80 bg-muted/60 px-3 py-1 text-[11px] font-semibold text-foreground tracking-wide uppercase">
+              <ShieldCheck className="h-3.5 w-3.5 text-primary" />
+              <span>Corporate Secretary & Legal Platform</span>
             </div>
-            <h1 className="text-3xl font-extrabold tracking-tight md:text-4xl text-white">
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
               Welcome back, {firstName}!
             </h1>
-            <p className="text-sm text-white/70 max-w-xl font-medium">
-              Overview of organizational legal requests, compliance routines, document repository, and department budget.
+            <p className="text-xs md:text-sm text-muted-foreground leading-relaxed">
+              Overview of legal requests, compliance routines, document repositories, offshore payments, and expense approvals.
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-3">
-            <Button
-              onClick={() => onNavigate('csl-create-request')}
-              className="font-bold text-xs h-10 px-5 shadow-lg rounded-xl transition-all hover:scale-105"
-              style={{ backgroundColor: '#C9A84C', color: '#0B1A35' }}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Create Request
-            </Button>
-            <Button
-              onClick={() => onNavigate('csl-all-requests')}
-              variant="outline"
-              className="border-white/20 bg-white/5 hover:bg-white/10 text-white font-semibold text-xs h-10 px-5 rounded-xl backdrop-blur-md"
-            >
-              View Requests
-            </Button>
+          <div className="relative shrink-0 flex items-center justify-center md:justify-end">
+            <img 
+              src="/image/teamwork.png" 
+              alt="Teamwork Illustration" 
+              className="h-28 md:h-32 lg:h-36 w-auto object-contain drop-shadow-sm select-none pointer-events-none" 
+            />
           </div>
         </div>
       </div>
 
-      {/* KPI Metrics */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {/* ── KPI Stat Cards ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         {/* Active Requests */}
-        <div className="border rounded-xl p-4 text-indigo-700 bg-indigo-50 border-indigo-200 cursor-pointer hover:-translate-y-0.5 transition-transform" onClick={() => onNavigate('csl-all-requests')}>
+        <div 
+          onClick={() => onNavigate('csl-all-requests')}
+          className="bg-card border border-border/40 p-5 rounded-xl shadow-sm flex flex-col justify-between hover:border-border/80 transition-colors cursor-pointer"
+        >
           <div className="flex items-center justify-between">
-            <p className="text-[10px] font-black uppercase tracking-widest opacity-70">Active Requests</p>
-            <span className="h-7 w-7 flex items-center justify-center rounded-lg bg-indigo-100 text-indigo-600"><Kanban className="h-4 w-4" /></span>
+            <span className="text-sm font-medium text-muted-foreground">Active Requests</span>
+            <div className="h-8 w-8 rounded-lg bg-muted/60 flex items-center justify-center">
+              <Kanban className="h-4 w-4 text-muted-foreground" />
+            </div>
           </div>
-          <p className="text-3xl font-black mt-1">{stats.activeRequests}</p>
-          <p className="text-[10px] font-medium mt-1 opacity-60">Requests currently processing</p>
+          <div className="mt-2">
+            <div className="flex items-baseline gap-2">
+              <p className="text-2xl font-bold font-mono text-foreground">{stats.activeRequests}</p>
+              <span className="text-xs text-muted-foreground">Active</span>
+            </div>
+            <p className="text-[11px] text-muted-foreground mt-0.5">Requests currently in progress</p>
+          </div>
         </div>
+
         {/* Pending Tasks */}
-        <div className="border rounded-xl p-4 text-amber-700 bg-amber-50 border-amber-200 cursor-pointer hover:-translate-y-0.5 transition-transform" onClick={() => onNavigate('routine-task')}>
+        <div 
+          onClick={() => onNavigate('routine-task')}
+          className="bg-card border border-border/40 p-5 rounded-xl shadow-sm flex flex-col justify-between hover:border-border/80 transition-colors cursor-pointer"
+        >
           <div className="flex items-center justify-between">
-            <p className="text-[10px] font-black uppercase tracking-widest opacity-70">Pending Tasks</p>
-            <span className="h-7 w-7 flex items-center justify-center rounded-lg bg-amber-100 text-amber-600"><Calendar className="h-4 w-4" /></span>
+            <span className="text-sm font-medium text-muted-foreground">Pending Tasks</span>
+            <div className="h-8 w-8 rounded-lg bg-muted/60 flex items-center justify-center">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+            </div>
           </div>
-          <p className="text-3xl font-black mt-1">{stats.pendingTasks}</p>
-          <p className="text-[10px] font-medium mt-1 opacity-60">Routine &amp; Agreement tasks</p>
+          <div className="mt-2">
+            <div className="flex items-baseline gap-2">
+              <p className="text-2xl font-bold font-mono text-foreground">{stats.pendingTasks}</p>
+              <span className="text-xs text-muted-foreground">Tasks</span>
+            </div>
+            <p className="text-[11px] text-muted-foreground mt-0.5">Routines &amp; agreement obligations</p>
+          </div>
         </div>
-        {/* Pending Expenses */}
-        <div className="border rounded-xl p-4 text-blue-700 bg-blue-50 border-blue-200 cursor-pointer hover:-translate-y-0.5 transition-transform" onClick={() => onNavigate('budget-expense')}>
+
+        {/* Pending Approvals (Expenses & Offshore) */}
+        <div 
+          onClick={() => onNavigate('budget-expense')}
+          className="bg-card border border-border/40 p-5 rounded-xl shadow-sm flex flex-col justify-between hover:border-border/80 transition-colors cursor-pointer"
+        >
           <div className="flex items-center justify-between">
-            <p className="text-[10px] font-black uppercase tracking-widest opacity-70">Pending Expenses</p>
-            <span className="h-7 w-7 flex items-center justify-center rounded-lg bg-blue-100 text-blue-600"><Wallet className="h-4 w-4" /></span>
+            <span className="text-sm font-medium text-muted-foreground">Pending Approvals</span>
+            <div className="h-8 w-8 rounded-lg bg-muted/60 flex items-center justify-center">
+              <Wallet className="h-4 w-4 text-muted-foreground" />
+            </div>
           </div>
-          <p className="text-3xl font-black mt-1">{stats.pendingExpenses}</p>
-          <p className="text-[10px] font-medium mt-1 opacity-60">Budget &amp; Cost requests</p>
+          <div className="mt-2">
+            <div className="flex items-baseline gap-2">
+              <p className="text-2xl font-bold font-mono text-foreground">
+                {stats.pendingExpenses + stats.pendingOffshore}
+              </p>
+              <span className="text-xs text-muted-foreground">Approvals</span>
+            </div>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              {stats.pendingExpenses} Expenses • {stats.pendingOffshore} Offshore
+            </p>
+          </div>
         </div>
+
         {/* SLA Compliance */}
-        <div className="border rounded-xl p-4 text-emerald-700 bg-emerald-50 border-emerald-200 cursor-pointer hover:-translate-y-0.5 transition-transform" onClick={() => onNavigate('reports-request')}>
+        <div 
+          onClick={() => onNavigate('reports-request')}
+          className="bg-card border border-border/40 p-5 rounded-xl shadow-sm flex flex-col justify-between hover:border-border/80 transition-colors cursor-pointer"
+        >
           <div className="flex items-center justify-between">
-            <p className="text-[10px] font-black uppercase tracking-widest opacity-70">SLA Compliance</p>
-            <span className="h-7 w-7 flex items-center justify-center rounded-lg bg-emerald-100 text-emerald-600"><ShieldCheck className="h-4 w-4" /></span>
+            <span className="text-sm font-medium text-muted-foreground">SLA Compliance</span>
+            <div className="h-8 w-8 rounded-lg bg-muted/60 flex items-center justify-center">
+              <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+            </div>
           </div>
-          <p className="text-3xl font-black mt-1">{slaPercentage}%</p>
-          <p className="text-[10px] font-medium mt-1 opacity-60">Requests met SLA targets</p>
+          <div className="mt-2">
+            <div className="flex items-baseline gap-2">
+              <p className="text-2xl font-bold font-mono text-foreground">{slaPercentage}%</p>
+              <span className="text-xs text-muted-foreground">Target met</span>
+            </div>
+            <p className="text-[11px] text-muted-foreground mt-0.5">Completed within SLA timeframe</p>
+          </div>
         </div>
       </div>
 
-      {/* Quick Access Modules Grid */}
-      <div className="space-y-4">
-        <h2 className="text-lg font-extrabold tracking-tight text-slate-900 dark:text-white">CSL Modules Quick Access</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+      {/* ── Quick Access Modules Grid ── */}
+      <div className="space-y-3">
+        <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          Quick Access Modules
+        </h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
           {[
-            { id: 'csl-requests', label: 'Ticketing / Request', icon: Kanban, route: 'csl-all-requests' },
-            { id: 'routine', label: 'Task & Routine', icon: Calendar, route: 'routine-task' },
-            { id: 'budget', label: 'Budget & Cost', icon: Wallet, route: 'budget-expense' },
-            { id: 'directory', label: 'Phone Directory', icon: PhoneCall, route: 'directory-all' },
-            { id: 'reports', label: 'Reports & SLA', icon: TrendingUp, route: 'reports-request' },
-          ].map((item, i) => {
+            { id: 'csl-requests', label: 'Ticketing & Requests', icon: Kanban, route: 'csl-all-requests', desc: 'Legal intake & SLA' },
+            { id: 'routine', label: 'Tasks & Compliance', icon: Calendar, route: 'routine-task', desc: 'Routines & tracking' },
+            { id: 'budget-exp', label: 'Expense Approval', icon: Receipt, route: 'budget-expense', desc: 'Operational costs' },
+            { id: 'budget-off', label: 'Offshore Invoices', icon: Globe, route: 'budget-offshore-invoice', desc: 'Foreign counsel fees' },
+            { id: 'directory', label: 'Directory & Reports', icon: TrendingUp, route: 'reports-request', desc: 'Analytics & contacts' },
+          ].map((item) => {
             const Icon = item.icon;
-            const isGold = i % 2 === 1;
             return (
               <button
                 key={item.id}
                 onClick={() => onNavigate(item.route)}
-                className="flex flex-col items-center justify-center p-5 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-all duration-200 group text-center"
+                className="flex flex-col items-start p-4 rounded-xl border border-border/60 bg-card hover:border-border hover:bg-muted/40 transition-all text-left group"
               >
-                <div className={`p-3 rounded-2xl mb-3 group-hover:scale-110 transition-transform ${
-                  isGold
-                    ? 'bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400'
-                    : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
-                }`}>
-                  <Icon className="h-6 w-6" />
+                <div className="h-9 w-9 rounded-lg bg-muted/70 flex items-center justify-center text-foreground group-hover:text-primary transition-colors mb-3">
+                  <Icon className="h-4 w-4" />
                 </div>
-                <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
+                <p className="text-xs font-semibold text-foreground group-hover:text-primary transition-colors">
                   {item.label}
-                </span>
+                </p>
+                <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-1">
+                  {item.desc}
+                </p>
               </button>
             );
           })}
         </div>
       </div>
 
-        {/* Main Dashboard Sections */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column: Recent Requests & Action Items */}
+      {/* ── Main Dashboard Sections ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* Left Column (2 cols): Status Mini Breakdown & Recent Requests */}
         <div className="lg:col-span-2 space-y-6">
           
-          {/* Status Breakdown Mini */}
-          <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900 p-5 shadow-sm space-y-4">
-            <h2 className="text-xs font-black tracking-widest text-slate-500 dark:text-slate-400 uppercase">Requests by Status</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+          {/* Status Breakdown Mini Card */}
+          <div className="rounded-xl border border-border/80 bg-card shadow-sm overflow-hidden">
+            <div className="px-5 py-4 border-b border-border/60 flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-sm text-foreground">Requests Pipeline by Status</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">Real-time status overview of all legal requests</p>
+              </div>
+              <Badge variant="outline" className="text-xs font-mono">
+                {stats.totalRequests} Total
+              </Badge>
+            </div>
+            <div className="p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
               {[
-                { status: 'DRAFT', count: statusCounts.DRAFT, color: 'bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-800/50 dark:border-slate-700 dark:text-slate-300' },
-                { status: 'SUBMITTED', count: statusCounts.SUBMITTED, color: 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-900/20 dark:border-indigo-800/50 dark:text-indigo-400' },
-                { status: 'PROCESSING', count: statusCounts.PROCESSING, color: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800/50 dark:text-amber-400' },
-                { status: 'REVIEW', count: statusCounts.REVIEW_USER, color: 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/20 dark:border-orange-800/50 dark:text-orange-400' },
-                { status: 'COMPLETED', count: statusCounts.COMPLETED, color: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800/50 dark:text-emerald-400' },
+                { status: 'DRAFT', label: 'Draft', count: statusCounts.DRAFT, style: STATUS_STYLE.DRAFT },
+                { status: 'SUBMITTED', label: 'Submitted', count: statusCounts.SUBMITTED, style: STATUS_STYLE.SUBMITTED },
+                { status: 'PROCESSING', label: 'Processing', count: statusCounts.PROCESSING, style: STATUS_STYLE.PROCESSING },
+                { status: 'REVIEW_USER', label: 'Review', count: statusCounts.REVIEW_USER, style: STATUS_STYLE.REVIEW_USER },
+                { status: 'COMPLETED', label: 'Completed', count: statusCounts.COMPLETED, style: STATUS_STYLE.COMPLETED },
               ].map((s) => (
-                <div key={s.status} className={`flex flex-col items-center justify-center p-3 rounded-xl border ${s.color}`}>
-                  <span className="text-2xl font-black">{s.count}</span>
-                  <span className="text-[9px] font-bold mt-1 uppercase tracking-wider">{s.status}</span>
+                <div 
+                  key={s.status} 
+                  onClick={() => onNavigate('csl-all-requests')}
+                  className={`flex flex-col items-center justify-center p-3 rounded-lg border ${s.style} cursor-pointer hover:opacity-80 transition-opacity`}
+                >
+                  <span className="text-xl font-bold font-mono">{s.count}</span>
+                  <span className="text-[10px] font-semibold mt-0.5 tracking-wide">{s.label}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-extrabold tracking-tight text-slate-900 dark:text-white">Recent Legal Requests</h2>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => onNavigate('csl-all-requests')} 
-              className="text-xs font-bold hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-700 dark:text-slate-300"
-            >
-              View All <ArrowUpRight className="h-3.5 w-3.5 ml-1" />
-            </Button>
-          </div>
+          {/* Recent Legal Requests Card */}
+          <div className="rounded-xl border border-border/80 bg-card shadow-sm overflow-hidden">
+            <div className="px-5 py-4 border-b border-border/60 flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-sm text-foreground">Recent Legal Requests</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">Latest submitted requests requiring attention</p>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => onNavigate('csl-all-requests')} 
+                className="h-8 text-xs font-medium gap-1 text-muted-foreground hover:text-foreground"
+              >
+                View all <ArrowUpRight className="h-3.5 w-3.5" />
+              </Button>
+            </div>
 
-          <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900 overflow-hidden shadow-sm">
-            <div className="divide-y divide-slate-100 dark:divide-white/5">
+            <div className="divide-y divide-border/40">
               {recentRequests.length > 0 ? (
                 recentRequests.map((req, idx) => {
-                  const isOverdue = req.sla_due_date && new Date(req.sla_due_date) < new Date() && !['COMPLETED','CLOSED','REJECTED'].includes(req.status);
+                  const isOverdue = req.sla_due_date && new Date(req.sla_due_date) < new Date() && !['COMPLETED', 'CLOSED', 'REJECTED'].includes(req.status);
                   return (
-                  <div key={idx} className="p-5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors flex items-center justify-between gap-4">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono font-bold text-slate-700 dark:text-slate-300">{req.request_number}</span>
-                        <span className="text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-white/10">
-                          {req.department || req.company || 'General'}
-                        </span>
-                        {isOverdue && (
-                          <span className="flex items-center text-[9px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded-md border border-red-200 uppercase">
-                            <AlertTriangle className="w-3 h-3 mr-1" /> Overdue
+                    <div 
+                      key={idx} 
+                      onClick={() => onNavigate('csl-all-requests')}
+                      className="p-4 hover:bg-muted/30 transition-colors flex items-center justify-between gap-4 cursor-pointer"
+                    >
+                      <div className="space-y-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-mono font-semibold text-foreground">{req.request_number}</span>
+                          <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-muted text-muted-foreground border border-border/50">
+                            {req.department || req.company || 'General'}
                           </span>
-                        )}
+                          {isOverdue && (
+                            <Badge variant="outline" className="text-[10px] py-0 px-1.5 border-rose-500/30 text-rose-600 bg-rose-500/10 gap-1 font-semibold">
+                              <AlertTriangle className="w-2.5 h-2.5" /> Overdue
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-xs font-medium text-foreground truncate max-w-md">
+                          {req.description || 'No description provided'}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground">
+                          PIC: <span className="font-medium text-foreground/80">{req.assigned_pic_name || 'Unassigned'}</span> • {new Date(req.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </p>
                       </div>
-                      <p className="text-sm font-bold text-slate-900 dark:text-white truncate max-w-[20rem] md:max-w-md">{req.description || 'Tanpa deskripsi'}</p>
-                      <p className="text-xs font-medium text-slate-500 dark:text-slate-400">PIC: {req.assigned_pic_name || 'Belum di-assign'} • {new Date(req.created_at).toLocaleDateString('id-ID')}</p>
+
+                      <div className="shrink-0">
+                        <Badge variant="outline" className={`text-[11px] px-2.5 py-0.5 rounded-md border ${STATUS_STYLE[req.status] || ''}`}>
+                          {formatStatus(req.status)}
+                        </Badge>
+                      </div>
                     </div>
-                    <div className="shrink-0">
-                      <span className={`text-[9px] font-black uppercase px-3 py-1 rounded-md border ${
-                        ['COMPLETED', 'CLOSED'].includes(req.status)
-                          ? 'bg-slate-200 text-slate-700 border-slate-300 dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600'
-                          : ['PROCESSING', 'RESPONDED'].includes(req.status)
-                          ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-700/40'
-                          : 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-white/5 dark:text-slate-300 dark:border-white/10'
-                      }`}>
-                        {req.status.replace(/_/g, ' ')}
-                      </span>
-                    </div>
-                  </div>
                   );
                 })
               ) : (
-                <div className="p-6 text-center text-sm font-medium text-slate-500">Belum ada request baru.</div>
+                <div className="py-12 text-center text-xs text-muted-foreground">
+                  No requests recorded yet.
+                </div>
               )}
             </div>
           </div>
         </div>
 
-        {/* Right Column: Action Items & Active Tasks */}
+        {/* Right Column (1 col): Action Items & Active Tasks */}
         <div className="space-y-6">
           
-          {/* Action Items */}
-          <div className="space-y-4">
-            <h2 className="text-lg font-extrabold tracking-tight text-slate-900 dark:text-white">My Action Items</h2>
-            <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900 p-4 shadow-sm space-y-3">
-              {myActionItems.length > 0 ? myActionItems.map((req, idx) => (
-                <div key={idx} onClick={() => onNavigate('csl-all-requests')} className="cursor-pointer p-3 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-zinc-800 dark:hover:bg-zinc-700/80 transition-colors border border-slate-100 dark:border-zinc-700">
-                  <div className="flex justify-between items-start mb-1">
-                    <span className="text-xs font-bold text-slate-900 dark:text-white">{req.request_number}</span>
-                    <span className="text-[9px] font-black uppercase bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded">
-                      {req.status === 'REVIEW_USER' ? 'Review Needed' : 'Assigned'}
-                    </span>
+          {/* Action Items Card */}
+          <div className="rounded-xl border border-border/80 bg-card shadow-sm overflow-hidden">
+            <div className="px-5 py-4 border-b border-border/60 flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-sm text-foreground">My Action Items</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">Tasks &amp; reviews assigned to you</p>
+              </div>
+              <Badge variant="secondary" className="font-mono text-xs">
+                {myActionItems.length}
+              </Badge>
+            </div>
+
+            <div className="p-4 space-y-2.5">
+              {myActionItems.length > 0 ? (
+                myActionItems.map((req, idx) => (
+                  <div 
+                    key={idx} 
+                    onClick={() => onNavigate('csl-all-requests')} 
+                    className="p-3 rounded-lg bg-muted/40 hover:bg-muted/80 transition-colors border border-border/60 cursor-pointer space-y-1"
+                  >
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-mono font-semibold text-foreground">{req.request_number}</span>
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-blue-500/30 text-blue-600 bg-blue-500/10">
+                        {req.status === 'REVIEW_USER' ? 'Review Needed' : 'Assigned to You'}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground truncate">{req.description || 'No description'}</p>
                   </div>
-                  <p className="text-xs text-slate-500 truncate">{req.description}</p>
-                </div>
-              )) : (
-                <div className="text-center py-6 text-slate-500">
-                  <CheckCircle2 className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                  <p className="text-xs font-bold">You're all caught up!</p>
+                ))
+              ) : (
+                <div className="text-center py-8 text-muted-foreground space-y-1">
+                  <CheckCircle2 className="w-7 h-7 mx-auto text-emerald-500/60 mb-2" />
+                  <p className="text-xs font-semibold text-foreground">You're all caught up!</p>
+                  <p className="text-[11px]">No pending actions assigned to you.</p>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Active Tasks & Compliance Alerts */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-extrabold tracking-tight text-slate-900 dark:text-white">Active Tasks</h2>
+          {/* Active Tasks & Compliance Card */}
+          <div className="rounded-xl border border-border/80 bg-card shadow-sm overflow-hidden">
+            <div className="px-5 py-4 border-b border-border/60 flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-sm text-foreground">Upcoming Tasks</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">Compliance &amp; agreement schedules</p>
+              </div>
               <Button 
                 variant="ghost" 
                 size="sm" 
                 onClick={() => onNavigate('routine-task')} 
-                className="text-xs font-bold hover:bg-slate-100 dark:hover:bg-zinc-800"
-                style={{ color: '#C9A84C' }}
+                className="h-8 text-xs font-medium gap-1 text-muted-foreground hover:text-foreground"
               >
-                View All <ArrowUpRight className="h-3.5 w-3.5 ml-1" />
+                View all <ArrowUpRight className="h-3.5 w-3.5" />
               </Button>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900 p-5 space-y-3 shadow-sm">
-              {upcomingTasks.length > 0 ? upcomingTasks.map((task, idx) => {
-                const isTaskOverdue = task.due_date && new Date(task.due_date) < new Date();
-                return (
-                <div key={idx} className={`p-3.5 rounded-xl border space-y-2 ${isTaskOverdue ? 'bg-red-50/50 border-red-100' : 'bg-slate-50 border-slate-100 dark:bg-zinc-800/50 dark:border-white/5'}`}>
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1 mb-0.5">
-                        <span className="text-[10px] font-black uppercase text-indigo-600 dark:text-indigo-400 block">{task.category}</span>
-                        {isTaskOverdue && <AlertTriangle className="w-3 h-3 text-red-500" />}
+            <div className="p-4 space-y-2.5">
+              {upcomingTasks.length > 0 ? (
+                upcomingTasks.map((task, idx) => {
+                  const isTaskOverdue = task.due_date && new Date(task.due_date) < new Date();
+                  return (
+                    <div 
+                      key={idx} 
+                      onClick={() => onNavigate('routine-task')}
+                      className={`p-3 rounded-lg border space-y-1.5 cursor-pointer transition-colors ${
+                        isTaskOverdue 
+                          ? 'bg-rose-500/5 border-rose-500/25 hover:bg-rose-500/10' 
+                          : 'bg-muted/30 border-border/60 hover:bg-muted/60'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] font-semibold uppercase text-primary tracking-wide">
+                              {task.category || 'Routine'}
+                            </span>
+                            {isTaskOverdue && (
+                              <span className="text-[10px] font-semibold text-rose-600 flex items-center gap-0.5">
+                                <AlertTriangle className="w-2.5 h-2.5" /> Overdue
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs font-medium text-foreground truncate mt-0.5">
+                            {task.task_name || task.company || 'Unnamed Task'}
+                          </p>
+                        </div>
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 shrink-0">
+                          {task.status || 'Pending'}
+                        </Badge>
                       </div>
-                      <span className="text-xs font-bold text-slate-900 dark:text-white truncate block">{task.task_name || task.company || 'Unnamed Task'}</span>
+                      
+                      <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-1 border-t border-border/30">
+                        <span>PIC: <strong className="font-medium text-foreground/80">{task.owner || '-'}</strong></span>
+                        <span className={isTaskOverdue ? 'text-rose-600 font-semibold' : ''}>
+                          {task.due_date || task.finish_date 
+                            ? new Date(task.due_date || task.finish_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) 
+                            : 'No date'}
+                        </span>
+                      </div>
                     </div>
-                    <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border shrink-0 ${
-                      task.status === 'In progress' ? 'bg-yellow-50 text-yellow-600 border-yellow-200 dark:bg-yellow-500/10 dark:border-yellow-500/20' : 
-                      task.status === 'Blocked' ? 'bg-red-50 text-red-600 border-red-200 dark:bg-red-500/10 dark:border-red-500/20' : 
-                      'bg-slate-100 text-slate-600 border-slate-200 dark:bg-white/5 dark:text-slate-300 dark:border-white/10'
-                    }`}>
-                      {task.status || 'Pending'}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-[11px] font-medium text-slate-500">
-                    <span>PIC: <strong className="text-slate-900 dark:text-white">{task.owner || '-'}</strong></span>
-                    <span className={isTaskOverdue ? 'text-red-600 font-bold' : ''}>{task.due_date || task.finish_date ? new Date(task.due_date || task.finish_date).toLocaleDateString('id-ID') : 'No Date'}</span>
-                  </div>
+                  );
+                })
+              ) : (
+                <div className="text-center py-8 text-xs text-muted-foreground">
+                  No upcoming tasks.
                 </div>
-                );
-              }) : (
-                <div className="text-center text-sm font-medium text-slate-500 py-4">Belum ada task aktif.</div>
               )}
             </div>
           </div>
+
         </div>
       </div>
     </div>

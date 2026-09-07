@@ -25,6 +25,7 @@ export interface OffshoreInvoiceData {
   prepared_by_id?: string;
   approved_by_name?: string;
   approved_by_id?: string;
+  invoice_attachment_id?: string;
   status?: string;
 }
 
