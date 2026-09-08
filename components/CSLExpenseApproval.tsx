@@ -679,7 +679,15 @@ export const CSLExpenseApproval: React.FC<{ currentUser: UserAccount | null }> =
 
         if (isSuperAdmin && editStatus) {
           updatePayload.status = editStatus;
+          
+          // If setting to an approval/final state, update the approver info as well
+          if (['APPROVED', 'REJECTED', 'DISBURSED', 'PAID'].includes(editStatus)) {
+            updatePayload.approved_by_name = currentUser?.fullName || currentUser?.email;
+            updatePayload.approved_by_id = currentUser?.id;
+          }
         }
+
+        updatePayload.updated_at = new Date().toISOString();
 
         if (attachmentId) {
           updatePayload.invoice_attachment_id = attachmentId;
@@ -784,6 +792,8 @@ export const CSLExpenseApproval: React.FC<{ currentUser: UserAccount | null }> =
     try {
       const { error } = await supabase.from('csl_expense_approvals').update({
         status: 'REJECTED',
+        approved_by_name: currentUser?.fullName || currentUser?.email,
+        approved_by_id: currentUser?.id,
       }).eq('id', item.id);
       if (error) { toast.error('Failed to reject: ' + error.message); return; }
       toast.success(`Expense request ${item.expense_number} rejected.`);
@@ -1328,6 +1338,16 @@ export const CSLExpenseApproval: React.FC<{ currentUser: UserAccount | null }> =
                     <Badge variant="outline" className={`text-[10px] px-2 py-0.5 rounded-md border ${STATUS_STYLE[exp.status] || ''}`}>
                       {formatStatusText(exp.status)}
                     </Badge>
+                    {exp.approved_by_name && (exp.status === 'APPROVED' || exp.status === 'DISBURSED' || exp.status === 'PAID') && (
+                      <div className="text-[9px] text-muted-foreground font-medium mt-0.5 truncate max-w-[120px]" title={`Approved by: ${exp.approved_by_name}`}>
+                        ✓ {exp.approved_by_name}
+                      </div>
+                    )}
+                    {exp.approved_by_name && exp.status === 'REJECTED' && (
+                      <div className="text-[9px] text-rose-500 font-medium mt-0.5 truncate max-w-[120px]" title={`Rejected by: ${exp.approved_by_name}`}>
+                        ✕ {exp.approved_by_name}
+                      </div>
+                    )}
                   </TableCell>
 
                   <TableCell className="text-right pr-5" onClick={e => e.stopPropagation()}>
@@ -1990,12 +2010,23 @@ export const CSLExpenseApproval: React.FC<{ currentUser: UserAccount | null }> =
                     </div>
                   </div>
 
-                  {/* Approver */}
+                  {/* Approver / Rejecter / Status */}
                   <div className="p-3 rounded-lg bg-card dark:bg-slate-900/60 border border-border/50 dark:border-slate-800 space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-bold text-muted-foreground uppercase flex items-center gap-1">
-                        <CheckCircle2 className="h-3 w-3 text-emerald-500" /> Disetujui Oleh (Approver)
-                      </span>
+                      {viewingDetail.status === 'REJECTED' ? (
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase flex items-center gap-1">
+                          <XCircle className="h-3 w-3 text-rose-500" /> Ditolak Oleh (Rejected By)
+                        </span>
+                      ) : viewingDetail.status === 'APPROVED' || viewingDetail.status === 'DISBURSED' || viewingDetail.status === 'PAID' ? (
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase flex items-center gap-1">
+                          <CheckCircle2 className="h-3 w-3 text-emerald-500" /> Disetujui Oleh (Approver)
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase flex items-center gap-1">
+                          <Clock className="h-3 w-3 text-amber-500" /> Status Persetujuan
+                        </span>
+                      )}
+
                       <span className={`text-[9px] font-black px-1.5 py-0.5 rounded ${
                         viewingDetail.status === 'APPROVED' || viewingDetail.status === 'DISBURSED' || viewingDetail.status === 'PAID'
                           ? 'bg-emerald-500/10 text-emerald-600'
@@ -2003,30 +2034,55 @@ export const CSLExpenseApproval: React.FC<{ currentUser: UserAccount | null }> =
                           ? 'bg-amber-500/10 text-amber-600'
                           : 'bg-rose-500/10 text-rose-600'
                       }`}>
-                        {viewingDetail.status === 'PENDING_APPROVAL' ? 'PENDING' : 'APPROVED'}
+                        {viewingDetail.status === 'PENDING_APPROVAL'
+                          ? 'PENDING'
+                          : viewingDetail.status === 'REJECTED'
+                          ? 'REJECTED'
+                          : viewingDetail.status === 'DISBURSED'
+                          ? 'DISBURSED'
+                          : viewingDetail.status === 'PAID'
+                          ? 'PAID'
+                          : 'APPROVED'}
                       </span>
                     </div>
+
                     <div className="font-bold text-sm text-foreground flex items-center gap-1.5">
-                      {viewingDetail.approved_by_name ? (
-                        <>
-                          <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
-                          <span>{viewingDetail.approved_by_name}</span>
-                        </>
-                      ) : viewingDetail.status === 'PENDING_APPROVAL' ? (
+                      {viewingDetail.status === 'REJECTED' ? (
+                        viewingDetail.approved_by_name ? (
+                          <>
+                            <XCircle className="h-4 w-4 text-rose-600 shrink-0" />
+                            <span>{viewingDetail.approved_by_name}</span>
+                          </>
+                        ) : (
+                          <span className="text-rose-600 font-medium text-xs">Admin / Approver</span>
+                        )
+                      ) : (viewingDetail.status === 'APPROVED' || viewingDetail.status === 'DISBURSED' || viewingDetail.status === 'PAID') ? (
+                        viewingDetail.approved_by_name ? (
+                          <>
+                            <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                            <span>{viewingDetail.approved_by_name}</span>
+                          </>
+                        ) : (
+                          <span className="text-muted-foreground font-normal text-xs">-</span>
+                        )
+                      ) : (
                         <span className="text-amber-600 font-medium text-xs flex items-center gap-1">
                           <Clock className="h-3.5 w-3.5 shrink-0" /> Menunggu Persetujuan
                         </span>
-                      ) : (
-                        <span className="text-muted-foreground font-normal text-xs">-</span>
                       )}
                     </div>
+
                     <div className="text-[11px] text-muted-foreground flex items-center gap-1.5">
                       <CalendarClock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                      <span>Waktu Disetujui: <strong className="text-foreground">
-                        {(viewingDetail.status === 'APPROVED' || viewingDetail.status === 'DISBURSED' || viewingDetail.status === 'PAID')
-                          ? formatFullDateTime(viewingDetail.updated_at || viewingDetail.created_at)
-                          : (viewingDetail.status === 'PENDING_APPROVAL' ? 'Belum Disetujui' : '-')}
-                      </strong></span>
+                      <span>
+                        {viewingDetail.status === 'REJECTED' ? (
+                          <>Waktu Ditolak: <strong className="text-foreground">{formatFullDateTime(viewingDetail.updated_at || viewingDetail.created_at)}</strong></>
+                        ) : (viewingDetail.status === 'APPROVED' || viewingDetail.status === 'DISBURSED' || viewingDetail.status === 'PAID') ? (
+                          <>Waktu Disetujui: <strong className="text-foreground">{formatFullDateTime(viewingDetail.updated_at || viewingDetail.created_at)}</strong></>
+                        ) : (
+                          <>Waktu Disetujui: <strong className="text-foreground">Belum Disetujui</strong></>
+                        )}
+                      </span>
                     </div>
                   </div>
                 </div>
