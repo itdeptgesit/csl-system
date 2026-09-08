@@ -23,9 +23,10 @@ export interface ExpenseApprovalData {
 
 // Map: user email → local e-sign image path (in /public/image/e-sign/)
 const E_SIGN_MAP: Record<string, string> = {
-  'sylvia@gesit.co.id':        '/image/e-sign/sylvia.png',
+  'sylvia@gesit.co.id': '/image/e-sign/sylvia.png',
   'rudi.siarudin@gesit.co.id': '/image/e-sign/siarudin.png',
-  'desi@gesit.co.id':          '/image/e-sign/desi.png',
+  'desi@gesit.co.id': '/image/e-sign/desi.png',
+  'natalia@gesit.co.id': '/image/e-sign/e-sign_bu-nata.png',
 };
 
 const fetchImageAsBase64 = async (url: string): Promise<string | null> => {
@@ -154,14 +155,14 @@ export const generateExpenseApprovalPdf = async (dataList: ExpenseApprovalData[]
 
     doc.setFontSize(8); doc.setFont('helvetica', 'normal');
 
-    const col1X      = offsetX + 4;
+    const col1X = offsetX + 4;
     const col1ColonX = offsetX + 20;
-    const col1ValX   = offsetX + 22;
-    const col1EndX   = offsetX + 50;
-    const col2X      = offsetX + 53;
+    const col1ValX = offsetX + 22;
+    const col1EndX = offsetX + 50;
+    const col2X = offsetX + 53;
     const col2ColonX = offsetX + 64;
-    const col2ValX   = offsetX + 66;
-    const col2EndX   = offsetX + 101;
+    const col2ValX = offsetX + 66;
+    const col2EndX = offsetX + 101;
 
     doc.setLineWidth(0.2);
     doc.setLineHeightFactor(1.3);
@@ -179,17 +180,17 @@ export const generateExpenseApprovalPdf = async (dataList: ExpenseApprovalData[]
 
     let y = offsetY + 28;
     y += Math.max(
-      drawField('Company',      data.company,      col1X, col1ColonX, col1ValX, col1EndX, y),
-      drawField('Dept.',         data.department,   col2X, col2ColonX, col2ValX, col2EndX, y)
+      drawField('Company', data.company, col1X, col1ColonX, col1ValX, col1EndX, y),
+      drawField('Dept.', data.department, col2X, col2ColonX, col2ValX, col2EndX, y)
     ) * lineH + 3.5;
     y += Math.max(
       drawField('Project Name', data.project_name, col1X, col1ColonX, col1ValX, col1EndX, y),
-      drawField('Paid to',       data.paid_to,      col2X, col2ColonX, col2ValX, col2EndX, y)
+      drawField('Paid to', data.paid_to, col2X, col2ColonX, col2ValX, col2EndX, y)
     ) * lineH + 3.5;
     const dateStr = data.request_date ? new Date(data.request_date).toLocaleDateString('id-ID') : '';
     y += Math.max(
-      drawField('Request Date', dateStr,           col1X, col1ColonX, col1ValX, col1EndX, y),
-      drawField('Note',          data.note || '',   col2X, col2ColonX, col2ValX, col2EndX, y)
+      drawField('Request Date', dateStr, col1X, col1ColonX, col1ValX, col1EndX, y),
+      drawField('Note', data.note || '', col2X, col2ColonX, col2ValX, col2EndX, y)
     ) * lineH + 3.5;
 
     // ── Signature Box ──
@@ -204,15 +205,15 @@ export const generateExpenseApprovalPdf = async (dataList: ExpenseApprovalData[]
     doc.line(boxX, boxY + boxH - 5, boxX + boxW, boxY + boxH - 5);
 
     doc.setFont('helvetica', 'bold'); doc.setFontSize(8);
-    doc.text('Prepared by', boxX + (boxW / 4)    - doc.getTextWidth('Prepared by') / 2, boxY + 3.5);
+    doc.text('Prepared by', boxX + (boxW / 4) - doc.getTextWidth('Prepared by') / 2, boxY + 3.5);
     doc.text('Approved by', boxX + (boxW * 0.75) - doc.getTextWidth('Approved by') / 2, boxY + 3.5);
 
     // E-sign images
     const signAreaY = boxY + 5.5;
     const signAreaH = boxH - 10;
-    const halfW     = boxW / 2;
-    const signImgH  = Math.min(signAreaH, 12);
-    const signImgW  = Math.min(halfW - 4, 18);
+    const halfW = boxW / 2;
+    const signImgH = Math.min(signAreaH, 12);
+    const signImgW = Math.min(halfW - 4, 18);
 
     const prepSign = data.prepared_by_id ? eSignCache[data.prepared_by_id] : null;
     if (prepSign && data.prepared_by_id) {
@@ -235,13 +236,13 @@ export const generateExpenseApprovalPdf = async (dataList: ExpenseApprovalData[]
     doc.setTextColor(150, 150, 150);
     const fPrep = data.prepared_by_name || '(Name)';
     const fAppr = data.approved_by_name || '(Name)';
-    doc.text(fPrep, boxX + (boxW / 4)    - doc.getTextWidth(fPrep) / 2, boxY + boxH - 1.5);
+    doc.text(fPrep, boxX + (boxW / 4) - doc.getTextWidth(fPrep) / 2, boxY + boxH - 1.5);
     doc.text(fAppr, boxX + (boxW * 0.75) - doc.getTextWidth(fAppr) / 2, boxY + boxH - 1.5);
     doc.setTextColor(0, 0, 0);
 
     // ── Right: Payment Details ──
     let rightY = y;
-    const rX  = offsetX + 53;
+    const rX = offsetX + 53;
     const rEX = offsetX + 100;
 
     doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
