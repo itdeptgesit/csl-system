@@ -193,6 +193,7 @@ export interface UserAccount {
   vpId?: string;
   lastLogin?: string;
   avatarUrl?: string;
+  eSignUrl?: string;
   company?: string;
   isHelpdeskSupport?: boolean;
   createdAt?: string;

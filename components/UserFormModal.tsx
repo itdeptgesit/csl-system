@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Shield, Users, Building2, UserCheck, Layers, Briefcase, MapPin, Loader2, Image as ImageIcon, Camera, LifeBuoy, Eye, EyeOff } from 'lucide-react';
+import { X, Shield, Users, Building2, UserCheck, Layers, Briefcase, MapPin, Loader2, Image as ImageIcon, Camera, LifeBuoy, Eye, EyeOff, PenTool } from 'lucide-react';
 import { UserAccount, UserGroup, Company } from '../types';
 import { supabase } from '../lib/supabaseClient';
 import { useToast } from './ToastProvider';
@@ -28,6 +28,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({ isOpen, onClose, o
     const [companyList, setCompanyList] = useState<Company[]>([]);
     const [departmentList, setDepartmentList] = useState<{ name: string }[]>([]);
     const [isUploading, setIsUploading] = useState(false);
+    const [isUploadingESign, setIsUploadingESign] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
 
     useEffect(() => {
@@ -61,7 +62,8 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({ isOpen, onClose, o
                 supervisorId: '',
                 managerId: '',
                 vpId: '',
-                isHelpdeskSupport: false
+                isHelpdeskSupport: false,
+                eSignUrl: ''
             });
         }
     }, [initialData, isOpen]);
@@ -94,6 +96,39 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({ isOpen, onClose, o
             setIsUploading(false);
         }
     };
+
+    const handleESignUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setIsUploadingESign(true);
+        const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'dmr8bxdos';
+        const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || 'gesit_erp_preset';
+
+        const uploadData = new FormData();
+        uploadData.append('file', file);
+        uploadData.append('upload_preset', uploadPreset);
+
+        try {
+            const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+                method: 'POST',
+                body: uploadData,
+            });
+            const data = await response.json();
+            if (data.secure_url) {
+                setFormData(prev => ({ ...prev, eSignUrl: data.secure_url }));
+                showToast('E-Signature berhasil diupload', 'success');
+            } else {
+                throw new Error(data.error?.message || 'Upload gagal');
+            }
+        } catch (error) {
+            console.error('Upload E-Sign Error:', error);
+            showToast('E-Sign upload gagal', 'error');
+        } finally {
+            setIsUploadingESign(false);
+        }
+    };
+
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -183,6 +218,67 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({ isOpen, onClose, o
                                                     Remove
                                                 </button>
                                             )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* ── User Digital Signature (E-Sign) ── */}
+                            <div className="md:col-span-2">
+                                <label className={labelClass}>Digital Signature (E-Sign)</label>
+                                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 mt-2 p-6 bg-slate-50 dark:bg-zinc-800/30 rounded-lg border border-dashed border-slate-200 dark:border-zinc-700">
+                                    <div className="w-36 h-20 rounded-md bg-white border border-slate-200 dark:border-zinc-700 overflow-hidden flex items-center justify-center text-slate-300 p-2 shadow-sm shrink-0">
+                                        {formData.eSignUrl ? (
+                                            <img src={formData.eSignUrl} alt="E-Signature" className="max-w-full max-h-full object-contain filter contrast-125" />
+                                        ) : (
+                                            <div className="flex flex-col items-center gap-1 text-slate-400">
+                                                <PenTool size={22} />
+                                                <span className="text-[9px] uppercase font-bold">No Signature</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="flex-1 space-y-3">
+                                        <p className="text-[10px] font-black text-slate-500 dark:text-zinc-400 uppercase tracking-widest">
+                                            Signature for Voucher &amp; Expense Approval PDF
+                                        </p>
+                                        <div className="flex flex-wrap items-center gap-3">
+                                            <label className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-md text-[11px] font-black uppercase tracking-widest text-slate-600 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-700 cursor-pointer transition-all shadow-sm">
+                                                {isUploadingESign ? <Loader2 size={14} className="animate-spin" /> : <PenTool size={14} strokeWidth={2.5} />}
+                                                {isUploadingESign ? 'Uploading...' : 'Upload Signature'}
+                                                <input type="file" className="hidden" accept="image/png,image/jpeg" onChange={handleESignUpload} disabled={isUploadingESign} />
+                                            </label>
+                                            {formData.eSignUrl && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setFormData(prev => ({ ...prev, eSignUrl: '' }))}
+                                                    className="px-4 py-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/10 rounded-md text-[11px] font-black uppercase tracking-widest transition-all"
+                                                >
+                                                    Remove
+                                                </button>
+                                            )}
+                                        </div>
+                                        {/* Quick Preset Selector */}
+                                        <div className="flex items-center gap-2 pt-1">
+                                            <span className="text-[9px] font-bold text-slate-400 uppercase">Presets:</span>
+                                            {[
+                                                { name: 'Sylvia', path: '/image/e-sign/sylvia.png' },
+                                                { name: 'Siarudin', path: '/image/e-sign/siarudin.png' },
+                                                { name: 'Desi', path: '/image/e-sign/desi.png' },
+                                                { name: 'Natalia', path: '/image/e-sign/e-sign_bu-nata.png' },
+                                            ].map(p => (
+                                                <button
+                                                    key={p.name}
+                                                    type="button"
+                                                    onClick={() => setFormData(prev => ({ ...prev, eSignUrl: p.path }))}
+                                                    className={`px-2 py-0.5 rounded text-[9px] font-bold transition-all ${
+                                                        formData.eSignUrl === p.path
+                                                            ? 'bg-indigo-600 text-white shadow-2xs'
+                                                            : 'bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-600 dark:text-zinc-300 hover:bg-slate-100'
+                                                    }`}
+                                                >
+                                                    {p.name}
+                                                </button>
+                                            ))}
                                         </div>
                                     </div>
                                 </div>

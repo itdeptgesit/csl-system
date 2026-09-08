@@ -16,6 +16,14 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+
+const E_SIGN_MAP: Record<string, string> = {
+  'sylvia@gesit.co.id': '/image/e-sign/sylvia.png',
+  'rudi.siarudin@gesit.co.id': '/image/e-sign/siarudin.png',
+  'desi@gesit.co.id': '/image/e-sign/desi.png',
+  'natalia@gesit.co.id': '/image/e-sign/e-sign_bu-nata.png',
+};
 
 interface UserManagementProps {
   onUpdateSuccess?: () => void;
@@ -32,6 +40,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onUpdateSuccess,
   const [editingUser, setEditingUser] = useState<UserAccount | null>(null);
   const [deleteUser, setDeleteUser] = useState<UserAccount | null>(null);
   const [permissionUser, setPermissionUser] = useState<UserAccount | null>(null);
+  const [viewingSignature, setViewingSignature] = useState<{ name: string; url: string } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -84,6 +93,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onUpdateSuccess,
           vpId: u.vp_id?.toString(),
           lastLogin: u.last_login ? u.last_login : 'Never',
           avatarUrl: u.avatar_url,
+          eSignUrl: u.e_sign_url,
           isHelpdeskSupport: u.is_helpdesk_support
         }));
         setUsers(usersMapped);
@@ -193,6 +203,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onUpdateSuccess,
                 <TableHead className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-zinc-500">Email</TableHead>
                 <TableHead className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-zinc-500">Company & Dept</TableHead>
                 <TableHead className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-zinc-500">Role</TableHead>
+                <TableHead className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-zinc-500">E-Sign</TableHead>
                 <TableHead className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-zinc-500">Access Scope</TableHead>
                 <TableHead className="px-6 py-5 text-center text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-zinc-500">Actions</TableHead>
               </TableRow>
@@ -210,13 +221,16 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onUpdateSuccess,
                       </div>
                     </TableCell>
                     <TableCell className="px-6 py-4"><Skeleton className="h-6 w-16 rounded-md" /></TableCell>
+                    <TableCell className="px-6 py-4"><Skeleton className="h-8 w-24 rounded-md" /></TableCell>
                     <TableCell className="px-6 py-4"><Skeleton className="h-8 w-40 rounded-lg" /></TableCell>
                     <TableCell className="px-6 py-4 text-center"><Skeleton className="h-4 w-12 mx-auto" /></TableCell>
                   </TableRow>
                 ))
               ) : paginatedUsers.length === 0 ? (
-                <TableRow><TableCell colSpan={6} className="text-center py-20 text-slate-300 dark:text-slate-700 font-bold uppercase tracking-[0.2em] text-[10px]">Registry Empty.</TableCell></TableRow>
-              ) : paginatedUsers.map((user) => (
+                <TableRow><TableCell colSpan={7} className="text-center py-20 text-slate-300 dark:text-slate-700 font-bold uppercase tracking-[0.2em] text-[10px]">Registry Empty.</TableCell></TableRow>
+              ) : paginatedUsers.map((user) => {
+                const userESign = user.eSignUrl || E_SIGN_MAP[user.email?.toLowerCase().trim() || ''];
+                return (
                 <TableRow key={user.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-all group">
                   <TableCell className="px-6 py-4 font-bold text-sm text-slate-900 dark:text-slate-100">
                     {user.fullName}
@@ -241,6 +255,26 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onUpdateSuccess,
                     </span>
                   </TableCell>
                   <TableCell className="px-6 py-4">
+                    {userESign ? (
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="h-8 w-20 bg-white border border-slate-200 dark:border-zinc-700 rounded-md p-0.5 flex items-center justify-center overflow-hidden cursor-pointer hover:border-indigo-400 transition-colors shadow-2xs"
+                          onClick={() => setViewingSignature({ name: user.fullName, url: userESign })}
+                          title="Click to preview e-signature"
+                        >
+                          <img src={userESign} alt={`${user.fullName} signature`} className="h-full max-w-full object-contain filter contrast-125" />
+                        </div>
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200/50">
+                          Active
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-[11px] font-medium text-slate-400 dark:text-zinc-600 italic">
+                        No E-Sign
+                      </span>
+                    )}
+                  </TableCell>
+                  <TableCell className="px-6 py-4">
                     <Button variant="outline" size="sm" onClick={() => setPermissionUser(user)} className="h-8 text-xs font-semibold text-indigo-600 border-indigo-200 bg-indigo-50/50 hover:bg-indigo-50 dark:bg-indigo-950/20 dark:border-indigo-900 dark:hover:bg-indigo-950/40">
                       <ShieldCheck className="h-3.5 w-3.5 mr-1.5" /> Configure Permissions
                     </Button>
@@ -254,7 +288,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onUpdateSuccess,
                     </div>
                   </TableCell>
                 </TableRow>
-              ))}
+              );})}
             </TableBody>
           </Table>
         </div>
@@ -292,6 +326,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onUpdateSuccess,
             manager_id: userData.managerId || null,
             vp_id: userData.vpId || null,
             avatar_url: userData.avatarUrl,
+            e_sign_url: userData.eSignUrl || null,
             is_helpdesk_support: userData.isHelpdeskSupport
           };
           try {
@@ -406,6 +441,27 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onUpdateSuccess,
           }
         }}
       />
+
+      {/* ── E-Signature Preview Modal ── */}
+      {viewingSignature && (
+        <Dialog open={!!viewingSignature} onOpenChange={(open) => !open && setViewingSignature(null)}>
+          <DialogContent className="sm:max-w-md p-6 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl shadow-2xl">
+            <DialogHeader>
+              <DialogTitle className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                Digital Signature — {viewingSignature.name}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="p-6 bg-white rounded-xl border border-slate-200 flex items-center justify-center my-3 min-h-[160px] shadow-inner">
+              <img src={viewingSignature.url} alt="Digital Signature" className="max-h-36 max-w-full object-contain filter contrast-125" />
+            </div>
+            <div className="flex justify-end pt-2">
+              <Button variant="outline" size="sm" onClick={() => setViewingSignature(null)} className="h-8 text-xs font-semibold">
+                Close
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };

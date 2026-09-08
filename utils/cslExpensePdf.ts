@@ -80,21 +80,52 @@ const fetchLogoAsBase64 = async (url: string): Promise<string | null> => {
 };
 
 /**
- * Resolve e-sign for a user ID by looking up their email, then matching E_SIGN_MAP.
+ * Resolves an e-sign image (returns a PNG data URL or null).
+ * Accepts raw base64 data URL, remote URL, or local path.
  */
-const fetchESignByUserId = async (userId?: string): Promise<string | null> => {
-  if (!userId) return null;
+const resolveESignImage = async (eSignUrlOrPath?: string | null): Promise<string | null> => {
+  if (!eSignUrlOrPath) return null;
+  const trimmed = eSignUrlOrPath.trim();
+  if (!trimmed) return null;
+
+  // If already a base64 data URL, return directly
+  if (trimmed.startsWith('data:image/')) {
+    return trimmed;
+  }
+
+  // Otherwise fetch and convert to base64
+  return await fetchImageAsBase64(trimmed);
+};
+
+/**
+ * Fetch all e-signatures for users from user_accounts table, matching by ID, full_name, and email.
+ */
+const prefetchESignMap = async (): Promise<Record<string, string | null>> => {
+  const cache: Record<string, string | null> = {};
   try {
-    const { data } = await supabase
+    const { data: users } = await supabase
       .from('user_accounts')
-      .select('email')
-      .eq('id', userId)
-      .maybeSingle();
-    if (!data?.email) return null;
-    const signPath = E_SIGN_MAP[data.email.toLowerCase().trim()];
-    if (!signPath) return null;
-    return await fetchImageAsBase64(signPath);
-  } catch { return null; }
+      .select('id, email, full_name, e_sign_url');
+
+    if (users && Array.isArray(users)) {
+      for (const u of users) {
+        let sign = u.e_sign_url ? await resolveESignImage(u.e_sign_url) : null;
+        if (!sign && u.email) {
+          const fallback = E_SIGN_MAP[u.email.toLowerCase().trim()];
+          if (fallback) sign = await fetchImageAsBase64(fallback);
+        }
+
+        if (sign) {
+          if (u.id) cache[u.id.toLowerCase().trim()] = sign;
+          if (u.email) cache[u.email.toLowerCase().trim()] = sign;
+          if (u.full_name) cache[u.full_name.toLowerCase().trim()] = sign;
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Error prefetching e-signs:', err);
+  }
+  return cache;
 };
 
 export const generateExpenseApprovalPdf = async (dataList: ExpenseApprovalData[]) => {
@@ -102,16 +133,21 @@ export const generateExpenseApprovalPdf = async (dataList: ExpenseApprovalData[]
 
   const logoBase64 = await fetchLogoAsBase64('/image/logo.png');
 
-  // Pre-fetch all unique e-signs in batch
-  const allIds = [...new Set([
-    ...dataList.map(d => d.prepared_by_id),
-    ...dataList.map(d => d.approved_by_id),
-  ].filter(Boolean) as string[])];
+  // Pre-fetch all e-signatures dynamically from user_accounts
+  const eSignMap = await prefetchESignMap();
 
-  const eSignCache: Record<string, string | null> = {};
-  await Promise.all(allIds.map(async id => {
-    eSignCache[id] = await fetchESignByUserId(id);
-  }));
+  const getSign = (userId?: string, userName?: string): string | null => {
+    if (userId && eSignMap[userId.toLowerCase().trim()]) {
+      return eSignMap[userId.toLowerCase().trim()];
+    }
+    if (userName && eSignMap[userName.toLowerCase().trim()]) {
+      return eSignMap[userName.toLowerCase().trim()];
+    }
+    if (userName && E_SIGN_MAP[userName.toLowerCase().trim()]) {
+      return eSignMap[userName.toLowerCase().trim()] || null;
+    }
+    return null;
+  };
 
   const cellW = 105;
   const cellH = 99;
@@ -215,20 +251,23 @@ export const generateExpenseApprovalPdf = async (dataList: ExpenseApprovalData[]
     const signImgH = Math.min(signAreaH, 12);
     const signImgW = Math.min(halfW - 4, 18);
 
-    const prepSign = data.prepared_by_id ? eSignCache[data.prepared_by_id] : null;
-    if (prepSign && data.prepared_by_id) {
+    const prepSign = getSign(data.prepared_by_id, data.prepared_by_name);
+    if (prepSign) {
       doc.addImage(prepSign, 'PNG',
         boxX + (halfW - signImgW) / 2,
         signAreaY + (signAreaH - signImgH) / 2,
-        signImgW, signImgH, `sign_${data.prepared_by_id}`, 'FAST');
+        signImgW, signImgH, `prep_${index}`, 'FAST');
     }
 
-    const apprSign = data.approved_by_id ? eSignCache[data.approved_by_id] : null;
-    if (apprSign && data.approved_by_id) {
+    const isApprovedOrDisbursed = data.status === 'APPROVED' || data.status === 'DISBURSED' || data.status === 'PAID';
+    const apprSign = isApprovedOrDisbursed
+      ? getSign(data.approved_by_id, data.approved_by_name)
+      : (data.approved_by_name ? getSign(data.approved_by_id, data.approved_by_name) : null);
+    if (apprSign) {
       doc.addImage(apprSign, 'PNG',
         boxX + halfW + (halfW - signImgW) / 2,
         signAreaY + (signAreaH - signImgH) / 2,
-        signImgW, signImgH, `sign_${data.approved_by_id}`, 'FAST');
+        signImgW, signImgH, `appr_${index}`, 'FAST');
     }
 
     // Name footers

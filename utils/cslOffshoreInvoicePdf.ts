@@ -55,15 +55,53 @@ const fetchImageAsBase64 = async (url: string): Promise<string | null> => {
   } catch { return null; }
 };
 
-const fetchESignByUserId = async (userId?: string): Promise<string | null> => {
-  if (!userId) return null;
+/**
+ * Resolves an e-sign image (returns a PNG data URL or null).
+ * Accepts raw base64 data URL, remote URL, or local path.
+ */
+const resolveESignImage = async (eSignUrlOrPath?: string | null): Promise<string | null> => {
+  if (!eSignUrlOrPath) return null;
+  const trimmed = eSignUrlOrPath.trim();
+  if (!trimmed) return null;
+
+  // If already a base64 data URL, return directly
+  if (trimmed.startsWith('data:image/')) {
+    return trimmed;
+  }
+
+  // Otherwise fetch and convert to base64
+  return await fetchImageAsBase64(trimmed);
+};
+
+/**
+ * Fetch all e-signatures for users from user_accounts table, matching by ID, full_name, and email.
+ */
+const prefetchESignMap = async (): Promise<Record<string, string | null>> => {
+  const cache: Record<string, string | null> = {};
   try {
-    const { data } = await supabase.from('user_accounts').select('email').eq('id', userId).maybeSingle();
-    if (!data?.email) return null;
-    const path = E_SIGN_MAP[data.email.toLowerCase().trim()];
-    if (!path) return null;
-    return await fetchImageAsBase64(path);
-  } catch { return null; }
+    const { data: users } = await supabase
+      .from('user_accounts')
+      .select('id, email, full_name, e_sign_url');
+
+    if (users && Array.isArray(users)) {
+      for (const u of users) {
+        let sign = u.e_sign_url ? await resolveESignImage(u.e_sign_url) : null;
+        if (!sign && u.email) {
+          const fallback = E_SIGN_MAP[u.email.toLowerCase().trim()];
+          if (fallback) sign = await fetchImageAsBase64(fallback);
+        }
+
+        if (sign) {
+          if (u.id) cache[u.id.toLowerCase().trim()] = sign;
+          if (u.email) cache[u.email.toLowerCase().trim()] = sign;
+          if (u.full_name) cache[u.full_name.toLowerCase().trim()] = sign;
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Error prefetching e-signs:', err);
+  }
+  return cache;
 };
 
 const fmtAmt = (currency: string, amount: number) =>
@@ -74,10 +112,21 @@ export const generateOffshoreInvoicePdf = async (dataList: OffshoreInvoiceData[]
   const ceklistBase64 = await fetchImageAsBase64('/image/ceklist.png');
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
-  // Pre-fetch e-signs
-  const allIds = [...new Set([...dataList.map(d => d.prepared_by_id), ...dataList.map(d => d.approved_by_id)].filter(Boolean) as string[])];
-  const eSignCache: Record<string, string | null> = {};
-  await Promise.all(allIds.map(async id => { eSignCache[id] = await fetchESignByUserId(id); }));
+  // Pre-fetch all e-signatures dynamically from user_accounts
+  const eSignMap = await prefetchESignMap();
+
+  const getSign = (userId?: string, userName?: string): string | null => {
+    if (userId && eSignMap[userId.toLowerCase().trim()]) {
+      return eSignMap[userId.toLowerCase().trim()];
+    }
+    if (userName && eSignMap[userName.toLowerCase().trim()]) {
+      return eSignMap[userName.toLowerCase().trim()];
+    }
+    if (userName && E_SIGN_MAP[userName.toLowerCase().trim()]) {
+      return eSignMap[userName.toLowerCase().trim()] || null;
+    }
+    return null;
+  };
 
   const pageW = 210;
   const slotH = 148.5;
@@ -302,8 +351,10 @@ export const generateOffshoreInvoicePdf = async (dataList: OffshoreInvoiceData[]
     y += 5;
     const sigLabels = ['Disetujui', 'Finance', 'Pembukuan', 'Diminta'];
     const sigW = 29; const sigH = 18; const sigGap = 1;
-    const prepSign = data.prepared_by_id  ? eSignCache[data.prepared_by_id]  : null;
-    const apprSign = data.approved_by_id  ? eSignCache[data.approved_by_id]  : null;
+    const prepSign = getSign(data.prepared_by_id, data.prepared_by_name);
+    const apprSign = (data.status === 'APPROVED' || data.status === 'PAID')
+      ? getSign(data.approved_by_id, data.approved_by_name)
+      : (data.approved_by_name ? getSign(data.approved_by_id, data.approved_by_name) : null);
 
     sigLabels.forEach((label, i) => {
       const bx = mL + i * (sigW + sigGap);

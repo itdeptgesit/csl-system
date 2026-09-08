@@ -697,6 +697,8 @@ const InternalApp: React.FC = () => {
                              <Route path="reports-request" element={<CSLReportsManager currentUser={currentUser} view="request" />} />
                              <Route path="reports-task" element={<CSLReportsManager currentUser={currentUser} view="task" />} />
                              <Route path="reports-budget" element={<CSLReportsManager currentUser={currentUser} view="budget" />} />
+                             <Route path="budget-expenses/report" element={<CSLReportsManager currentUser={currentUser} view="budget" />} />
+                             <Route path="budget/report" element={<CSLReportsManager currentUser={currentUser} view="budget" />} />
 
                              {/* Settings */}
                              <Route path="settings" element={<CSLSettings currentUser={currentUser} view="categories" />} />

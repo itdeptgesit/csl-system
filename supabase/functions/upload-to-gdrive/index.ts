@@ -124,12 +124,15 @@ serve(async (req) => {
     // Tentukan subfolder tujuan di dalam CSL System Dev
     // • folderType 'document' → subfolder "CSL Documents"
     // • folderType 'request'  → subfolder "User Requests"
+    // • folderType 'e-sign'   → subfolder "E-Sign"
     // • lainnya               → langsung ke root CSL System Dev
     let targetFolderId = rootFolderId
     if (folderType === 'document') {
       targetFolderId = await getOrCreateSubfolder(accessToken, rootFolderId, 'CSL Documents')
     } else if (folderType === 'request') {
       targetFolderId = await getOrCreateSubfolder(accessToken, rootFolderId, 'User Requests')
+    } else if (folderType === 'e-sign') {
+      targetFolderId = await getOrCreateSubfolder(accessToken, rootFolderId, 'E-Sign')
     }
 
     // Decode Base64

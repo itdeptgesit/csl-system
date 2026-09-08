@@ -52,7 +52,9 @@ import {
   EyeOff,
   Crown,
   Briefcase,
-  Network
+  Network,
+  PenTool,
+  Loader2
 } from 'lucide-react';
 
 interface CSLSettingsProps {
@@ -207,9 +209,10 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
   // User Modal State
   const [userModalOpen, setUserModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserItem | null>(null);
-  const [userForm, setUserForm] = useState({ name: '', email: '', role: 'User', groupsStr: 'requester', password: '' });
+  const [userForm, setUserForm] = useState({ name: '', email: '', role: 'User', groupsStr: 'requester', password: '', eSignUrl: '' });
   const [showUserPassword, setShowUserPassword] = useState(false);
   const [isUserSaving, setIsUserSaving] = useState(false);
+  const [isUploadingESign, setIsUploadingESign] = useState(false);
 
   // User Permissions Modal State
   const [permUser, setPermUser] = useState<UserItem | null>(null);
@@ -440,16 +443,50 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
   };
 
   // ── User Handlers ──────────────────────────────────────────────────────────
-  const openUserModal = (u?: UserItem) => {
+  const openUserModal = async (u?: UserItem) => {
     if (u) {
       setEditingUser(u);
-      setUserForm({ name: u.name, email: u.email, role: u.role, groupsStr: u.groups.join(', '), password: '' });
+      // Ambil e_sign_url secara terpisah agar aman meski kolom belum ada
+      let eSignUrl = '';
+      try {
+        const { data: signData } = await supabase
+          .from('user_accounts')
+          .select('e_sign_url')
+          .eq('id', u.id)
+          .single();
+        eSignUrl = signData?.e_sign_url || '';
+      } catch (_) { /* kolom belum ada, abaikan */ }
+      setUserForm({ name: u.name, email: u.email, role: u.role, groupsStr: u.groups.join(', '), password: '', eSignUrl });
     } else {
       setEditingUser(null);
-      setUserForm({ name: '', email: '', role: 'User', groupsStr: 'requester', password: '' });
+      setUserForm({ name: '', email: '', role: 'User', groupsStr: 'requester', password: '', eSignUrl: '' });
     }
     setShowUserPassword(false);
     setUserModalOpen(true);
+  };
+
+  const handleESignUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingESign(true);
+    const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'dmr8bxdos';
+    const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || 'gesit_erp_preset';
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('upload_preset', uploadPreset);
+    try {
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, { method: 'POST', body: fd });
+      const data = await res.json();
+      if (data.secure_url) {
+        setUserForm(prev => ({ ...prev, eSignUrl: data.secure_url }));
+      } else {
+        throw new Error(data.error?.message || 'Upload gagal');
+      }
+    } catch (err: any) {
+      showFeedback(`E-Sign upload gagal: ${err.message}`);
+    } finally {
+      setIsUploadingESign(false);
+    }
   };
 
   const handleSaveUser = async (e: React.FormEvent) => {
@@ -482,6 +519,7 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
           email: emailTrim,
           role: userForm.role,
           groups: groupsArr,
+          e_sign_url: userForm.eSignUrl || null,
         };
         if (authUserId && authUserId !== editingUser.id.toString()) {
           updatePayload.id = authUserId;
@@ -984,6 +1022,33 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
                   <option value="User">User (Hanya Request CSL)</option>
                 </select>
               </div>
+              {/* ── E-Sign Section ── */}
+              <div className="border border-dashed border-border/40 rounded-xl p-4 bg-muted/20 space-y-3">
+                <label className="text-[11px] font-bold text-foreground block">Digital Signature (E-Sign)</label>
+                <div className="flex items-center gap-4">
+                  <div className="w-32 h-16 rounded-lg border border-border/40 bg-white dark:bg-zinc-900 flex items-center justify-center overflow-hidden shrink-0">
+                    {userForm.eSignUrl ? (
+                      <img src={userForm.eSignUrl} alt="E-Signature" className="max-w-full max-h-full object-contain" />
+                    ) : (
+                      <div className="flex flex-col items-center gap-1 text-muted-foreground">
+                        <PenTool size={18} />
+                        <span className="text-[9px] font-bold uppercase">No Sign</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <label className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-zinc-800 border border-border/40 rounded-lg text-[11px] font-bold uppercase tracking-wider cursor-pointer hover:bg-muted/40 transition-all">
+                      {isUploadingESign ? <Loader2 size={13} className="animate-spin" /> : <PenTool size={13} />}
+                      {isUploadingESign ? 'Uploading...' : 'Upload Signature'}
+                      <input type="file" className="hidden" accept="image/png,image/jpeg" onChange={handleESignUpload} disabled={isUploadingESign} />
+                    </label>
+                    {userForm.eSignUrl && (
+                      <button type="button" onClick={() => setUserForm(prev => ({ ...prev, eSignUrl: '' }))} className="text-[10px] font-bold text-rose-500 hover:underline text-left">Remove</button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               <DialogFooter className="pt-4 border-t border-border/30 gap-2 flex sm:justify-end">
                 <Button type="button" variant="outline" size="sm" onClick={() => setUserModalOpen(false)} className="text-xs font-bold rounded-xl h-9">Cancel</Button>
                 <Button type="submit" disabled={isUserSaving} size="sm" className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl h-9 px-5">

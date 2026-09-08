@@ -228,7 +228,7 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
 
         {/* Pending Approvals (Expenses & Offshore) */}
         <div 
-          onClick={() => onNavigate('budget-expense')}
+          onClick={() => onNavigate('budget')}
           className="bg-card border border-border/40 p-5 rounded-xl shadow-sm flex flex-col justify-between hover:border-border/80 transition-colors cursor-pointer"
         >
           <div className="flex items-center justify-between">
@@ -276,12 +276,11 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
         <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
           Quick Access Modules
         </h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
           {[
             { id: 'csl-requests', label: 'Ticketing & Requests', icon: Kanban, route: 'csl-all-requests', desc: 'Legal intake & SLA' },
             { id: 'routine', label: 'Tasks & Compliance', icon: Calendar, route: 'routine-task', desc: 'Routines & tracking' },
-            { id: 'budget-exp', label: 'Expense Approval', icon: Receipt, route: 'budget-expense', desc: 'Operational costs' },
-            { id: 'budget-off', label: 'Offshore Invoices', icon: Globe, route: 'budget-offshore-invoice', desc: 'Foreign counsel fees' },
+            { id: 'budget-exp', label: 'Budget & Expenses', icon: Receipt, route: 'budget', desc: 'Company & personal expenses' },
             { id: 'directory', label: 'Directory & Reports', icon: TrendingUp, route: 'reports-request', desc: 'Analytics & contacts' },
           ].map((item) => {
             const Icon = item.icon;

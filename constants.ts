@@ -60,10 +60,8 @@ export const APP_MENU_STRUCTURE = [
     { id: 'routine-activity',   label: 'Activity',   parentId: 'routine', iconName: 'Activity' },
     { id: 'routine-task',       label: 'Task',       parentId: 'routine', iconName: 'CheckSquare' },
 
-    // ── Budget & Cost ──
-    { id: 'budget', label: 'Budget & Cost', iconName: 'Wallet' },
-    { id: 'budget-expense',           label: 'Expenses Approval',           parentId: 'budget', iconName: 'Receipt' },
-    { id: 'budget-offshore-invoice',  label: 'Offshore Invoice Payment',    parentId: 'budget', iconName: 'Globe' },
+    // ── Budget & Expenses ──
+    { id: 'budget', label: 'Budget & Expenses', iconName: 'Wallet' },
 
     // ── Phone Directory ──
     { id: 'directory', label: 'Phone Directory', iconName: 'Phone' },
