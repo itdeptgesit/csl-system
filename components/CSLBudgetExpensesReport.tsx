@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useTransition, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { UserAccount } from '../types';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -154,6 +154,7 @@ const DEFAULT_FILTERS: ReportFilters = {
 };
 
 export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = ({ currentUser }) => {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [filters, setFilters] = useState<ReportFilters>(() => parseParamsToFilters(searchParams));
 
@@ -615,57 +616,54 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300 pb-16 font-sans">
-      {/* ── SECTION 1: HEADER ──────────────────────────────────────────────── */}
-      <div className="bg-card border border-border/50 rounded-2xl p-5 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <span className="w-10 h-10 rounded-xl bg-indigo-600/10 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400 flex items-center justify-center font-black">
-            <Wallet size={20} />
-          </span>
-          <div>
-            <h1 className="text-xl font-black text-foreground tracking-tight">Budget & Expenses Report</h1>
-            <p className="text-xs text-muted-foreground font-medium">
-              Financial overview and budget monitoring
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2.5 flex-wrap">
-          <span className="text-[11px] font-semibold text-muted-foreground bg-muted/50 px-3 py-1.5 rounded-xl border border-border/40">
-            Last updated: <span className="text-foreground font-bold">{reportData?.lastUpdated}</span>
+      {/* ── SECTION 1: HEADER (MATCHING BUDGET EXPENSES STYLE) ── */}
+      <PageHeader
+        title="Budget & Expenses Report"
+        description="Financial overview, monthly spend monitoring, and project budget utilization"
+      >
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-[11px] font-semibold text-muted-foreground bg-muted/40 px-3 py-1.5 rounded-lg border border-border/40 hidden md:inline-block">
+            Last updated: <strong className="text-foreground font-mono">{reportData?.lastUpdated}</strong>
           </span>
 
           <Button
             variant="outline"
             size="sm"
-            onClick={loadReport}
-            disabled={loading}
-            className="rounded-xl font-bold text-xs h-9 px-3.5 border-border/60 hover:bg-muted/60 cursor-pointer"
+            onClick={() => navigate('/budget-expense')}
+            className="h-9 text-xs gap-1.5 font-bold"
           >
-            <RefreshCw size={13} className={`mr-1.5 ${loading ? 'animate-spin' : ''}`} /> Refresh
+            <Receipt className="h-3.5 w-3.5 text-indigo-500" /> Expense List
           </Button>
 
-          {/* Export Actions */}
-          <div className="flex items-center gap-1.5">
-            <Button
-              size="sm"
-              onClick={handleExportExcel}
-              className="rounded-xl font-bold text-xs h-9 px-3.5 bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs cursor-pointer"
-            >
-              <FileSpreadsheet size={13} className="mr-1.5" /> Export Excel
-            </Button>
-            <Button
-              size="sm"
-              onClick={handleExportPdf}
-              className="rounded-xl font-bold text-xs h-9 px-3.5 bg-indigo-600 hover:bg-indigo-500 text-white shadow-xs cursor-pointer"
-            >
-              <FileText size={13} className="mr-1.5" /> Export PDF
-            </Button>
-          </div>
-        </div>
-      </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={loadReport}
+            disabled={loading}
+            className="h-9 text-xs gap-1.5"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} /> Refresh
+          </Button>
 
-      {/* ── SECTION 7: REVISED COMPACT FILTER BAR ────────────────────────────── */}
-      <div className="bg-card border border-border/60 rounded-2xl p-3.5 shadow-sm space-y-3">
+          <Button
+            size="sm"
+            onClick={handleExportExcel}
+            className="h-9 text-xs gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold shadow-xs"
+          >
+            <FileSpreadsheet className="h-3.5 w-3.5" /> Export Excel
+          </Button>
+          <Button
+            size="sm"
+            onClick={handleExportPdf}
+            className="h-9 text-xs gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold shadow-xs"
+          >
+            <FileText className="h-3.5 w-3.5" /> Export PDF
+          </Button>
+        </div>
+      </PageHeader>
+
+      {/* ── SECTION 2: COMPACT FILTER BAR ────────────────────────────── */}
+      <div className="bg-card border border-border/40 rounded-xl p-3.5 shadow-sm space-y-3">
         {/* Main Toolbar Row: Compact & Global */}
         <div className="flex items-center justify-between gap-2.5 flex-wrap">
           {/* Left: Primary Filters (Period & Payee) + Search */}
@@ -1351,80 +1349,81 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
         </div>
       )}
 
-      {/* ── SECTION 3: FINANCIAL OVERVIEW (EXACTLY 4 KPI CARDS) ────────────── */}
+      {/* ── SECTION 3: FINANCIAL OVERVIEW (EXACTLY 4 KPI CARDS MATCHING EXPENSE APPROVAL) ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* CARD 1: Total Budget */}
-        <div className="bg-card border border-border/50 rounded-2xl p-5 shadow-sm flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Total Budget</span>
-            <span className="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400 flex items-center justify-center">
-              <Wallet size={16} />
-            </span>
+        <div className="bg-card border border-border/40 p-5 rounded-xl shadow-sm flex flex-col justify-between hover:border-border/80 transition-colors">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-muted-foreground">Total Budget</span>
+            <Wallet size={16} className="text-indigo-500" />
           </div>
-          <div>
-            <p className="text-xl font-black text-foreground tracking-tight truncate font-mono">
-              {formatIdr(summary.totalBudget)}
+          <div className="mt-2">
+            <div className="flex items-baseline gap-2">
+              <p className="text-2xl font-bold font-mono text-foreground truncate">{formatIdr(summary.totalBudget)}</p>
+            </div>
+            <p className="text-xs font-semibold font-mono text-muted-foreground mt-1 truncate">
+              Approved budget
             </p>
-            <p className="text-[10px] text-muted-foreground font-medium mt-0.5">Approved budget</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">FY {filters.fiscalYear || 2026} allocation</p>
           </div>
         </div>
 
         {/* CARD 2: Actual Expenses */}
-        <div className="bg-card border border-border/50 rounded-2xl p-5 shadow-sm flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Actual Expenses</span>
-            <span className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400 flex items-center justify-center">
-              <CheckCircle2 size={16} />
-            </span>
+        <div className="bg-card border border-border/40 p-5 rounded-xl shadow-sm flex flex-col justify-between hover:border-border/80 transition-colors">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-muted-foreground">Actual Expenses</span>
+            <CheckCircle2 size={16} className="text-emerald-500" />
           </div>
-          <div>
-            <p className="text-xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight truncate font-mono">
-              {formatIdr(summary.actualExpenses)}
+          <div className="mt-2">
+            <div className="flex items-baseline gap-2">
+              <p className="text-2xl font-bold font-mono text-emerald-600 dark:text-emerald-400 truncate">{formatIdr(summary.actualExpenses)}</p>
+            </div>
+            <p className="text-xs font-semibold font-mono text-emerald-600/80 mt-1 truncate">
+              Verified / approved spend
             </p>
-            <p className="text-[10px] text-muted-foreground font-medium mt-0.5">Verified / approved spend</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">Consolidated total (IDR)</p>
           </div>
         </div>
 
         {/* CARD 3: Budget Remaining */}
-        <div className="bg-card border border-border/50 rounded-2xl p-5 shadow-sm flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Budget Remaining</span>
-            <span className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400 flex items-center justify-center">
-              <Sparkles size={16} />
-            </span>
+        <div className="bg-card border border-border/40 p-5 rounded-xl shadow-sm flex flex-col justify-between hover:border-border/80 transition-colors">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-muted-foreground">Budget Remaining</span>
+            <Sparkles size={16} className="text-blue-500" />
           </div>
-          <div>
-            <p className="text-xl font-black text-foreground tracking-tight truncate font-mono">
-              {formatIdr(summary.budgetRemaining)}
-            </p>
-            <p className="text-[10px] text-muted-foreground font-medium mt-0.5">
+          <div className="mt-2">
+            <div className="flex items-baseline gap-2">
+              <p className="text-2xl font-bold font-mono text-foreground truncate">{formatIdr(summary.budgetRemaining)}</p>
+            </div>
+            <p className="text-xs font-semibold font-mono text-muted-foreground mt-1 truncate">
               {summary.totalBudget > 0 
                 ? `${Math.max(100 - summary.budgetUtilization, 0).toFixed(1)}% remaining`
                 : 'Available balance'}
             </p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">Unspent allocation</p>
           </div>
         </div>
 
         {/* CARD 4: Budget Utilization */}
-        <div className="bg-card border border-border/50 rounded-2xl p-5 shadow-sm flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Budget Utilization</span>
-            <span className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+        <div className="bg-card border border-border/40 p-5 rounded-xl shadow-sm flex flex-col justify-between hover:border-border/80 transition-colors">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-muted-foreground">Budget Utilization</span>
+            <BarChart3 size={16} className={
               summary.budgetUtilization >= 100 
-                ? 'bg-rose-500/10 text-rose-600' 
+                ? 'text-rose-500' 
                 : summary.budgetUtilization >= 80 
-                ? 'bg-amber-500/10 text-amber-600' 
-                : 'bg-indigo-500/10 text-indigo-600'
-            }`}>
-              <BarChart3 size={16} />
-            </span>
+                ? 'text-amber-500' 
+                : 'text-indigo-500'
+            } />
           </div>
-          <div>
-            <p className={`text-xl font-black tracking-tight truncate ${
-              summary.budgetUtilization >= 100 ? 'text-rose-600' : summary.budgetUtilization >= 80 ? 'text-amber-600' : 'text-foreground'
-            }`}>
-              {summary.totalBudget > 0 ? `${summary.budgetUtilization.toFixed(1)}%` : '0.0%'}
-            </p>
+          <div className="mt-2">
+            <div className="flex items-baseline gap-2">
+              <p className={`text-2xl font-bold font-mono ${
+                summary.budgetUtilization >= 100 ? 'text-rose-600' : summary.budgetUtilization >= 80 ? 'text-amber-600' : 'text-foreground'
+              }`}>
+                {summary.totalBudget > 0 ? `${summary.budgetUtilization.toFixed(1)}%` : '0.0%'}
+              </p>
+            </div>
             <div className="w-full bg-muted/60 h-1.5 rounded-full mt-2 overflow-hidden">
               <div 
                 className={`h-full rounded-full transition-all duration-500 ${
@@ -1433,17 +1432,20 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
                 style={{ width: `${Math.min(Math.max(summary.budgetUtilization || 0, 0), 100)}%` }}
               />
             </div>
+            <p className="text-[11px] text-muted-foreground mt-1.5">
+              {summary.budgetUtilization >= 100 ? 'Budget exceeded' : summary.budgetUtilization >= 80 ? 'Approaching threshold' : 'Optimal range'}
+            </p>
           </div>
         </div>
       </div>
 
       {/* ── SECTION 4: BUDGET VS ACTUAL (FULL WIDTH) ────────────────────── */}
-      <div className="bg-card border border-border/50 rounded-2xl p-5 shadow-sm">
+      <div className="bg-card border border-border/40 rounded-xl p-5 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <BarChart3 size={16} className="text-indigo-600" />
               <div>
-                <h3 className="text-xs font-black uppercase tracking-wider text-foreground">Budget vs Actual</h3>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">Budget vs Actual</h3>
                 <p className="text-[10px] text-muted-foreground font-medium">
                   {filters.periodType === 'month' ? 'Project allocation vs actual spend' : 'Monthly allocation vs actual spend'}
                 </p>
@@ -1461,7 +1463,7 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
                   variant="outline"
                   size="sm"
                   onClick={() => handleOpenBudgetModal('nominal')}
-                  className="h-6 text-[10px] font-bold px-2 border-indigo-500/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/10 cursor-pointer"
+                  className="h-7 text-[10px] font-bold px-2.5 border-indigo-500/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/10 rounded-lg cursor-pointer"
                 >
                   <Pencil size={11} className="mr-1" /> Edit Budget
                 </Button>
@@ -1550,12 +1552,12 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
       {/* ── SECTIONS 5 & 6: EXPENSE BY PROJECT & NEEDS ATTENTION ─────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* Section 5: Expense by Project */}
-        <div className="bg-card border border-border/60 dark:border-slate-800 rounded-2xl p-5 shadow-sm flex flex-col">
+        <div className="bg-card border border-border/40 rounded-xl p-5 shadow-sm flex flex-col">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <Layers size={16} className="text-violet-600 dark:text-violet-400" />
+              <Layers size={16} className="text-indigo-600 dark:text-indigo-400" />
               <div>
-                <h3 className="text-xs font-black uppercase tracking-wider text-foreground">Expense by Project</h3>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">Expense by Project</h3>
                 <p className="text-[10px] text-muted-foreground font-medium">Ranked by highest actual spend (click to filter)</p>
               </div>
             </div>
@@ -1578,7 +1580,7 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
                   <div
                     key={proj.projectName}
                     onClick={() => handleFilterChange('project', proj.projectName)}
-                    className="p-3.5 rounded-xl border border-border/50 dark:border-slate-800/80 bg-muted/15 dark:bg-slate-900/40 hover:bg-muted/30 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group"
+                    className="p-3.5 rounded-xl border border-border/40 bg-muted/15 dark:bg-slate-900/40 hover:bg-muted/30 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group"
                   >
                     <div className="flex items-center justify-between text-xs mb-1.5">
                       <div className="flex items-center gap-2 min-w-0">
@@ -1606,7 +1608,7 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
                     <div className="h-1.5 rounded-full bg-muted/60 dark:bg-slate-800 overflow-hidden mb-2">
                       <div
                         className={`h-full rounded-full transition-all duration-500 ${
-                          isOver ? 'bg-rose-500' : isWarn ? 'bg-amber-500' : 'bg-violet-600'
+                          isOver ? 'bg-rose-500' : isWarn ? 'bg-amber-500' : 'bg-indigo-600'
                         }`}
                         style={{ width: `${Math.min(proj.utilization, 100)}%` }}
                       />
@@ -1626,11 +1628,11 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
         </div>
 
         {/* Section 6: Needs Attention */}
-        <div className="bg-card border border-border/60 dark:border-slate-800 rounded-2xl p-5 shadow-sm flex flex-col">
+        <div className="bg-card border border-border/40 rounded-xl p-5 shadow-sm flex flex-col">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <AlertTriangle size={16} className="text-amber-500" />
-              <h3 className="text-xs font-black uppercase tracking-wider text-foreground">Needs Attention</h3>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">Needs Attention</h3>
               {reportData?.attentionRequired && reportData.attentionRequired.length > 0 && (
                 <span className="text-[10px] font-black bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-full">
                   {reportData.attentionRequired.length} Items
@@ -1693,12 +1695,12 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
       </div>
 
       {/* ── SECTION 7: EXPENSE TRANSACTIONS TABLE ─────────────────────────── */}
-      <div className="bg-card border border-border/50 rounded-2xl p-5 shadow-sm space-y-4">
+      <div className="bg-card border border-border/40 rounded-xl p-5 shadow-sm space-y-4">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <ShieldCheck size={16} className="text-indigo-600" />
             <div>
-              <h3 className="text-xs font-black uppercase tracking-wider text-foreground">Expense Transactions</h3>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">Expense Transactions</h3>
               <p className="text-[10px] text-muted-foreground font-medium">
                 Showing {pagedTransactions.length} of {reportData?.totalTransactionsCount} transactions
               </p>
@@ -1710,7 +1712,7 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
             <select
               value={pageSize}
               onChange={e => { setPageSize(Number(e.target.value)); setPage(1); }}
-              className="bg-background border border-border/70 rounded-lg px-2 py-1 text-xs font-semibold text-foreground focus:outline-none"
+              className="bg-background border border-border/60 rounded-lg px-2 py-1 text-xs font-semibold text-foreground focus:outline-none"
             >
               <option value={10}>10</option>
               <option value={15}>15</option>
@@ -1720,20 +1722,20 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
           </div>
         </div>
 
-        <div className="rounded-xl border border-border/50 overflow-x-auto">
+        <div className="rounded-xl border border-border/40 overflow-x-auto">
           <Table>
-            <TableHeader className="bg-muted/40">
+            <TableHeader className="bg-muted/20 border-b border-border/40">
               <TableRow>
-                <TableHead className="text-[10px] font-black uppercase tracking-wider">ID / Expense No</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-wider">Date</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-wider">Payee / Vendor</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-wider">Payee Type</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-wider">Department</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-wider">Project / Description</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-wider text-right">Original Amount</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-wider text-right">Reporting Amount (IDR)</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-wider text-center">Status</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-wider text-center">Action</TableHead>
+                <TableHead className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">ID / Expense No</TableHead>
+                <TableHead className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Date</TableHead>
+                <TableHead className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Payee / Vendor</TableHead>
+                <TableHead className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Payee Type</TableHead>
+                <TableHead className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Department</TableHead>
+                <TableHead className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Project / Description</TableHead>
+                <TableHead className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground text-right">Original Amount</TableHead>
+                <TableHead className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground text-right">Reporting Amount (IDR)</TableHead>
+                <TableHead className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground text-center">Status</TableHead>
+                <TableHead className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground text-center">Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

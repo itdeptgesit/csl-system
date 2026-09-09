@@ -301,3 +301,13 @@
     100% { opacity: 0; }
   }
 }
+
+@keyframes move-stripe {
+  from { background-position: 1rem 0; }
+  to { background-position: 0 0; }
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}

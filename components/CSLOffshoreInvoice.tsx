@@ -590,7 +590,7 @@ export const CSLOffshoreInvoice: React.FC<{ currentUser: UserAccount | null }> =
               </div>
               <div>
                 <FieldLabel>Request date *</FieldLabel>
-                <Input required type="date" value={form.request_date || ''} onChange={e => setForm({ ...form, request_date: e.target.value })} className="h-9 text-sm" />
+                <Input required type="date" value={form.request_date?.split('T')[0] || ''} onChange={e => setForm(prev => ({ ...prev, request_date: e.target.value }))} className="h-9 text-sm" />
               </div>
               <div>
                 <FieldLabel>Account code</FieldLabel>

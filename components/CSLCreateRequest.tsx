@@ -372,7 +372,7 @@ export const CSLCreateRequest: React.FC<CSLCreateRequestProps> = ({ currentUser,
                 type="date"
                 required
                 min={new Date().toISOString().split('T')[0]}
-                value={form.required_date}
+                value={form.required_date?.split('T')[0] || ''}
                 onChange={e => setForm(f => ({ ...f, required_date: e.target.value }))}
                 className="h-9 w-full sm:w-60"
               />

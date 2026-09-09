@@ -476,16 +476,18 @@ export const CSLExpenseApproval: React.FC<{ currentUser: UserAccount | null }> =
 
   useEffect(() => { fetchData(); }, []);
 
-  // Handler for automatic live exchange rate fetching
-  const handleFetchRate = async (curr: string, ignoreCache = false) => {
+  // Handler for automatic live exchange rate fetching (with historical date support)
+  const handleFetchRate = async (curr: string, ignoreCache = false, targetDate?: string) => {
     const upper = (curr || 'IDR').toUpperCase().trim();
+    const cleanDate = targetDate || form.exchange_rate_date || form.request_date || new Date().toISOString().split('T')[0];
+
     if (upper === 'IDR') {
       setForm(f => ({
         ...f,
         currency: 'IDR',
         exchange_rate: '1',
         exchange_rate_source: 'API',
-        exchange_rate_date: new Date().toISOString().split('T')[0],
+        exchange_rate_date: cleanDate,
       }));
       setRateFetchError(null);
       return;
@@ -494,24 +496,25 @@ export const CSLExpenseApproval: React.FC<{ currentUser: UserAccount | null }> =
     setIsFetchingRate(true);
     setRateFetchError(null);
     try {
-      const res = await fetchLiveExchangeRate(upper, ignoreCache);
+      const res = await fetchLiveExchangeRate(upper, ignoreCache, cleanDate);
       setForm(f => ({
         ...f,
         currency: upper,
         exchange_rate: String(res.rate),
         exchange_rate_source: res.source,
-        exchange_rate_date: new Date().toISOString().split('T')[0],
+        exchange_rate_date: cleanDate,
       }));
 
       if (res.error) {
         setRateFetchError(res.error);
         toast.warning(res.error);
       } else {
-        toast.success(`Retrieved latest ${upper} → IDR rate: ${new Intl.NumberFormat('id-ID').format(res.rate)}`);
+        const formatted = new Intl.NumberFormat('id-ID').format(res.rate);
+        toast.success(`Exchange rate (${upper} → IDR): ${formatted} [${res.effectiveDate || cleanDate}]`);
       }
     } catch (err: any) {
-      setRateFetchError('Unable to retrieve the latest exchange rate.');
-      toast.error('Failed to fetch live exchange rate: ' + err.message);
+      setRateFetchError('Unable to retrieve the exchange rate.');
+      toast.error('Failed to fetch exchange rate: ' + err.message);
     } finally {
       setIsFetchingRate(false);
     }
@@ -522,7 +525,26 @@ export const CSLExpenseApproval: React.FC<{ currentUser: UserAccount | null }> =
       const updatedAmount = f.amount ? formatAmountWithDots(f.amount, newCurr === 'IDR') : '';
       return { ...f, currency: newCurr, amount: updatedAmount };
     });
-    handleFetchRate(newCurr);
+    handleFetchRate(newCurr, false, form.exchange_rate_date);
+  };
+
+  const handleExchangeRateDateChange = (newDate: string) => {
+    setForm(prev => ({ ...prev, exchange_rate_date: newDate }));
+    if (form.currency !== 'IDR' && newDate) {
+      handleFetchRate(form.currency, false, newDate);
+    }
+  };
+
+  const handleRequestDateChange = (newReqDate: string) => {
+    const shouldSync = !form.exchange_rate_date || form.exchange_rate_date === form.request_date;
+    setForm(prev => ({
+      ...prev,
+      request_date: newReqDate,
+      exchange_rate_date: shouldSync ? newReqDate : prev.exchange_rate_date,
+    }));
+    if (shouldSync && form.currency !== 'IDR' && newReqDate) {
+      handleFetchRate(form.currency, false, newReqDate);
+    }
   };
 
   const handleManualRateChange = (val: string) => {
@@ -586,12 +608,12 @@ export const CSLExpenseApproval: React.FC<{ currentUser: UserAccount | null }> =
     };
 
     setUploadProgress({
-      open: true,
+      open: false,
       progress: 0,
       subtitle: isEdit ? (editingExpense?.expense_number || 'updating record') : (attachmentFile?.name || 'expense request'),
       steps: uploadSteps
     });
-    await sleep(200);
+    await sleep(150);
 
     try {
       let attachmentId = null;
@@ -1552,7 +1574,7 @@ export const CSLExpenseApproval: React.FC<{ currentUser: UserAccount | null }> =
                 </div>
                 <div>
                   <FieldLabel>Request Date *</FieldLabel>
-                  <Input required type="date" value={form.request_date} onChange={e => setForm({ ...form, request_date: e.target.value })} className="h-9 text-sm" />
+                  <Input required type="date" value={form.request_date?.split('T')[0] || ''} onChange={e => handleRequestDateChange(e.target.value)} className="h-9 text-sm" />
                 </div>
                 <div>
                   <FieldLabel>Project / Expense Name *</FieldLabel>
@@ -1680,10 +1702,10 @@ export const CSLExpenseApproval: React.FC<{ currentUser: UserAccount | null }> =
                         type="button"
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleFetchRate(form.currency, true)}
+                        onClick={() => handleFetchRate(form.currency, true, form.exchange_rate_date)}
                         disabled={isFetchingRate}
                         className="h-6 px-2 text-[10px] gap-1 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-500/10"
-                        title="Re-fetch latest rate from ExchangeRate.fun"
+                        title="Re-fetch rate for selected date"
                       >
                         <RefreshCcw className={`h-3 w-3 ${isFetchingRate ? 'animate-spin' : ''}`} /> Refresh API Rate
                       </Button>
@@ -1694,13 +1716,13 @@ export const CSLExpenseApproval: React.FC<{ currentUser: UserAccount | null }> =
                     <div className="p-2.5 rounded-lg border border-rose-500/30 bg-rose-500/10 flex items-center justify-between text-xs text-rose-600 dark:text-rose-400">
                       <div className="flex items-center gap-2">
                         <AlertCircle size={14} />
-                        <span>Unable to retrieve the latest exchange rate. You can enter it manually below.</span>
+                        <span>Unable to retrieve the exchange rate. You can enter it manually below.</span>
                       </div>
                       <Button
                         type="button"
                         variant="outline"
                         size="sm"
-                        onClick={() => handleFetchRate(form.currency, true)}
+                        onClick={() => handleFetchRate(form.currency, true, form.exchange_rate_date)}
                         className="h-6 text-[10px] px-2 text-rose-600 border-rose-500/30 hover:bg-rose-500/10"
                       >
                         Retry
@@ -1732,8 +1754,8 @@ export const CSLExpenseApproval: React.FC<{ currentUser: UserAccount | null }> =
                       <Input
                         required
                         type="date"
-                        value={form.exchange_rate_date}
-                        onChange={e => setForm({ ...form, exchange_rate_date: e.target.value })}
+                        value={form.exchange_rate_date?.split('T')[0] || ''}
+                        onChange={e => handleExchangeRateDateChange(e.target.value)}
                         className="h-8 text-xs bg-background font-mono"
                       />
                     </div>
@@ -1754,7 +1776,7 @@ export const CSLExpenseApproval: React.FC<{ currentUser: UserAccount | null }> =
                   <p className="text-[11px] text-muted-foreground italic">
                     {form.exchange_rate_source === 'Manual'
                       ? 'Manual rate override active. Historical transactions are permanently frozen upon submission.'
-                      : 'Latest exchange rate retrieved automatically via ExchangeRate.fun API.'}
+                      : 'Exchange rate automatically synchronized for the selected date.'}
                   </p>
                 </div>
               )}
@@ -1909,6 +1931,77 @@ export const CSLExpenseApproval: React.FC<{ currentUser: UserAccount | null }> =
                   )}
                   <input type="file" accept=".pdf,.png,.jpg,.jpeg" className="hidden" onChange={e => setAttachmentFile(e.target.files?.[0] || null)} />
                 </label>
+
+                {/* ── INLINE ANIMATED UPLOAD PROGRESS (DI DALAM FORM DI BAWAH INVOICE ATT) ── */}
+                {isSubmitting && (
+                  <div className="mt-3 p-4 rounded-xl border border-indigo-500/40 bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-background shadow-sm space-y-3 animate-in fade-in-50 slide-in-from-top-2 duration-300">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="h-8 w-8 rounded-lg bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 shadow-sm border border-indigo-500/30">
+                          <CloudUpload className="h-4 w-4 animate-bounce text-indigo-600 dark:text-indigo-400" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-foreground truncate flex items-center gap-1.5">
+                            <span>{attachmentFile ? 'Mengunggah Lampiran Invoice...' : 'Memproses Pengajuan...'}</span>
+                            <span className="flex h-1.5 w-1.5 relative">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-indigo-500"></span>
+                            </span>
+                          </p>
+                          <p className="text-[11px] text-muted-foreground truncate">
+                            {attachmentFile ? `${attachmentFile.name} (${(attachmentFile.size / 1024).toFixed(1)} KB)` : 'Menyimpan data ke server...'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <span className="text-sm font-mono font-extrabold text-indigo-600 dark:text-indigo-400 tabular-nums">
+                          {Math.round(uploadProgress.progress)}%
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Animated Progress Bar */}
+                    <div className="space-y-1">
+                      <div className="h-2.5 w-full bg-muted/80 dark:bg-muted/50 rounded-full overflow-hidden p-0.5 border border-indigo-500/20 shadow-inner">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 shadow-md transition-all duration-300 ease-out relative overflow-hidden"
+                          style={{ width: `${Math.max(6, Math.min(100, uploadProgress.progress))}%` }}
+                        >
+                          <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(255,255,255,0.25)_25%,transparent_25%,transparent_50%,rgba(255,255,255,0.25)_50%,rgba(255,255,255,0.25)_75%,transparent_75%,transparent)] bg-[length:1rem_1rem] animate-[move-stripe_1s_linear_infinite]" />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Step Indicators */}
+                    {uploadProgress.steps.length > 0 && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-1">
+                        {uploadProgress.steps.map((step, idx) => (
+                          <div key={idx} className="flex items-center gap-2 text-[11px]">
+                            <div className="w-3.5 h-3.5 shrink-0 flex items-center justify-center">
+                              {step.status === 'done' ? (
+                                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                              ) : step.status === 'active' ? (
+                                <Loader2 className="h-3.5 w-3.5 text-indigo-500 animate-spin" />
+                              ) : step.status === 'error' ? (
+                                <XIcon className="h-3.5 w-3.5 text-rose-500" />
+                              ) : (
+                                <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground/30" />
+                              )}
+                            </div>
+                            <span className={`truncate transition-colors ${
+                              step.status === 'active' ? 'font-semibold text-indigo-600 dark:text-indigo-400' :
+                              step.status === 'done' ? 'text-muted-foreground line-through decoration-muted-foreground/40' :
+                              step.status === 'error' ? 'text-rose-500 font-medium' :
+                              'text-muted-foreground/60'
+                            }`}>
+                              {step.label}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
