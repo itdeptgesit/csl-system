@@ -84,17 +84,10 @@ const SLA_BADGE: Record<SLAStatus, { label: string; className: string }> = {
 };
 
 const STATUS_BADGE: Record<string, string> = {
-  DRAFT: 'border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 bg-zinc-100/80 dark:bg-zinc-800/60',
-  SUBMITTED: 'border-sky-500/25 text-sky-700 dark:text-sky-300 bg-sky-500/10 font-medium',
-  ACKNOWLEDGED: 'border-indigo-500/25 text-indigo-700 dark:text-indigo-300 bg-indigo-500/10 font-medium',
-  IN_REVIEW: 'border-blue-500/25 text-blue-700 dark:text-blue-300 bg-blue-500/10 font-medium',
-  REVIEW_USER: 'border-purple-500/25 text-purple-700 dark:text-purple-300 bg-purple-500/10 font-medium',
   PROCESSING: 'border-amber-500/25 text-amber-700 dark:text-amber-300 bg-amber-500/10 font-medium',
+  REVIEW_USER: 'border-purple-500/25 text-purple-700 dark:text-purple-300 bg-purple-500/10 font-medium',
   COMPLETED: 'border-emerald-500/25 text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 font-semibold',
-  RESPONDED: 'border-teal-500/25 text-teal-700 dark:text-teal-300 bg-teal-500/10 font-medium',
-  CLOSED: 'border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 font-medium',
   REJECTED: 'border-rose-500/25 text-rose-700 dark:text-rose-300 bg-rose-500/10 font-medium',
-  CANCELLED: 'border-zinc-400 dark:border-zinc-600 text-muted-foreground bg-muted/40 line-through font-medium',
 };
 
 const PRIORITY_BADGE: Record<string, string> = {
@@ -137,7 +130,7 @@ const MOCK_REQUESTS: CSLRequest[] = [
     id: 2,
     request_number: 'CSL-202608-0002',
     category_id: 2,
-    category_name: 'Legal Review',
+    category_name: 'Documents',
     requester_name: 'Dewi Lestari',
     requester_email: 'dewi@gesit.co.id',
     department: 'HR & GA',
@@ -155,8 +148,8 @@ const MOCK_REQUESTS: CSLRequest[] = [
   {
     id: 3,
     request_number: 'CSL-202608-0003',
-    category_id: 8,
-    category_name: 'Document Request',
+    category_id: 2,
+    category_name: 'Documents',
     requester_name: 'Agus Purnomo',
     requester_email: 'agus@gesit.co.id',
     department: 'Operations',
@@ -488,8 +481,18 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
     if (!selectedRequest) return;
     setIsSubmitting(true);
 
+    // Determine if this is a Documents category request
+    const reqCatName = categories.find(c => c.id === (selectedRequest as any).category_id)?.name || (selectedRequest as any).category_name || '';
+    const isDocumentsCategory = reqCatName === 'Documents';
+
+    // For Documents category: if user selects REVIEW_USER or COMPLETED and has files, auto-complete
+    let finalStatus = responseForm.status;
+    if (isDocumentsCategory && ['REVIEW_USER', 'COMPLETED'].includes(responseForm.status)) {
+      finalStatus = 'COMPLETED';
+    }
+
     const payload: any = {
-      status: responseForm.status,
+      status: finalStatus,
       updated_at: new Date().toISOString(),
     };
 
@@ -575,14 +578,10 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
         const attachments = newFileMeta.map((f: any) => ({ name: f.name, url: f.url }));
         await notifyRequestUpdate({ ...selectedRequest, ...payload }, 'STATUS_CHANGED', payload.csl_response, attachments);
         const statusLabel: Record<string, string> = {
-          ACKNOWLEDGED: 'Permintaan diakui dan sedang dikaji',
-          IN_REVIEW: 'Permintaan sedang dalam review',
           PROCESSING: 'Permintaan sedang diproses',
           REVIEW_USER: 'Review dibutuhkan dari pemohon',
           COMPLETED: 'Permintaan telah diselesaikan',
-          RESPONDED: 'Tim CSL telah memberikan respons',
           REJECTED: 'Permintaan ditolak',
-          CLOSED: 'Permintaan ditutup',
         };
         const autoNote = responseForm.response?.trim() || statusLabel[responseForm.status] || `Status diubah ke ${responseForm.status}`;
         const { error: logErr } = await supabase.from('csl_request_logs').insert([{
@@ -930,12 +929,10 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
           <div className="inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground w-full sm:w-auto overflow-x-auto hide-scrollbar">
             {[
               { id: 'ALL', label: 'All' },
-              { id: 'SUBMITTED', label: 'Submitted' },
-              { id: 'IN_REVIEW', label: 'In Review' },
               { id: 'PROCESSING', label: 'Processing' },
               { id: 'REVIEW_USER', label: 'Review User' },
               { id: 'COMPLETED', label: 'Completed' },
-              { id: 'OVERDUE', label: 'Overdue' }
+              { id: 'REJECTED', label: 'Rejected' },
             ].map(cat => (
               <button
                 key={cat.id}
@@ -1002,7 +999,7 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                 const requestDate = new Date(req.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
                 const catName = categories.find(c => c.id === req.category_id)?.name || req.category_name || 'Permintaan';
                 const getInitials = (name: string) => name.replace(/(Adv\.|S\.H\.|M\.H\.|Dra\.|PT)/gi, '').trim().substring(0, 2).toUpperCase();
-                const progressValue = req.progress || (req.status === 'COMPLETED' ? 100 : req.status === 'PROCESSING' ? 60 : req.status === 'IN_REVIEW' ? 40 : 15);
+                const progressValue = req.progress || (req.status === 'COMPLETED' ? 100 : req.status === 'REVIEW_USER' ? 80 : req.status === 'PROCESSING' ? 50 : 15);
 
                 return (
                   <TableRow
@@ -1295,10 +1292,10 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
 
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 pt-1">
                         {[
-                          { step: 1, label: 'Diajukan', desc: 'Permintaan Masuk', isDone: true, isActive: selectedRequest.status === 'SUBMITTED' },
-                          { step: 2, label: 'Peninjauan', desc: 'Review & Penugasan', isDone: ['ACKNOWLEDGED', 'IN_REVIEW', 'PROCESSING', 'REVIEW_USER', 'COMPLETED', 'CLOSED'].includes(selectedRequest.status), isActive: ['ACKNOWLEDGED', 'IN_REVIEW'].includes(selectedRequest.status) },
-                          { step: 3, label: 'Pengerjaan', desc: 'Draft & Tindakan CSL', isDone: ['PROCESSING', 'REVIEW_USER', 'COMPLETED', 'CLOSED'].includes(selectedRequest.status), isActive: ['PROCESSING', 'REVIEW_USER'].includes(selectedRequest.status) },
-                          { step: 4, label: 'Selesai', desc: 'Hasil Final Tuntas', isDone: ['COMPLETED', 'CLOSED'].includes(selectedRequest.status), isActive: ['COMPLETED', 'CLOSED'].includes(selectedRequest.status) },
+                          { step: 1, label: 'Diajukan', desc: 'Permintaan Masuk', isDone: true, isActive: false },
+                          { step: 2, label: 'Diproses', desc: 'Sedang Dikerjakan', isDone: ['PROCESSING', 'REVIEW_USER', 'COMPLETED'].includes(selectedRequest.status), isActive: selectedRequest.status === 'PROCESSING' },
+                          { step: 3, label: 'Review', desc: 'Review Pemohon', isDone: ['REVIEW_USER', 'COMPLETED'].includes(selectedRequest.status), isActive: selectedRequest.status === 'REVIEW_USER' },
+                          { step: 4, label: 'Selesai', desc: 'Tuntas', isDone: selectedRequest.status === 'COMPLETED', isActive: selectedRequest.status === 'COMPLETED' },
                         ].map((s) => (
                           <div key={s.step} className="flex flex-col gap-1.5 p-2 rounded-lg bg-muted/20 border border-border/40">
                             <div className={`h-1.5 rounded-full transition-all ${s.isDone ? 'bg-primary' : 'bg-muted border border-border/50'}`} />
@@ -1967,17 +1964,22 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                             value={responseForm.status}
                             onChange={e => setResponseForm({ ...responseForm, status: e.target.value })}
                           >
-                            <option value="">— Pilih Status Pemrosesan —</option>
-                            <option value="ACKNOWLEDGED">Acknowledged</option>
-                            <option value="IN_REVIEW">In Review</option>
+                            <option value="">— Pilih Status —</option>
                             <option value="PROCESSING">Processing</option>
-                            <option value="REVIEW_USER">Review User</option>
-                            <option value="COMPLETED">Completed ✓</option>
+                            {/* Review User hanya untuk Agreement */}
+                            {(() => {
+                              const catName = categories.find(c => c.id === (selectedRequest as any)?.category_id)?.name || (selectedRequest as any)?.category_name || '';
+                              if (catName !== 'Documents') {
+                                return <option value="REVIEW_USER">Review User</option>;
+                              }
+                              return null;
+                            })()}
+                            <option value="COMPLETED">Completed</option>
                             <option value="REJECTED">Rejected</option>
                           </select>
                         </div>
 
-                        {['COMPLETED', 'REJECTED', 'REVIEW_USER', 'RESPONDED'].includes(responseForm.status) && (
+                        {['COMPLETED', 'REJECTED', 'REVIEW_USER'].includes(responseForm.status) && (
                           <div className="space-y-1.5">
                             <label className="text-xs font-semibold text-foreground">Catatan / Balasan untuk Pemohon</label>
                             <Textarea

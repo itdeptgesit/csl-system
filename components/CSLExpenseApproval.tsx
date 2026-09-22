@@ -80,11 +80,16 @@ export interface UnifiedExpenseApproval {
   invoice_attachment_id?: string;
 }
 
+const EXPENSE_CATEGORIES = ['Notaris', 'Lawfirm', 'Konsultan', 'Other'] as const;
+
+type ExpenseCategory = typeof EXPENSE_CATEGORIES[number];
+
 const EMPTY_FORM = {
   company: 'PT Bumi Grafika Jaya',
   department: 'CSL',
   request_date: new Date().toISOString().split('T')[0],
   project_name: '',
+  category: 'Other' as ExpenseCategory,
   paid_to: '',
   payee_type: 'Company' as 'Company' | 'Individual',
   payment_method: 'Bank Transfer / T.T',
@@ -373,14 +378,12 @@ export const CSLExpenseApproval: React.FC<{ currentUser: UserAccount | null }> =
       else if (activeTab === 'PAID') matchTab = e.status === 'DISBURSED' || e.status === 'PAID';
       else if (activeTab === 'REJECTED') matchTab = e.status === 'REJECTED';
 
-      const q = searchTerm.toLowerCase();
-      const matchSearch = !q ||
-        e.expense_number?.toLowerCase().includes(q) ||
-        e.project_name?.toLowerCase().includes(q) ||
-        e.payment_description?.toLowerCase().includes(q) ||
-        e.paid_to?.toLowerCase().includes(q) ||
-        e.prepared_by_name?.toLowerCase().includes(q) ||
-        e.invoice_number?.toLowerCase().includes(q);
+      const q = searchTerm.toLowerCase().trim();
+      const searchableText = Object.values(e)
+        .filter(value => value !== null && value !== undefined)
+        .map(value => String(value).toLowerCase())
+        .join(' ');
+      const matchSearch = !q || searchableText.includes(q);
 
       return matchTab && matchSearch;
     });
@@ -404,6 +407,7 @@ export const CSLExpenseApproval: React.FC<{ currentUser: UserAccount | null }> =
       department: exp.department || 'CSL',
       request_date: exp.request_date || new Date().toISOString().split('T')[0],
       project_name: exp.project_name || '',
+      category: (exp.category as ExpenseCategory) || 'Other',
       paid_to: exp.paid_to || '',
       payee_type: (exp.payee_type as 'Company' | 'Individual') || 'Company',
       payment_method: exp.payment_method || 'Bank Transfer / T.T',
@@ -696,6 +700,7 @@ export const CSLExpenseApproval: React.FC<{ currentUser: UserAccount | null }> =
           invoice_number: form.invoice_number || null,
           account_code: form.account_code || null,
           payment_description: form.payment_description,
+          category: form.category,
           note: form.note || null,
         };
 
@@ -1197,7 +1202,7 @@ export const CSLExpenseApproval: React.FC<{ currentUser: UserAccount | null }> =
           <div className="relative w-full sm:w-80">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search project, vendor, payee, invoice..."
+              placeholder="Search all data: ID, vendor, project, amount, status..."
               className="pl-9 h-9 text-sm rounded-md"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -1579,6 +1584,19 @@ export const CSLExpenseApproval: React.FC<{ currentUser: UserAccount | null }> =
                 <div>
                   <FieldLabel>Project / Expense Name *</FieldLabel>
                   <Input required value={form.project_name} onChange={e => setForm({ ...form, project_name: e.target.value })} placeholder="e.g. Notary Fees & Business Licensing" className="h-9 text-sm" />
+                </div>
+                <div>
+                  <FieldLabel>Kategori Biaya *</FieldLabel>
+                  <select
+                    required
+                    value={form.category}
+                    onChange={e => setForm({ ...form, category: e.target.value as ExpenseCategory })}
+                    className="w-full h-9 px-3 py-1 text-sm bg-background border border-input rounded-md focus:outline-none focus:ring-1 focus:ring-ring"
+                  >
+                    {EXPENSE_CATEGORIES.map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
             </div>

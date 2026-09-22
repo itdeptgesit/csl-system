@@ -130,6 +130,7 @@ const parseParamsToFilters = (params: URLSearchParams): ReportFilters => {
     department: params.get('department') || 'all',
     project: params.get('project') || 'all',
     status: params.get('status') || 'all',
+    category: params.get('category') || 'all',
     currency: params.get('currency') || 'all',
     paymentLocation: params.get('paymentLocation') || 'all',
     paymentMethod: params.get('paymentMethod') || 'all',
@@ -146,6 +147,7 @@ const DEFAULT_FILTERS: ReportFilters = {
   department: 'all',
   project: 'all',
   status: 'all',
+  category: 'all',
   currency: 'all',
   paymentLocation: 'all',
   paymentMethod: 'all',
@@ -427,6 +429,7 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
       if (newFilters.department !== 'all') params.set('department', newFilters.department);
       if (newFilters.project !== 'all') params.set('project', newFilters.project);
       if (newFilters.status !== 'all') params.set('status', newFilters.status);
+      if (newFilters.category !== 'all') params.set('category', newFilters.category);
       if (newFilters.currency !== 'all') params.set('currency', newFilters.currency);
       if (newFilters.paymentLocation !== 'all') params.set('paymentLocation', newFilters.paymentLocation);
       if (newFilters.paymentMethod !== 'all') params.set('paymentMethod', newFilters.paymentMethod);
@@ -517,6 +520,7 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
     if (filters.department !== 'all') c++;
     if (filters.project !== 'all') c++;
     if (filters.status !== 'all') c++;
+    if (filters.category !== 'all') c++;
     if (filters.currency !== 'all') c++;
     if (filters.paymentLocation !== 'all') c++;
     if (filters.paymentMethod !== 'all') c++;
@@ -987,7 +991,7 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
               <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="Search descriptions, payees, projects..."
+                placeholder="Search all data: ID, vendor, project, amount, status..."
                 value={filters.search}
                 onChange={e => handleFilterChange('search', e.target.value)}
                 className="w-full bg-background border border-border/70 rounded-xl pl-8 pr-3 py-1.5 text-xs font-medium text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-indigo-500 h-9"
@@ -1109,6 +1113,15 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-muted/80 text-foreground border border-border/70">
                 <span>Status: <strong>{filters.status}</strong></span>
                 <button type="button" onClick={() => handleFilterChange('status', 'all')} className="hover:bg-background rounded-full p-0.5">
+                  <X size={11} />
+                </button>
+              </span>
+            )}
+
+            {filters.category !== 'all' && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-muted/80 text-foreground border border-border/70">
+                <span>Kategori: <strong>{filters.category}</strong></span>
+                <button type="button" onClick={() => handleFilterChange('category', 'all')} className="hover:bg-background rounded-full p-0.5">
                   <X size={11} />
                 </button>
               </span>
@@ -1253,6 +1266,21 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
                   <option value="APPROVED">Approved (Exposure)</option>
                   <option value="PENDING_APPROVAL">Pending Approval</option>
                   <option value="REJECTED">Rejected</option>
+                </select>
+              </div>
+
+              {/* Category */}
+              <div>
+                <label className="text-[10px] font-black uppercase tracking-wider text-muted-foreground block mb-1">Kategori Biaya</label>
+                <select
+                  value={filters.category}
+                  onChange={e => handleFilterChange('category', e.target.value)}
+                  className="w-full bg-background border border-border/70 rounded-xl px-3 py-2 text-xs font-semibold text-foreground focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                >
+                  <option value="all">Semua Kategori</option>
+                  {(reportData?.filterOptions.categories || ['Notaris', 'Lawfirm', 'Konsultan', 'Other']).map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
                 </select>
               </div>
 
@@ -1452,11 +1480,14 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
               </div>
             </div>
             <div className="flex items-center gap-3 text-[11px] font-bold">
-              <span className="flex items-center gap-1.5 text-muted-foreground dark:text-slate-400">
-                <span className="w-2.5 h-2.5 rounded-sm bg-slate-500 dark:bg-slate-600 inline-block" /> Budget
+              <span className="flex items-center gap-1.5 text-foreground dark:text-slate-200">
+                <span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ background: '#22c55e' }} /> Individual
               </span>
               <span className="flex items-center gap-1.5 text-foreground dark:text-slate-200">
-                <span className="w-2.5 h-2.5 rounded-sm bg-indigo-600 dark:bg-indigo-500 inline-block" /> Actual
+                <span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ background: '#3b82f6' }} /> Company
+              </span>
+              <span className="flex items-center gap-1.5 text-foreground dark:text-slate-200">
+                <span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ background: '#ef4444' }} /> Over Budget
               </span>
               {isSuperAdmin && (
                 <Button
@@ -1519,29 +1550,41 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
                     }}
                     formatter={(value: number, name: string) => [
                       formatIdr(value),
-                      name === 'budget' ? 'Budget' : 'Actual'
+                      name === 'individualActual' ? 'Individual' : 'Company'
                     ]}
                     labelFormatter={(label: string) => label}
                   />
                   <Bar
-                    dataKey="budget"
-                    name="budget"
-                    fill="#475569"
-                    radius={[4, 4, 0, 0]}
-                    maxBarSize={40}
-                  />
-                  <Bar
-                    dataKey="actual"
-                    name="actual"
+                    dataKey="individualActual"
+                    name="individualActual"
                     radius={[4, 4, 0, 0]}
                     maxBarSize={40}
                   >
-                    {reportData?.budgetVsActual.map((entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={entry.actual > entry.budget && entry.budget > 0 ? '#f43f5e' : '#6366f1'}
-                      />
-                    ))}
+                    {reportData?.budgetVsActual.map((entry, index) => {
+                      const isOverBudget = (entry.individualActual + entry.companyActual) > entry.budget && entry.budget > 0;
+                      return (
+                        <Cell
+                          key={`ind-${index}`}
+                          fill={isOverBudget ? '#ef4444' : '#22c55e'}
+                        />
+                      );
+                    })}
+                  </Bar>
+                  <Bar
+                    dataKey="companyActual"
+                    name="companyActual"
+                    radius={[4, 4, 0, 0]}
+                    maxBarSize={40}
+                  >
+                    {reportData?.budgetVsActual.map((entry, index) => {
+                      const isOverBudget = (entry.individualActual + entry.companyActual) > entry.budget && entry.budget > 0;
+                      return (
+                        <Cell
+                          key={`com-${index}`}
+                          fill={isOverBudget ? '#ef4444' : '#3b82f6'}
+                        />
+                      );
+                    })}
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>

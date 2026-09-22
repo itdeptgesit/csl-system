@@ -100,75 +100,75 @@ const DateCell: React.FC<{
 };
 
 const DUMMY_RUPS_AR = [
-  { id: 1, company: 'Alakasa Alumina Refineri', status: 'Completed', owner: 'Desi Rahmuni', startDate: '', dueDate: '', finishDate: '', notes: '' },
-  { id: 2, company: 'Alakasa Extrusindo', status: 'Completed', owner: 'Sylvia', startDate: '', dueDate: '7/31/2026', finishDate: '7/10/2026', notes: '' },
-  { id: 3, company: 'Alakasa Industrindo Tbk', status: 'Completed', owner: 'Desi Rahmuni', startDate: '', dueDate: '', finishDate: '', notes: '' },
-  { id: 4, company: 'Alka Niaga Industri', status: 'Completed', owner: 'Desi Rahmuni', startDate: '', dueDate: '7/31/2026', finishDate: '', notes: '' },
-  { id: 5, company: 'Arjuna Bumi Cahaya', status: 'Completed', owner: 'Desi Rahmuni', startDate: '', dueDate: '', finishDate: '', notes: '' },
-  { id: 6, company: 'Bahana Cipta Permai', status: 'Completed', owner: 'Sylvia', startDate: '', dueDate: '7/31/2026', finishDate: '7/23/2026', notes: '' },
-  { id: 7, company: 'Bumi Grafika Jaya', status: 'Completed', owner: 'Sylvia', startDate: '', dueDate: '7/31/2026', finishDate: '7/24/2026', notes: '' },
-  { id: 8, company: 'Catur Boga Pratama', status: 'Not started', owner: 'Sylvia', startDate: '', dueDate: '', finishDate: '', notes: 'non-active' },
-  { id: 9, company: 'DA International', status: 'Completed', owner: 'Sylvia', startDate: '', dueDate: '7/31/2026', finishDate: '7/22/2026', notes: '' },
-  { id: 10, company: 'Dharma Alumas Sakti', status: 'Completed', owner: 'Sylvia', startDate: '', dueDate: '7/31/2026', finishDate: '7/10/2026', notes: '' },
-  { id: 11, company: 'Gesit Alumas', status: 'Blocked', owner: 'Sylvia', startDate: '', dueDate: '7/31/2026', finishDate: '', notes: 'Case AHU terblokir sejak 2023, proses mencari solusinya by YA & CA' },
-  { id: 12, company: 'Gesit Bumi Persada', status: 'Completed', owner: 'Desi Rahmuni', startDate: '', dueDate: '7/31/2026', finishDate: '', notes: '' },
-  { id: 13, company: 'Gesit Graha', status: 'Completed', owner: 'Sylvia', startDate: '', dueDate: '7/31/2026', finishDate: '7/23/2026', notes: '' },
-  { id: 14, company: 'Gesit Intrade', status: 'Completed', owner: 'Desi Rahmuni', startDate: '', dueDate: '7/31/2026', finishDate: '7/28/2026', notes: '' },
-  { id: 15, company: 'Gesit Makmur Utama', status: 'Completed', owner: 'Sylvia', startDate: '', dueDate: '7/31/2026', finishDate: '8/3/2026', notes: '' },
-  { id: 16, company: 'Gesit Maju', status: 'Completed', owner: 'Sylvia', startDate: '', dueDate: '7/31/2026', finishDate: '7/23/2026', notes: '' },
-  { id: 17, company: 'Gesit Perkasa', status: 'Completed', owner: 'Sylvia', startDate: '', dueDate: '7/31/2026', finishDate: '7/23/2026', notes: '' },
-  { id: 18, company: 'HTT Sarana Perkasa', status: 'Completed', owner: 'Sylvia', startDate: '', dueDate: '7/31/2026', finishDate: '7/10/2026', notes: '' },
-  { id: 19, company: 'Jaya Mitra Investasi', status: 'Completed', owner: 'Sylvia', startDate: '', dueDate: '7/31/2026', finishDate: '7/10/2026', notes: '' },
-  { id: 20, company: 'Jaya Sejahtera Investasi', status: 'Completed', owner: 'Sylvia', startDate: '', dueDate: '7/31/2026', finishDate: '7/10/2026', notes: '' },
-  { id: 21, company: 'Jaya Sudirman Mandiri', status: 'Completed', owner: 'Sylvia', startDate: '', dueDate: '7/31/2026', finishDate: '7/23/2026', notes: '' },
-  { id: 22, company: 'Jaya Sudirman Perkasa', status: 'Completed', owner: 'Sylvia', startDate: '', dueDate: '7/31/2026', finishDate: '7/23/2026', notes: '' },
-  { id: 23, company: 'JSAlu Investasi Pratama', status: 'Completed', owner: 'Sylvia', startDate: '', dueDate: '7/31/2026', finishDate: '7/22/2026', notes: '' },
-  { id: 24, company: 'JSGlobal Mineral Energi', status: 'Completed', owner: 'Sylvia', startDate: '', dueDate: '7/31/2026', finishDate: '7/22/2026', notes: '' },
-  { id: 25, company: 'JSCapital Investasi Gesit', status: 'Completed', owner: 'Sylvia', startDate: '', dueDate: '7/31/2026', finishDate: '7/17/2026', notes: '' },
-  { id: 26, company: 'JSGlobal Energi Pratama', status: 'Completed', owner: 'Sylvia', startDate: '', dueDate: '7/31/2026', finishDate: '7/22/2026', notes: '' },
-  { id: 27, company: 'JSGlobal Logistik Energi', status: 'Completed', owner: 'Sylvia', startDate: '', dueDate: '7/31/2026', finishDate: '7/22/2026', notes: '' },
-  { id: 28, company: 'Kalimantan Industri Terpadu', status: 'Completed', owner: 'Desi Rahmuni', startDate: '', dueDate: '', finishDate: '', notes: 'diproses oleh legal GNR' },
-  { id: 29, company: 'Lima Garda Sakti', status: 'Completed', owner: 'Sylvia', startDate: '', dueDate: '7/31/2026', finishDate: '7/23/2026', notes: '' },
-  { id: 30, company: 'Lima Sudirman Perkasa', status: 'Completed', owner: 'Sylvia', startDate: '', dueDate: '7/31/2026', finishDate: '7/23/2026', notes: '' },
-  { id: 31, company: 'Mitra Harapan Karya Utama', status: 'Completed', owner: 'Sylvia', startDate: '', dueDate: '7/31/2026', finishDate: '7/10/2026', notes: '' },
-  { id: 32, company: 'Mitra Harapan Sakti', status: 'Completed', owner: 'Desi Rahmuni', startDate: '', dueDate: '', finishDate: '', notes: '' },
-  { id: 33, company: 'Mitra Senayan Sejati', status: 'Completed', owner: 'Sylvia', startDate: '', dueDate: '7/31/2026', finishDate: '7/22/2026', notes: '' },
-  { id: 34, company: 'Mitra Sudirman Lestari', status: 'Completed', owner: 'Sylvia', startDate: '', dueDate: '7/31/2026', finishDate: '7/10/2026', notes: '' },
-  { id: 35, company: 'Mitra Sudirman Mandiri', status: 'Completed', owner: 'Sylvia', startDate: '', dueDate: '7/31/2026', finishDate: '7/10/2026', notes: '' },
-  { id: 36, company: 'Prodas Perdana', status: 'Completed', owner: 'Sylvia', startDate: '', dueDate: '7/31/2026', finishDate: '7/10/2026', notes: '' },
-  { id: 37, company: 'Sembilan Empat Investama', status: 'Completed', owner: 'Sylvia', startDate: '', dueDate: '7/31/2026', finishDate: '7/10/2026', notes: '' },
-  { id: 38, company: 'Sinar Bangsa', status: 'Not started', owner: 'Sylvia', startDate: '', dueDate: '7/31/2026', finishDate: '', notes: 'Belum ada keputusan dari owner (sudah 3rd Reminder)' },
-  { id: 39, company: 'Sircon Development', status: 'Completed', owner: 'Sylvia', startDate: '', dueDate: '7/31/2026', finishDate: '7/23/2026', notes: '' },
-  { id: 40, company: 'Sircon Griya Jaya', status: 'Completed', owner: 'Sylvia', startDate: '', dueDate: '7/31/2026', finishDate: '7/17/2026', notes: '' },
-  { id: 41, company: 'Sircon Investment', status: 'Completed', owner: 'Sylvia', startDate: '', dueDate: '7/31/2026', finishDate: '7/17/2026', notes: '' },
-  { id: 42, company: 'Terra Makmur Sarana', status: 'Completed', owner: 'Sylvia', startDate: '', dueDate: '7/31/2026', finishDate: '7/10/2026', notes: '' },
-  { id: 43, company: 'Trinitas Investment', status: 'Not started', owner: 'Sylvia', startDate: '', dueDate: '7/31/2026', finishDate: '', notes: 'Belum ada keputusan dari Management (sudah 3rd Reminder)' },
-  { id: 44, company: 'Andalas Inti Mulia', status: '', owner: '', startDate: '', dueDate: '', finishDate: '', notes: '' },
-  { id: 45, company: 'Baranusa Insan Gemilang', status: '', owner: '', startDate: '', dueDate: '', finishDate: '', notes: '' },
-  { id: 46, company: "Bara Optima Sejahtera", status: "", owner: "", startDate: "", dueDate: "", finishDate: "", notes: "" },
-  { id: 47, company: "Bumi Batu Mulia", status: "", owner: "", startDate: "", dueDate: "", finishDate: "", notes: "" },
-  { id: 48, company: "Delta Prima Mineral", status: "", owner: "", startDate: "", dueDate: "", finishDate: "", notes: "Status ownership: PPJB" },
-  { id: 49, company: "Dinamika Sejahtera Mandiri", status: "", owner: "", startDate: "", dueDate: "", finishDate: "", notes: "" },
-  { id: 50, company: "Grahasejahtera Asri", status: "", owner: "", startDate: "", dueDate: "", finishDate: "", notes: "" },
-  { id: 51, company: "Mandara Prima Nusantara", status: "Completed", owner: "Desi Rahmuni", startDate: "", dueDate: "7/31/2026", finishDate: "", notes: "" },
-  { id: 52, company: "Merdeka Nusantara Makmur", status: "", owner: "", startDate: "", dueDate: "", finishDate: "", notes: "" },
-  { id: 53, company: "Mineral Jaya Perkasa", status: "", owner: "", startDate: "", dueDate: "", finishDate: "", notes: "" },
-  { id: 54, company: "Mineral Sejahtera Utama", status: "", owner: "", startDate: "", dueDate: "", finishDate: "", notes: "" },
-  { id: 55, company: "Permata Teguh Sejahtera", status: "", owner: "", startDate: "", dueDate: "", finishDate: "", notes: "" },
-  { id: 56, company: "Rakasa Prima Mineral", status: "", owner: "", startDate: "", dueDate: "", finishDate: "", notes: "" },
-  { id: 57, company: "Sigma Prima Indotama", status: "", owner: "", startDate: "", dueDate: "", finishDate: "", notes: "" },
-  { id: 58, company: "Teguh Bumi Perkasa", status: "", owner: "", startDate: "", dueDate: "", finishDate: "", notes: "" },
-  { id: 59, company: "Vista Primanusa Persada", status: "", owner: "", startDate: "", dueDate: "", finishDate: "", notes: "" },
-  { id: 60, company: "Gesit Sarana Perkasa", status: "", owner: "", startDate: "", dueDate: "", finishDate: "", notes: "" },
-  { id: 61, company: "Windas Development", status: "", owner: "", startDate: "", dueDate: "", finishDate: "", notes: "" },
-  { id: 62, company: "Alakasa Andalan Mitra Sejati", status: "", owner: "", startDate: "", dueDate: "", finishDate: "", notes: "" },
-  { id: 63, company: "Alakasa Mitra CBox", status: "", owner: "", startDate: "", dueDate: "", finishDate: "", notes: "" },
-  { id: 64, company: "Rheem Indonesia", status: "", owner: "", startDate: "", dueDate: "", finishDate: "", notes: "" },
-  { id: 65, company: "Kalimantan Alumina Nusantara", status: "", owner: "", startDate: "", dueDate: "", finishDate: "", notes: "" },
-  { id: 66, company: "Selaras Investama Globalindo", status: "Completed", owner: "", startDate: "", dueDate: "7/30/2026", finishDate: "", notes: "" },
-  { id: 67, company: "Alpha Investama Globalindo", status: "Completed", owner: "", startDate: "", dueDate: "7/30/2026", finishDate: "", notes: "" },
-  { id: 68, company: "Bersinar Abadi Energi", status: "Completed", owner: "", startDate: "", dueDate: "7/30/2026", finishDate: "", notes: "" },
-  { id: 69, company: "Terang Abadi Energi", status: "Completed", owner: "", startDate: "", dueDate: "7/30/2026", finishDate: "", notes: "" }
+  { id: 1, company: 'Alakasa Alumina Refineri', status: 'Completed', owner: 'Desi Rahmuni', startDate: '', finishDate: '', notes: 'Akta No..... tgl ....' },
+  { id: 2, company: 'Alakasa Extrusindo', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/10/2026', notes: 'Akta No..... tgl ....' },
+  { id: 3, company: 'Alakasa Industrindo Tbk', status: 'Completed', owner: 'Desi Rahmuni', startDate: '', finishDate: '', notes: 'Akta No..... tgl ....' },
+  { id: 4, company: 'Alka Niaga Industri', status: 'Completed', owner: 'Desi Rahmuni', startDate: '', finishDate: '', notes: 'Akta No..... tgl ....' },
+  { id: 5, company: 'Arjuna Bumi Cahaya', status: 'Completed', owner: 'Desi Rahmuni', startDate: '', finishDate: '', notes: 'Akta No..... tgl ....' },
+  { id: 6, company: 'Bahana Cipta Permai', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/23/2026', notes: 'Akta No..... tgl ....' },
+  { id: 7, company: 'Bumi Grafika Jaya', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/24/2026', notes: 'Akta No..... tgl ....' },
+  { id: 8, company: 'Catur Boga Pratama', status: 'Not started', owner: 'Sylvia', startDate: '', finishDate: '', notes: 'non-active' },
+  { id: 9, company: 'DA International', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/22/2026', notes: 'Akta No..... tgl ....' },
+  { id: 10, company: 'Dharma Alumas Sakti', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/10/2026', notes: 'Akta No..... tgl ....' },
+  { id: 11, company: 'Gesit Alumas', status: 'Blocked', owner: 'Sylvia', startDate: '', finishDate: '', notes: 'Case AHU terblokir sejak 2023, proses mencari solusinya by YA & CA' },
+  { id: 12, company: 'Gesit Bumi Persada', status: 'Completed', owner: 'Desi Rahmuni', startDate: '', finishDate: '', notes: 'Akta No..... tgl ....' },
+  { id: 13, company: 'Gesit Graha', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/23/2026', notes: 'Akta No..... tgl ....' },
+  { id: 14, company: 'Gesit Intrade', status: 'Completed', owner: 'Desi Rahmuni', startDate: '', finishDate: '7/28/2026', notes: 'Akta No..... tgl ....' },
+  { id: 15, company: 'Gesit Makmur Utama', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '8/3/2026', notes: 'Akta No..... tgl ....' },
+  { id: 16, company: 'Gesit Maju', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/23/2026', notes: 'Akta No..... tgl ....' },
+  { id: 17, company: 'Gesit Perkasa', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/23/2026', notes: 'Akta No..... tgl ....' },
+  { id: 18, company: 'HTT Sarana Perkasa', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/10/2026', notes: 'Akta No..... tgl ....' },
+  { id: 19, company: 'Jaya Mitra Investasi', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/10/2026', notes: 'Akta No..... tgl ....' },
+  { id: 20, company: 'Jaya Sejahtera Investasi', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/10/2026', notes: 'Akta No..... tgl ....' },
+  { id: 21, company: 'Jaya Sudirman Mandiri', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/23/2026', notes: 'Akta No..... tgl ....' },
+  { id: 22, company: 'Jaya Sudirman Perkasa', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/23/2026', notes: 'Akta No..... tgl ....' },
+  { id: 23, company: 'JSAlu Investasi Pratama', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/22/2026', notes: 'Akta No..... tgl ....' },
+  { id: 24, company: 'JSGlobal Mineral Energi', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/22/2026', notes: 'Akta No..... tgl ....' },
+  { id: 25, company: 'JSCapital Investasi Gesit', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/17/2026', notes: 'Akta No..... tgl ....' },
+  { id: 26, company: 'JSGlobal Energi Pratama', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/22/2026', notes: 'Akta No..... tgl ....' },
+  { id: 27, company: 'JSGlobal Logistik Energi', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/22/2026', notes: 'Akta No..... tgl ....' },
+  { id: 28, company: 'Kalimantan Industri Terpadu', status: 'Completed', owner: 'Desi Rahmuni', startDate: '', finishDate: '', notes: 'diproses oleh legal GNR' },
+  { id: 29, company: 'Lima Garda Sakti', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/23/2026', notes: 'Akta No..... tgl ....' },
+  { id: 30, company: 'Lima Sudirman Perkasa', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/23/2026', notes: 'Akta No..... tgl ....' },
+  { id: 31, company: 'Mitra Harapan Karya Utama', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/10/2026', notes: 'Akta No..... tgl ....' },
+  { id: 32, company: 'Mitra Harapan Sakti', status: 'Completed', owner: 'Desi Rahmuni', startDate: '', finishDate: '', notes: 'Akta No..... tgl ....' },
+  { id: 33, company: 'Mitra Senayan Sejati', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/22/2026', notes: 'Akta No..... tgl ....' },
+  { id: 34, company: 'Mitra Sudirman Lestari', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/10/2026', notes: 'Akta No..... tgl ....' },
+  { id: 35, company: 'Mitra Sudirman Mandiri', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/10/2026', notes: 'Akta No..... tgl ....' },
+  { id: 36, company: 'Prodas Perdana', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/10/2026', notes: 'Akta No..... tgl ....' },
+  { id: 37, company: 'Sembilan Empat Investama', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/10/2026', notes: 'Akta No..... tgl ....' },
+  { id: 38, company: 'Sinar Bangsa', status: 'Not started', owner: 'Sylvia', startDate: '', finishDate: '', notes: 'Belum ada keputusan dari owner (sudah 3rd Reminder)' },
+  { id: 39, company: 'Sircon Development', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/23/2026', notes: '' },
+  { id: 40, company: 'Sircon Griya Jaya', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/17/2026', notes: '' },
+  { id: 41, company: 'Sircon Investment', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/17/2026', notes: '' },
+  { id: 42, company: 'Terra Makmur Sarana', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/10/2026', notes: '' },
+  { id: 43, company: 'Trinitas Investment', status: 'Not started', owner: 'Sylvia', startDate: '', finishDate: '', notes: 'Belum ada keputusan dari Management (sudah 3rd Reminder)' },
+  { id: 44, company: 'Andalas Inti Mulia', status: '', owner: 'Desi Rahmuni', startDate: '', finishDate: '', notes: '' },
+  { id: 45, company: 'Baranusa Insan Gemilang', status: '', owner: 'Desi Rahmuni', startDate: '', finishDate: '', notes: '' },
+  { id: 46, company: 'Bara Optima Sejahtera', status: '', owner: 'Desi Rahmuni', startDate: '', finishDate: '', notes: '' },
+  { id: 47, company: 'Bumi Batu Mulia', status: '', owner: 'Desi Rahmuni', startDate: '', finishDate: '', notes: '' },
+  { id: 48, company: 'Delta Prima Mineral', status: '', owner: 'Desi Rahmuni', startDate: '', finishDate: '', notes: 'Status ownership: PPJB' },
+  { id: 49, company: 'Dinamika Sejahtera Mandiri', status: '', owner: 'Desi Rahmuni', startDate: '', finishDate: '', notes: '' },
+  { id: 50, company: 'Grahasejahtera Asri', status: '', owner: 'Desi Rahmuni', startDate: '', finishDate: '', notes: '' },
+  { id: 51, company: 'Mandara Prima Nusantara', status: 'Completed', owner: 'Desi Rahmuni', startDate: '', finishDate: '', notes: '' },
+  { id: 52, company: 'Merdeka Nusantara Makmur', status: '', owner: 'Desi Rahmuni', startDate: '', finishDate: '', notes: '' },
+  { id: 53, company: 'Mineral Jaya Perkasa', status: '', owner: 'Desi Rahmuni', startDate: '', finishDate: '', notes: '' },
+  { id: 54, company: 'Mineral Sejahtera Utama', status: '', owner: 'Desi Rahmuni', startDate: '', finishDate: '', notes: '' },
+  { id: 55, company: 'Permata Teguh Sejahtera', status: '', owner: 'Desi Rahmuni', startDate: '', finishDate: '', notes: '' },
+  { id: 56, company: 'Rakasa Prima Mineral', status: '', owner: 'Desi Rahmuni', startDate: '', finishDate: '', notes: '' },
+  { id: 57, company: 'Sigma Prima Indotama', status: '', owner: 'Desi Rahmuni', startDate: '', finishDate: '', notes: '' },
+  { id: 58, company: 'Teguh Bumi Perkasa', status: '', owner: 'Desi Rahmuni', startDate: '', finishDate: '', notes: '' },
+  { id: 59, company: 'Vista Primanusa Persada', status: '', owner: 'Desi Rahmuni', startDate: '', finishDate: '', notes: '' },
+  { id: 60, company: 'Gesit Sarana Perkasa', status: '', owner: '', startDate: '', finishDate: '', notes: 'Handle by JSL/GSP' },
+  { id: 61, company: 'Windas Development', status: '', owner: '', startDate: '', finishDate: '', notes: 'Handle by Windas Development' },
+  { id: 62, company: 'Alakasa Andalan Mitra Sejati', status: '', owner: '', startDate: '', finishDate: '', notes: 'Handle by AAMS' },
+  { id: 63, company: 'Alakasa Mitra CBox', status: '', owner: '', startDate: '', finishDate: '', notes: 'Handly by AMC' },
+  { id: 64, company: 'Rheem Indonesia', status: '', owner: '', startDate: '', finishDate: '', notes: 'Handle by Rheem' },
+  { id: 65, company: 'Kalimantan Alumina Nusantara', status: '', owner: '', startDate: '', finishDate: '', notes: 'Handle by KAN' },
+  { id: 66, company: 'Selaras Investama Globalindo', status: 'Completed', owner: 'Desi Rahmuni', startDate: '', finishDate: '', notes: '' },
+  { id: 67, company: 'Alpha Investama Globalindo', status: 'Completed', owner: 'Desi Rahmuni', startDate: '', finishDate: '', notes: '' },
+  { id: 68, company: 'Bersinar Abadi Energi', status: 'Completed', owner: 'Desi Rahmuni', startDate: '', finishDate: '', notes: '' },
+  { id: 69, company: 'Terang Abadi Energi', status: 'Completed', owner: 'Desi Rahmuni', startDate: '', finishDate: '', notes: '' }
 ];
 
 const DUMMY_ASET = [
@@ -188,7 +188,7 @@ const getStatusStyle = (status: string) => {
     case 'Not started': return 'bg-blue-200 text-blue-800';
     case 'Blocked': return 'bg-red-300 text-red-900';
     case 'In progress': return 'bg-yellow-200 text-yellow-800';
-    default: return 'bg-gray-200 text-gray-800';
+    default: return 'bg-gray-100 text-gray-500';
   }
 };
 
@@ -216,7 +216,7 @@ const DUMMY_AGREEMENT = [
   { id: 4, requestBy: 'Bu Yayan', taskName: 'Market Research and Business Development Agreement TCS & ACL', status: 'In progress', owner: 'Desi Rahmuni', startDate: '2026-08-18', finishDate: '', notes: 'waiting for Finance confirmation to proceed' },
 ];
 
-const EMPTY_RUPS_FORM = { company: '', periode: new Date().getFullYear().toString(), status: '', owner: '', startDate: '', dueDate: '', finishDate: '', notes: '' };
+const EMPTY_RUPS_FORM = { company: '', periode: new Date().getFullYear().toString(), status: '', owner: '', startDate: '', finishDate: '', notes: '' };
 const EMPTY_ASET_FORM = { company: '', taskName: '', status: '', owner: '', startDate: '', dueDate: '', notes: '' };
 const EMPTY_AGREEMENT_FORM = { requestBy: '', taskName: '', status: '', owner: '', startDate: '', finishDate: '', notes: '' };
 
@@ -258,9 +258,9 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
       const { data, error } = await supabase
         .from('csl_rups_ar')
         .select('*')
-        .order('id', { ascending: false });
+        .order('id', { ascending: true });
       
-      if (!error && data) {
+      if (!error && data && data.length > 0) {
         setRupsData(data.map(d => ({
           id: d.id,
           company: d.company || '',
@@ -268,12 +268,11 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
           status: d.status || '',
           owner: d.owner || '',
           startDate: d.start_date || '',
-          dueDate: d.due_date || '',
           finishDate: d.finish_date || '',
           notes: d.notes || ''
         })));
       } else {
-        // Fallback to dummy if table doesn't exist yet
+        // Fallback to dummy if table doesn't exist yet or is empty
         setRupsData(DUMMY_RUPS_AR.map(d => ({ ...d, periode: new Date().getFullYear().toString() })));
       }
     } catch {
@@ -285,23 +284,95 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
     fetchRupsData();
   }, []);
 
+  // Fetch ASET from Supabase
+  const fetchAsetData = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('csl_task_aset')
+        .select('*')
+        .order('id', { ascending: false });
+
+      if (!error && data) {
+        setAsetData(data.map(d => ({
+          id: d.id,
+          company: d.company || '',
+          taskName: d.task_name || '',
+          status: d.status || '',
+          owner: d.owner || '',
+          startDate: d.start_date || '',
+          dueDate: d.due_date || '',
+          notes: d.notes || ''
+        })));
+      } else {
+        setAsetData(DUMMY_ASET);
+      }
+    } catch {
+      setAsetData(DUMMY_ASET);
+    }
+  };
+
+  useEffect(() => {
+    fetchAsetData();
+  }, []);
+
+  // Fetch AGREEMENT from Supabase
+  const fetchAgreementData = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('csl_task_agreement')
+        .select('*')
+        .order('id', { ascending: false });
+
+      if (!error && data) {
+        setAgreementData(data.map(d => ({
+          id: d.id,
+          requestBy: d.request_by || '',
+          taskName: d.task_name || '',
+          status: d.status || '',
+          owner: d.owner || '',
+          startDate: d.start_date || '',
+          finishDate: d.finish_date || '',
+          notes: d.notes || ''
+        })));
+      } else {
+        setAgreementData(DUMMY_AGREEMENT);
+      }
+    } catch {
+      setAgreementData(DUMMY_AGREEMENT);
+    }
+  };
+
+  useEffect(() => {
+    fetchAgreementData();
+  }, []);
+
   const updateRupsInDb = (id: number, field: string, value: string) => {
     if (saveTimeoutRef.current[`${id}-${field}`]) {
       clearTimeout(saveTimeoutRef.current[`${id}-${field}`]);
     }
     // Map camelCase fields to snake_case for Supabase
     const dbField = field === 'startDate' ? 'start_date' : field === 'dueDate' ? 'due_date' : field === 'finishDate' ? 'finish_date' : field;
+    const isDateField = dbField.endsWith('_date');
+    const dbValue = isDateField ? (toISO(value) || null) : value;
+    const isText = field === 'notes';
+    const delay = isText ? 700 : 150;
     
     saveTimeoutRef.current[`${id}-${field}`] = setTimeout(async () => {
       try {
-        const { error } = await supabase.from('csl_rups_ar').update({ [dbField]: value }).eq('id', id);
+        const { data, error } = await supabase.from('csl_rups_ar').update({ [dbField]: dbValue }).eq('id', id).select();
         if (error && error.code !== '42P01') {
            toast.error('Gagal menyimpan: ' + error.message);
+           console.error('RUPS update error:', error);
         } else if (!error) {
-           toast.success('Disimpan', { duration: 1500 });
+           // Only toast for non-text fields (notes = silent save)
+           if (field !== 'notes') {
+             toast.success('Disimpan', { duration: 1500 });
+           }
         }
-      } catch (err) {}
-    }, 1000);
+      } catch (err) {
+        console.error('RUPS update catch:', err);
+      }
+    }, delay);
   };
 
   const handleUpdateRups = (id: number, field: string, value: string) => {
@@ -311,16 +382,72 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
     updateRupsInDb(id, field, value);
   };
 
+  const updateAsetInDb = (id: number, field: string, value: string) => {
+    if (saveTimeoutRef.current[`aset-${id}-${field}`]) {
+      clearTimeout(saveTimeoutRef.current[`aset-${id}-${field}`]);
+    }
+    const dbField = field === 'startDate' ? 'start_date' : field === 'dueDate' ? 'due_date' : field === 'taskName' ? 'task_name' : field;
+    const isDateField = dbField.endsWith('_date');
+    const dbValue = isDateField ? (toISO(value) || null) : value;
+    const isText = field === 'notes' || field === 'taskName';
+    const delay = isText ? 700 : 150;
+
+    saveTimeoutRef.current[`aset-${id}-${field}`] = setTimeout(async () => {
+      try {
+        const { data, error } = await supabase.from('csl_task_aset').update({ [dbField]: dbValue }).eq('id', id).select();
+        if (error && error.code !== '42P01') {
+          toast.error('Gagal menyimpan: ' + error.message);
+          console.error('ASET update error:', error);
+        } else if (!error) {
+          if (field !== 'notes') {
+            toast.success('Disimpan', { duration: 1500 });
+          }
+        }
+      } catch (err) {
+        console.error('ASET update catch:', err);
+      }
+    }, delay);
+  };
+
+  const updateAgreementInDb = (id: number, field: string, value: string) => {
+    if (saveTimeoutRef.current[`agr-${id}-${field}`]) {
+      clearTimeout(saveTimeoutRef.current[`agr-${id}-${field}`]);
+    }
+    const dbField = field === 'startDate' ? 'start_date' : field === 'finishDate' ? 'finish_date' : field === 'taskName' ? 'task_name' : field === 'requestBy' ? 'request_by' : field;
+    const isDateField = dbField.endsWith('_date');
+    const dbValue = isDateField ? (toISO(value) || null) : value;
+    const isText = field === 'notes' || field === 'taskName';
+    const delay = isText ? 700 : 150;
+
+    saveTimeoutRef.current[`agr-${id}-${field}`] = setTimeout(async () => {
+      try {
+        const { data, error } = await supabase.from('csl_task_agreement').update({ [dbField]: dbValue }).eq('id', id).select();
+        if (error && error.code !== '42P01') {
+          toast.error('Gagal menyimpan: ' + error.message);
+          console.error('AGREEMENT update error:', error);
+        } else if (!error) {
+          if (field !== 'notes') {
+            toast.success('Disimpan', { duration: 1500 });
+          }
+        }
+      } catch (err) {
+        console.error('AGREEMENT update catch:', err);
+      }
+    }, delay);
+  };
+
   const handleUpdateAset = (id: number, field: string, value: string) => {
     setAsetData(prev => prev.map(item => 
       item.id === id ? { ...item, [field]: value } : item
     ));
+    updateAsetInDb(id, field, value);
   };
 
   const handleUpdateAgreement = (id: number, field: string, value: string) => {
     setAgreementData(prev => prev.map(item => 
       item.id === id ? { ...item, [field]: value } : item
     ));
+    updateAgreementInDb(id, field, value);
   };
 
   const filteredRups = rupsData.filter(item => {
@@ -378,17 +505,23 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
       
       const payload = {
         company: rupsForm.company,
-        periode: rupsForm.periode,
+        periode: (rupsForm as any).periode || new Date().getFullYear().toString(),
         status: rupsForm.status,
         owner: rupsForm.owner,
-        start_date: rupsForm.startDate || null,
-        due_date: rupsForm.dueDate || null,
-        finish_date: rupsForm.finishDate || null,
+        start_date: toISO(rupsForm.startDate) || null,
+        finish_date: toISO(rupsForm.finishDate) || null,
         notes: rupsForm.notes
       };
 
       try {
-        const { data, error } = await supabase.from('csl_rups_ar').insert([payload]).select().single();
+        let { data, error } = await supabase.from('csl_rups_ar').insert([payload]).select().single();
+        if (error && (error.code === '42501' || error.message?.includes('sequence'))) {
+          // Sequence permission fallback: supply explicit ID
+          const nextId = Math.max(0, ...rupsData.map(r => r.id)) + 1;
+          const retryRes = await supabase.from('csl_rups_ar').insert([{ id: nextId, ...payload }]).select().single();
+          data = retryRes.data;
+          error = retryRes.error;
+        }
         if (error && error.code !== '42P01') {
           toast.error('Gagal tambah task: ' + error.message);
           return;
@@ -401,7 +534,6 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
           status: data.status || '',
           owner: data.owner || '',
           startDate: data.start_date || '',
-          dueDate: data.due_date || '',
           finishDate: data.finish_date || '',
           notes: data.notes || ''
         } : { id: Math.max(0, ...rupsData.map(r => r.id)) + 1, ...rupsForm };
@@ -418,16 +550,84 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
       }
     } else if (activeCategory === 'ASET') {
       if (!asetForm.company.trim()) { toast.error('Company wajib diisi!'); return; }
-      const newId = Math.max(0, ...asetData.map(r => r.id)) + 1;
-      setAsetData(prev => [{ id: newId, ...asetForm }, ...prev]);
-      setAsetForm(EMPTY_ASET_FORM);
-      toast.success('Task ASET berhasil ditambahkan!');
+
+      const payload = {
+        company: asetForm.company,
+        task_name: asetForm.taskName,
+        status: asetForm.status,
+        owner: asetForm.owner,
+        start_date: asetForm.startDate || null,
+        due_date: asetForm.dueDate || null,
+        notes: asetForm.notes
+      };
+
+      try {
+        const { data, error } = await supabase.from('csl_task_aset').insert([payload]).select().single();
+        if (error && error.code !== '42P01') {
+          toast.error('Gagal tambah task: ' + error.message);
+          return;
+        }
+
+        const newEntry = data ? {
+          id: data.id,
+          company: data.company || '',
+          taskName: data.task_name || '',
+          status: data.status || '',
+          owner: data.owner || '',
+          startDate: data.start_date || '',
+          dueDate: data.due_date || '',
+          notes: data.notes || ''
+        } : { id: Math.max(0, ...asetData.map(r => r.id)) + 1, ...asetForm };
+
+        setAsetData(prev => [newEntry, ...prev]);
+        setAsetForm(EMPTY_ASET_FORM);
+        toast.success('Task ASET berhasil ditambahkan!');
+      } catch (err) {
+        const newId = Math.max(0, ...asetData.map(r => r.id)) + 1;
+        setAsetData(prev => [{ id: newId, ...asetForm }, ...prev]);
+        setAsetForm(EMPTY_ASET_FORM);
+        toast.success('Task ASET berhasil ditambahkan (Lokal)');
+      }
     } else if (activeCategory === 'AGREEMENT') {
       if (!agreementForm.taskName.trim()) { toast.error('Task wajib diisi!'); return; }
-      const newId = Math.max(0, ...agreementData.map(r => r.id)) + 1;
-      setAgreementData(prev => [{ id: newId, ...agreementForm }, ...prev]);
-      setAgreementForm(EMPTY_AGREEMENT_FORM);
-      toast.success('Task Agreement berhasil ditambahkan!');
+
+      const payload = {
+        request_by: agreementForm.requestBy,
+        task_name: agreementForm.taskName,
+        status: agreementForm.status,
+        owner: agreementForm.owner,
+        start_date: agreementForm.startDate || null,
+        finish_date: agreementForm.finishDate || null,
+        notes: agreementForm.notes
+      };
+
+      try {
+        const { data, error } = await supabase.from('csl_task_agreement').insert([payload]).select().single();
+        if (error && error.code !== '42P01') {
+          toast.error('Gagal tambah task: ' + error.message);
+          return;
+        }
+
+        const newEntry = data ? {
+          id: data.id,
+          requestBy: data.request_by || '',
+          taskName: data.task_name || '',
+          status: data.status || '',
+          owner: data.owner || '',
+          startDate: data.start_date || '',
+          finishDate: data.finish_date || '',
+          notes: data.notes || ''
+        } : { id: Math.max(0, ...agreementData.map(r => r.id)) + 1, ...agreementForm };
+
+        setAgreementData(prev => [newEntry, ...prev]);
+        setAgreementForm(EMPTY_AGREEMENT_FORM);
+        toast.success('Task Agreement berhasil ditambahkan!');
+      } catch (err) {
+        const newId = Math.max(0, ...agreementData.map(r => r.id)) + 1;
+        setAgreementData(prev => [{ id: newId, ...agreementForm }, ...prev]);
+        setAgreementForm(EMPTY_AGREEMENT_FORM);
+        toast.success('Task Agreement berhasil ditambahkan (Lokal)');
+      }
     }
     setIsModalOpen(false);
     setCurrentPage(1);
@@ -503,8 +703,7 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
                 <TableHead className="text-indigo-100 font-bold border-l border-indigo-700/50">Status</TableHead>
                 <TableHead className="text-indigo-100 font-bold border-l border-indigo-700/50">Owner</TableHead>
                 <TableHead className="text-indigo-100 font-bold border-l border-indigo-700/50">Start date</TableHead>
-                <TableHead className="text-indigo-100 font-bold border-l border-indigo-700/50">Due date</TableHead>
-                <TableHead className="text-indigo-100 font-bold border-l border-indigo-700/50">Finish date</TableHead>
+                <TableHead className="text-indigo-100 font-bold border-l border-indigo-700/50">Complete date</TableHead>
                 <TableHead className="text-indigo-100 font-bold border-l border-indigo-700/50">Notes</TableHead>
               </TableRow>
             </TableHeader>
@@ -512,7 +711,7 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
               {pagedRups.map((item, idx) => (
                 <TableRow key={item.id} className="hover:bg-muted/30 border-b border-border/40">
                   <TableCell className="text-center text-xs font-mono text-muted-foreground bg-muted/20 border-r border-border/40 py-1.5">{(safePage - 1) * PAGE_SIZE + idx + 1}</TableCell>
-                  <TableCell className={`text-sm border-r border-border/40 py-1.5 ${item.status === 'Blocked' ? 'text-red-500 font-medium' : 'text-foreground'}`}>
+                  <TableCell className={`text-sm border-r border-border/40 py-1.5 font-medium ${item.status === 'Blocked' ? 'text-red-500 font-medium' : 'text-foreground'}`}>
                     {item.company}
                   </TableCell>
                   <TableCell className="border-r border-border/40 py-1.5 px-2">
@@ -521,9 +720,11 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
                       onChange={(e) => handleUpdateRups(item.id, 'status', e.target.value)}
                       className={`text-[11px] px-2 py-0.5 rounded-full font-medium border-none outline-none cursor-pointer w-full text-left appearance-none ${getStatusStyle(item.status)}`}
                     >
+                      <option value="" className="bg-white text-black">— Status —</option>
                       <option value="Completed" className="bg-white text-black">Completed</option>
                       <option value="Not started" className="bg-white text-black">Not started</option>
                       <option value="Blocked" className="bg-white text-black">Blocked</option>
+                      <option value="In progress" className="bg-white text-black">In progress</option>
                     </select>
                   </TableCell>
                   <TableCell className="border-r border-border/40 py-1.5 px-2">
@@ -554,12 +755,6 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
                   </TableCell>
                   <TableCell className="border-r border-border/40 p-0">
                     <DateCell
-                      value={item.dueDate}
-                      onChange={(v) => handleUpdateRups(item.id, 'dueDate', v)}
-                    />
-                  </TableCell>
-                  <TableCell className="border-r border-border/40 p-0">
-                    <DateCell
                       value={item.finishDate}
                       onChange={(v) => handleUpdateRups(item.id, 'finishDate', v)}
                     />
@@ -570,7 +765,7 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
                       value={item.notes}
                       onChange={(e) => handleUpdateRups(item.id, 'notes', e.target.value)}
                       placeholder="Notes..."
-                      className={`w-full h-full text-xs px-3 py-2.5 bg-transparent border-none outline-none focus:bg-indigo-50/50 min-w-[120px] ${item.status === 'Blocked' ? 'text-red-500 font-medium' : 'text-muted-foreground'}`}
+                      className={`w-full h-full text-xs px-3 py-2.5 bg-transparent border-none outline-none focus:bg-indigo-50/50 min-w-[140px] ${item.status === 'Blocked' ? 'text-red-500 font-medium' : 'text-muted-foreground'}`}
                     />
                   </TableCell>
                 </TableRow>
@@ -907,17 +1102,13 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
                     </select>
                   </div>
                 </div>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground block mb-1">Start Date</label>
                     <Input type="date" value={rupsForm.startDate} onChange={e => setRupsForm({...rupsForm, startDate: e.target.value})} className="h-9 text-sm bg-muted/30" />
                   </div>
                   <div>
-                    <label className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground block mb-1">Due Date</label>
-                    <Input type="date" value={rupsForm.dueDate} onChange={e => setRupsForm({...rupsForm, dueDate: e.target.value})} className="h-9 text-sm bg-muted/30" />
-                  </div>
-                  <div>
-                    <label className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground block mb-1">Finish Date</label>
+                    <label className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground block mb-1">Complete Date</label>
                     <Input type="date" value={rupsForm.finishDate} onChange={e => setRupsForm({...rupsForm, finishDate: e.target.value})} className="h-9 text-sm bg-muted/30" />
                   </div>
                 </div>

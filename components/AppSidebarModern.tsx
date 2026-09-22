@@ -184,6 +184,9 @@ export function AppSidebarModern({
         if (g === 'directory' || g === 'directory_view') {
           allowed.add('directory'); allowed.add('directory-all'); allowed.add('directory-lawyer'); allowed.add('directory-vendor'); allowed.add('directory-government'); allowed.add('directory-other')
         }
+        if (g === 'credentials' || g === 'credentials_view') {
+          allowed.add('credentials')
+        }
         if (g === 'reports' || g === 'reports_view') {
           allowed.add('reports'); allowed.add('reports-request'); allowed.add('reports-task'); allowed.add('reports-budget')
         }
@@ -225,6 +228,7 @@ export function AppSidebarModern({
         'routine', 'routine-activity', 'routine-task',
         'budget', 'budget-expense', 'budget-offshore-invoice',
         'directory', 'directory-all', 'directory-lawyer', 'directory-vendor', 'directory-government', 'directory-other',
+        'credentials',
         'reports', 'reports-request', 'reports-task', 'reports-budget',
         'profile'
       ].forEach((id) => allowed.add(id))

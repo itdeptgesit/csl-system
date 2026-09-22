@@ -16,6 +16,7 @@ export interface ReportFilters {
   company: string;
   department: string;
   project: string;
+  category: string;
   status: string;
   currency: string;
   paymentLocation: string;
@@ -125,6 +126,8 @@ export interface MonthlyComparison {
   periodLabel: string;
   budget: number;
   actual: number;
+  individualActual: number;
+  companyActual: number;
   variance: number;
   utilization: number;
 }
@@ -244,6 +247,7 @@ export interface BudgetExpensesReportData {
     projects: string[];
     currencies: string[];
     payeeTypes: string[];
+    categories: string[];
     paymentLocations: string[];
     paymentMethods: string[];
     statuses: string[];
@@ -460,6 +464,7 @@ export async function fetchBudgetExpensesReport(
     projects: Array.from(new Set(rawList.map(t => t.project_name).filter(Boolean))).sort(),
     currencies: Array.from(new Set(rawList.map(t => t.currency).filter(Boolean))).sort(),
     payeeTypes: ['Company', 'Individual'],
+    categories: ['Notaris', 'Lawfirm', 'Konsultan', 'Other'],
     paymentLocations: ['Local', 'Offshore'],
     paymentMethods: Array.from(new Set(rawList.map(t => t.payment_method).filter(Boolean))).sort(),
     statuses: ['DISBURSED', 'APPROVED', 'PENDING_APPROVAL', 'REJECTED', 'DRAFT']
@@ -548,24 +553,23 @@ export async function fetchBudgetExpensesReport(
     if (filters.company && filters.company !== 'all' && item.company !== filters.company) return false;
     if (filters.department && filters.department !== 'all' && item.department !== filters.department) return false;
     if (filters.project && filters.project !== 'all' && item.project_name !== filters.project) return false;
+    if (filters.category && filters.category !== 'all' && item.category !== filters.category) return false;
     if (filters.status && filters.status !== 'all' && item.status !== filters.status) return false;
     if (filters.currency && filters.currency !== 'all' && item.currency !== filters.currency) return false;
     if (filters.paymentLocation && filters.paymentLocation !== 'all' && item.payment_location !== filters.paymentLocation) return false;
     if (filters.paymentMethod && filters.paymentMethod !== 'all' && item.payment_method !== filters.paymentMethod) return false;
     if (filters.accountCode && item.invoice_number && !item.invoice_number.toLowerCase().includes(filters.accountCode.toLowerCase())) return false;
 
-    // Search query
+    // Global search: match every scalar field in transaction row.
+    // This keeps search useful when users know only an ID, date, amount,
+    // status, company, account detail, or any other visible record value.
     if (filters.search && filters.search.trim()) {
       const q = filters.search.toLowerCase().trim();
-      const match =
-        item.expense_number.toLowerCase().includes(q) ||
-        (item.invoice_number && item.invoice_number.toLowerCase().includes(q)) ||
-        (item.voucher_number && item.voucher_number.toLowerCase().includes(q)) ||
-        item.paid_to.toLowerCase().includes(q) ||
-        item.project_name.toLowerCase().includes(q) ||
-        item.payment_description.toLowerCase().includes(q) ||
-        item.department.toLowerCase().includes(q);
-      if (!match) return false;
+      const searchableText = Object.values(item)
+        .filter(value => value !== null && value !== undefined)
+        .map(value => String(value).toLowerCase())
+        .join(' ');
+      if (!searchableText.includes(q)) return false;
     }
 
     return true;
@@ -718,10 +722,17 @@ export async function fetchBudgetExpensesReport(
   const monthlyBudgetSlice = totalBudget > 0 ? totalBudget / displayMonthIndices.length : 0;
 
   const monthlyActualMap: Record<number, number> = {};
+  const monthlyIndividualMap: Record<number, number> = {};
+  const monthlyCompanyMap: Record<number, number> = {};
   filtered.forEach(item => {
     if (ACTUAL_STATUSES.includes(item.status)) {
       const m = new Date(item.request_date || item.created_at).getMonth();
       monthlyActualMap[m] = (monthlyActualMap[m] || 0) + item.reporting_amount;
+      if (item.payee_type === 'Individual') {
+        monthlyIndividualMap[m] = (monthlyIndividualMap[m] || 0) + item.reporting_amount;
+      } else {
+        monthlyCompanyMap[m] = (monthlyCompanyMap[m] || 0) + item.reporting_amount;
+      }
     }
   });
 
@@ -741,6 +752,8 @@ export async function fetchBudgetExpensesReport(
         periodLabel: proj.projectName,
         budget: projMonthlyBudget,
         actual: Math.round(proj.actual),
+        individualActual: 0,
+        companyActual: Math.round(proj.actual),
         variance: Math.round(vr),
         utilization: Number(ut.toFixed(1))
       };
@@ -750,6 +763,8 @@ export async function fetchBudgetExpensesReport(
     budgetVsActual = displayMonthIndices.map(idx => {
       const name = allMonthNames[idx];
       const act = monthlyActualMap[idx] || 0;
+      const indAct = monthlyIndividualMap[idx] || 0;
+      const comAct = monthlyCompanyMap[idx] || 0;
       const bgt = (filters.project && filters.project !== 'all')
         ? monthlyBudgetSlice
         : (monthlyPlan ? (monthlyPlan.months[idx] ?? monthlyPlan.monthlyNominal) : monthlyBudgetSlice);
@@ -760,6 +775,8 @@ export async function fetchBudgetExpensesReport(
         periodLabel: `${name} '${yrShort}`,
         budget: Math.round(bgt),
         actual: Math.round(act),
+        individualActual: Math.round(indAct),
+        companyActual: Math.round(comAct),
         variance: Math.round(vr),
         utilization: Number(ut.toFixed(1))
       };

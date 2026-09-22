@@ -20,11 +20,11 @@
 
   <!-- ✅ ENV CONFIG -->
   <script>
-    window.process = {
-      env: {
-        NEXT_PUBLIC_SUPABASE_URL: 'https://yihjfrxdrhkqfnjofvua.supabase.co',
-        NEXT_PUBLIC_SUPABASE_ANON_KEY: ''
-      }
+    window.process = window.process || {};
+    window.process.env = {
+      ...(window.process.env || {}),
+      NEXT_PUBLIC_SUPABASE_URL: 'https://yihjfrxdrhkqfnjofvua.supabase.co',
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ''
     };
   </script>
 

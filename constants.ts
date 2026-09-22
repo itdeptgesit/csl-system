@@ -18,6 +18,8 @@ export const MOCK_GROUPS = [
             'budget', 'budget-expense', 'budget-offshore-invoice',
             // Phone Directory
             'directory', 'directory-all', 'directory-lawyer', 'directory-vendor', 'directory-government', 'directory-other',
+            // Credentials Vault
+            'credentials',
             // Reports
             'reports', 'reports-request', 'reports-task', 'reports-budget',
             // Settings
@@ -34,6 +36,7 @@ export const MOCK_GROUPS = [
             'routine', 'routine-activity', 'routine-task',
             'budget', 'budget-expense', 'budget-offshore-invoice',
             'directory', 'directory-all', 'directory-lawyer', 'directory-vendor', 'directory-government', 'directory-other',
+            'credentials',
             'reports', 'reports-request', 'reports-task', 'reports-budget',
         ]
     },
@@ -57,7 +60,6 @@ export const APP_MENU_STRUCTURE = [
 
     // ── Routine Activity ──
     { id: 'routine', label: 'Routine Activity', iconName: 'Calendar' },
-    { id: 'routine-activity',   label: 'Activity',   parentId: 'routine', iconName: 'Activity' },
     { id: 'routine-task',       label: 'Task',       parentId: 'routine', iconName: 'CheckSquare' },
 
     // ── Budget & Expenses ──
@@ -65,6 +67,9 @@ export const APP_MENU_STRUCTURE = [
 
     // ── Phone Directory ──
     { id: 'directory', label: 'Phone Directory', iconName: 'Phone' },
+
+    // ── Credentials Vault ──
+    { id: 'credentials', label: 'Credentials Vault', iconName: 'Key' },
 
     // ── Reports ──
     { id: 'reports', label: 'Reports', iconName: 'BarChart2' },

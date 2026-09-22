@@ -71,6 +71,7 @@ const CSLBudgetManager = React.lazy(() => import('./components/CSLBudgetManager'
 const CSLReportsManager = React.lazy(() => import('./components/CSLReportsManager').then(m => ({ default: m.CSLReportsManager })));
 const CSLSettings = React.lazy(() => import('./components/CSLSettings').then(m => ({ default: m.CSLSettings })));
 const CSLTaskManager = React.lazy(() => import('./components/CSLTaskManager').then(m => ({ default: m.CSLTaskManager })));
+const CSLCredentialVault = React.lazy(() => import('./components/CSLCredentialVault').then(m => ({ default: m.CSLCredentialVault })));
 
 const ICON_MAP: Record<string, React.ElementType> = {
   LayoutDashboard: LayoutDashboard,
@@ -449,8 +450,8 @@ const InternalApp: React.FC = () => {
             id: session?.user?.id,
             email: email,
             full_name: fullName,
-            role: 'User',
-            groups: ['user'],
+            role: 'requester',
+            groups: ['requester'],
             department: 'Other',
             company: 'GESIT'
           }])
@@ -691,6 +692,7 @@ const InternalApp: React.FC = () => {
                              <Route path="directory-vendor" element={<CSLDirectoryManager currentUser={currentUser} category="vendor" />} />
                              <Route path="directory-government" element={<CSLDirectoryManager currentUser={currentUser} category="government" />} />
                              <Route path="directory-other" element={<CSLDirectoryManager currentUser={currentUser} category="other" />} />
+                             <Route path="credentials" element={<CSLCredentialVault currentUser={currentUser} />} />
 
                              {/* Reports */}
                              <Route path="reports" element={<CSLReportsManager currentUser={currentUser} view="request" />} />
@@ -814,7 +816,7 @@ const DashboardLayout: React.FC<any & { children?: React.ReactNode }> = ({
         if (g === 'req_submit' || g === 'requests_create') {
           allowed.add('csl-requests');
         }
-        if (g === 'req_review' || g === 'requests_review') {
+        if (g === 'req_review' || g === 'requests_review' || g === 'requester') {
           allowed.add('csl-requests');
         }
         if (g === 'routine_view' || g === 'routine') {
@@ -828,6 +830,9 @@ const DashboardLayout: React.FC<any & { children?: React.ReactNode }> = ({
         }
         if (g === 'directory' || g === 'directory_view') {
           allowed.add('directory'); allowed.add('directory-all'); allowed.add('directory-lawyer'); allowed.add('directory-vendor'); allowed.add('directory-government'); allowed.add('directory-other');
+        }
+        if (g === 'credentials' || g === 'credentials_view') {
+          allowed.add('credentials');
         }
         if (g === 'reports' || g === 'reports_view') {
           allowed.add('reports'); allowed.add('reports-request'); allowed.add('reports-task'); allowed.add('reports-budget');
@@ -874,6 +879,7 @@ const DashboardLayout: React.FC<any & { children?: React.ReactNode }> = ({
         'routine', 'routine-activity', 'routine-task',
         'budget', 'budget-expense', 'budget-offshore-invoice',
         'directory', 'directory-all', 'directory-lawyer', 'directory-vendor', 'directory-government', 'directory-other',
+        'credentials',
         'reports', 'reports-request', 'reports-task', 'reports-budget',
         'profile'
       ].forEach(id => allowed.add(id));

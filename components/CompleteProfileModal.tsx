@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabaseClient';
 import { UserAccount } from '../types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Dialog, DialogContent } from './ui/dialog';
-import { Loader2, Briefcase, Building2, UserCircle2, Sparkles } from 'lucide-react';
+import { Loader2, Briefcase, UserCircle2, Sparkles } from 'lucide-react';
 
 interface CompleteProfileModalProps {
   user: UserAccount | null;
@@ -15,19 +15,16 @@ export const CompleteProfileModal: React.FC<CompleteProfileModalProps> = ({ user
   const [isSaving, setIsSaving] = useState(false);
 
   const [formData, setFormData] = useState({
-    department: '',
-    company: ''
+    department: ''
   });
 
   const [departmentList, setDepartmentList] = useState<{ name: string }[]>([]);
-  const [companyList, setCompanyList] = useState<{ id: number, name: string }[]>([]);
 
   useEffect(() => {
-    if (user && (user.department === 'Other' || !user.department || user.company === 'GESIT' || !user.company)) {
+    if (user && (user.department === 'Other' || !user.department)) {
       setIsOpen(true);
       setFormData({
-        department: user.department === 'Other' ? '' : (user.department || ''),
-        company: user.company === 'GESIT' ? '' : (user.company || '')
+        department: user.department === 'Other' ? '' : (user.department || '')
       });
     }
   }, [user]);
@@ -37,9 +34,6 @@ export const CompleteProfileModal: React.FC<CompleteProfileModalProps> = ({ user
       const fetchMasterData = async () => {
         const { data: depts } = await supabase.from('departments').select('name').order('name');
         if (depts) setDepartmentList(depts);
-
-        const { data: comps } = await supabase.from('companies').select('id, name').order('name');
-        if (comps) setCompanyList(comps);
       };
       fetchMasterData();
     }
@@ -47,15 +41,14 @@ export const CompleteProfileModal: React.FC<CompleteProfileModalProps> = ({ user
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !formData.department || !formData.company) return;
+    if (!user || !formData.department) return;
 
     setIsSaving(true);
     try {
       const { error } = await supabase
         .from('user_accounts')
         .update({
-          department: formData.department,
-          company: formData.company
+          department: formData.department
         })
         .eq('id', user.id);
 
@@ -70,11 +63,11 @@ export const CompleteProfileModal: React.FC<CompleteProfileModalProps> = ({ user
     }
   };
 
-  const isFormComplete = formData.department && formData.company;
+  const isFormComplete = Boolean(formData.department);
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => {
-      if (!open && formData.department && formData.company) {
+      if (!open && formData.department) {
         setIsOpen(false);
       }
     }}>
@@ -110,7 +103,7 @@ export const CompleteProfileModal: React.FC<CompleteProfileModalProps> = ({ user
                 Lengkapi Profil Anda
               </h2>
               <p className="text-xs text-white/50 mt-1 leading-relaxed">
-                Pilih departemen & perusahaan Anda untuk mulai menggunakan CSL System.
+                Pilih divisi Anda untuk mulai menggunakan CSL System.
               </p>
             </div>
           </div>
@@ -123,7 +116,7 @@ export const CompleteProfileModal: React.FC<CompleteProfileModalProps> = ({ user
           <div className="space-y-2">
             <label className="flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-zinc-400 uppercase tracking-wider">
               <Briefcase size={12} style={{ color: '#C9A84C' }} />
-              Departemen
+              Divisi
             </label>
             <Select value={formData.department} onValueChange={(v) => setFormData({ ...formData, department: v })}>
               <SelectTrigger
@@ -143,43 +136,19 @@ export const CompleteProfileModal: React.FC<CompleteProfileModalProps> = ({ user
             </Select>
           </div>
 
-          {/* Company */}
-          <div className="space-y-2">
-            <label className="flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-zinc-400 uppercase tracking-wider">
-              <Building2 size={12} style={{ color: '#C9A84C' }} />
-              Perusahaan
-            </label>
-            <Select value={formData.company} onValueChange={(v) => setFormData({ ...formData, company: v })}>
-              <SelectTrigger
-                className="h-12 rounded-xl text-sm font-medium border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800 focus:ring-0 transition-all"
-                style={{
-                  borderColor: formData.company ? '#C9A84C' : undefined,
-                  boxShadow: formData.company ? '0 0 0 3px rgba(201,168,76,0.1)' : undefined
-                }}
-              >
-                <SelectValue placeholder="Pilih perusahaan..." />
-              </SelectTrigger>
-              <SelectContent className="rounded-xl border-slate-200 shadow-xl">
-                {companyList.map(c => (
-                  <SelectItem key={c.id} value={c.name} className="text-sm">{c.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
           {/* Progress indicator */}
           <div className="flex items-center gap-2">
             <div className="flex-1 h-1.5 rounded-full bg-slate-100 dark:bg-zinc-800 overflow-hidden">
               <div
                 className="h-full rounded-full transition-all duration-500"
                 style={{
-                  width: `${(Number(!!formData.department) + Number(!!formData.company)) * 50}%`,
+                  width: `${Number(!!formData.department) * 100}%`,
                   background: 'linear-gradient(90deg, #C9A84C, #e8c97a)'
                 }}
               />
             </div>
             <span className="text-[11px] font-bold text-slate-400">
-              {Number(!!formData.department) + Number(!!formData.company)}/2
+              {Number(!!formData.department)}/1
             </span>
           </div>
 

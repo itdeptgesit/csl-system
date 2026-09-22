@@ -25,16 +25,8 @@ interface CSLCreateRequestProps {
 
 
 const MOCK_CATEGORIES: CSLCategory[] = [
-  { id: 1, code: 'AGR',       name: 'Agreement',          sla_days: 5 },
-  { id: 2, code: 'LREV',      name: 'Legal Review',       sla_days: 5 },
-  { id: 3, code: 'CORPSECR',  name: 'Corporate Secretary',sla_days: 5 },
-  { id: 4, code: 'OSS',       name: 'OSS',                sla_days: 14 },
-  { id: 5, code: 'LIC',       name: 'Licensing',          sla_days: 10 },
-  { id: 6, code: 'NOTARY',    name: 'Notary',             sla_days: 7 },
-  { id: 7, code: 'LEGALOP',   name: 'Legal Opinion',      sla_days: 5 },
-  { id: 8, code: 'DOCREQ',    name: 'Document Request',   sla_days: 2 },
-  { id: 9, code: 'COMPLIANCE',name: 'Compliance',         sla_days: 5 },
-  { id: 10,code: 'OTHER',     name: 'Other',              sla_days: 5 },
+  { id: 1, code: 'AGR',  name: 'Agreement',  sla_days: 5 },
+  { id: 2, code: 'DOCS', name: 'Documents',  sla_days: 2 },
 ];
 
 function generateRequestNumber(): string {
@@ -56,16 +48,27 @@ export const CSLCreateRequest: React.FC<CSLCreateRequestProps> = ({ currentUser,
   const [isDragging, setIsDragging] = useState(false);
 
   const [masterDepartments, setMasterDepartments] = useState<string[]>([]);
+  const [categories, setCategories] = useState<CSLCategory[]>(MOCK_CATEGORIES);
   const [isLoadingMaster, setIsLoadingMaster] = useState(true);
 
   useEffect(() => {
     const fetchMasterData = async () => {
       setIsLoadingMaster(true);
       try {
-        const { data: deptRes } = await supabase.from('departments').select('name').order('name');
-        
+        const [{ data: deptRes }, { data: categoryRes }] = await Promise.all([
+          supabase.from('departments').select('name').order('name'),
+          supabase.from('csl_request_categories').select('id, code, name, sla_days').order('name'),
+        ]);
+
         if (deptRes) {
           setMasterDepartments(deptRes.map(d => d.name));
+        }
+        if (categoryRes?.length) {
+          const normalized = (categoryRes as CSLCategory[]).map(category => ({
+            ...category,
+            name: category.code === 'DOCREQ' ? 'Documents' : category.code === 'AGR' ? 'Agreement' : category.name,
+          }));
+          setCategories(normalized.filter(c => c.code === 'AGR' || c.code === 'DOCREQ'));
         }
       } catch (err) {
         console.error("Error fetching master data:", err);
@@ -79,6 +82,7 @@ export const CSLCreateRequest: React.FC<CSLCreateRequestProps> = ({ currentUser,
   const [form, setForm] = useState({
     department: currentUser?.department || '',
     otherDepartment: '',
+    categoryId: '',
     description: '',
     tujuan: '',
     required_date: '',
@@ -94,12 +98,13 @@ export const CSLCreateRequest: React.FC<CSLCreateRequestProps> = ({ currentUser,
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.description.trim() || !form.tujuan.trim() || !form.required_date) return;
+    if (!form.categoryId || !form.description.trim() || !form.tujuan.trim() || !form.required_date) return;
     setIsSubmitting(true);
 
+    const selectedCategory = categories.find(category => String(category.id) === form.categoryId);
+    let slaTargetDays = selectedCategory?.sla_days || 5;
     const requestNumber = generateRequestNumber();
-    let slaDueDate = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString();
-    let slaTargetDays = 5;
+    let slaDueDate = new Date(Date.now() + slaTargetDays * 24 * 60 * 60 * 1000).toISOString();
 
     if (form.required_date) {
       const reqDate = new Date(form.required_date);
@@ -118,6 +123,7 @@ export const CSLCreateRequest: React.FC<CSLCreateRequestProps> = ({ currentUser,
       requester_name: currentUser?.fullName || '',
       department: form.department === 'Other' ? form.otherDepartment : form.department,
       company: currentUser?.company || 'PT GESIT',
+      category_id: selectedCategory?.id || null,
       priority: 'Medium',
       status: 'SUBMITTED',
       description: form.description,
@@ -244,7 +250,7 @@ export const CSLCreateRequest: React.FC<CSLCreateRequestProps> = ({ currentUser,
           </Button>
           <Button className="rounded-lg font-bold text-sm h-10 px-5 bg-slate-800 dark:bg-slate-200 dark:text-slate-900 hover:opacity-90" onClick={() => {
             setSubmitted(false);
-            setForm({ ...form, description: '', tujuan: '', required_date: '', otherDepartment: '' });
+            setForm({ ...form, categoryId: '', description: '', tujuan: '', required_date: '', otherDepartment: '' });
             setAttachedFiles([]);
           }}>
             Buat Permintaan Lain
@@ -318,6 +324,29 @@ export const CSLCreateRequest: React.FC<CSLCreateRequestProps> = ({ currentUser,
             <h2 className="text-sm font-semibold text-foreground">Detail Permintaan</h2>
           </div>
           <div className="p-5 space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-foreground">
+                Kategori Permintaan <span className="text-destructive">*</span>
+              </label>
+              <div className="relative">
+                <select
+                  required
+                  value={form.categoryId}
+                  onChange={e => setForm(f => ({ ...f, categoryId: e.target.value }))}
+                  className="h-9 w-full rounded-md border border-input bg-background pl-3 pr-8 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring text-foreground appearance-none"
+                >
+                  <option value="">— Pilih Kategori —</option>
+                  {categories.map(category => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+              </div>
+              <p className="text-[11px] text-muted-foreground">Kategori menentukan tim penanganan dan target SLA request.</p>
+            </div>
+
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-foreground">
                 Deskripsi Permintaan Data / Draft <span className="text-destructive">*</span>
