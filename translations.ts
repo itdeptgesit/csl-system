@@ -236,7 +236,7 @@ export const translations = {
     statusDone: 'Done',
     myTasks: 'My Tasks',
     myReports: 'My Reports',
-    accessRestricted: 'Access restricted to gesit.co.id domain.',
+    accessRestricted: 'Access restricted to gesit.co.id and gnr.co.id domains.',
     welcomeAutoReg: 'Welcome! Your account has been automatically created.',
     loginFailedAdmin: 'Login failed. Please contact administrator.',
     linkCopied: 'Directory link copied to clipboard!',

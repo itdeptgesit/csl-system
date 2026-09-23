@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { AlertCircle, CheckCircle2, Loader2, Mail, Lock, Eye, EyeOff, User, UserPlus, LogIn, Shield, Globe, MailCheck, ArrowRight, RefreshCw } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { sendPasswordResetNotificationEmail } from '../utils/EmailSystemUtils';
+import { isAllowedEmailDomain, ALLOWED_EMAIL_DOMAINS } from '../constants';
 
 interface LoginPageProps {
     onLogin: (email: string) => void;
@@ -13,12 +14,8 @@ interface LoginPageProps {
     userGroups?: string[];
 }
 
-const ALLOWED_DOMAINS = ['gesit.co.id', 'gnr.co.id'];
-
-function isAllowedDomain(email: string): boolean {
-    const domain = email.split('@')[1]?.toLowerCase();
-    return ALLOWED_DOMAINS.includes(domain);
-}
+const ALLOWED_DOMAINS = ALLOWED_EMAIL_DOMAINS;
+const isAllowedDomain = isAllowedEmailDomain;
 
 type Mode = 'login' | 'register' | 'reset' | 'email-sent';
 
@@ -448,6 +445,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                                     </svg>
                                     Masuk dengan Google
                                 </button>
+                                <p className="text-[11px] text-center text-slate-400 mt-2.5 font-medium">
+                                    🔒 Khusus akun email domain <span className="font-bold text-slate-700">@gesit.co.id</span> &amp; <span className="font-bold text-slate-700">@gnr.co.id</span>
+                                </p>
                             </div>
                         )}
 

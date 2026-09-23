@@ -184,7 +184,16 @@ export function AppSidebarModern({
         if (g === 'directory' || g === 'directory_view') {
           allowed.add('directory'); allowed.add('directory-all'); allowed.add('directory-lawyer'); allowed.add('directory-vendor'); allowed.add('directory-government'); allowed.add('directory-other')
         }
-        if (g === 'credentials' || g === 'credentials_view') {
+        if (g === 'credentials' || g === 'credentials_view' || g === 'csl_staff' || g === 'staff') {
+          allowed.add('credentials')
+        }
+        if (g === 'csl_staff' || g === 'staff') {
+          ;['dashboard', 'csl-requests', 'routine', 'routine-activity', 'routine-task', 'budget', 'budget-expense', 'budget-offshore-invoice', 'directory', 'directory-all', 'directory-lawyer', 'directory-vendor', 'directory-government', 'directory-other', 'credentials', 'reports', 'reports-request', 'reports-task', 'reports-budget', 'profile'].forEach((id) => allowed.add(id))
+        }
+        if (g === 'admin' || g === 'csl_admin') {
+          APP_MENU_STRUCTURE.forEach((m) => {
+            if (m.id !== 'settings-users' && m.id !== 'settings-system') allowed.add(m.id)
+          })
           allowed.add('credentials')
         }
         if (g === 'reports' || g === 'reports_view') {
@@ -212,16 +221,17 @@ export function AppSidebarModern({
     }
 
     // 3. Default fallbacks by role if no groups specified
-    if (roleLower === 'admin') {
+    if (roleLower === 'admin' || roleLower.includes('admin')) {
       APP_MENU_STRUCTURE.forEach((m) => {
         if (m.id !== 'settings-users' && m.id !== 'settings-system') {
           allowed.add(m.id)
         }
       })
+      allowed.add('credentials')
       return allowed
     }
 
-    if (roleLower === 'staff' || roleLower === 'csl staff' || roleLower === 'csl_staff') {
+    if (roleLower === 'staff' || roleLower === 'csl staff' || roleLower === 'csl_staff' || roleLower.includes('staff')) {
       ;[
         'dashboard',
         'csl-requests',

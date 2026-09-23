@@ -82,6 +82,7 @@ interface MenuPermissions {
   budget_approve: boolean;
   directory_view: boolean;
   directory_manage: boolean;
+  credentials: boolean;
   reports_view: boolean;
   settings_manage: boolean;
 }
@@ -122,6 +123,7 @@ const DEFAULT_SUPER_ADMIN_PERMISSIONS: MenuPermissions = {
   budget_approve: true,
   directory_view: true,
   directory_manage: true,
+  credentials: true,
   reports_view: true,
   settings_manage: true,
 };
@@ -138,6 +140,7 @@ const DEFAULT_ADMIN_PERMISSIONS: MenuPermissions = {
   budget_approve: true,
   directory_view: true,
   directory_manage: true,
+  credentials: true,
   reports_view: true,
   settings_manage: false,
 };
@@ -154,6 +157,7 @@ const DEFAULT_STAFF_PERMISSIONS: MenuPermissions = {
   budget_approve: false,
   directory_view: true,
   directory_manage: false,
+  credentials: true,
   reports_view: true,
   settings_manage: false,
 };
@@ -170,6 +174,7 @@ const DEFAULT_REQUESTER_PERMISSIONS: MenuPermissions = {
   budget_approve: false,
   directory_view: false,
   directory_manage: false,
+  credentials: false,
   reports_view: false,
   settings_manage: false,
 };
@@ -305,6 +310,7 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
               budget_approve: groupsArr.includes('budget') || groupsArr.includes('budget_approve'),
               directory_view: groupsArr.includes('directory') || groupsArr.includes('directory_view'),
               directory_manage: groupsArr.includes('directory_manage'),
+              credentials: groupsArr.includes('credentials') || groupsArr.includes('credentials_view'),
               reports_view: groupsArr.includes('reports') || groupsArr.includes('reports_view'),
               settings_manage: groupsArr.includes('settings') || groupsArr.includes('settings_manage'),
             } : defaultPerms;
@@ -592,6 +598,7 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
         budget_approve: g.includes('budget') || g.includes('budget_approve'),
         directory_view: g.includes('directory') || g.includes('directory_view'),
         directory_manage: g.includes('directory_manage'),
+        credentials: g.includes('credentials') || g.includes('credentials_view'),
         reports_view: g.includes('reports') || g.includes('reports_view'),
         settings_manage: g.includes('settings') || g.includes('settings_manage'),
       });
@@ -612,6 +619,7 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
     if (userPerms.routine_manage) menuIds.push('routine_create');
     if (userPerms.budget_view || userPerms.budget_approve) menuIds.push('budget');
     if (userPerms.directory_view || userPerms.directory_manage) menuIds.push('directory');
+    if (userPerms.credentials) menuIds.push('credentials');
     if (userPerms.reports_view) menuIds.push('reports');
     if (userPerms.settings_manage) menuIds.push('settings');
 
@@ -1108,6 +1116,7 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
                   { key: 'budget_approve', label: 'Budget & Cost - Approve & Disburse', icon: Coins, color: 'text-violet-600', desc: 'Approve cost requests and disburse funds' },
                   { key: 'directory_view', label: 'Phone Directory - Access Contacts', icon: Phone, color: 'text-rose-600', desc: 'Search lawyers, vendors, and government agencies' },
                   { key: 'directory_manage', label: 'Phone Directory - Add Contacts', icon: BookUser, color: 'text-rose-600', desc: 'Register new external contacts' },
+                  { key: 'credentials', label: 'Credentials Vault - Shared Accounts', icon: Key, color: 'text-amber-600', desc: 'Secure shared website credentials and passwords' },
                   { key: 'reports_view', label: 'Reports & Analytics', icon: BarChart2, color: 'text-teal-600', desc: 'View SLA compliance and team productivity reports' },
                   { key: 'settings_manage', label: 'Settings & User Permissions', icon: Settings, color: 'text-slate-600', desc: 'Configure system categories, SLA, and user access' },
                 ].map((item) => {

@@ -30,7 +30,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 
 import { supabase } from './lib/supabaseClient';
 import { UserAccount, UserGroup } from './types';
-import { MOCK_GROUPS, APP_MENU_STRUCTURE } from './constants';
+import { MOCK_GROUPS, APP_MENU_STRUCTURE, isAllowedEmailDomain, ALLOWED_EMAIL_DOMAINS } from './constants';
 import { Language, translations, LanguageContext } from './translations';
 import {
   LayoutGrid, LifeBuoy, Activity, Calendar, ShoppingCart, Package,
@@ -252,7 +252,19 @@ const InternalApp: React.FC = () => {
         const { data: { session } } = await supabase.auth.getSession();
         console.log("App.tsx: Session check result:", !!session);
         if (session?.user?.email) {
-          await handleLogin(session.user.email);
+          const email = session.user.email;
+          if (!isAllowedEmailDomain(email)) {
+            console.warn("App.tsx: Access denied for domain on checkSession:", email);
+            await supabase.auth.signOut();
+            setIsAuthenticated(false);
+            setCurrentUser(null);
+            if (window.location.hash.includes('access_token')) {
+              window.history.replaceState(null, '', window.location.pathname);
+            }
+            showToast(`Akses ditolak. Email (${email}) bukan domain resmi (@gesit.co.id / @gnr.co.id).`, 'error');
+            return;
+          }
+          await handleLogin(email);
         }
       } catch (err: any) {
         console.error("LoginPage: Login error:", err);
@@ -272,16 +284,19 @@ const InternalApp: React.FC = () => {
 
     checkSession();
 
-    const ALLOWED_DOMAINS = ['gesit.co.id', 'gnr.co.id'];
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       console.log("App.tsx: Auth state changed:", _event, !!session);
       if (session?.user?.email) {
         const email = session.user.email;
-        const domain = email.split('@')[1]?.toLowerCase();
-        if (!ALLOWED_DOMAINS.includes(domain)) {
-          console.warn("App.tsx: Access denied for domain:", domain);
+        if (!isAllowedEmailDomain(email)) {
+          console.warn("App.tsx: Access denied for domain:", email);
           await supabase.auth.signOut();
-          showToast(`Akses ditolak. Hanya domain ${ALLOWED_DOMAINS.map(d => '@' + d).join(' & ')} yang diizinkan.`, 'error');
+          setIsAuthenticated(false);
+          setCurrentUser(null);
+          if (window.location.hash.includes('access_token')) {
+            window.history.replaceState(null, '', window.location.pathname);
+          }
+          showToast(`Akses ditolak. Email (${email}) bukan domain resmi (@gesit.co.id / @gnr.co.id).`, 'error');
           return;
         }
         handleLogin(email);
@@ -385,6 +400,17 @@ const InternalApp: React.FC = () => {
 
   const handleLogin = async (email: string) => {
     console.log("App.tsx: Handling login for", email);
+    if (!isAllowedEmailDomain(email)) {
+      console.warn("App.tsx: handleLogin blocked for unauthorized domain:", email);
+      await supabase.auth.signOut();
+      setIsAuthenticated(false);
+      setCurrentUser(null);
+      if (window.location.hash.includes('access_token')) {
+        window.history.replaceState(null, '', window.location.pathname);
+      }
+      showToast(`Akses ditolak. Email (${email}) bukan domain resmi (@gesit.co.id / @gnr.co.id).`, 'error');
+      return;
+    }
     try {
       // 1. Update timestamp first
       await supabase.from('user_accounts').update({ last_login: new Date().toISOString() }).eq('email', email);
@@ -453,7 +479,7 @@ const InternalApp: React.FC = () => {
             role: 'requester',
             groups: ['requester'],
             department: 'Other',
-            company: 'GESIT'
+            company: email.toLowerCase().includes('gnr') ? 'GNR' : 'GESIT'
           }])
           .select()
           .single();
@@ -831,7 +857,16 @@ const DashboardLayout: React.FC<any & { children?: React.ReactNode }> = ({
         if (g === 'directory' || g === 'directory_view') {
           allowed.add('directory'); allowed.add('directory-all'); allowed.add('directory-lawyer'); allowed.add('directory-vendor'); allowed.add('directory-government'); allowed.add('directory-other');
         }
-        if (g === 'credentials' || g === 'credentials_view') {
+        if (g === 'credentials' || g === 'credentials_view' || g === 'csl_staff' || g === 'staff') {
+          allowed.add('credentials');
+        }
+        if (g === 'csl_staff' || g === 'staff') {
+          ['dashboard', 'csl-requests', 'routine', 'routine-activity', 'routine-task', 'budget', 'budget-expense', 'budget-offshore-invoice', 'directory', 'directory-all', 'directory-lawyer', 'directory-vendor', 'directory-government', 'directory-other', 'credentials', 'reports', 'reports-request', 'reports-task', 'reports-budget', 'profile'].forEach(id => allowed.add(id));
+        }
+        if (g === 'admin' || g === 'csl_admin') {
+          (APP_MENU_STRUCTURE || []).forEach(m => {
+            if (m.id !== 'settings-users' && m.id !== 'settings-system') allowed.add(m.id);
+          });
           allowed.add('credentials');
         }
         if (g === 'reports' || g === 'reports_view') {
@@ -862,17 +897,18 @@ const DashboardLayout: React.FC<any & { children?: React.ReactNode }> = ({
     }
 
     // 3. Fallbacks by role if no custom groups are defined
-    if (roleLower === 'admin') {
+    if (roleLower === 'admin' || roleLower.includes('admin')) {
       const allMenus = APP_MENU_STRUCTURE || [];
       allMenus.forEach(m => {
         if (m.id !== 'settings-users' && m.id !== 'settings-system') {
           allowed.add(m.id);
         }
       });
+      allowed.add('credentials');
       return allowed;
     }
 
-    if (roleLower === 'staff' || roleLower === 'csl staff' || roleLower === 'csl_staff') {
+    if (roleLower === 'staff' || roleLower === 'csl staff' || roleLower === 'csl_staff' || roleLower.includes('staff')) {
       [
         'dashboard',
         'csl-requests',

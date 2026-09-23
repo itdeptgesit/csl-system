@@ -1,6 +1,23 @@
 
 export const APP_NAME = 'CSL ERP';
 
+export const ALLOWED_EMAIL_DOMAINS = ['gesit.co.id', 'gnr.co.id', 'gnr.id'];
+
+export function isAllowedEmailDomain(email: string): boolean {
+    if (!email || typeof email !== 'string' || !email.includes('@')) return false;
+    const domain = email.split('@')[1]?.toLowerCase().trim();
+    if (!domain) return false;
+    return (
+        ALLOWED_EMAIL_DOMAINS.includes(domain) ||
+        domain === 'gesit.co.id' ||
+        domain === 'gnr.co.id' ||
+        domain === 'gnr.id' ||
+        domain.startsWith('gnr.') ||
+        domain.endsWith('.gesit.co.id') ||
+        domain.endsWith('.gnr.co.id')
+    );
+}
+
 export const CURRENT_USER_GROUPS = ['admin'];
 
 export const MOCK_GROUPS = [
