@@ -67,7 +67,7 @@ const DateCell: React.FC<{
   };
 
   return (
-    <div className="relative flex items-center group w-full h-full min-w-[110px]">
+    <div className="group relative flex h-full min-w-[125px] items-center">
       {/* Visible text input for manual entry */}
       <input
         type="text"
@@ -75,13 +75,13 @@ const DateCell: React.FC<{
         onChange={handleManualChange}
         onBlur={handleManualBlur}
         placeholder={placeholder}
-        className="w-full text-xs text-foreground px-3 py-2.5 bg-transparent border-none outline-none focus:bg-indigo-50/50 pr-7"
+        className="h-8 w-full rounded-md border border-transparent bg-transparent py-1.5 pl-2 pr-8 text-xs text-foreground outline-none transition-colors hover:border-border/60 focus:border-border focus:bg-background"
       />
       {/* Calendar icon to open hidden date input */}
       <button
         type="button"
         onClick={() => inputRef.current?.showPicker?.() ?? inputRef.current?.click()}
-        className="absolute right-1.5 text-muted-foreground/50 hover:text-indigo-500 transition-colors"
+        className="absolute right-2 inline-flex h-6 w-6 items-center justify-center rounded text-muted-foreground/60 transition-colors hover:bg-muted hover:text-foreground"
         title="Pilih tanggal"
       >
         <CalendarDays className="h-3.5 w-3.5" />
@@ -778,11 +778,11 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
                       <option value="In progress" className="bg-card">In progress</option>
                     </select>
                   </TableCell>
-                  <TableCell className="border-r border-border/40 py-1.5 px-2">
+                  <TableCell className="px-3 py-2.5">
                     <select
                       value={item.owner}
                       onChange={(e) => handleUpdateRups(item.id, 'owner', e.target.value)}
-                      className="text-[11px] px-2 py-0.5 rounded font-medium border border-border/30 outline-none cursor-pointer w-full bg-transparent text-muted-foreground hover:border-indigo-400 focus:border-indigo-500 transition-colors min-w-[110px]"
+                      className="h-7 w-full min-w-[120px] cursor-pointer rounded-md border border-border/60 bg-transparent px-2 text-xs font-medium text-foreground outline-none transition-colors hover:bg-muted focus:ring-2 focus:ring-ring/30"
                     >
                       <option value="">— Pilih Owner —</option>
                       {/* Current user on top if not in list */}
@@ -798,28 +798,28 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
                       )}
                     </select>
                   </TableCell>
-                  <TableCell className="border-r border-border/40 p-0">
+                  <TableCell className="px-1 py-1.5">
                     <DateCell
                       value={item.startDate}
                       onChange={(v) => handleUpdateRups(item.id, 'startDate', v)}
                     />
                   </TableCell>
-                  <TableCell className="border-r border-border/40 p-0">
+                  <TableCell className="px-1 py-1.5">
                     <DateCell
                       value={item.finishDate}
                       onChange={(v) => handleUpdateRups(item.id, 'finishDate', v)}
                     />
                   </TableCell>
-                  <TableCell className="border-r border-border/40 p-0">
+                  <TableCell className="px-1 py-1.5">
                     <input 
                       type="text" 
                       value={item.notes}
                       onChange={(e) => handleUpdateRups(item.id, 'notes', e.target.value)}
-                      placeholder="Notes..."
-                      className={`w-full h-full text-xs px-3 py-2.5 bg-transparent border-none outline-none focus:bg-indigo-50/50 min-w-[140px] ${item.status === 'Blocked' ? 'text-red-500 font-medium' : 'text-muted-foreground'}`}
+                      placeholder="Tambahkan catatan"
+                      className={`h-8 w-full min-w-[170px] rounded-md border border-transparent bg-transparent px-2 text-xs outline-none transition-colors hover:border-border/60 focus:border-border focus:bg-background ${item.status === 'Blocked' ? 'font-medium text-red-500' : 'text-muted-foreground'}`}
                     />
                   </TableCell>
-                  <TableCell className="text-center border-l border-border/40 py-1.5 px-1">
+                  <TableCell className="px-2 py-2 text-center">
                     <button
                       onClick={() => {
                         setReminderEditTarget(item);
@@ -827,7 +827,7 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
                         setReminderEditEmails(item.reminderEmails || '');
                         setReminderEditOpen(true);
                       }}
-                      className="p-1 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-500/20 text-muted-foreground hover:text-indigo-600 transition-colors"
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring/30"
                       title="Edit Email & Reminder"
                     >
                       <Pencil className="h-3.5 w-3.5" />
@@ -837,17 +837,18 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
               ))}
             </TableBody>
           </Table>
+          </div>
 
           {/* Pagination Footer */}
-          <div className="flex items-center justify-between px-4 py-2.5 border-t border-border/30 bg-muted/10">
+          <div className="flex flex-col gap-3 border-t border-border/60 bg-muted/20 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
             <span className="text-[11px] text-muted-foreground">
-              Menampilkan {filteredRups.length === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, filteredRups.length)} dari <span className="font-bold text-foreground">{filteredRups.length}</span> entri
+              Menampilkan {filteredRups.length === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, filteredRups.length)} dari <span className="font-semibold text-foreground">{filteredRups.length}</span> entri
             </span>
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                 disabled={safePage <= 1}
-                className="px-3 py-1 text-[11px] font-bold rounded-lg border border-border/50 bg-card hover:bg-muted/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                className="h-7 rounded-md border border-border/60 bg-background px-2.5 text-[11px] font-medium transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-30"
               >
                 ← Prev
               </button>
@@ -865,10 +866,10 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
                     <button
                       key={p}
                       onClick={() => setCurrentPage(p as number)}
-                      className={`w-7 h-7 text-[11px] font-bold rounded-lg transition-colors ${
+                      className={`h-7 w-7 rounded-md text-[11px] font-semibold transition-colors ${
                         safePage === p
-                          ? 'bg-indigo-600 text-white shadow-sm'
-                          : 'border border-border/50 bg-card hover:bg-muted/50 text-muted-foreground'
+                          ? 'bg-foreground text-background'
+                          : 'border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground'
                       }`}
                     >
                       {p}
@@ -878,7 +879,7 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
               <button
                 onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                 disabled={safePage >= totalPages}
-                className="px-3 py-1 text-[11px] font-bold rounded-lg border border-border/50 bg-card hover:bg-muted/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                className="h-7 rounded-md border border-border/60 bg-background px-2.5 text-[11px] font-medium transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-30"
               >
                 Next →
               </button>
@@ -982,7 +983,7 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
               <button
                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                 disabled={safePageAset <= 1}
-                className="px-3 py-1 text-[11px] font-bold rounded-lg border border-border/50 bg-card hover:bg-muted/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                className="h-7 rounded-md border border-border/60 bg-background px-2.5 text-[11px] font-medium transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-30"
               >
                 ← Prev
               </button>
@@ -1013,7 +1014,7 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
               <button
                 onClick={() => setCurrentPage(p => Math.min(totalPagesAset, p + 1))}
                 disabled={safePageAset >= totalPagesAset}
-                className="px-3 py-1 text-[11px] font-bold rounded-lg border border-border/50 bg-card hover:bg-muted/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                className="h-7 rounded-md border border-border/60 bg-background px-2.5 text-[11px] font-medium transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-30"
               >
                 Next →
               </button>
@@ -1111,9 +1112,9 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
               Menampilkan {filteredAgreement.length === 0 ? 0 : (safePageAgreement - 1) * PAGE_SIZE + 1}–{Math.min(safePageAgreement * PAGE_SIZE, filteredAgreement.length)} dari <span className="font-bold text-foreground">{filteredAgreement.length}</span> entri
             </span>
             <div className="flex items-center gap-1">
-              <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={safePageAgreement <= 1} className="px-3 py-1 text-[11px] font-bold rounded-lg border border-border/50 bg-card hover:bg-muted/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">← Prev</button>
+              <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={safePageAgreement <= 1} className="h-7 rounded-md border border-border/60 bg-background px-2.5 text-[11px] font-medium transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-30">← Prev</button>
               {Array.from({ length: totalPagesAgreement }, (_, i) => i + 1).filter(p => p === 1 || p === totalPagesAgreement || Math.abs(p - safePageAgreement) <= 1).reduce<(number | '...')[]>((acc, p, i, arr) => { if (i > 0 && p - (arr[i - 1] as number) > 1) acc.push('...'); acc.push(p); return acc; }, []).map((p, i) => p === '...' ? <span key={`e-${i}`} className="px-1.5 text-[11px] text-muted-foreground">…</span> : <button key={p} onClick={() => setCurrentPage(p as number)} className={`w-7 h-7 text-[11px] font-bold rounded-lg transition-colors ${safePageAgreement === p ? 'bg-[#4A3570] text-white shadow-sm' : 'border border-border/50 bg-card hover:bg-muted/50 text-muted-foreground'}`}>{p}</button>)}
-              <button onClick={() => setCurrentPage(p => Math.min(totalPagesAgreement, p + 1))} disabled={safePageAgreement >= totalPagesAgreement} className="px-3 py-1 text-[11px] font-bold rounded-lg border border-border/50 bg-card hover:bg-muted/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">Next →</button>
+              <button onClick={() => setCurrentPage(p => Math.min(totalPagesAgreement, p + 1))} disabled={safePageAgreement >= totalPagesAgreement} className="h-7 rounded-md border border-border/60 bg-background px-2.5 text-[11px] font-medium transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-30">Next →</button>
             </div>
           </div>
         </div>

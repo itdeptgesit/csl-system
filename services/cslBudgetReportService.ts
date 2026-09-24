@@ -354,6 +354,9 @@ export async function fetchBudgetExpensesReport(
   if (resExpenses.error && resExpenses.error.code !== '42P01') {
     console.error('Error fetching expenses:', resExpenses.error);
   }
+  if (resMonthlyPlan.error && resMonthlyPlan.error.code !== '42P01') {
+    console.error('Error fetching monthly budget plan:', resMonthlyPlan.error);
+  }
 
   // Raw normalizations
   const rawList: ExpenseTransactionRow[] = [];
@@ -585,7 +588,7 @@ export async function fetchBudgetExpensesReport(
   if (resMonthlyPlan?.data && Array.isArray(resMonthlyPlan.data) && resMonthlyPlan.data.length > 0) {
     const sp = resMonthlyPlan.data.find((r: any) => r.fiscal_year === targetFiscalYear) || resMonthlyPlan.data[0];
     if (sp && Number(sp.monthly_nominal) > 0) {
-      const mList = Array.isArray(sp.months) && sp.months.length === 12 ? sp.months.map(Number) : Array(12).fill(Number(sp.monthly_nominal));
+      const mList = normalizeBudgetMonths(sp.months, Number(sp.monthly_nominal));
       monthlyPlan = {
         fiscalYear: targetFiscalYear,
         mode: sp.mode || 'flat',
@@ -994,6 +997,23 @@ export interface MonthlyBudgetPlan {
   months: number[]; // 12 numbers: index 0 = Jan, index 11 = Dec
 }
 
+const normalizeBudgetMonths = (months: unknown, fallbackMonthly: number): number[] => {
+  if (Array.isArray(months) && months.length === 12) {
+    return months.map(Number);
+  }
+
+  if (typeof months === 'string') {
+    try {
+      const parsed = JSON.parse(months);
+      if (Array.isArray(parsed) && parsed.length === 12) return parsed.map(Number);
+    } catch {
+      // Use fallback below.
+    }
+  }
+
+  return Array(12).fill(fallbackMonthly);
+};
+
 /**
  * Gets the current monthly budget plan from localStorage (or generates a sensible default).
  */
@@ -1039,37 +1059,39 @@ export async function saveMonthlyBudgetPlan(
   fiscalYear: number,
   plan: MonthlyBudgetPlan
 ): Promise<void> {
-  // 1. Save to localStorage
-  if (typeof window !== 'undefined') {
-    localStorage.setItem(`csl_monthly_budget_plan_${fiscalYear}`, JSON.stringify(plan));
+  const normalizedPlan: MonthlyBudgetPlan = {
+    fiscalYear,
+    mode: plan.mode || 'flat',
+    monthlyNominal: Number(plan.monthlyNominal) || 0,
+    annualNominal: Number(plan.annualNominal) || 0,
+    months: normalizeBudgetMonths(plan.months, Number(plan.monthlyNominal) || 0),
+  };
+
+  const payload = {
+    fiscal_year: fiscalYear,
+    mode: normalizedPlan.mode,
+    monthly_nominal: normalizedPlan.monthlyNominal,
+    annual_nominal: normalizedPlan.annualNominal,
+    months: normalizedPlan.months,
+    updated_at: new Date().toISOString()
+  };
+
+  const { data, error } = await supabase
+    .from('csl_monthly_budget_plans')
+    .upsert(payload, { onConflict: 'fiscal_year' })
+    .select('fiscal_year, mode, monthly_nominal, annual_nominal, months')
+    .single();
+
+  if (error) {
+    throw new Error(`Supabase monthly budget save failed: ${error.message}`);
   }
 
-  // 2. Sync to Supabase csl_monthly_budget_plans
-  try {
-    const { error: delErr } = await supabase
-      .from('csl_monthly_budget_plans')
-      .delete()
-      .eq('fiscal_year', fiscalYear);
+  if (!data || Number(data.fiscal_year) !== fiscalYear) {
+    throw new Error('Supabase monthly budget save failed: saved row not returned');
+  }
 
-    if (!delErr) {
-      const { error: insErr } = await supabase
-        .from('csl_monthly_budget_plans')
-        .insert({
-          fiscal_year: fiscalYear,
-          mode: plan.mode || 'flat',
-          monthly_nominal: plan.monthlyNominal || 0,
-          annual_nominal: plan.annualNominal || 0,
-          months: plan.months || Array(12).fill(0),
-          updated_at: new Date().toISOString()
-        });
-      if (insErr) {
-        console.warn('Supabase csl_monthly_budget_plans insert failed:', insErr.message);
-      }
-    } else {
-      console.warn('Supabase csl_monthly_budget_plans delete failed:', delErr.message);
-    }
-  } catch (err) {
-    console.warn('Notice: csl_monthly_budget_plans sync skipped (using local persistence):', err);
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(`csl_monthly_budget_plan_${fiscalYear}`, JSON.stringify(normalizedPlan));
   }
 }
 
