@@ -28,6 +28,7 @@ import {
   StickyNote,
   Save,
   AlertTriangle,
+  Building2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -80,12 +81,10 @@ interface CredentialItem {
 const LS_CREDENTIALS = 'csl_vault_offline_data';
 
 const CATEGORIES = [
-  'Pemerintahan & Regulasi',
-  'Perbankan & Finansial',
-  'Internal CSL & Grup',
-  'Notaris & Konsultan',
-  'Vendor & Utilities',
-  'Lainnya',
+  'Government',
+  'Utilities',
+  'Consultant (Corporate Agent)',
+  'Other',
 ];
 
 // ─── Category badge styling ───────────────────────────────────────────────────
@@ -132,7 +131,7 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
   const [editingItem, setEditingItem] = useState<CredentialItem | null>(null);
   const [form, setForm] = useState({
     title: '', category: CATEGORIES[0], website_url: '',
-    username: '', password: '', notes: '',
+    nama_pt: '', username: '', password: '', notes: '',
   });
   const [showFormPass, setShowFormPass] = useState(false);
 
@@ -295,7 +294,7 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
   // — Open add / edit form
   function openAdd() {
     setEditingItem(null);
-    setForm({ title: '', category: CATEGORIES[0], website_url: '', username: '', password: '', notes: '' });
+    setForm({ title: '', category: CATEGORIES[0], website_url: '', nama_pt: '', username: '', password: '', notes: '' });
     setShowFormPass(false);
     setIsFormOpen(true);
   }
@@ -305,6 +304,7 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
     setForm({
       title: item.title, category: item.category || CATEGORIES[0],
       website_url: item.website_url || '',
+      nama_pt: item.decrypted?.nama_pt || '',
       username: item.decrypted?.username || '',
       password: item.decrypted?.password || '',
       notes: item.decrypted?.notes || '',
@@ -333,7 +333,7 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
 
     setIsLoading(true);
     try {
-      const secret: VaultSecretPayload = { username: form.username.trim(), password: form.password, notes: form.notes };
+      const secret: VaultSecretPayload = { username: form.username.trim(), password: form.password, nama_pt: form.nama_pt.trim() || undefined, notes: form.notes };
       const enc = await encryptVaultData(secret, vaultKey);
 
       const u = form.username.trim();
@@ -344,13 +344,33 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
       if (editingItem) {
         // UPDATE
         try {
-          await supabase.from('csl_credentials').update({
+          const { data: updateData, error: updateErr } = await supabase.from('csl_credentials').update({
             title: form.title.trim(), category: form.category,
             website_url: form.website_url.trim() || null,
             encrypted_data: enc.ciphertext, iv: enc.iv,
             username_preview: preview, updated_at: new Date().toISOString(),
-          }).eq('id', editingItem.id);
-        } catch { /* offline */ }
+          }).eq('id', editingItem.id).select();
+
+          if (updateErr) {
+            console.error('Supabase update error:', updateErr);
+            toast.error('Database update: ' + updateErr.message);
+          } else if (!updateData || updateData.length === 0) {
+            // Row not in DB (e.g. offline-created timestamp ID). Insert it to sync to DB!
+            const { data: insertData } = await supabase.from('csl_credentials').insert([{
+              title: form.title.trim(), category: form.category,
+              website_url: form.website_url.trim() || null,
+              encrypted_data: enc.ciphertext, iv: enc.iv,
+              username_preview: preview, created_by: authorName,
+              created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+            }]).select().single();
+
+            if (insertData?.id) {
+              editingItem.id = insertData.id;
+            }
+          }
+        } catch (e: any) { 
+          console.error('Update DB exception:', e);
+        }
 
         await trackActivity(
           authorName,
@@ -442,6 +462,7 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
       item.title.toLowerCase().includes(q) ||
       (item.website_url || '').toLowerCase().includes(q) ||
       (item.category || '').toLowerCase().includes(q) ||
+      (item.decrypted?.nama_pt || '').toLowerCase().includes(q) ||
       (item.decrypted?.username || '').toLowerCase().includes(q) ||
       (item.decrypted?.notes || '').toLowerCase().includes(q);
     return catOk && searchOk;
@@ -544,9 +565,8 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
               <button
                 key={cat}
                 onClick={() => setActiveCat(cat)}
-                className={`inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-xs font-medium transition-all ${
-                  activeCat === cat ? 'bg-background text-foreground shadow-sm' : 'hover:text-foreground'
-                }`}
+                className={`inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-xs font-medium transition-all ${activeCat === cat ? 'bg-background text-foreground shadow-sm' : 'hover:text-foreground'
+                  }`}
               >
                 {cat === 'Semua' ? `Semua (${credentials.length})` : cat.split(' ')[0]}
               </button>
@@ -558,17 +578,15 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
         <div className="inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground self-end sm:self-auto">
           <button
             onClick={() => setViewMode('grid')}
-            className={`inline-flex items-center justify-center whitespace-nowrap rounded-md px-2 py-1 text-sm font-medium transition-all ${
-              viewMode === 'grid' ? 'bg-background text-foreground shadow-sm' : 'hover:text-foreground'
-            }`}
+            className={`inline-flex items-center justify-center whitespace-nowrap rounded-md px-2 py-1 text-sm font-medium transition-all ${viewMode === 'grid' ? 'bg-background text-foreground shadow-sm' : 'hover:text-foreground'
+              }`}
           >
             <LayoutGrid size={14} className="mr-1" /> Grid
           </button>
           <button
             onClick={() => setViewMode('table')}
-            className={`inline-flex items-center justify-center whitespace-nowrap rounded-md px-2 py-1 text-sm font-medium transition-all ${
-              viewMode === 'table' ? 'bg-background text-foreground shadow-sm' : 'hover:text-foreground'
-            }`}
+            className={`inline-flex items-center justify-center whitespace-nowrap rounded-md px-2 py-1 text-sm font-medium transition-all ${viewMode === 'table' ? 'bg-background text-foreground shadow-sm' : 'hover:text-foreground'
+              }`}
           >
             <List size={14} className="mr-1" /> List
           </button>
@@ -736,6 +754,15 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
                     </div>
                   </div>
 
+                  {/* Nama PT */}
+                  {item.decrypted?.nama_pt && (
+                    <div className="flex items-center gap-2 text-xs px-2 py-1">
+                      <Building2 size={11} className="text-muted-foreground shrink-0" />
+                      <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground shrink-0">PT</span>
+                      <span className="truncate text-foreground/80">{item.decrypted.nama_pt}</span>
+                    </div>
+                  )}
+
                   {/* Notes */}
                   {item.decrypted?.notes && (
                     <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2 px-2">
@@ -781,6 +808,7 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
               <TableRow className="hover:bg-transparent border-b border-border/40">
                 <TableHead className="text-xs font-semibold text-foreground/80 pl-6">Layanan</TableHead>
                 <TableHead className="text-xs font-semibold text-foreground/80">Kategori</TableHead>
+                <TableHead className="text-xs font-semibold text-foreground/80">Nama PT</TableHead>
                 <TableHead className="text-xs font-semibold text-foreground/80">Username / Email</TableHead>
                 <TableHead className="text-xs font-semibold text-foreground/80">Password</TableHead>
                 <TableHead className="text-xs font-semibold text-foreground/80">Catatan</TableHead>
@@ -825,6 +853,13 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
                         <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium ${getCategoryBadgeClass(item.category)}`}>
                           {item.category.split(' ')[0]}
                         </span>
+                      )}
+                    </TableCell>
+                    <TableCell className="py-4 text-xs text-foreground/80 max-w-[180px] truncate">
+                      {isDecryptFailed ? '—' : (
+                        item.decrypted?.nama_pt
+                          ? <span className="flex items-center gap-1"><Building2 size={11} className="shrink-0 text-muted-foreground" />{item.decrypted.nama_pt}</span>
+                          : <span className="text-muted-foreground">—</span>
                       )}
                     </TableCell>
                     <TableCell className="py-4">
@@ -887,73 +922,91 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
 
       {/* ── MODAL: Add / Edit ── */}
       <Dialog open={isFormOpen} onOpenChange={v => { if (!isLoading) setIsFormOpen(v); }}>
-        <DialogContent className="max-w-xl p-0 gap-0 overflow-hidden">
+        <DialogContent className="sm:max-w-3xl w-full p-0 gap-0 overflow-hidden dark:bg-zinc-900 dark:border-zinc-800 shadow-2xl">
           {/* Modal Header */}
-          <div className="flex items-center gap-3 px-6 py-4 border-b border-border/50 bg-muted/30">
-            <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
-              <Key className="h-4 w-4 text-primary" />
+          <div className="flex items-center gap-3.5 px-6 py-5 border-b border-border/60 dark:border-zinc-800 bg-muted/40 dark:bg-zinc-800/60">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 dark:bg-primary/20 border border-primary/25 flex items-center justify-center shrink-0">
+              <Key className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <DialogTitle className="text-sm font-semibold text-foreground">
+              <DialogTitle className="text-base font-bold text-foreground dark:text-zinc-100">
                 {editingItem ? 'Edit Kredensial' : 'Tambah Kredensial Baru'}
               </DialogTitle>
-              <DialogDescription className="text-[11px] text-muted-foreground mt-0">
-                Data dienkripsi AES-256-GCM sebelum tersimpan ke database.
+              <DialogDescription className="text-xs text-muted-foreground dark:text-zinc-400 mt-0.5">
+                Data akun dienkripsi end-to-end dengan standar militer AES-256-GCM sebelum disimpan.
               </DialogDescription>
             </div>
           </div>
 
           <form onSubmit={handleSave}>
-            <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+            <div className="p-6 space-y-5 max-h-[75vh] overflow-y-auto">
 
-              {/* SECTION 1: Informasi Layanan */}
-              <div className="bg-card border border-border/40 rounded-xl overflow-hidden shadow-sm">
-                <div className="flex items-center gap-2.5 px-4 py-2.5 border-b border-border/40 bg-muted/20">
-                  <div className="w-5 h-5 rounded-md flex items-center justify-center text-xs font-semibold shrink-0 bg-muted text-foreground border border-border/40">1</div>
-                  <h3 className="text-xs font-semibold text-foreground">Informasi Layanan</h3>
+              {/* SECTION 1: Informasi Layanan & Entitas */}
+              <div className="bg-card dark:bg-zinc-900/90 border border-border/60 dark:border-zinc-800 rounded-xl overflow-hidden shadow-sm">
+                <div className="flex items-center gap-2.5 px-5 py-3 border-b border-border/50 dark:border-zinc-800 bg-muted/30 dark:bg-zinc-800/50">
+                  <div className="w-5 h-5 rounded-md flex items-center justify-center text-xs font-bold shrink-0 bg-primary/10 text-primary border border-primary/25">1</div>
+                  <h3 className="text-xs font-bold text-foreground dark:text-zinc-200 uppercase tracking-wider">Informasi Layanan &amp; Perusahaan</h3>
                 </div>
-                <div className="p-4 space-y-3">
-                  {/* Nama Layanan */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-foreground">
-                      Nama Layanan / Website <span className="text-destructive">*</span>
-                    </label>
-                    <Input
-                      value={form.title}
-                      onChange={e => setForm({ ...form, title: e.target.value })}
-                      placeholder="cth: DJP Online, AHU Online, KlikBCA"
-                      className="h-9 text-sm"
-                      autoFocus
-                      required
-                    />
+                <div className="p-5 space-y-4">
+                  {/* Row 1: Nama Layanan & Nama PT */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-foreground dark:text-zinc-300">
+                        Nama Layanan / Akun <span className="text-destructive">*</span>
+                      </label>
+                      <Input
+                        value={form.title}
+                        onChange={e => setForm({ ...form, title: e.target.value })}
+                        placeholder="cth: DJP Online, AHU Online, KlikBCA"
+                        className="h-10 text-sm dark:bg-zinc-800/90 dark:border-zinc-700 dark:text-zinc-100 dark:placeholder:text-zinc-500"
+                        autoFocus
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-foreground dark:text-zinc-300">
+                        Nama PT / Entitas <span className="text-muted-foreground dark:text-zinc-500 font-normal">(Opsional)</span>
+                      </label>
+                      <div className="relative">
+                        <Building2 size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground dark:text-zinc-500 pointer-events-none" />
+                        <Input
+                          value={form.nama_pt}
+                          onChange={e => setForm({ ...form, nama_pt: e.target.value })}
+                          placeholder="cth: PT Desi Jaya / PT CSL..."
+                          className="h-10 text-sm pl-9 dark:bg-zinc-800/90 dark:border-zinc-700 dark:text-zinc-100 dark:placeholder:text-zinc-500"
+                        />
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Kategori + URL */}
-                  <div className="grid grid-cols-2 gap-3">
+                  {/* Row 2: Kategori & URL */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-xs font-medium text-foreground">Kategori</label>
+                      <label className="text-xs font-semibold text-foreground dark:text-zinc-300">Kategori</label>
                       <div className="relative">
                         <select
                           value={form.category}
                           onChange={e => setForm({ ...form, category: e.target.value })}
-                          className="h-9 w-full rounded-md border border-input bg-background pl-3 pr-8 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring text-foreground appearance-none"
+                          className="h-10 w-full rounded-md border border-input dark:border-zinc-700 bg-background dark:bg-zinc-800/90 pl-3 pr-8 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring text-foreground dark:text-zinc-100 appearance-none"
                         >
-                          {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                          {CATEGORIES.map(c => <option key={c} value={c} className="dark:bg-zinc-800 dark:text-zinc-100">{c}</option>)}
                         </select>
-                        <ChevronDown size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                        <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground dark:text-zinc-400 pointer-events-none" />
                       </div>
                     </div>
+
                     <div className="space-y-1.5">
-                      <label className="text-xs font-medium text-foreground">
-                        URL Website <span className="text-muted-foreground font-normal">(Opsional)</span>
+                      <label className="text-xs font-semibold text-foreground dark:text-zinc-300">
+                        URL Website <span className="text-muted-foreground dark:text-zinc-500 font-normal">(Opsional)</span>
                       </label>
                       <div className="relative">
-                        <Link2 size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                        <Link2 size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground dark:text-zinc-500 pointer-events-none" />
                         <Input
                           value={form.website_url}
                           onChange={e => setForm({ ...form, website_url: e.target.value })}
                           placeholder="https://..."
-                          className="h-9 text-sm pl-8"
+                          className="h-10 text-sm pl-9 dark:bg-zinc-800/90 dark:border-zinc-700 dark:text-zinc-100 dark:placeholder:text-zinc-500"
                         />
                       </div>
                     </div>
@@ -962,106 +1015,111 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
               </div>
 
               {/* SECTION 2: Kredensial Login */}
-              <div className="bg-card border border-border/40 rounded-xl overflow-hidden shadow-sm">
-                <div className="flex items-center gap-2.5 px-4 py-2.5 border-b border-border/40 bg-muted/20">
-                  <div className="w-5 h-5 rounded-md flex items-center justify-center text-xs font-semibold shrink-0 bg-muted text-foreground border border-border/40">2</div>
-                  <h3 className="text-xs font-semibold text-foreground">Kredensial Login</h3>
+              <div className="bg-card dark:bg-zinc-900/90 border border-border/60 dark:border-zinc-800 rounded-xl overflow-hidden shadow-sm">
+                <div className="flex items-center gap-2.5 px-5 py-3 border-b border-border/50 dark:border-zinc-800 bg-muted/30 dark:bg-zinc-800/50">
+                  <div className="w-5 h-5 rounded-md flex items-center justify-center text-xs font-bold shrink-0 bg-primary/10 text-primary border border-primary/25">2</div>
+                  <h3 className="text-xs font-bold text-foreground dark:text-zinc-200 uppercase tracking-wider">Kredensial Akses &amp; Akun</h3>
                 </div>
-                <div className="p-4 space-y-3">
-                  {/* Username */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-foreground">
-                      Username / Email <span className="text-destructive">*</span>
-                    </label>
-                    <div className="relative">
-                      <User2 size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-                      <Input
-                        value={form.username}
-                        onChange={e => setForm({ ...form, username: e.target.value })}
-                        placeholder="cth: admin@gesit.co.id"
-                        className="h-9 text-sm pl-8"
-                        required
-                      />
+                <div className="p-5 space-y-4">
+                  {/* Row: Username + Password */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-foreground dark:text-zinc-300">
+                        Username / Email / ID <span className="text-destructive">*</span>
+                      </label>
+                      <div className="relative">
+                        <User2 size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground dark:text-zinc-500 pointer-events-none" />
+                        <Input
+                          value={form.username}
+                          onChange={e => setForm({ ...form, username: e.target.value })}
+                          placeholder="cth: admin@gesit.co.id"
+                          className="h-10 text-sm pl-9 dark:bg-zinc-800/90 dark:border-zinc-700 dark:text-zinc-100 dark:placeholder:text-zinc-500"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-semibold text-foreground dark:text-zinc-300">
+                          Password <span className="text-destructive">*</span>
+                        </label>
+                        <button
+                          type="button"
+                          onClick={handleGenerate}
+                          className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:text-primary/80 transition-colors"
+                        >
+                          <Sparkles size={11} /> Generate Sandi
+                        </button>
+                      </div>
+                      <div className="relative">
+                        <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground dark:text-zinc-500 pointer-events-none" />
+                        <Input
+                          type={showFormPass ? 'text' : 'password'}
+                          value={form.password}
+                          onChange={e => setForm({ ...form, password: e.target.value })}
+                          placeholder="Masukkan password..."
+                          className="h-10 text-sm pl-9 pr-10 font-mono tracking-wider dark:bg-zinc-800/90 dark:border-zinc-700 dark:text-zinc-100 dark:placeholder:text-zinc-500"
+                          required
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowFormPass(!showFormPass)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground dark:text-zinc-400 dark:hover:text-zinc-200 transition-colors"
+                        >
+                          {showFormPass ? <EyeOff size={15} /> : <Eye size={15} />}
+                        </button>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Password */}
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <label className="text-xs font-medium text-foreground">
-                        Password <span className="text-destructive">*</span>
-                      </label>
-                      <button
-                        type="button"
-                        onClick={handleGenerate}
-                        className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:text-primary/80 transition-colors"
-                      >
-                        <Sparkles size={11} /> Generate Password Kuat
-                      </button>
-                    </div>
-                    <div className="relative">
-                      <Lock size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-                      <Input
-                        type={showFormPass ? 'text' : 'password'}
-                        value={form.password}
-                        onChange={e => setForm({ ...form, password: e.target.value })}
-                        placeholder="Masukkan password..."
-                        className="h-9 text-sm pl-8 pr-10 font-mono tracking-wider"
-                        required
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowFormPass(!showFormPass)}
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        {showFormPass ? <EyeOff size={14} /> : <Eye size={14} />}
-                      </button>
-                    </div>
-                    {/* Password strength bar */}
-                    {form.password && (() => {
-                      const len = form.password.length;
-                      const hasUpper = /[A-Z]/.test(form.password);
-                      const hasNum = /[0-9]/.test(form.password);
-                      const hasSym = /[^A-Za-z0-9]/.test(form.password);
-                      const score = (len >= 8 ? 1 : 0) + (len >= 14 ? 1 : 0) + (hasUpper ? 1 : 0) + (hasNum ? 1 : 0) + (hasSym ? 1 : 0);
-                      const label = score <= 1 ? 'Lemah' : score <= 3 ? 'Sedang' : 'Kuat';
-                      const color = score <= 1 ? 'bg-destructive' : score <= 3 ? 'bg-amber-400' : 'bg-emerald-500';
-                      return (
-                        <div className="space-y-1">
-                          <div className="flex gap-1">
-                            {[1,2,3,4,5].map(i => (
-                              <div key={i} className={`h-1 flex-1 rounded-full transition-all ${i <= score ? color : 'bg-muted'}`} />
-                            ))}
-                          </div>
-                          <p className="text-[10px] text-muted-foreground">Kekuatan: <span className={score <= 1 ? 'text-destructive' : score <= 3 ? 'text-amber-500' : 'text-emerald-600'}>{label}</span></p>
+                  {/* Password strength bar */}
+                  {form.password && (() => {
+                    const len = form.password.length;
+                    const hasUpper = /[A-Z]/.test(form.password);
+                    const hasNum = /[0-9]/.test(form.password);
+                    const hasSym = /[^A-Za-z0-9]/.test(form.password);
+                    const score = (len >= 8 ? 1 : 0) + (len >= 14 ? 1 : 0) + (hasUpper ? 1 : 0) + (hasNum ? 1 : 0) + (hasSym ? 1 : 0);
+                    const label = score <= 1 ? 'Lemah' : score <= 3 ? 'Sedang' : 'Kuat';
+                    const color = score <= 1 ? 'bg-destructive' : score <= 3 ? 'bg-amber-400' : 'bg-emerald-500';
+                    return (
+                      <div className="space-y-1.5 pt-1">
+                        <div className="flex gap-1.5">
+                          {[1, 2, 3, 4, 5].map(i => (
+                            <div key={i} className={`h-1.5 flex-1 rounded-full transition-all ${i <= score ? color : 'bg-muted dark:bg-zinc-800'}`} />
+                          ))}
                         </div>
-                      );
-                    })()}
-                  </div>
+                        <p className="text-[11px] text-muted-foreground dark:text-zinc-400">
+                          Kekuatan Sandi: <span className={score <= 1 ? 'text-destructive font-semibold' : score <= 3 ? 'text-amber-500 font-semibold' : 'text-emerald-500 font-semibold'}>{label}</span>
+                        </p>
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
 
-              {/* SECTION 3: Catatan Tambahan */}
-              <div className="bg-card border border-border/40 rounded-xl overflow-hidden shadow-sm">
-                <div className="flex items-center gap-2.5 px-4 py-2.5 border-b border-border/40 bg-muted/20">
-                  <div className="w-5 h-5 rounded-md flex items-center justify-center text-xs font-semibold shrink-0 bg-muted text-foreground border border-border/40">3</div>
-                  <h3 className="text-xs font-semibold text-foreground">Catatan Tambahan</h3>
+              {/* SECTION 3: Catatan & Token Keamanan */}
+              <div className="bg-card dark:bg-zinc-900/90 border border-border/60 dark:border-zinc-800 rounded-xl overflow-hidden shadow-sm">
+                <div className="flex items-center gap-2.5 px-5 py-3 border-b border-border/50 dark:border-zinc-800 bg-muted/30 dark:bg-zinc-800/50">
+                  <div className="w-5 h-5 rounded-md flex items-center justify-center text-xs font-bold shrink-0 bg-primary/10 text-primary border border-primary/25">3</div>
+                  <h3 className="text-xs font-bold text-foreground dark:text-zinc-200 uppercase tracking-wider">Catatan &amp; Token Keamanan</h3>
                 </div>
-                <div className="p-4">
+                <div className="p-5 space-y-2">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-foreground">
-                      Catatan / PIN / Info Tambahan{' '}
-                      <span className="font-normal text-muted-foreground">(Opsional)</span>
+                    <label className="text-xs font-semibold text-foreground dark:text-zinc-300">
+                      Catatan / PIN / Info Tambahan <span className="font-normal text-muted-foreground dark:text-zinc-500">(Opsional)</span>
                     </label>
-                    <p className="text-[11px] text-muted-foreground">Token 2FA, PIN ATM, pertanyaan keamanan, atau catatan penting lainnya.</p>
-                    <div className="relative">
-                      <StickyNote size={13} className="absolute left-2.5 top-3 text-muted-foreground pointer-events-none" />
+                    <p className="text-[11px] text-muted-foreground dark:text-zinc-400">
+                      Token 2FA, PIN ATM, pertanyaan keamanan, atau detail informasi penting lainnya.
+                    </p>
+                    <div className="relative mt-2">
+                      <StickyNote size={14} className="absolute left-3 top-3 text-muted-foreground dark:text-zinc-500 pointer-events-none" />
                       <textarea
                         value={form.notes}
                         onChange={e => setForm({ ...form, notes: e.target.value })}
                         placeholder="Contoh: PIN 2FA = 123456, Pertanyaan keamanan: nama ibu..."
                         rows={3}
-                        className="w-full text-sm pl-8 pr-3 py-2 rounded-md border border-input bg-background resize-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring transition-colors"
+                        className="w-full text-sm pl-9 pr-3 py-2.5 rounded-lg border border-input dark:border-zinc-700 bg-background dark:bg-zinc-800/90 dark:text-zinc-100 dark:placeholder:text-zinc-500 resize-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring transition-colors"
                       />
                     </div>
                   </div>
@@ -1071,23 +1129,23 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
             </div>
 
             {/* Footer Actions */}
-            <div className="flex items-center justify-between gap-3 px-6 py-4 border-t border-border/50 bg-muted/20">
-              <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                <ShieldCheck size={12} className="text-emerald-500" />
-                Dienkripsi AES-256-GCM
+            <div className="flex items-center justify-between gap-3 px-6 py-4 border-t border-border/60 dark:border-zinc-800 bg-muted/30 dark:bg-zinc-800/50">
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground dark:text-zinc-400">
+                <ShieldCheck size={14} className="text-emerald-500" />
+                Dienkripsi AES-256-GCM (Zero-Knowledge)
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2.5">
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   onClick={() => setIsFormOpen(false)}
                   disabled={isLoading}
-                  className="h-9 text-xs"
+                  className="h-9 px-4 text-xs font-medium dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-700"
                 >
                   Batal
                 </Button>
-                <Button type="submit" size="sm" disabled={isLoading} className="h-9 text-xs gap-1.5">
+                <Button type="submit" size="sm" disabled={isLoading} className="h-9 px-4 text-xs font-medium gap-1.5 shadow-sm">
                   {isLoading
                     ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Menyimpan...</>
                     : <><Save className="h-3.5 w-3.5" /> {editingItem ? 'Simpan Perubahan' : 'Enkripsi & Simpan'}</>

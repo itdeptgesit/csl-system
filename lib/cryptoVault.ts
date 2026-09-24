@@ -13,6 +13,7 @@ const PBKDF2_ITERATIONS = 100000;
 export interface VaultSecretPayload {
   username: string;
   password: string;
+  nama_pt?: string;
   notes?: string;
 }
 

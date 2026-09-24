@@ -344,13 +344,11 @@ export async function fetchBudgetExpensesReport(
   filters: ReportFilters
 ): Promise<BudgetExpensesReportData> {
   // 1. Fetch Expenses & Offshore Invoices
-  const [resExpenses, resOffshore, resBudgets] = await Promise.all([
+  const [resExpenses, resOffshore, resBudgets, resMonthlyPlan] = await Promise.all([
     supabase.from('csl_expense_approvals').select('*').order('created_at', { ascending: false }),
     supabase.from('csl_offshore_invoices').select('*').order('created_at', { ascending: false }),
-    supabase.from('csl_budget_allocations').select('*').maybeSingle().then(
-      async () => supabase.from('csl_budget_allocations').select('*'),
-      () => ({ data: null, error: null })
-    )
+    supabase.from('csl_budget_allocations').select('*'),
+    supabase.from('csl_monthly_budget_plans').select('*')
   ]);
 
   if (resExpenses.error && resExpenses.error.code !== '42P01') {
@@ -490,8 +488,9 @@ export async function fetchBudgetExpensesReport(
     savedLocalBudgets = [];
   }
 
-  if (Array.isArray(savedLocalBudgets) && savedLocalBudgets.length > 0) {
-    savedLocalBudgets.forEach((b: any) => {
+  // Priority: Supabase > localStorage > auto-generate
+  if (resBudgets?.data && Array.isArray(resBudgets.data) && resBudgets.data.length > 0) {
+    resBudgets.data.forEach((b: any) => {
       budgetAllocations.push({
         fiscal_year: Number(b.fiscal_year || targetFiscalYear),
         company: (b.company || 'PT Determinan Indah').trim(),
@@ -500,12 +499,16 @@ export async function fetchBudgetExpensesReport(
         allocated_amount: Number(b.allocated_amount || 0)
       });
     });
-  } else if (resBudgets?.data && Array.isArray(resBudgets.data) && resBudgets.data.length > 0) {
-    resBudgets.data.forEach((b: any) => {
+    // Sync to localStorage for offline fallback
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(`csl_budget_allocations_${targetFiscalYear}`, JSON.stringify(budgetAllocations));
+    }
+  } else if (Array.isArray(savedLocalBudgets) && savedLocalBudgets.length > 0) {
+    savedLocalBudgets.forEach((b: any) => {
       budgetAllocations.push({
-        fiscal_year: Number(b.fiscal_year || 2026),
-        company: (b.company || '').trim(),
-        department: (b.department || '').trim(),
+        fiscal_year: Number(b.fiscal_year || targetFiscalYear),
+        company: (b.company || 'PT Determinan Indah').trim(),
+        department: (b.department || 'CSL').trim(),
         project_name: (b.project_name || '').trim(),
         allocated_amount: Number(b.allocated_amount || 0)
       });
@@ -575,9 +578,30 @@ export async function fetchBudgetExpensesReport(
     return true;
   });
 
-  // Check if direct nominal monthly budget plan exists in localStorage
+  // Check if direct nominal monthly budget plan exists (Supabase first, then localStorage)
   let monthlyPlan: MonthlyBudgetPlan | null = null;
-  if (typeof window !== 'undefined') {
+
+  // Try Supabase first
+  if (resMonthlyPlan?.data && Array.isArray(resMonthlyPlan.data) && resMonthlyPlan.data.length > 0) {
+    const sp = resMonthlyPlan.data.find((r: any) => r.fiscal_year === targetFiscalYear) || resMonthlyPlan.data[0];
+    if (sp && Number(sp.monthly_nominal) > 0) {
+      const mList = Array.isArray(sp.months) && sp.months.length === 12 ? sp.months.map(Number) : Array(12).fill(Number(sp.monthly_nominal));
+      monthlyPlan = {
+        fiscalYear: targetFiscalYear,
+        mode: sp.mode || 'flat',
+        monthlyNominal: Number(sp.monthly_nominal),
+        annualNominal: Number(sp.annual_nominal) || mList.reduce((s: number, n: number) => s + n, 0),
+        months: mList
+      };
+      // Sync to localStorage for offline fallback
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(`csl_monthly_budget_plan_${targetFiscalYear}`, JSON.stringify(monthlyPlan));
+      }
+    }
+  }
+
+  // Fallback to localStorage
+  if (!monthlyPlan && typeof window !== 'undefined') {
     try {
       const rawPlan = localStorage.getItem(`csl_monthly_budget_plan_${targetFiscalYear}`);
       if (rawPlan) {
@@ -1008,20 +1032,50 @@ export function getMonthlyBudgetPlan(fiscalYear: number, defaultMonthly?: number
 }
 
 /**
- * Saves the monthly budget plan for a fiscal year to localStorage.
+ * Saves the monthly budget plan for a fiscal year.
+ * Syncs to both localStorage and Supabase csl_monthly_budget_plans.
  */
 export async function saveMonthlyBudgetPlan(
   fiscalYear: number,
   plan: MonthlyBudgetPlan
 ): Promise<void> {
+  // 1. Save to localStorage
   if (typeof window !== 'undefined') {
     localStorage.setItem(`csl_monthly_budget_plan_${fiscalYear}`, JSON.stringify(plan));
+  }
+
+  // 2. Sync to Supabase csl_monthly_budget_plans
+  try {
+    const { error: delErr } = await supabase
+      .from('csl_monthly_budget_plans')
+      .delete()
+      .eq('fiscal_year', fiscalYear);
+
+    if (!delErr) {
+      const { error: insErr } = await supabase
+        .from('csl_monthly_budget_plans')
+        .insert({
+          fiscal_year: fiscalYear,
+          mode: plan.mode || 'flat',
+          monthly_nominal: plan.monthlyNominal || 0,
+          annual_nominal: plan.annualNominal || 0,
+          months: plan.months || Array(12).fill(0),
+          updated_at: new Date().toISOString()
+        });
+      if (insErr) {
+        console.warn('Supabase csl_monthly_budget_plans insert failed:', insErr.message);
+      }
+    } else {
+      console.warn('Supabase csl_monthly_budget_plans delete failed:', delErr.message);
+    }
+  } catch (err) {
+    console.warn('Notice: csl_monthly_budget_plans sync skipped (using local persistence):', err);
   }
 }
 
 /**
  * Saves and updates project budget allocations for a specific fiscal year.
- * Persists to LocalStorage immediately and syncs with Supabase csl_budget_allocations if table is available.
+ * Persists to LocalStorage and syncs with Supabase csl_budget_allocations.
  */
 export async function saveProjectBudgetAllocations(
   fiscalYear: number,
@@ -1043,11 +1097,18 @@ export async function saveProjectBudgetAllocations(
     localStorage.setItem(`csl_budget_allocations_${fiscalYear}`, JSON.stringify(sanitized));
   }
 
-  // 2. Try saving to Supabase if table csl_budget_allocations exists
+  // 2. Sync to Supabase csl_budget_allocations
   try {
     const { error: delErr } = await supabase.from('csl_budget_allocations').delete().eq('fiscal_year', fiscalYear);
-    if (!delErr && sanitized.length > 0) {
-      await supabase.from('csl_budget_allocations').insert(sanitized);
+    if (delErr) {
+      console.warn('Supabase csl_budget_allocations delete failed:', delErr.message);
+      return;
+    }
+    if (sanitized.length > 0) {
+      const { error: insErr } = await supabase.from('csl_budget_allocations').insert(sanitized);
+      if (insErr) {
+        console.warn('Supabase csl_budget_allocations insert failed:', insErr.message);
+      }
     }
   } catch (err) {
     console.warn('Notice: csl_budget_allocations table sync skipped (using local persistence):', err);

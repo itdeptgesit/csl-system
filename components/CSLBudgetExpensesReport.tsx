@@ -13,6 +13,7 @@ import {
   getPeriodDateRange,
   MONTH_NAMES,
   MONTH_SHORT_NAMES,
+  MonthlyComparison,
   formatIdr,
   formatCurrencyAmount,
   getCurrencyFlag,
@@ -70,7 +71,19 @@ import {
   Smartphone
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell } from 'recharts';
+import { 
+  ComposedChart, 
+  Bar, 
+  Line, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip as RechartsTooltip, 
+  ResponsiveContainer,
+  BarChart,
+  Cell
+} from 'recharts';
+import { useTheme } from 'next-themes';
 
 interface CSLBudgetExpensesReportProps {
   currentUser: UserAccount | null;
@@ -102,6 +115,109 @@ const formatFullDateTime = (dStr?: string) => {
   } catch {
     return dStr;
   }
+};
+
+const BudgetVsActualTooltip = ({ active, payload, label, isDark }: any) => {
+  if (!active || !payload || !payload.length) return null;
+
+  const data: MonthlyComparison | undefined = payload[0]?.payload;
+  if (!data) return null;
+
+  const budget = data.budget || 0;
+  const individual = data.individualActual || 0;
+  const company = data.companyActual || 0;
+  const actual = data.actual !== undefined ? data.actual : individual + company;
+  const variance = budget - actual;
+  const isOver = actual > budget && budget > 0;
+  const utilization = data.utilization !== undefined ? data.utilization : (budget > 0 ? (actual / budget) * 100 : 0);
+
+  return (
+    <div
+      className={`p-3.5 rounded-xl border shadow-2xl backdrop-blur-md min-w-[250px] text-xs font-sans transition-all pointer-events-none ${
+        isDark
+          ? 'bg-slate-900/95 border-slate-700 text-slate-100 shadow-black/50'
+          : 'bg-white/95 border-slate-200 text-slate-900 shadow-slate-300/50'
+      }`}
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between gap-3 pb-2 mb-2 border-b border-border/40">
+        <span className="font-bold text-sm text-foreground">
+          {label || data.periodLabel}
+        </span>
+        <span
+          className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full border ${
+            isOver
+              ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30'
+              : utilization >= 80
+              ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30'
+              : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
+          }`}
+        >
+          {isOver ? 'Over Budget' : utilization >= 80 ? 'Warning' : 'On Track'}
+        </span>
+      </div>
+
+      {/* Detail Rows */}
+      <div className="space-y-1.5 font-medium">
+        <div className="flex items-center justify-between">
+          <span className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
+            <span className="w-2.5 h-2.5 rounded-sm bg-amber-500 inline-block shrink-0" />
+            Budget Target
+          </span>
+          <span className="font-mono font-bold text-foreground">
+            {formatIdr(budget)}
+          </span>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <span className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
+            <span className="w-2.5 h-2.5 rounded-sm bg-emerald-500 inline-block shrink-0" />
+            Individual Actual
+          </span>
+          <span className="font-mono font-semibold text-foreground">
+            {formatIdr(individual)}
+          </span>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <span className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
+            <span className="w-2.5 h-2.5 rounded-sm bg-blue-500 inline-block shrink-0" />
+            Company Actual
+          </span>
+          <span className="font-mono font-semibold text-foreground">
+            {formatIdr(company)}
+          </span>
+        </div>
+
+        <div className="pt-1.5 border-t border-border/40 flex items-center justify-between">
+          <span className="font-bold text-foreground">Total Actual Spend</span>
+          <span className={`font-mono font-bold ${
+            isOver ? 'text-rose-600 dark:text-rose-400' : 'text-foreground'
+          }`}>
+            {formatIdr(actual)}
+          </span>
+        </div>
+
+        <div className="flex items-center justify-between text-[11px] pt-0.5">
+          <span className="text-slate-500 dark:text-slate-400">
+            {variance >= 0 ? 'Sisa Alokasi' : 'Defisit Anggaran'}
+          </span>
+          <span className={`font-mono font-bold ${
+            variance >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+          }`}>
+            {variance >= 0 ? `+${formatIdr(variance)}` : `-${formatIdr(Math.abs(variance))}`}
+          </span>
+        </div>
+
+        <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 pt-0.5">
+          <span>Utilisasi</span>
+          <span className="font-mono font-bold text-foreground">
+            {utilization.toFixed(1)}%
+          </span>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 const parseParamsToFilters = (params: URLSearchParams): ReportFilters => {
@@ -159,6 +275,23 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [filters, setFilters] = useState<ReportFilters>(() => parseParamsToFilters(searchParams));
+
+  const { resolvedTheme } = useTheme();
+  const [isDarkMode, setIsDarkMode] = useState(() => 
+    typeof document !== 'undefined' ? document.documentElement.classList.contains('dark') : false
+  );
+
+  useEffect(() => {
+    if (resolvedTheme) {
+      setIsDarkMode(resolvedTheme === 'dark');
+      return;
+    }
+    const update = () => setIsDarkMode(document.documentElement.classList.contains('dark'));
+    update();
+    const observer = new MutationObserver(update);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, [resolvedTheme]);
 
   // Mobile viewport warning popup state
   const [showMobileWarning, setShowMobileWarning] = useState<boolean>(false);
@@ -644,9 +777,9 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
             size="sm"
             onClick={loadReport}
             disabled={loading}
-            className="h-9 text-xs gap-1.5"
+            className="h-9 text-xs gap-1.5 text-foreground dark:text-slate-200"
           >
-            <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} /> Refresh
+            <RefreshCw className={`h-3.5 w-3.5 text-muted-foreground dark:text-slate-400 ${loading ? 'animate-spin' : ''}`} /> Refresh
           </Button>
 
           <Button
@@ -1176,7 +1309,7 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
             <button
               type="button"
               onClick={handleResetFilters}
-              className="text-xs font-bold text-rose-600 hover:text-rose-700 hover:underline ml-auto pl-2"
+              className="text-xs font-bold text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 hover:underline ml-auto pl-2"
             >
               Reset all
             </button>
@@ -1406,7 +1539,7 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
             <div className="flex items-baseline gap-2">
               <p className="text-2xl font-bold font-mono text-emerald-600 dark:text-emerald-400 truncate">{formatIdr(summary.actualExpenses)}</p>
             </div>
-            <p className="text-xs font-semibold font-mono text-emerald-600/80 mt-1 truncate">
+            <p className="text-xs font-semibold font-mono text-emerald-600/80 dark:text-emerald-400/80 mt-1 truncate">
               Verified / approved spend
             </p>
             <p className="text-[11px] text-muted-foreground mt-0.5">Consolidated total (IDR)</p>
@@ -1471,7 +1604,7 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
       <div className="bg-card border border-border/40 rounded-xl p-5 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <BarChart3 size={16} className="text-indigo-600" />
+              <BarChart3 size={16} className="text-indigo-600 dark:text-indigo-400" />
               <div>
                 <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">Budget vs Actual</h3>
                 <p className="text-[10px] text-muted-foreground font-medium">
@@ -1515,16 +1648,16 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
                   barCategoryGap="20%"
                   barGap={4}
                 >
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" opacity={0.15} />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDarkMode ? '#334155' : '#cbd5e1'} opacity={0.5} />
                   <XAxis
                     dataKey="periodLabel"
-                    tick={{ fontSize: 11, fontWeight: 700, fill: '#94a3b8' }}
-                    axisLine={{ stroke: '#334155', opacity: 0.5 }}
+                    tick={{ fontSize: 11, fontWeight: 700, fill: isDarkMode ? '#94a3b8' : '#475569' }}
+                    axisLine={{ stroke: isDarkMode ? '#334155' : '#cbd5e1', opacity: 0.5 }}
                     tickLine={false}
                     interval={0}
                   />
                   <YAxis
-                    tick={{ fontSize: 10, fill: '#94a3b8' }}
+                    tick={{ fontSize: 10, fill: isDarkMode ? '#94a3b8' : '#64748b' }}
                     axisLine={false}
                     tickLine={false}
                     tickFormatter={(val: number) => {
@@ -1536,23 +1669,33 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
                     width={52}
                   />
                   <RechartsTooltip
-                    cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                    cursor={{ fill: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)' }}
                     contentStyle={{
-                      background: 'rgba(15, 23, 42, 0.95)',
+                      background: isDarkMode ? 'rgba(15, 23, 42, 0.95)' : 'rgba(255, 255, 255, 0.98)',
                       backdropFilter: 'blur(8px)',
-                      border: '1px solid rgba(148, 163, 184, 0.2)',
+                      border: `1px solid ${isDarkMode ? 'rgba(148, 163, 184, 0.2)' : 'rgba(203, 213, 225, 0.6)'}`,
                       borderRadius: 12,
                       fontSize: 12,
                       fontWeight: 600,
-                      color: '#f8fafc',
-                      boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+                      color: isDarkMode ? '#f8fafc' : '#1e293b',
+                      boxShadow: isDarkMode ? '0 8px 32px rgba(0,0,0,0.5)' : '0 8px 32px rgba(0,0,0,0.1)',
                       padding: '10px 14px',
                     }}
-                    formatter={(value: number, name: string) => [
-                      formatIdr(value),
+                    labelStyle={{
+                      color: isDarkMode ? '#e2e8f0' : '#334155',
+                      fontWeight: 700,
+                      marginBottom: 4,
+                    }}
+                    itemStyle={{
+                      color: isDarkMode ? '#f8fafc' : '#1e293b',
+                      fontWeight: 600,
+                      padding: 0,
+                    }}
+                    formatter={(value, name) => [
+                      formatIdr(Number(value)),
                       name === 'individualActual' ? 'Individual' : 'Company'
                     ]}
-                    labelFormatter={(label: string) => label}
+                    labelFormatter={(label) => String(label ?? '')}
                   />
                   <Bar
                     dataKey="individualActual"
@@ -1565,7 +1708,7 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
                       return (
                         <Cell
                           key={`ind-${index}`}
-                          fill={isOverBudget ? '#ef4444' : '#22c55e'}
+                          fill={isOverBudget ? '#f87171' : '#4ade80'}
                         />
                       );
                     })}
@@ -1581,7 +1724,7 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
                       return (
                         <Cell
                           key={`com-${index}`}
-                          fill={isOverBudget ? '#ef4444' : '#3b82f6'}
+                          fill={isOverBudget ? '#f87171' : '#60a5fa'}
                         />
                       );
                     })}
@@ -1844,12 +1987,12 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
                       <div>
                         <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded border inline-block ${
                           txn.status === 'DISBURSED' || txn.status === 'PAID'
-                            ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
+                            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
                             : txn.status === 'APPROVED'
-                            ? 'bg-blue-500/10 text-blue-600 border-blue-500/20'
+                            ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20'
                             : txn.status === 'PENDING_APPROVAL'
-                            ? 'bg-amber-500/10 text-amber-600 border-amber-500/20'
-                            : 'bg-rose-500/10 text-rose-600 border-rose-500/20'
+                            ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
+                            : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20'
                         }`}>
                           {txn.status}
                         </span>
@@ -1936,12 +2079,12 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
                     <span className="text-[10px] font-black uppercase text-indigo-600 tracking-wider">Transaction Detail</span>
                     <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded border ${
                       selectedTxn.status === 'DISBURSED' || selectedTxn.status === 'PAID'
-                        ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
+                        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
                         : selectedTxn.status === 'APPROVED'
-                        ? 'bg-blue-500/10 text-blue-600 border-blue-500/20'
+                        ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20'
                         : selectedTxn.status === 'PENDING_APPROVAL'
-                        ? 'bg-amber-500/10 text-amber-600 border-amber-500/20'
-                        : 'bg-rose-500/10 text-rose-600 border-rose-500/20'
+                        ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
+                        : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20'
                     }`}>
                       {selectedTxn.status}
                     </span>
@@ -2001,10 +2144,10 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
                       </span>
                       <span className={`text-[9px] font-black px-1.5 py-0.5 rounded ${
                         selectedTxn.status === 'APPROVED' || selectedTxn.status === 'DISBURSED' || selectedTxn.status === 'PAID'
-                          ? 'bg-emerald-500/10 text-emerald-600'
+                          ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
                           : selectedTxn.status === 'PENDING_APPROVAL'
-                          ? 'bg-amber-500/10 text-amber-600'
-                          : 'bg-rose-500/10 text-rose-600'
+                          ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                          : 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
                       }`}>
                         {selectedTxn.status === 'PENDING_APPROVAL' ? 'PENDING' : 'APPROVED'}
                       </span>
@@ -2176,7 +2319,7 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
                     <span>Lampiran Dokumen / Invoice</span>
                   </div>
                   {selectedTxn.invoice_attachment_id && (
-                    <span className="text-[9px] font-bold bg-emerald-500/10 text-emerald-600 px-2 py-0.5 rounded-full">
+                    <span className="text-[9px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full">
                       Tersedia
                     </span>
                   )}
@@ -2399,7 +2542,7 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
                     <div className="grid grid-cols-3 gap-2.5 pt-1">
                       <div className="p-2.5 rounded-xl bg-muted/30 border border-border/40 text-center">
                         <span className="text-[9px] font-bold text-muted-foreground uppercase block">Per Bulan</span>
-                        <p className="text-xs font-black font-mono text-indigo-600 mt-0.5">
+                        <p className="text-xs font-black font-mono text-indigo-600 dark:text-indigo-400 mt-0.5">
                           {formatIdr(parseFormattedAmount(monthlyNominalStr))}
                         </p>
                       </div>
@@ -2411,7 +2554,7 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
                       </div>
                       <div className="p-2.5 rounded-xl bg-muted/30 border border-border/40 text-center">
                         <span className="text-[9px] font-bold text-muted-foreground uppercase block">Total 1 Tahun</span>
-                        <p className="text-xs font-black font-mono text-emerald-600 mt-0.5">
+                        <p className="text-xs font-black font-mono text-emerald-600 dark:text-emerald-400 mt-0.5">
                           {formatIdr(parseFormattedAmount(annualNominalStr))}
                         </p>
                       </div>
@@ -2477,7 +2620,7 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
                       </div>
                       <div className="text-right">
                         <span className="text-[10px] font-bold text-muted-foreground uppercase block">Rata-rata per Bulan:</span>
-                        <span className="font-black font-mono text-sm text-indigo-600">
+                        <span className="font-black font-mono text-sm text-indigo-600 dark:text-indigo-400">
                           Rp {monthlyNominalStr || '0'}
                         </span>
                       </div>
@@ -2574,7 +2717,7 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
                             value={item.monthly_amount}
                             onChange={e => handleMonthlyChange(index, e.target.value)}
                             placeholder="e.g. 5.000.000"
-                            className="h-8 text-xs font-mono font-bold text-indigo-600 bg-background"
+                            className="h-8 text-xs font-mono font-bold text-indigo-600 dark:text-indigo-400 bg-background"
                           />
                         </div>
 
