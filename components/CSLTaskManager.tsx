@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { UserAccount } from '../types';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { Plus, Search, Filter, CalendarDays, X } from 'lucide-react';
+import { Plus, Search, Filter, CalendarDays, X, Bell, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -184,11 +184,11 @@ const DUMMY_ASET = [
 
 const getStatusStyle = (status: string) => {
   switch (status) {
-    case 'Completed': return 'bg-emerald-200 text-emerald-800';
-    case 'Not started': return 'bg-blue-200 text-blue-800';
-    case 'Blocked': return 'bg-red-300 text-red-900';
-    case 'In progress': return 'bg-yellow-200 text-yellow-800';
-    default: return 'bg-gray-100 text-gray-500';
+    case 'Completed': return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400';
+    case 'Not started': return 'bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400';
+    case 'Blocked': return 'bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400';
+    case 'In progress': return 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400';
+    default: return 'bg-muted text-muted-foreground';
   }
 };
 
@@ -216,7 +216,7 @@ const DUMMY_AGREEMENT = [
   { id: 4, requestBy: 'Bu Yayan', taskName: 'Market Research and Business Development Agreement TCS & ACL', status: 'In progress', owner: 'Desi Rahmuni', startDate: '2026-08-18', finishDate: '', notes: 'waiting for Finance confirmation to proceed' },
 ];
 
-const EMPTY_RUPS_FORM = { company: '', periode: new Date().getFullYear().toString(), status: '', owner: '', startDate: '', finishDate: '', notes: '' };
+const EMPTY_RUPS_FORM = { company: '', periode: new Date().getFullYear().toString(), status: '', owner: '', startDate: '', dueDate: '', finishDate: '', notes: '', reminderEmails: '' };
 const EMPTY_ASET_FORM = { company: '', taskName: '', status: '', owner: '', startDate: '', dueDate: '', notes: '' };
 const EMPTY_AGREEMENT_FORM = { requestBy: '', taskName: '', status: '', owner: '', startDate: '', finishDate: '', notes: '' };
 
@@ -236,6 +236,12 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
   const [rupsForm, setRupsForm] = useState(EMPTY_RUPS_FORM);
   const [asetForm, setAsetForm] = useState(EMPTY_ASET_FORM);
   const [agreementForm, setAgreementForm] = useState(EMPTY_AGREEMENT_FORM);
+
+  // Reminder Edit Modal
+  const [reminderEditOpen, setReminderEditOpen] = useState(false);
+  const [reminderEditTarget, setReminderEditTarget] = useState<any>(null);
+  const [reminderEditDueDate, setReminderEditDueDate] = useState('');
+  const [reminderEditEmails, setReminderEditEmails] = useState('');
 
   // Fetch all active users for the Owner dropdown
   useEffect(() => {
@@ -268,8 +274,10 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
           status: d.status || '',
           owner: d.owner || '',
           startDate: d.start_date || '',
+          dueDate: d.due_date || '',
           finishDate: d.finish_date || '',
-          notes: d.notes || ''
+          notes: d.notes || '',
+          reminderEmails: d.reminder_emails || ''
         })));
       } else {
         // Fallback to dummy if table doesn't exist yet or is empty
@@ -351,7 +359,7 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
       clearTimeout(saveTimeoutRef.current[`${id}-${field}`]);
     }
     // Map camelCase fields to snake_case for Supabase
-    const dbField = field === 'startDate' ? 'start_date' : field === 'dueDate' ? 'due_date' : field === 'finishDate' ? 'finish_date' : field;
+    const dbField = field === 'startDate' ? 'start_date' : field === 'dueDate' ? 'due_date' : field === 'finishDate' ? 'finish_date' : field === 'reminderEmails' ? 'reminder_emails' : field;
     const isDateField = dbField.endsWith('_date');
     const dbValue = isDateField ? (toISO(value) || null) : value;
     const isText = field === 'notes';
@@ -450,6 +458,29 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
     updateAgreementInDb(id, field, value);
   };
 
+  const handleSaveReminderEdit = async () => {
+    if (!reminderEditTarget) return;
+    const id = reminderEditTarget.id;
+    setRupsData(prev => prev.map(item =>
+      item.id === id ? { ...item, dueDate: reminderEditDueDate, reminderEmails: reminderEditEmails } : item
+    ));
+    try {
+      const { error } = await supabase
+        .from('csl_rups_ar')
+        .update({ due_date: toISO(reminderEditDueDate) || null, reminder_emails: reminderEditEmails })
+        .eq('id', id);
+      if (error && error.code !== '42P01') {
+        toast.error('Gagal menyimpan: ' + error.message);
+      } else {
+        toast.success('Reminder berhasil disimpan');
+      }
+    } catch (err) {
+      console.error('Reminder save error:', err);
+    }
+    setReminderEditOpen(false);
+    setReminderEditTarget(null);
+  };
+
   const filteredRups = rupsData.filter(item => {
     const p = (item as any).periode || new Date().getFullYear().toString();
     const searchMatches = 
@@ -509,8 +540,10 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
         status: rupsForm.status,
         owner: rupsForm.owner,
         start_date: toISO(rupsForm.startDate) || null,
+        due_date: toISO((rupsForm as any).dueDate) || null,
         finish_date: toISO(rupsForm.finishDate) || null,
-        notes: rupsForm.notes
+        notes: rupsForm.notes,
+        reminder_emails: (rupsForm as any).reminderEmails || ''
       };
 
       try {
@@ -534,8 +567,10 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
           status: data.status || '',
           owner: data.owner || '',
           startDate: data.start_date || '',
+          dueDate: data.due_date || '',
           finishDate: data.finish_date || '',
-          notes: data.notes || ''
+          notes: data.notes || '',
+          reminderEmails: data.reminder_emails || ''
         } : { id: Math.max(0, ...rupsData.map(r => r.id)) + 1, ...rupsForm };
 
         setRupsData(prev => [newEntry, ...prev]);
@@ -679,7 +714,7 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
               setActivePeriode(e.target.value);
               setCurrentPage(1);
             }}
-            className="h-9 text-sm font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-xl px-3 outline-none focus:ring-2 focus:ring-indigo-500/30 cursor-pointer"
+            className="h-9 text-sm font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-500/15 border border-indigo-200 dark:border-indigo-500/30 rounded-xl px-3 outline-none focus:ring-2 focus:ring-indigo-500/30 cursor-pointer"
           >
             {[2024, 2025, 2026, 2027, 2028].map(y => (
               <option key={y} value={y.toString()}>Periode {y}</option>
@@ -705,6 +740,7 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
                 <TableHead className="text-indigo-100 font-bold border-l border-indigo-700/50">Start date</TableHead>
                 <TableHead className="text-indigo-100 font-bold border-l border-indigo-700/50">Complete date</TableHead>
                 <TableHead className="text-indigo-100 font-bold border-l border-indigo-700/50">Notes</TableHead>
+                <TableHead className="w-10 text-center text-indigo-100 font-bold border-l border-indigo-700/50"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -720,11 +756,11 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
                       onChange={(e) => handleUpdateRups(item.id, 'status', e.target.value)}
                       className={`text-[11px] px-2 py-0.5 rounded-full font-medium border-none outline-none cursor-pointer w-full text-left appearance-none ${getStatusStyle(item.status)}`}
                     >
-                      <option value="" className="bg-white text-black">— Status —</option>
-                      <option value="Completed" className="bg-white text-black">Completed</option>
-                      <option value="Not started" className="bg-white text-black">Not started</option>
-                      <option value="Blocked" className="bg-white text-black">Blocked</option>
-                      <option value="In progress" className="bg-white text-black">In progress</option>
+                      <option value="" className="bg-card">— Status —</option>
+                      <option value="Completed" className="bg-card">Completed</option>
+                      <option value="Not started" className="bg-card">Not started</option>
+                      <option value="Blocked" className="bg-card">Blocked</option>
+                      <option value="In progress" className="bg-card">In progress</option>
                     </select>
                   </TableCell>
                   <TableCell className="border-r border-border/40 py-1.5 px-2">
@@ -767,6 +803,20 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
                       placeholder="Notes..."
                       className={`w-full h-full text-xs px-3 py-2.5 bg-transparent border-none outline-none focus:bg-indigo-50/50 min-w-[140px] ${item.status === 'Blocked' ? 'text-red-500 font-medium' : 'text-muted-foreground'}`}
                     />
+                  </TableCell>
+                  <TableCell className="text-center border-l border-border/40 py-1.5 px-1">
+                    <button
+                      onClick={() => {
+                        setReminderEditTarget(item);
+                        setReminderEditDueDate(item.dueDate || '');
+                        setReminderEditEmails(item.reminderEmails || '');
+                        setReminderEditOpen(true);
+                      }}
+                      className="p-1 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-500/20 text-muted-foreground hover:text-indigo-600 transition-colors"
+                      title="Edit Email & Reminder"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
                   </TableCell>
                 </TableRow>
               ))}
@@ -857,11 +907,11 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
                       onChange={(e) => handleUpdateAset(item.id, 'status', e.target.value)}
                       className={`text-[11px] px-2 py-0.5 rounded-full font-medium border-none outline-none cursor-pointer w-full text-left appearance-none ${getStatusStyle(item.status)}`}
                     >
-                      <option value="" className="bg-white text-black"></option>
-                      <option value="In progress" className="bg-white text-black">In progress</option>
-                      <option value="Completed" className="bg-white text-black">Completed</option>
-                      <option value="Not started" className="bg-white text-black">Not started</option>
-                      <option value="Blocked" className="bg-white text-black">Blocked</option>
+                      <option value="" className="bg-card"></option>
+                      <option value="In progress" className="bg-card">In progress</option>
+                      <option value="Completed" className="bg-card">Completed</option>
+                      <option value="Not started" className="bg-card">Not started</option>
+                      <option value="Blocked" className="bg-card">Blocked</option>
                     </select>
                   </TableCell>
                   <TableCell className="border-r border-border/40 py-1.5 px-2">
@@ -998,11 +1048,11 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
                       onChange={(e) => handleUpdateAgreement(item.id, 'status', e.target.value)}
                       className={`text-[11px] px-2 py-0.5 rounded-full font-medium border-none outline-none cursor-pointer w-full text-left appearance-none ${getStatusStyle(item.status)}`}
                     >
-                      <option value="" className="bg-white text-black"></option>
-                      <option value="In progress" className="bg-white text-black">In progress</option>
-                      <option value="Completed" className="bg-white text-black">Completed</option>
-                      <option value="Not started" className="bg-white text-black">Not started</option>
-                      <option value="Blocked" className="bg-white text-black">Blocked</option>
+                      <option value="" className="bg-card"></option>
+                      <option value="In progress" className="bg-card">In progress</option>
+                      <option value="Completed" className="bg-card">Completed</option>
+                      <option value="Not started" className="bg-card">Not started</option>
+                      <option value="Blocked" className="bg-card">Blocked</option>
                     </select>
                   </TableCell>
                   <TableCell className="border-r border-border/40 py-1.5 px-2">
@@ -1110,6 +1160,23 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
                   <div>
                     <label className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground block mb-1">Complete Date</label>
                     <Input type="date" value={rupsForm.finishDate} onChange={e => setRupsForm({...rupsForm, finishDate: e.target.value})} className="h-9 text-sm bg-muted/30" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground block mb-1">Due Date (Reminder)</label>
+                    <Input type="date" value={(rupsForm as any).dueDate || ''} onChange={e => setRupsForm({...rupsForm, dueDate: e.target.value} as any)} className="h-9 text-sm bg-muted/30" />
+                    <p className="text-[9px] text-muted-foreground mt-1">Email reminder dikirim 1 minggu sebelum due date</p>
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground block mb-1">Email Reminder</label>
+                    <Input
+                      value={(rupsForm as any).reminderEmails || ''}
+                      onChange={e => setRupsForm({...rupsForm, reminderEmails: e.target.value} as any)}
+                      placeholder="email1@test.com, email2@test.com"
+                      className="h-9 text-sm bg-muted/30"
+                    />
+                    <p className="text-[9px] text-muted-foreground mt-1">Pisahkan dengan koma untuk banyak email</p>
                   </div>
                 </div>
                 <div>
@@ -1230,6 +1297,48 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
                 <Plus className="h-4 w-4 mr-1.5" /> Tambah Task
               </Button>
             )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Modal Edit Email & Reminder ── */}
+      <Dialog open={reminderEditOpen} onOpenChange={setReminderEditOpen}>
+        <DialogContent className="sm:max-w-md p-0 overflow-hidden rounded-2xl">
+          <DialogHeader className="p-6 pb-4 border-b bg-muted/20">
+            <DialogTitle className="text-lg font-black">Edit Email & Reminder</DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              {reminderEditTarget?.company}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="p-6 space-y-4">
+            <div>
+              <label className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground block mb-1">Due Date (Reminder)</label>
+              <Input
+                type="date"
+                value={reminderEditDueDate}
+                onChange={(e) => setReminderEditDueDate(e.target.value)}
+                className="h-9 text-sm bg-muted/30"
+              />
+              <p className="text-[9px] text-muted-foreground mt-1">Email reminder dikirim 1 minggu sebelum due date</p>
+            </div>
+            <div>
+              <label className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground block mb-1">Email Reminder</label>
+              <Input
+                value={reminderEditEmails}
+                onChange={(e) => setReminderEditEmails(e.target.value)}
+                placeholder="email1@test.com, email2@test.com"
+                className="h-9 text-sm bg-muted/30"
+              />
+              <p className="text-[9px] text-muted-foreground mt-1">Pisahkan dengan koma untuk banyak email</p>
+            </div>
+          </div>
+          <DialogFooter className="p-4 border-t bg-muted/10 gap-2 flex sm:justify-end">
+            <Button type="button" variant="outline" size="sm" onClick={() => setReminderEditOpen(false)} className="text-xs font-bold rounded-xl h-9">
+              Batal
+            </Button>
+            <Button size="sm" onClick={handleSaveReminderEdit} className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl h-9 px-5">
+              Simpan
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
