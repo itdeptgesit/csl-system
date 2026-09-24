@@ -99,7 +99,19 @@ const DateCell: React.FC<{
   );
 };
 
-const DUMMY_RUPS_AR = [
+interface RupsItem {
+  id: number;
+  company: string;
+  status: string;
+  owner: string;
+  startDate: string;
+  finishDate: string;
+  notes: string;
+  dueDate?: string;
+  reminderEmails?: string;
+}
+
+const DUMMY_RUPS_AR: RupsItem[] = [
   { id: 1, company: 'Alakasa Alumina Refineri', status: 'Completed', owner: 'Desi Rahmuni', startDate: '', finishDate: '', notes: 'Akta No..... tgl ....' },
   { id: 2, company: 'Alakasa Extrusindo', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/10/2026', notes: 'Akta No..... tgl ....' },
   { id: 3, company: 'Alakasa Industrindo Tbk', status: 'Completed', owner: 'Desi Rahmuni', startDate: '', finishDate: '', notes: 'Akta No..... tgl ....' },
