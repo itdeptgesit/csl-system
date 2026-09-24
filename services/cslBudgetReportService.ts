@@ -1114,26 +1114,28 @@ export async function saveProjectBudgetAllocations(
       updated_at: new Date().toISOString()
     }));
 
-  // 1. Save to LocalStorage for persistent client-side retrieval
-  if (typeof window !== 'undefined') {
-    localStorage.setItem(`csl_budget_allocations_${fiscalYear}`, JSON.stringify(sanitized));
+  const { error: delErr } = await supabase
+    .from('csl_budget_allocations')
+    .delete()
+    .eq('fiscal_year', fiscalYear);
+
+  if (delErr) {
+    throw new Error(`Supabase project budget delete failed: ${delErr.message}`);
   }
 
-  // 2. Sync to Supabase csl_budget_allocations
-  try {
-    const { error: delErr } = await supabase.from('csl_budget_allocations').delete().eq('fiscal_year', fiscalYear);
-    if (delErr) {
-      console.warn('Supabase csl_budget_allocations delete failed:', delErr.message);
-      return;
+  if (sanitized.length > 0) {
+    const { error: insErr } = await supabase
+      .from('csl_budget_allocations')
+      .insert(sanitized)
+      .select('id');
+
+    if (insErr) {
+      throw new Error(`Supabase project budget insert failed: ${insErr.message}`);
     }
-    if (sanitized.length > 0) {
-      const { error: insErr } = await supabase.from('csl_budget_allocations').insert(sanitized);
-      if (insErr) {
-        console.warn('Supabase csl_budget_allocations insert failed:', insErr.message);
-      }
-    }
-  } catch (err) {
-    console.warn('Notice: csl_budget_allocations table sync skipped (using local persistence):', err);
+  }
+
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(`csl_budget_allocations_${fiscalYear}`, JSON.stringify(sanitized));
   }
 }
 

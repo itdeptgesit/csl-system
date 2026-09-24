@@ -435,8 +435,25 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
     handleFlatMonthlyChange(formatted);
   };
 
+  const withSaveTimeout = async <T,>(promise: Promise<T>, label: string): Promise<T> => {
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    const timeout = new Promise<never>((_, reject) => {
+      timeoutId = setTimeout(() => reject(new Error(`${label} timeout. Cek koneksi atau permission Supabase.`)), 15000);
+    });
+
+    try {
+      return await Promise.race([promise, timeout]);
+    } finally {
+      if (timeoutId) clearTimeout(timeoutId);
+    }
+  };
+
   const handleSaveMonthlyBudget = async () => {
+    if (isSavingBudgets) return;
+
     setIsSavingBudgets(true);
+    const toastId = toast.loading('Menyimpan nominal budget ke Supabase...');
+
     try {
       const year = filters.fiscalYear || 2026;
       const numMonthly = parseFormattedAmount(monthlyNominalStr);
@@ -451,19 +468,20 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
         months = Array(12).fill(numMonthly);
       }
 
-      await saveMonthlyBudgetPlan(year, {
+      await withSaveTimeout(saveMonthlyBudgetPlan(year, {
         fiscalYear: year,
         mode: isCustomMonthly ? 'custom' : 'flat',
         monthlyNominal: numMonthly,
         annualNominal: annual,
         months
-      });
+      }), 'Simpan nominal budget');
 
-      toast.success(`Nominal budget FY ${year} berhasil disimpan!`);
+      toast.success(`Nominal budget FY ${year} berhasil disimpan.`, { id: toastId });
       setIsBudgetModalOpen(false);
-      loadReport();
+      await loadReport();
     } catch (err: any) {
-      toast.error('Gagal menyimpan budget: ' + err.message);
+      console.error('Failed to save monthly budget:', err);
+      toast.error('Gagal menyimpan budget: ' + (err?.message || 'Unknown error'), { id: toastId });
     } finally {
       setIsSavingBudgets(false);
     }
@@ -507,7 +525,11 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
   };
 
   const handleSaveBudgets = async () => {
+    if (isSavingBudgets) return;
+
     setIsSavingBudgets(true);
+    const toastId = toast.loading('Menyimpan project budget ke Supabase...');
+
     try {
       const year = filters.fiscalYear || 2026;
       const formatted = budgetEditList
@@ -517,12 +539,13 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
           department: item.department || 'CSL',
           allocated_amount: parseFormattedAmount(item.allocated_amount) || 0,
         }));
-      await saveProjectBudgetAllocations(year, formatted);
-      toast.success(`Project budgets for FY ${year} saved successfully!`);
+      await withSaveTimeout(saveProjectBudgetAllocations(year, formatted), 'Simpan project budget');
+      toast.success(`Project budgets FY ${year} berhasil disimpan.`, { id: toastId });
       setIsBudgetModalOpen(false);
-      loadReport();
+      await loadReport();
     } catch (err: any) {
-      toast.error('Failed to save budgets: ' + err.message);
+      console.error('Failed to save project budgets:', err);
+      toast.error('Gagal menyimpan project budget: ' + (err?.message || 'Unknown error'), { id: toastId });
     } finally {
       setIsSavingBudgets(false);
     }
