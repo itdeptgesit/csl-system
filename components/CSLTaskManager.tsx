@@ -691,31 +691,33 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
       </PageHeader>
 
       {/* Category Tabs */}
-      <div className="flex overflow-x-auto hide-scrollbar border-b border-border/40">
-        {TASK_CATEGORIES.map(cat => (
-          <button
-            key={cat}
-            onClick={() => handleCategoryChange(cat)}
-            className={`whitespace-nowrap px-4 py-3 text-xs font-bold transition-all border-b-2 ${
-              activeCategory === cat
-                ? 'border-indigo-600 text-indigo-600'
-                : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
-            }`}
-          >
-            {cat}
-          </button>
-        ))}
+      <div className="rounded-xl border border-border/60 bg-card p-1.5 overflow-x-auto hide-scrollbar">
+        <div className="flex min-w-max gap-1">
+          {TASK_CATEGORIES.map(cat => (
+            <button
+              key={cat}
+              onClick={() => handleCategoryChange(cat)}
+              className={`whitespace-nowrap rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${
+                activeCategory === cat
+                  ? 'bg-foreground text-background shadow-sm'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Toolbar */}
-      <div className="flex flex-col sm:flex-row gap-3 items-center">
-        <div className="relative flex-1 w-full">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      <div className="flex flex-col gap-3 rounded-xl border border-border/60 bg-card p-3 sm:flex-row sm:items-center">
+        <div className="relative w-full flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={searchTerm}
             onChange={e => handleSearchChange(e.target.value)}
             placeholder={`Cari task di kategori ${activeCategory}...`}
-            className="pl-9 h-9 text-sm rounded-xl bg-muted/30"
+            className="h-9 rounded-lg border-border/60 bg-background pl-9 text-sm shadow-none"
           />
         </div>
         
@@ -726,7 +728,7 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
               setActivePeriode(e.target.value);
               setCurrentPage(1);
             }}
-            className="h-9 text-sm font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-500/15 border border-indigo-200 dark:border-indigo-500/30 rounded-xl px-3 outline-none focus:ring-2 focus:ring-indigo-500/30 cursor-pointer"
+            className="h-9 cursor-pointer rounded-lg border border-border/60 bg-background px-3 text-xs font-semibold text-foreground outline-none transition-colors hover:bg-muted focus:ring-2 focus:ring-ring/30"
           >
             {[2024, 2025, 2026, 2027, 2028].map(y => (
               <option key={y} value={y.toString()}>Periode {y}</option>
@@ -734,39 +736,40 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
           </select>
         )}
 
-        <Button variant="outline" size="sm" className="h-9 rounded-xl text-xs font-bold bg-card border-border/40">
-          <Filter className="h-4 w-4 mr-1.5" /> Filter
+        <Button variant="outline" size="sm" className="h-9 rounded-lg border-border/60 bg-background text-xs font-semibold shadow-none hover:bg-muted">
+          <Filter className="mr-1.5 h-4 w-4" /> Filter
         </Button>
       </div>
 
       {/* Content Area */}
       {activeCategory === 'RUPS-AR' ? (
-        <div className="bg-card border border-border/10 rounded-xl overflow-hidden shadow-sm">
-          <Table>
-            <TableHeader className="bg-indigo-900 text-white">
-              <TableRow className="hover:bg-indigo-900">
-                <TableHead className="w-12 text-center text-indigo-100 font-bold">#</TableHead>
-                <TableHead className="text-indigo-100 font-bold border-l border-indigo-700/50">Company</TableHead>
-                <TableHead className="text-indigo-100 font-bold border-l border-indigo-700/50">Status</TableHead>
-                <TableHead className="text-indigo-100 font-bold border-l border-indigo-700/50">Owner</TableHead>
-                <TableHead className="text-indigo-100 font-bold border-l border-indigo-700/50">Start date</TableHead>
-                <TableHead className="text-indigo-100 font-bold border-l border-indigo-700/50">Complete date</TableHead>
-                <TableHead className="text-indigo-100 font-bold border-l border-indigo-700/50">Notes</TableHead>
-                <TableHead className="w-10 text-center text-indigo-100 font-bold border-l border-indigo-700/50"></TableHead>
+        <div className="overflow-hidden rounded-xl border border-border/60 bg-card">
+          <div className="overflow-x-auto">
+          <Table className="min-w-[1050px]">
+            <TableHeader className="bg-muted/60">
+              <TableRow className="border-b border-border/70 hover:bg-muted/60">
+                <TableHead className="h-10 w-12 px-3 text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">#</TableHead>
+                <TableHead className="h-10 min-w-[210px] px-4 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Company</TableHead>
+                <TableHead className="h-10 w-[140px] px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Status</TableHead>
+                <TableHead className="h-10 w-[155px] px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Owner</TableHead>
+                <TableHead className="h-10 w-[145px] px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Start date</TableHead>
+                <TableHead className="h-10 w-[145px] px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Complete date</TableHead>
+                <TableHead className="h-10 min-w-[190px] px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Notes</TableHead>
+                <TableHead className="h-10 w-12 px-2"><span className="sr-only">Aksi</span></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {pagedRups.map((item, idx) => (
-                <TableRow key={item.id} className="hover:bg-muted/30 border-b border-border/40">
-                  <TableCell className="text-center text-xs font-mono text-muted-foreground bg-muted/20 border-r border-border/40 py-1.5">{(safePage - 1) * PAGE_SIZE + idx + 1}</TableCell>
-                  <TableCell className={`text-sm border-r border-border/40 py-1.5 font-medium ${item.status === 'Blocked' ? 'text-red-500 font-medium' : 'text-foreground'}`}>
+                <TableRow key={item.id} className="border-b border-border/50 transition-colors hover:bg-muted/30 last:border-b-0">
+                  <TableCell className="px-3 py-2.5 text-center font-mono text-xs tabular-nums text-muted-foreground">{(safePage - 1) * PAGE_SIZE + idx + 1}</TableCell>
+                  <TableCell className={`px-4 py-2.5 text-sm font-medium ${item.status === 'Blocked' ? 'text-red-500' : 'text-foreground'}`}>
                     {item.company}
                   </TableCell>
-                  <TableCell className="border-r border-border/40 py-1.5 px-2">
+                  <TableCell className="px-3 py-2.5">
                     <select 
                       value={item.status}
                       onChange={(e) => handleUpdateRups(item.id, 'status', e.target.value)}
-                      className={`text-[11px] px-2 py-0.5 rounded-full font-medium border-none outline-none cursor-pointer w-full text-left appearance-none ${getStatusStyle(item.status)}`}
+                      className={`h-7 w-full cursor-pointer appearance-none rounded-md border border-transparent px-2 text-left text-[11px] font-semibold outline-none transition-colors focus:ring-2 focus:ring-ring/30 ${getStatusStyle(item.status)}`}
                     >
                       <option value="" className="bg-card">— Status —</option>
                       <option value="Completed" className="bg-card">Completed</option>
