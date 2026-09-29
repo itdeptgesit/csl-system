@@ -130,6 +130,8 @@ export interface MonthlyComparison {
   companyActual: number;
   variance: number;
   utilization: number;
+  categoryBudgets?: Record<string, number>;
+  categoryActuals?: Record<string, number>;
 }
 
 export interface ExpenseTrendPoint {
@@ -160,6 +162,7 @@ export interface ProjectVariance {
   projectName: string;
   company: string;
   department: string;
+  category: string;
   budget: number;
   actual: number;
   variance: number; // budget - actual
@@ -262,16 +265,18 @@ export const PENDING_STATUSES = ['PENDING_APPROVAL'];
 export const EXPOSURE_STATUSES = ['APPROVED'];
 
 export const extractCategory = (raw: string | undefined | null): string => {
-  if (!raw) return 'Legal & Secretarial';
+  if (!raw) return 'Other';
   const str = raw.trim().toLowerCase();
-  if (str.includes('notaris') || str.includes('notary') || str.includes('akta')) return 'Notary & PPAT Services';
-  if (str.includes('likuidasi') || str.includes('restruktur')) return 'Corporate Restructuring';
-  if (str.includes('rups') || str.includes('saham') || str.includes('ar')) return 'RUPS & Secretarial';
-  if (str.includes('hukum') || str.includes('legal') || str.includes('advisory') || str.includes('counsel')) return 'Legal Advisory & Counsel';
-  if (str.includes('izin') || str.includes('oss') || str.includes('ahu') || str.includes('pnbp')) return 'Permits & Government Filings';
-  if (str.includes('offshore')) return 'Offshore Legal Services';
-  if (str.includes('audit') || str.includes('tax') || str.includes('pajak')) return 'Tax & Audit Advisory';
-  return 'Corporate Legal Operations';
+  if (str === 'notaris' || str.includes('notary') || str.includes('notaris') || str.includes('ppat') || str.includes('akta')) return 'Notaris';
+  if (str === 'lawfirm' || str.includes('law firm') || str.includes('legal advisory') || str.includes('counsel') || str.includes('hukum')) return 'Lawfirm';
+  if (str === 'konsultan' || str.includes('consultant') || str.includes('consulting') || str.includes('konsultan') || str.includes('advisory')) return 'Konsultan';
+  return 'Other';
+};
+
+export const normalizeExpenseCategory = (value: string | undefined | null, fallbackText?: string): string => {
+  const exact = (value || '').trim();
+  if (['Notaris', 'Lawfirm', 'Konsultan', 'Other'].includes(exact)) return exact;
+  return extractCategory(exact || fallbackText);
 };
 
 // Currency symbols
@@ -343,12 +348,13 @@ export const formatIdrCompact = (val: number): string => {
 export async function fetchBudgetExpensesReport(
   filters: ReportFilters
 ): Promise<BudgetExpensesReportData> {
+  const targetFiscalYear = filters.fiscalYear || filters.year || 2026;
   // 1. Fetch Expenses & Offshore Invoices
   const [resExpenses, resOffshore, resBudgets, resMonthlyPlan] = await Promise.all([
     supabase.from('csl_expense_approvals').select('*').order('created_at', { ascending: false }),
     supabase.from('csl_offshore_invoices').select('*').order('created_at', { ascending: false }),
-    supabase.from('csl_budget_allocations').select('*'),
-    supabase.from('csl_monthly_budget_plans').select('*')
+    supabase.from('csl_budget_allocations').select('*').eq('fiscal_year', targetFiscalYear),
+    supabase.from('csl_monthly_budget_plans').select('*').eq('fiscal_year', targetFiscalYear)
   ]);
 
   if (resExpenses.error && resExpenses.error.code !== '42P01') {
@@ -356,6 +362,9 @@ export async function fetchBudgetExpensesReport(
   }
   if (resMonthlyPlan.error && resMonthlyPlan.error.code !== '42P01') {
     console.error('Error fetching monthly budget plan:', resMonthlyPlan.error);
+  }
+  if (resBudgets.error && resBudgets.error.code !== '42P01') {
+    throw new Error(`Gagal membaca budget Supabase: ${resBudgets.error.message}`);
   }
 
   // Raw normalizations
@@ -385,7 +394,9 @@ export async function fetchBudgetExpensesReport(
         payment_location: (r.payment_location || 'Local').trim(),
         payment_method: (r.payment_method || 'Bank Transfer / T.T').trim(),
         payment_description: desc,
-        category: extractCategory(r.payment_description || r.project_name),
+        // Database category is authoritative. Text inference only supports legacy rows
+        // that were created before category was stored explicitly.
+        category: normalizeExpenseCategory(r.category, r.payment_description || r.project_name),
         currency: curr,
         amount: origAmt,
         exchange_rate: rate,
@@ -407,6 +418,10 @@ export async function fetchBudgetExpensesReport(
 
   if (resOffshore.data && Array.isArray(resOffshore.data)) {
     resOffshore.data.forEach((r: any) => {
+      // Unified migration copies offshore rows into csl_expense_approvals.
+      // Keep the legacy table only as fallback and never count the same invoice twice.
+      const invoiceKey = String(r.invoice_number || '').trim().toLowerCase();
+      if (invoiceKey && rawList.some(item => String(item.invoice_number || '').trim().toLowerCase() === invoiceKey)) return;
       const origAmt = Number(r.foreign_amount || 0);
       const rate = Number(r.exchange_rate || 1);
       const repAmt = origAmt * rate;
@@ -429,7 +444,7 @@ export async function fetchBudgetExpensesReport(
         payment_location: 'Offshore',
         payment_method: 'Bank Transfer / T.T',
         payment_description: desc,
-        category: 'LEGAL SERVICES',
+        category: normalizeExpenseCategory(r.category, desc),
         currency: curr,
         amount: origAmt,
         exchange_rate: rate,
@@ -468,7 +483,7 @@ export async function fetchBudgetExpensesReport(
     categories: ['Notaris', 'Lawfirm', 'Konsultan', 'Other'],
     paymentLocations: ['Local', 'Offshore'],
     paymentMethods: Array.from(new Set(rawList.map(t => t.payment_method).filter(Boolean))).sort(),
-    statuses: ['DISBURSED', 'APPROVED', 'PENDING_APPROVAL', 'REJECTED', 'DRAFT']
+    statuses: ['DISBURSED', 'PAID', 'APPROVED', 'PENDING_APPROVAL', 'REJECTED', 'DRAFT']
   };
 
   // 2. Budget Allocations Table or Default Project Allocations
@@ -477,10 +492,9 @@ export async function fetchBudgetExpensesReport(
     company: string;
     department: string;
     project_name: string;
+    category: string;
     allocated_amount: number;
   }> = [];
-
-  const targetFiscalYear = filters.fiscalYear || filters.year || 2026;
 
   // Check if custom user-defined budget allocations exist in localStorage
   let savedLocalBudgets: any[] = [];
@@ -499,6 +513,7 @@ export async function fetchBudgetExpensesReport(
         company: (b.company || 'PT Determinan Indah').trim(),
         department: (b.department || 'CSL').trim(),
         project_name: (b.project_name || '').trim(),
+        category: (b.category || 'Other').trim(),
         allocated_amount: Number(b.allocated_amount || 0)
       });
     });
@@ -513,27 +528,8 @@ export async function fetchBudgetExpensesReport(
         company: (b.company || 'PT Determinan Indah').trim(),
         department: (b.department || 'CSL').trim(),
         project_name: (b.project_name || '').trim(),
+        category: (b.category || 'Other').trim(),
         allocated_amount: Number(b.allocated_amount || 0)
-      });
-    });
-  } else {
-    // Dynamically derive project allocations for actual projects present in CSL expense approvals
-    const uniqueProjects = Array.from(new Set(rawList.map(t => t.project_name).filter(Boolean)));
-    uniqueProjects.forEach(proj => {
-      const projTxns = rawList.filter(t => t.project_name === proj);
-      const totalSpend = projTxns.reduce((s, t) => s + t.reporting_amount, 0);
-      const dept = projTxns[0]?.department || 'CSL';
-      const company = projTxns[0]?.company || 'PT Determinan Indah';
-
-      // Allocated target based on project budget ceiling (130% of spend or min 10M)
-      const allocAmt = totalSpend > 0 ? Math.max(Math.round(totalSpend * 1.3), 10_000_000) : 10_000_000;
-
-      budgetAllocations.push({
-        fiscal_year: targetFiscalYear,
-        company,
-        department: dept,
-        project_name: proj,
-        allocated_amount: allocAmt
       });
     });
   }
@@ -628,6 +624,7 @@ export async function fetchBudgetExpensesReport(
     if (filters.company && filters.company !== 'all' && b.company !== filters.company) return false;
     if (filters.department && filters.department !== 'all' && b.department !== filters.department) return false;
     if (filters.project && filters.project !== 'all' && b.project_name !== filters.project) return false;
+    if (filters.category && filters.category !== 'all' && normalizeExpenseCategory(b.category) !== filters.category) return false;
     return true;
   });
 
@@ -652,8 +649,9 @@ export async function fetchBudgetExpensesReport(
 
   let totalBudget = relevantBudgets.reduce((sum, b) => sum + b.allocated_amount, 0);
 
-  // If user configured a direct nominal monthly budget plan and is not filtering to a single project:
-  if (monthlyPlan && (!filters.project || filters.project === 'all')) {
+  // Category allocations are authoritative. Legacy monthly plan is used only
+  // when no category allocation exists for the selected fiscal year.
+  if (totalBudget === 0 && monthlyPlan && (!filters.project || filters.project === 'all')) {
     totalBudget = displayMonthIndices.reduce((sum, idx) => sum + (monthlyPlan!.months[idx] ?? monthlyPlan!.monthlyNominal), 0);
   } else {
     // Scale budget appropriately based on period type
@@ -679,10 +677,6 @@ export async function fetchBudgetExpensesReport(
   const pendingApprovalAmount = pendingItems.reduce((sum, i) => sum + i.reporting_amount, 0);
   const paymentExposure = exposureItems.reduce((sum, i) => sum + i.reporting_amount, 0);
 
-  // If budget not explicitly allocated, baseline total budget safely
-  if (totalBudget === 0 && actualExpenses > 0) {
-    totalBudget = Math.round(actualExpenses * 1.22); // Estimated baseline
-  }
 
   const budgetRemaining = Math.max(totalBudget - actualExpenses, 0);
   const budgetUtilization = totalBudget > 0 ? (actualExpenses / totalBudget) * 100 : 0;
@@ -724,7 +718,7 @@ export async function fetchBudgetExpensesReport(
 
   const budgetVarianceList: ProjectVariance[] = Object.entries(projectStats).map(([proj, data]) => {
     const alloc = budgetAllocations.find(b => b.project_name.toLowerCase() === proj.toLowerCase());
-    const bgt = alloc ? alloc.allocated_amount : (data.actual > 0 ? Math.round(data.actual * 1.15) : 10_000_000);
+    const bgt = alloc ? alloc.allocated_amount : 0;
     const variance = bgt - data.actual;
     const utilization = bgt > 0 ? (data.actual / bgt) * 100 : 0;
     
@@ -736,6 +730,7 @@ export async function fetchBudgetExpensesReport(
       projectName: proj,
       company: data.company,
       department: data.department,
+      category: alloc?.category || 'Other',
       budget: bgt,
       actual: data.actual,
       variance,
@@ -746,20 +741,11 @@ export async function fetchBudgetExpensesReport(
   }).sort((a, b) => b.actual - a.actual); // Sorted by highest actual expense first
 
   // 7. Budget vs Actual (Monthly time series if multi-month, or Grouped by Project if single month)
-  const monthlyBudgetSlice = totalBudget > 0 ? totalBudget / displayMonthIndices.length : 0;
-
   const monthlyActualMap: Record<number, number> = {};
-  const monthlyIndividualMap: Record<number, number> = {};
-  const monthlyCompanyMap: Record<number, number> = {};
   filtered.forEach(item => {
     if (ACTUAL_STATUSES.includes(item.status)) {
       const m = new Date(item.request_date || item.created_at).getMonth();
       monthlyActualMap[m] = (monthlyActualMap[m] || 0) + item.reporting_amount;
-      if (item.payee_type === 'Individual') {
-        monthlyIndividualMap[m] = (monthlyIndividualMap[m] || 0) + item.reporting_amount;
-      } else {
-        monthlyCompanyMap[m] = (monthlyCompanyMap[m] || 0) + item.reporting_amount;
-      }
     }
   });
 
@@ -767,48 +753,66 @@ export async function fetchBudgetExpensesReport(
 
   let budgetVsActual: MonthlyComparison[] = [];
 
-  if (displayMonthIndices.length === 1 && budgetVarianceList.length > 0) {
-    // Single month selected: Group by Project as requested
-    budgetVsActual = budgetVarianceList.map(proj => {
-      // Monthly slice for this project's budget
-      const projMonthlyBudget = Math.round(proj.budget / 12);
-      const vr = projMonthlyBudget - proj.actual;
-      const ut = projMonthlyBudget > 0 ? (proj.actual / projMonthlyBudget) * 100 : 0;
-      return {
-        periodKey: proj.projectName,
-        periodLabel: proj.projectName,
-        budget: projMonthlyBudget,
-        actual: Math.round(proj.actual),
-        individualActual: 0,
-        companyActual: Math.round(proj.actual),
-        variance: Math.round(vr),
-        utilization: Number(ut.toFixed(1))
-      };
-    }).sort((a, b) => b.actual - a.actual);
-  } else {
-    // Multi-month period: Group by month (Jan - Dec)
-    budgetVsActual = displayMonthIndices.map(idx => {
-      const name = allMonthNames[idx];
-      const act = monthlyActualMap[idx] || 0;
-      const indAct = monthlyIndividualMap[idx] || 0;
-      const comAct = monthlyCompanyMap[idx] || 0;
-      const bgt = (filters.project && filters.project !== 'all')
-        ? monthlyBudgetSlice
-        : (monthlyPlan ? (monthlyPlan.months[idx] ?? monthlyPlan.monthlyNominal) : monthlyBudgetSlice);
-      const vr = bgt - act;
-      const ut = bgt > 0 ? (act / bgt) * 100 : 0;
-      return {
-        periodKey: `${name} '${yrShort}`,
-        periodLabel: `${name} '${yrShort}`,
-        budget: Math.round(bgt),
-        actual: Math.round(act),
-        individualActual: Math.round(indAct),
-        companyActual: Math.round(comAct),
-        variance: Math.round(vr),
-        utilization: Number(ut.toFixed(1))
-      };
+  // Group Budget vs Actual by exact expense categories used by the approval form.
+  const expenseCategories = ['Notaris', 'Lawfirm', 'Konsultan', 'Other'];
+  const categoryActuals: Record<string, { actual: number; individual: number; company: number }> = {};
+  expenseCategories.forEach(category => {
+    categoryActuals[category] = { actual: 0, individual: 0, company: 0 };
+  });
+
+  actualItems.forEach(item => {
+    const category = expenseCategories.includes(item.category) ? item.category : 'Other';
+    const amount = item.reporting_amount || 0;
+    categoryActuals[category].actual += amount;
+    if (item.payee_type === 'Individual') categoryActuals[category].individual += amount;
+    else categoryActuals[category].company += amount;
+  });
+
+  const annualCategoryBudgets: Record<string, number> = {};
+  expenseCategories.forEach(category => { annualCategoryBudgets[category] = 0; });
+  relevantBudgets.forEach(allocation => {
+    const category = expenseCategories.includes(allocation.category) ? allocation.category : 'Other';
+    annualCategoryBudgets[category] += allocation.allocated_amount;
+  });
+
+  // X-axis follows selected months; every point retains breakdown by cost category.
+  budgetVsActual = displayMonthIndices.map(monthIndex => {
+    const monthActuals: Record<string, number> = {};
+    const monthBudgets: Record<string, number> = {};
+    expenseCategories.forEach(category => {
+      monthActuals[category] = 0;
+      monthBudgets[category] = annualCategoryBudgets[category] / 12;
     });
-  }
+
+    const monthItems = actualItems.filter(item =>
+      new Date(item.request_date || item.created_at).getMonth() === monthIndex
+    );
+    monthItems.forEach(item => {
+      const category = expenseCategories.includes(item.category) ? item.category : 'Other';
+      monthActuals[category] += item.reporting_amount || 0;
+    });
+
+    const budget = Object.values(monthBudgets).reduce((sum, value) => sum + value, 0);
+    const actual = Object.values(monthActuals).reduce((sum, value) => sum + value, 0);
+    const individualActual = monthItems
+      .filter(item => item.payee_type === 'Individual')
+      .reduce((sum, item) => sum + (item.reporting_amount || 0), 0);
+    const variance = budget - actual;
+    const utilization = budget > 0 ? (actual / budget) * 100 : 0;
+
+    return {
+      periodKey: `${allMonthNames[monthIndex]}-${targetFiscalYear}`,
+      periodLabel: allMonthNames[monthIndex],
+      budget: Math.round(budget),
+      actual: Math.round(actual),
+      individualActual: Math.round(individualActual),
+      companyActual: Math.round(actual - individualActual),
+      variance: Math.round(variance),
+      utilization: Number(utilization.toFixed(1)),
+      categoryBudgets: monthBudgets,
+      categoryActuals: monthActuals
+    };
+  });
 
   // 8. Expense Trend
   const expenseTrend: ExpenseTrendPoint[] = displayMonthIndices.map(idx => {
@@ -830,8 +834,8 @@ export async function fetchBudgetExpensesReport(
 
   // 9. Expense by Category
   const catMap: Record<string, { amount: number; count: number }> = {};
-  filtered.forEach(item => {
-    const cat = item.category || 'General';
+  actualItems.forEach(item => {
+    const cat = item.category || 'Other';
     if (!catMap[cat]) catMap[cat] = { amount: 0, count: 0 };
     catMap[cat].amount += item.reporting_amount;
     catMap[cat].count += 1;
@@ -1096,12 +1100,12 @@ export async function saveMonthlyBudgetPlan(
 }
 
 /**
- * Saves and updates project budget allocations for a specific fiscal year.
- * Persists to LocalStorage and syncs with Supabase csl_budget_allocations.
+ * Saves annual cost-category budgets for a fiscal year.
+ * Supabase is authoritative; localStorage is updated only after read-back verification.
  */
 export async function saveProjectBudgetAllocations(
   fiscalYear: number,
-  allocations: Array<{ project_name: string; allocated_amount: number; department?: string; company?: string }>
+  allocations: Array<{ project_name: string; allocated_amount: number; category: string; department?: string; company?: string }>
 ): Promise<void> {
   const sanitized = allocations
     .filter(a => a.project_name.trim().length > 0)
@@ -1110,28 +1114,45 @@ export async function saveProjectBudgetAllocations(
       company: a.company || 'PT Determinan Indah',
       department: a.department || 'CSL',
       project_name: a.project_name.trim(),
+      category: a.category,
       allocated_amount: Math.max(0, Number(a.allocated_amount) || 0),
       updated_at: new Date().toISOString()
     }));
 
-  const { error: delErr } = await supabase
-    .from('csl_budget_allocations')
-    .delete()
-    .eq('fiscal_year', fiscalYear);
-
-  if (delErr) {
-    throw new Error(`Supabase project budget delete failed: ${delErr.message}`);
+  if (sanitized.length !== 4) {
+    throw new Error('Empat budget kategori wajib dikirim lengkap');
   }
 
-  if (sanitized.length > 0) {
-    const { error: insErr } = await supabase
-      .from('csl_budget_allocations')
-      .insert(sanitized)
-      .select('id');
+  // Database function performs delete + insert inside one PostgreSQL transaction.
+  // Any error rolls the whole replacement back, preserving the previous budget.
+  const { data: inserted, error: replaceErr } = await supabase.rpc(
+    'replace_csl_category_budgets',
+    { p_fiscal_year: fiscalYear, p_allocations: sanitized }
+  );
 
-    if (insErr) {
-      throw new Error(`Supabase project budget insert failed: ${insErr.message}`);
-    }
+  if (replaceErr) {
+    throw new Error(`Supabase category budget replacement failed: ${replaceErr.message}`);
+  }
+
+  if (!inserted || inserted.length !== sanitized.length) {
+    throw new Error('Supabase category budget save failed: saved rows were not returned');
+  }
+
+  const { data: verified, error: verifyErr } = await supabase
+    .from('csl_budget_allocations')
+    .select('fiscal_year, category, allocated_amount')
+    .eq('fiscal_year', fiscalYear);
+
+  if (verifyErr) {
+    throw new Error(`Supabase category budget verification failed: ${verifyErr.message}`);
+  }
+
+  const savedByCategory = new Map(
+    (verified || []).map(row => [String(row.category || 'Other'), Number(row.allocated_amount) || 0])
+  );
+  const mismatch = sanitized.some(row => savedByCategory.get(row.category) !== row.allocated_amount);
+  if ((verified || []).length !== sanitized.length || mismatch) {
+    throw new Error('Supabase category budget verification failed: saved values do not match');
   }
 
   if (typeof window !== 'undefined') {

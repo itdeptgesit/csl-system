@@ -407,7 +407,9 @@ export const CSLExpenseApproval: React.FC<{ currentUser: UserAccount | null }> =
       department: exp.department || 'CSL',
       request_date: exp.request_date || new Date().toISOString().split('T')[0],
       project_name: exp.project_name || '',
-      category: (exp.category as ExpenseCategory) || 'Other',
+      category: EXPENSE_CATEGORIES.includes(exp.category as ExpenseCategory)
+        ? (exp.category as ExpenseCategory)
+        : 'Other',
       paid_to: exp.paid_to || '',
       payee_type: (exp.payee_type as 'Company' | 'Individual') || 'Company',
       payment_method: exp.payment_method || 'Bank Transfer / T.T',
@@ -1266,6 +1268,7 @@ export const CSLExpenseApproval: React.FC<{ currentUser: UserAccount | null }> =
                 <TableHead className="text-xs font-semibold text-foreground/80">Expense / Date</TableHead>
                 <TableHead className="text-xs font-semibold text-foreground/80">Payee Type</TableHead>
                 <TableHead className="text-xs font-semibold text-foreground/80">Paid To</TableHead>
+                <TableHead className="text-xs font-semibold text-foreground/80">Kategori Biaya</TableHead>
                 <TableHead className="text-xs font-semibold text-foreground/80">Project / Description</TableHead>
                 <TableHead className="text-xs font-semibold text-foreground/80">Currency &amp; Amount</TableHead>
                 <TableHead className="text-xs font-semibold text-foreground/80">Prepared By</TableHead>
@@ -1325,6 +1328,12 @@ export const CSLExpenseApproval: React.FC<{ currentUser: UserAccount | null }> =
                       {exp.paid_to}
                     </p>
                     <p className="text-[11px] text-muted-foreground">{exp.company}</p>
+                  </TableCell>
+
+                  <TableCell>
+                    <span className="inline-flex items-center whitespace-nowrap rounded-md border border-indigo-500/20 bg-indigo-500/10 px-2 py-0.5 text-[10px] font-bold text-indigo-700 dark:text-indigo-300">
+                      {exp.category || 'Other'}
+                    </span>
                   </TableCell>
 
                   <TableCell>

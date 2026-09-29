@@ -976,50 +976,45 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
             </div>
           </div>
 
-          <Table>
-            <TableHeader>
-              <TableRow className="border-border/60 hover:bg-transparent bg-muted/20">
-                <TableHead className="py-3 pl-6 font-semibold text-xs text-foreground/80 w-12 text-center">#</TableHead>
-                <TableHead className="py-3 font-semibold text-xs text-foreground/80 min-w-[300px]">Permintaan</TableHead>
+          <Table className="w-full table-fixed">
+            <TableHeader className="sticky top-0 z-10 bg-card">
+              <TableRow className="border-border/60 hover:bg-transparent bg-muted/30">
+                <TableHead className="h-10 pl-6 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground w-[38%]">Request</TableHead>
                 {view !== 'mine' && (
-                  <TableHead className="py-3 font-semibold text-xs text-foreground/80 min-w-[160px]">Pemohon</TableHead>
+                  <TableHead className="h-10 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground w-[18%]">Requester</TableHead>
                 )}
-                <TableHead className="py-3 font-semibold text-xs text-foreground/80 min-w-[130px]">PIC Assigned</TableHead>
-                <TableHead className="py-3 font-semibold text-xs text-foreground/80 min-w-[100px]">Status</TableHead>
-                <TableHead className="py-3 font-semibold text-xs text-foreground/80 min-w-[140px]">Progress</TableHead>
-                <TableHead className="py-3 pr-6 text-right font-semibold text-xs text-foreground/80 w-20">Aksi</TableHead>
+                <TableHead className="h-10 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground w-[16%]">Owner</TableHead>
+                <TableHead className="h-10 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground w-[22%]">Status &amp; Timeline</TableHead>
+                <TableHead className="h-10 pr-4 text-right text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground w-[6%]">Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((req, idx) => {
+              {filtered.map((req) => {
                 const displaySlaDueDate = req.required_date || req.sla_due_date;
                 const slaStatus = getSlaStatus(displaySlaDueDate, req.status, req.completed_at);
                 const slaBadge = SLA_BADGE[slaStatus];
-                const dueDate = new Date(displaySlaDueDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+                const dueDate = displaySlaDueDate
+                  ? new Date(displaySlaDueDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
+                  : 'Belum ditentukan';
                 const requestDate = new Date(req.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
                 const catName = categories.find(c => c.id === req.category_id)?.name || req.category_name || 'Permintaan';
                 const getInitials = (name: string) => name.replace(/(Adv\.|S\.H\.|M\.H\.|Dra\.|PT)/gi, '').trim().substring(0, 2).toUpperCase();
-                const progressValue = req.progress || (req.status === 'COMPLETED' ? 100 : req.status === 'REVIEW_USER' ? 80 : req.status === 'PROCESSING' ? 50 : 15);
+                const progressValue = Math.min(100, Math.max(0, req.progress ?? (req.status === 'COMPLETED' ? 100 : req.status === 'REVIEW_USER' ? 80 : req.status === 'PROCESSING' ? 50 : 15)));
 
                 return (
                   <TableRow
                     key={req.id}
                     onClick={() => handleRowClick(req)}
-                    className="border-border/30 hover:bg-muted/30 transition-colors cursor-pointer group"
+                    className="border-border/30 hover:bg-muted/40 transition-colors cursor-pointer group"
                   >
-                    {/* # Index */}
-                    <TableCell className="py-3.5 pl-6 text-center text-xs font-mono text-muted-foreground">
-                      {idx + 1}
-                    </TableCell>
-
                     {/* Deskripsi & Meta */}
-                    <TableCell className="py-3.5">
+                    <TableCell className="py-3.5 pl-6">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-full bg-muted/60 border border-border/60 flex items-center justify-center text-muted-foreground shrink-0 group-hover:border-foreground/30 transition-colors">
                           <FileText size={15} />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="font-semibold text-xs text-foreground truncate group-hover:text-primary transition-colors" title={req.description}>
+                          <p className="font-medium text-sm text-foreground truncate group-hover:text-primary transition-colors" title={req.description}>
                             {req.description}
                           </p>
                           <p className="text-[11px] text-foreground/75 truncate mt-0.5">
@@ -1056,25 +1051,26 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                       </div>
                     </TableCell>
 
-                    {/* Status */}
-                    <TableCell className="py-3.5">
-                      <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium whitespace-nowrap ${STATUS_BADGE[req.status] || ''}`}>
-                        {formatStatusText(req.status)}
-                      </span>
-                    </TableCell>
-
-                    {/* Progress */}
-                    <TableCell className="py-3.5">
-                      <div className="space-y-1">
-                        <div className="w-24 bg-muted rounded-full h-1.5 overflow-hidden border border-border/40">
+                    {/* Status & Timeline */}
+                    <TableCell className="py-3.5 pr-3">
+                      <div className="space-y-1.5 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className={`inline-flex min-w-0 items-center rounded-md border px-2 py-0.5 text-[10px] font-medium whitespace-nowrap ${STATUS_BADGE[req.status] || ''}`}>
+                            {formatStatusText(req.status)}
+                          </span>
+                          <span className="text-[10px] font-mono font-medium text-foreground shrink-0">{progressValue}%</span>
+                        </div>
+                        <div className="w-full bg-muted rounded-full h-1.5 overflow-hidden border border-border/40">
                           <div
-                            className="bg-foreground h-full rounded-full transition-all"
+                            className={`h-full rounded-full transition-all ${progressValue >= 100 ? 'bg-emerald-500' : slaStatus === 'OVERDUE' ? 'bg-destructive' : 'bg-primary'}`}
                             style={{ width: `${progressValue}%` }}
                           />
                         </div>
-                        <div className="flex items-center justify-between text-[10px] text-muted-foreground w-24">
-                          <span className="font-mono">{progressValue}%</span>
-                          <span>Due {dueDate}</span>
+                        <div className="flex items-center justify-between gap-2 text-[10px]">
+                          <span className="text-muted-foreground truncate">Due {dueDate}</span>
+                          <span className={`font-medium whitespace-nowrap ${slaStatus === 'OVERDUE' ? 'text-destructive' : 'text-muted-foreground'}`}>
+                            {slaBadge.label}
+                          </span>
                         </div>
                       </div>
                     </TableCell>

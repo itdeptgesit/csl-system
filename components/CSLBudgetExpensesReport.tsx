@@ -81,6 +81,10 @@ import {
   Tooltip as RechartsTooltip, 
   ResponsiveContainer,
   BarChart,
+  AreaChart,
+  Area,
+  PieChart,
+  Pie,
   Cell
 } from 'recharts';
 import { useTheme } from 'next-themes';
@@ -335,6 +339,7 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(15);
   const [selectedTxn, setSelectedTxn] = useState<ExpenseTransactionRow | null>(null);
+  const [expandedTxnId, setExpandedTxnId] = useState<string | null>(null);
   const [chartViewMode, setChartViewMode] = useState<'budgetVsActual' | 'trend'>('budgetVsActual');
 
   const roleLower = (currentUser?.role || '').trim().toLowerCase();
@@ -351,10 +356,12 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
   const [isCustomMonthly, setIsCustomMonthly] = useState(false);
   const [customMonthsStr, setCustomMonthsStr] = useState<string[]>(Array(12).fill('50.000.000'));
 
-  // Project Budget List State
+  // Annual budget by cost category. project_name is retained only for compatibility
+  // with the existing allocation table and always mirrors category.
   const [budgetEditList, setBudgetEditList] = useState<Array<{
     project_name: string;
     department: string;
+    category: string;
     allocated_amount: string;
     monthly_amount: string;
     actual: number;
@@ -373,7 +380,7 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
     return Number(clean) || 0;
   };
 
-  const handleOpenBudgetModal = (initialTab: 'nominal' | 'projects' = 'nominal') => {
+  const handleOpenBudgetModal = (_initialTab: 'nominal' | 'projects' = 'projects') => {
     const year = filters.fiscalYear || 2026;
     const plan = getMonthlyBudgetPlan(year, reportData?.summary.totalBudget);
 
@@ -383,20 +390,29 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
     setCustomMonthsStr(plan.months.map(m => formatAmountWithDots(m)));
 
     if (reportData) {
-      const items = reportData.budgetVarianceList.map(proj => {
-        const annualVal = proj.budget || 0;
+      const categoryActuals = reportData.expenseByCategory.reduce<Record<string, number>>((acc, row) => {
+        acc[row.category] = row.amount || 0;
+        return acc;
+      }, {});
+      // Every monthly chart point carries annual category budget / 12. Read it
+      // directly instead of deriving category budgets from project variance.
+      const monthlyCategoryBudgets = reportData.budgetVsActual[0]?.categoryBudgets || {};
+      const categories = ['Notaris', 'Lawfirm', 'Konsultan', 'Other'];
+      const items = categories.map(category => {
+        const annualVal = Math.round((monthlyCategoryBudgets[category] || 0) * 12);
         const monthlyVal = Math.round(annualVal / 12);
         return {
-          project_name: proj.projectName,
-          department: proj.department || 'CSL',
+          project_name: category,
+          department: 'CSL',
+          category,
           allocated_amount: annualVal ? formatAmountWithDots(annualVal) : '0',
           monthly_amount: monthlyVal ? formatAmountWithDots(monthlyVal) : '0',
-          actual: proj.actual || 0,
+          actual: categoryActuals[category] || 0,
         };
       });
       setBudgetEditList(items);
     }
-    setBudgetModalTab(initialTab);
+    setBudgetModalTab('projects');
     setIsBudgetModalOpen(true);
   };
 
@@ -487,18 +503,6 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
     }
   };
 
-  const handleMonthlyChange = (index: number, val: string) => {
-    const formattedMonthly = formatAmountWithDots(val);
-    const numMonthly = parseFormattedAmount(formattedMonthly);
-    const numAnnual = numMonthly * 12;
-    const formattedAnnual = numAnnual > 0 ? formatAmountWithDots(numAnnual) : '';
-
-    setBudgetEditList(prev => prev.map((p, i) => i === index ? {
-      ...p,
-      monthly_amount: formattedMonthly,
-      allocated_amount: formattedAnnual
-    } : p));
-  };
 
   const handleAnnualChange = (index: number, val: string) => {
     const formattedAnnual = formatAmountWithDots(val);
@@ -513,39 +517,29 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
     } : p));
   };
 
-  const handleAddBudgetRow = () => {
-    setBudgetEditList(prev => [
-      ...prev,
-      { project_name: '', department: 'CSL', allocated_amount: '', monthly_amount: '', actual: 0 }
-    ]);
-  };
-
-  const handleRemoveBudgetRow = (index: number) => {
-    setBudgetEditList(prev => prev.filter((_, i) => i !== index));
-  };
 
   const handleSaveBudgets = async () => {
     if (isSavingBudgets) return;
 
     setIsSavingBudgets(true);
-    const toastId = toast.loading('Menyimpan project budget ke Supabase...');
+    const toastId = toast.loading('Menyimpan budget kategori ke Supabase...');
 
     try {
       const year = filters.fiscalYear || 2026;
       const formatted = budgetEditList
-        .filter(item => item.project_name.trim().length > 0)
         .map(item => ({
-          project_name: item.project_name.trim(),
+          project_name: item.category,
           department: item.department || 'CSL',
+          category: item.category,
           allocated_amount: parseFormattedAmount(item.allocated_amount) || 0,
         }));
-      await withSaveTimeout(saveProjectBudgetAllocations(year, formatted), 'Simpan project budget');
-      toast.success(`Project budgets FY ${year} berhasil disimpan.`, { id: toastId });
+      await withSaveTimeout(saveProjectBudgetAllocations(year, formatted), 'Simpan budget kategori');
+      toast.success(`Budget kategori FY ${year} tersimpan dan terverifikasi di Supabase.`, { id: toastId });
       setIsBudgetModalOpen(false);
       await loadReport();
     } catch (err: any) {
-      console.error('Failed to save project budgets:', err);
-      toast.error('Gagal menyimpan project budget: ' + (err?.message || 'Unknown error'), { id: toastId });
+      console.error('Failed to save category budgets:', err);
+      toast.error('Gagal menyimpan budget kategori: ' + (err?.message || 'Unknown error'), { id: toastId });
     } finally {
       setIsSavingBudgets(false);
     }
@@ -625,6 +619,7 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
     filters.department,
     filters.project,
     filters.status,
+    filters.category,
     filters.currency,
     filters.paymentLocation,
     filters.paymentMethod,
@@ -672,15 +667,10 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
   // Count active filters inside More Filters
   const activeMoreFiltersCount = useMemo(() => {
     let c = 0;
-    if (filters.company !== 'all') c++;
-    if (filters.department !== 'all') c++;
-    if (filters.project !== 'all') c++;
     if (filters.status !== 'all') c++;
     if (filters.category !== 'all') c++;
     if (filters.currency !== 'all') c++;
-    if (filters.paymentLocation !== 'all') c++;
     if (filters.paymentMethod !== 'all') c++;
-    if (filters.accountCode) c++;
     return c;
   }, [filters]);
 
@@ -739,6 +729,65 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
 
   const totalPages = Math.ceil((reportData?.transactions.length || 0) / pageSize) || 1;
 
+  const payeeTypeChartData = useMemo(() => {
+    const totals = (reportData?.budgetVsActual || []).reduce(
+      (sum, row) => ({
+        company: sum.company + (row.companyActual || 0),
+        individual: sum.individual + (row.individualActual || 0)
+      }),
+      { company: 0, individual: 0 }
+    );
+    return [
+      { name: 'Company', value: totals.company, color: '#3b82f6' },
+      { name: 'Individual', value: totals.individual, color: '#22c55e' }
+    ];
+  }, [reportData?.budgetVsActual]);
+
+  const payeeTypeTotal = payeeTypeChartData.reduce((sum, item) => sum + item.value, 0);
+
+  const categoryChartCards = useMemo(() => {
+    const categories = [
+      { key: 'Notaris', color: '#6366f1', soft: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-300' },
+      { key: 'Lawfirm', color: '#3b82f6', soft: 'bg-blue-500/10 text-blue-600 dark:text-blue-300' },
+      { key: 'Konsultan', color: '#22c55e', soft: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-300' },
+      { key: 'Other', color: '#f59e0b', soft: 'bg-amber-500/10 text-amber-600 dark:text-amber-300' }
+    ] as const;
+
+    return categories.map(category => {
+      const chartData = (reportData?.budgetVsActual || []).map(row => ({
+        periodLabel: row.periodLabel,
+        actual: row.categoryActuals?.[category.key] || 0,
+        budget: row.categoryBudgets?.[category.key] || 0
+      }));
+      const actual = chartData.reduce((sum, row) => sum + row.actual, 0);
+      const budget = chartData.reduce((sum, row) => sum + row.budget, 0);
+      const variance = budget - actual;
+      return {
+        ...category,
+        chartData,
+        actual,
+        budget,
+        variance,
+        utilization: budget > 0 ? (actual / budget) * 100 : 0
+      };
+    });
+  }, [reportData?.budgetVsActual]);
+
+  const reportInsights = useMemo(() => {
+    const categories = reportData?.expenseByCategory || [];
+    const topCategory = [...categories].sort((a, b) => b.amount - a.amount)[0];
+    const actual = reportData?.summary.actualExpenses || 0;
+    const budget = reportData?.summary.totalBudget || 0;
+    const variance = budget - actual;
+    const company = payeeTypeChartData.find(item => item.name === 'Company')?.value || 0;
+    return {
+      topCategory,
+      variance,
+      companyShare: actual > 0 ? (company / actual) * 100 : 0,
+      isOverBudget: variance < 0
+    };
+  }, [reportData, payeeTypeChartData]);
+
   // Render Skeleton
   if (loading && !reportData) {
     return (
@@ -779,7 +828,7 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
       {/* ── SECTION 1: HEADER (MATCHING BUDGET EXPENSES STYLE) ── */}
       <PageHeader
         title="Budget & Expenses Report"
-        description="Financial overview, monthly spend monitoring, and project budget utilization"
+        description="Executive view of budget utilization, payee composition, cost categories, and transaction detail"
       >
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-[11px] font-semibold text-muted-foreground bg-muted/40 px-3 py-1.5 rounded-lg border border-border/40 hidden md:inline-block">
@@ -1364,50 +1413,6 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Company */}
-              <div>
-                <label className="text-[10px] font-black uppercase tracking-wider text-muted-foreground block mb-1">Company</label>
-                <select
-                  value={filters.company}
-                  onChange={e => handleFilterChange('company', e.target.value)}
-                  className="w-full bg-background border border-border/70 rounded-xl px-3 py-2 text-xs font-semibold text-foreground focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                >
-                  <option value="all">All Companies</option>
-                  {reportData?.filterOptions.companies.map(c => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Department */}
-              <div>
-                <label className="text-[10px] font-black uppercase tracking-wider text-muted-foreground block mb-1">Department</label>
-                <select
-                  value={filters.department}
-                  onChange={e => handleFilterChange('department', e.target.value)}
-                  className="w-full bg-background border border-border/70 rounded-xl px-3 py-2 text-xs font-semibold text-foreground focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                >
-                  <option value="all">All Departments</option>
-                  {reportData?.filterOptions.departments.map(d => (
-                    <option key={d} value={d}>{d}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Project */}
-              <div>
-                <label className="text-[10px] font-black uppercase tracking-wider text-muted-foreground block mb-1">Project</label>
-                <select
-                  value={filters.project}
-                  onChange={e => handleFilterChange('project', e.target.value)}
-                  className="w-full bg-background border border-border/70 rounded-xl px-3 py-2 text-xs font-semibold text-foreground focus:outline-none focus:ring-1 focus:ring-indigo-500 truncate"
-                >
-                  <option value="all">All Projects</option>
-                  {reportData?.filterOptions.projects.map(p => (
-                    <option key={p} value={p}>{p}</option>
-                  ))}
-                </select>
-              </div>
 
               {/* Status */}
               <div>
@@ -1455,19 +1460,6 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
                 </select>
               </div>
 
-              {/* Payment Location */}
-              <div>
-                <label className="text-[10px] font-black uppercase tracking-wider text-muted-foreground block mb-1">Payment Location</label>
-                <select
-                  value={filters.paymentLocation}
-                  onChange={e => handleFilterChange('paymentLocation', e.target.value)}
-                  className="w-full bg-background border border-border/70 rounded-xl px-3 py-2 text-xs font-semibold text-foreground focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                >
-                  <option value="all">All Locations</option>
-                  <option value="Local">Local</option>
-                  <option value="Offshore">Offshore</option>
-                </select>
-              </div>
 
               {/* Payment Method */}
               <div>
@@ -1484,17 +1476,7 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
                 </select>
               </div>
 
-              {/* Account Code */}
-              <div>
-                <label className="text-[10px] font-black uppercase tracking-wider text-muted-foreground block mb-1">Account Code</label>
-                <input
-                  type="text"
-                  placeholder="e.g. 51001"
-                  value={filters.accountCode || ''}
-                  onChange={e => handleFilterChange('accountCode', e.target.value)}
-                  className="w-full bg-background border border-border/70 rounded-xl px-3 py-2 text-xs font-semibold text-foreground focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                />
-              </div>
+
             </div>
 
             <div className="flex items-center justify-between border-t border-border/50 pt-3">
@@ -1505,14 +1487,10 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
                 onClick={() => {
                   updateFiltersAndUrl({
                     ...filters,
-                    company: 'all',
-                    department: 'all',
-                    project: 'all',
                     status: 'all',
+                    category: 'all',
                     currency: 'all',
-                    paymentLocation: 'all',
-                    paymentMethod: 'all',
-                    accountCode: ''
+                    paymentMethod: 'all'
                   });
                 }}
                 className="text-xs text-rose-600 font-bold hover:bg-rose-50 dark:hover:bg-rose-950/30"
@@ -1533,7 +1511,40 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
         </div>
       )}
 
-      {/* ── SECTION 3: FINANCIAL OVERVIEW (EXACTLY 4 KPI CARDS MATCHING EXPENSE APPROVAL) ── */}
+      {/* ── EXECUTIVE SNAPSHOT ─────────────────────────────────────────── */}
+      <div className={`rounded-xl border p-4 ${reportInsights.isOverBudget ? 'border-rose-500/25 bg-rose-500/5' : 'border-emerald-500/20 bg-emerald-500/5'}`}>
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-start gap-3">
+            <div className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${reportInsights.isOverBudget ? 'bg-rose-500/10 text-rose-500' : 'bg-emerald-500/10 text-emerald-500'}`}>
+              {reportInsights.isOverBudget ? <AlertTriangle size={15} /> : <CheckCircle2 size={15} />}
+            </div>
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-muted-foreground">Executive Snapshot · {activePeriodLabel}</p>
+              <p className="mt-1 text-sm font-semibold text-foreground">
+                {reportInsights.isOverBudget
+                  ? `Actual spend exceeds period budget by ${formatIdr(Math.abs(reportInsights.variance))}.`
+                  : `${formatIdr(Math.max(reportInsights.variance, 0))} budget remains for this period.`}
+              </p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 lg:min-w-[560px]">
+            <div className="rounded-lg border border-border/50 bg-background/60 px-3 py-2">
+              <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Top Cost Category</span>
+              <p className="mt-0.5 truncate text-xs font-bold text-foreground">{reportInsights.topCategory?.category || 'No data'}{reportInsights.topCategory && <span className="ml-1 font-mono text-muted-foreground">· {formatIdr(reportInsights.topCategory.amount)}</span>}</p>
+            </div>
+            <div className="rounded-lg border border-border/50 bg-background/60 px-3 py-2">
+              <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Company Share</span>
+              <p className="mt-0.5 text-xs font-bold text-foreground">{reportInsights.companyShare.toFixed(1)}% <span className="font-normal text-muted-foreground">of actual</span></p>
+            </div>
+            <div className="rounded-lg border border-border/50 bg-background/60 px-3 py-2">
+              <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Transactions</span>
+              <p className="mt-0.5 text-xs font-bold text-foreground">{reportData?.totalTransactionsCount || 0} <span className="font-normal text-muted-foreground">records</span></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── SECTION 3: FINANCIAL OVERVIEW ──────────────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* CARD 1: Total Budget */}
         <div className="bg-card border border-border/40 p-5 rounded-xl shadow-sm flex flex-col justify-between hover:border-border/80 transition-colors">
@@ -1623,33 +1634,24 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
         </div>
       </div>
 
-      {/* ── SECTION 4: BUDGET VS ACTUAL (FULL WIDTH) ────────────────────── */}
-      <div className="bg-card border border-border/40 rounded-xl p-5 shadow-sm">
+      {/* ── SECTION 4: BUDGET VS ACTUAL BY CATEGORY (SMALL MULTIPLES) ───── */}
+      <div className="space-y-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <BarChart3 size={16} className="text-indigo-600 dark:text-indigo-400" />
               <div>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">Budget vs Actual</h3>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">Budget vs Actual by Cost Category</h3>
                 <p className="text-[10px] text-muted-foreground font-medium">
-                  {filters.periodType === 'month' ? 'Project allocation vs actual spend' : 'Monthly allocation vs actual spend'}
+                  Independent monthly scale makes every category easy to compare
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-3 text-[11px] font-bold">
-              <span className="flex items-center gap-1.5 text-foreground dark:text-slate-200">
-                <span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ background: '#22c55e' }} /> Individual
-              </span>
-              <span className="flex items-center gap-1.5 text-foreground dark:text-slate-200">
-                <span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ background: '#3b82f6' }} /> Company
-              </span>
-              <span className="flex items-center gap-1.5 text-foreground dark:text-slate-200">
-                <span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ background: '#ef4444' }} /> Over Budget
-              </span>
               {isSuperAdmin && (
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handleOpenBudgetModal('nominal')}
+                  onClick={() => handleOpenBudgetModal('projects')}
                   className="h-7 text-[10px] font-bold px-2.5 border-indigo-500/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/10 rounded-lg cursor-pointer"
                 >
                   <Pencil size={11} className="mr-1" /> Edit Budget
@@ -1663,179 +1665,101 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
               No budget comparison records for this period.
             </div>
           ) : (
-            <div className="w-full" style={{ height: 320 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={reportData?.budgetVsActual}
-                  margin={{ top: 8, right: 12, left: 12, bottom: 4 }}
-                  barCategoryGap="20%"
-                  barGap={4}
-                >
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDarkMode ? '#334155' : '#cbd5e1'} opacity={0.5} />
-                  <XAxis
-                    dataKey="periodLabel"
-                    tick={{ fontSize: 11, fontWeight: 700, fill: isDarkMode ? '#94a3b8' : '#475569' }}
-                    axisLine={{ stroke: isDarkMode ? '#334155' : '#cbd5e1', opacity: 0.5 }}
-                    tickLine={false}
-                    interval={0}
-                  />
-                  <YAxis
-                    tick={{ fontSize: 10, fill: isDarkMode ? '#94a3b8' : '#64748b' }}
-                    axisLine={false}
-                    tickLine={false}
-                    tickFormatter={(val: number) => {
-                      if (val >= 1_000_000_000) return `${(val / 1_000_000_000).toFixed(1)}B`;
-                      if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(0)}M`;
-                      if (val >= 1_000) return `${(val / 1_000).toFixed(0)}K`;
-                      return String(val);
-                    }}
-                    width={52}
-                  />
-                  <RechartsTooltip
-                    cursor={{ fill: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)' }}
-                    contentStyle={{
-                      background: isDarkMode ? 'rgba(15, 23, 42, 0.95)' : 'rgba(255, 255, 255, 0.98)',
-                      backdropFilter: 'blur(8px)',
-                      border: `1px solid ${isDarkMode ? 'rgba(148, 163, 184, 0.2)' : 'rgba(203, 213, 225, 0.6)'}`,
-                      borderRadius: 12,
-                      fontSize: 12,
-                      fontWeight: 600,
-                      color: isDarkMode ? '#f8fafc' : '#1e293b',
-                      boxShadow: isDarkMode ? '0 8px 32px rgba(0,0,0,0.5)' : '0 8px 32px rgba(0,0,0,0.1)',
-                      padding: '10px 14px',
-                    }}
-                    labelStyle={{
-                      color: isDarkMode ? '#e2e8f0' : '#334155',
-                      fontWeight: 700,
-                      marginBottom: 4,
-                    }}
-                    itemStyle={{
-                      color: isDarkMode ? '#f8fafc' : '#1e293b',
-                      fontWeight: 600,
-                      padding: 0,
-                    }}
-                    formatter={(value, name) => [
-                      formatIdr(Number(value)),
-                      name === 'individualActual' ? 'Individual' : 'Company'
-                    ]}
-                    labelFormatter={(label) => String(label ?? '')}
-                  />
-                  <Bar
-                    dataKey="individualActual"
-                    name="individualActual"
-                    radius={[4, 4, 0, 0]}
-                    maxBarSize={40}
-                  >
-                    {reportData?.budgetVsActual.map((entry, index) => {
-                      const isOverBudget = (entry.individualActual + entry.companyActual) > entry.budget && entry.budget > 0;
-                      return (
-                        <Cell
-                          key={`ind-${index}`}
-                          fill={isOverBudget ? '#f87171' : '#4ade80'}
-                        />
-                      );
-                    })}
-                  </Bar>
-                  <Bar
-                    dataKey="companyActual"
-                    name="companyActual"
-                    radius={[4, 4, 0, 0]}
-                    maxBarSize={40}
-                  >
-                    {reportData?.budgetVsActual.map((entry, index) => {
-                      const isOverBudget = (entry.individualActual + entry.companyActual) > entry.budget && entry.budget > 0;
-                      return (
-                        <Cell
-                          key={`com-${index}`}
-                          fill={isOverBudget ? '#f87171' : '#60a5fa'}
-                        />
-                      );
-                    })}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+              {categoryChartCards.map(category => (
+                <article key={category.key} className="bg-card border border-border/50 rounded-xl p-4 shadow-sm">
+                  <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: category.color }} />
+                        <h4 className="text-sm font-black text-foreground">{category.key}</h4>
+                        <span className={`rounded-full px-2 py-0.5 text-[9px] font-black ${category.soft}`}>
+                          {category.utilization.toFixed(1)}% used
+                        </span>
+                      </div>
+                      <p className="mt-1 text-[10px] text-muted-foreground">Actual bar and category budget line</p>
+                    </div>
+                    <div className="grid grid-cols-3 gap-3 text-right">
+                      <div><span className="block text-[8px] font-bold uppercase text-muted-foreground">Actual</span><b className="text-[11px] font-mono text-foreground">{formatIdr(category.actual)}</b></div>
+                      <div><span className="block text-[8px] font-bold uppercase text-muted-foreground">Budget</span><b className="text-[11px] font-mono text-foreground">{formatIdr(category.budget)}</b></div>
+                      <div><span className="block text-[8px] font-bold uppercase text-muted-foreground">Variance</span><b className={`text-[11px] font-mono ${category.variance < 0 ? 'text-rose-500' : 'text-emerald-500'}`}>{formatIdr(category.variance)}</b></div>
+                    </div>
+                  </div>
+                  <div className="h-[235px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={category.chartData} margin={{ top: 8, right: 8, left: 2, bottom: 2 }} barCategoryGap="25%">
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDarkMode ? '#334155' : '#cbd5e1'} opacity={0.45} />
+                        <XAxis dataKey="periodLabel" axisLine={false} tickLine={false} interval={0} tick={{ fontSize: 9, fontWeight: 700, fill: isDarkMode ? '#94a3b8' : '#475569' }} />
+                        <YAxis width={44} axisLine={false} tickLine={false} tick={{ fontSize: 8, fill: isDarkMode ? '#94a3b8' : '#64748b' }} tickFormatter={(value: number) => value >= 1_000_000_000 ? `${(value / 1_000_000_000).toFixed(1)}B` : value >= 1_000_000 ? `${Math.round(value / 1_000_000)}M` : value >= 1_000 ? `${Math.round(value / 1_000)}K` : String(value)} />
+                        <RechartsTooltip formatter={(value, name) => [formatIdr(Number(value)), String(name)]} contentStyle={{ background: isDarkMode ? '#0f172a' : '#ffffff', border: `1px solid ${isDarkMode ? '#334155' : '#e2e8f0'}`, borderRadius: 10, fontSize: 11 }} />
+                        <Bar dataKey="actual" name={`${category.key} Actual`} fill={category.color} radius={[4, 4, 0, 0]} maxBarSize={28} />
+                        <Line dataKey="budget" name={`${category.key} Budget`} type="monotone" stroke="#ef4444" strokeWidth={2} dot={{ r: 2.5, fill: '#ef4444' }} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </article>
+              ))}
             </div>
           )}
       </div>
 
-      {/* ── SECTIONS 5 & 6: EXPENSE BY PROJECT & NEEDS ATTENTION ─────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        {/* Section 5: Expense by Project */}
-        <div className="bg-card border border-border/40 rounded-xl p-5 shadow-sm flex flex-col">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Layers size={16} className="text-indigo-600 dark:text-indigo-400" />
-              <div>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">Expense by Project</h3>
-                <p className="text-[10px] text-muted-foreground font-medium">Ranked by highest actual spend (click to filter)</p>
-              </div>
-            </div>
-            <span className="text-[10px] font-bold text-muted-foreground uppercase">
-              {reportData?.budgetVarianceList.length || 0} Projects
-            </span>
+      {/* ── PAYEE COMPOSITION ────────────────────────────────────────────── */}
+      <div className="bg-card border border-border/40 rounded-xl p-5 shadow-sm">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">Actual Composition by Payee Type</h3>
+            <p className="text-[10px] text-muted-foreground font-medium">Company vs Individual for selected period</p>
           </div>
-
-          <div className="space-y-3 pt-1 max-h-[440px] overflow-y-auto pr-1 flex-1">
-            {reportData?.budgetVarianceList.length === 0 ? (
-              <div className="text-center py-8 text-xs text-muted-foreground">
-                No project expense data found.
-              </div>
-            ) : (
-              reportData?.budgetVarianceList.map(proj => {
-                const isOver = proj.utilization >= 100;
-                const isWarn = proj.utilization >= 80 && proj.utilization < 100;
-
-                return (
-                  <div
-                    key={proj.projectName}
-                    onClick={() => handleFilterChange('project', proj.projectName)}
-                    className="p-3.5 rounded-xl border border-border/40 bg-muted/15 dark:bg-slate-900/40 hover:bg-muted/30 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group"
-                  >
-                    <div className="flex items-center justify-between text-xs mb-1.5">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="font-bold text-foreground group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate max-w-[180px]" title={proj.projectName}>
-                          {proj.projectName}
-                        </span>
-                        <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded border shrink-0 ${
-                          isOver
-                            ? 'bg-rose-500/10 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 border-rose-500/30'
-                            : isWarn
-                            ? 'bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/30'
-                            : 'bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
-                        }`}>
-                          {isOver ? 'OVER BUDGET' : isWarn ? 'WARNING' : 'HEALTHY'}
-                        </span>
-                      </div>
-                      <div className="text-right shrink-0 font-mono">
-                        <span className="font-black text-foreground">{formatIdr(proj.actual)}</span>
-                        <span className="text-[10px] text-muted-foreground dark:text-slate-400 ml-1.5 font-sans">
-                          ({proj.utilization.toFixed(1)}%)
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="h-1.5 rounded-full bg-muted/60 dark:bg-slate-800 overflow-hidden mb-2">
-                      <div
-                        className={`h-full rounded-full transition-all duration-500 ${
-                          isOver ? 'bg-rose-500' : isWarn ? 'bg-amber-500' : 'bg-indigo-600'
-                        }`}
-                        style={{ width: `${Math.min(proj.utilization, 100)}%` }}
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between text-[10px] text-muted-foreground dark:text-slate-400 font-medium">
-                      <span>Budget: <strong className="text-foreground dark:text-slate-200 font-mono">{formatIdr(proj.budget)}</strong></span>
-                      <span>Remaining: <strong className={`font-mono ${proj.variance >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
-                        {formatIdr(proj.variance)}
-                      </strong></span>
-                    </div>
+          <span className="text-xs font-black font-mono text-foreground">{formatIdr(payeeTypeTotal)}</span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] items-center gap-4">
+          <div className="relative h-[220px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={payeeTypeChartData}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={62}
+                  outerRadius={88}
+                  paddingAngle={3}
+                  strokeWidth={0}
+                >
+                  {payeeTypeChartData.map(item => <Cell key={item.name} fill={item.color} />)}
+                </Pie>
+                <RechartsTooltip
+                  formatter={(value, name) => [formatIdr(Number(value)), String(name)]}
+                  contentStyle={{ background: isDarkMode ? '#0f172a' : '#ffffff', border: `1px solid ${isDarkMode ? '#334155' : '#e2e8f0'}`, borderRadius: 10, fontSize: 12 }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Total Actual</span>
+              <span className="mt-1 text-sm font-black font-mono text-foreground">{formatIdr(payeeTypeTotal)}</span>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {payeeTypeChartData.map(item => {
+              const percentage = payeeTypeTotal > 0 ? (item.value / payeeTypeTotal) * 100 : 0;
+              return (
+                <div key={item.name} className="rounded-xl border border-border/50 bg-muted/20 p-4">
+                  <div className="flex items-center gap-2 text-xs font-bold text-foreground">
+                    <span className="h-2.5 w-2.5 rounded-sm" style={{ background: item.color }} />
+                    {item.name}
                   </div>
-                );
-              })
-            )}
+                  <p className="mt-2 text-lg font-black font-mono text-foreground">{formatIdr(item.value)}</p>
+                  <p className="mt-1 text-xs font-bold text-muted-foreground">{percentage.toFixed(1)}% of actual spend</p>
+                </div>
+              );
+            })}
           </div>
         </div>
+      </div>
 
+      {/* ── NEEDS ATTENTION ──────────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 gap-5">
         {/* Section 6: Needs Attention */}
         <div className="bg-card border border-border/40 rounded-xl p-5 shadow-sm flex flex-col">
           <div className="flex items-center justify-between mb-4">
@@ -1931,128 +1855,96 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
           </div>
         </div>
 
-        <div className="rounded-xl border border-border/40 overflow-x-auto">
-          <Table>
-            <TableHeader className="bg-muted/20 border-b border-border/40">
+        <div className="rounded-xl border border-border/40 overflow-auto max-h-[680px]">
+          <Table className="min-w-[980px]">
+            <TableHeader className="sticky top-0 z-20 bg-muted/95 backdrop-blur border-b border-border/50">
               <TableRow>
-                <TableHead className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">ID / Expense No</TableHead>
-                <TableHead className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Date</TableHead>
-                <TableHead className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Payee / Vendor</TableHead>
-                <TableHead className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Payee Type</TableHead>
-                <TableHead className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Department</TableHead>
-                <TableHead className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Project / Description</TableHead>
-                <TableHead className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground text-right">Original Amount</TableHead>
-                <TableHead className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground text-right">Reporting Amount (IDR)</TableHead>
-                <TableHead className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground text-center">Status</TableHead>
-                <TableHead className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground text-center">Action</TableHead>
+                <TableHead className="sticky left-0 z-30 min-w-[245px] bg-muted/95 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Expense / Vendor</TableHead>
+                <TableHead className="min-w-[190px] text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Category / Description</TableHead>
+                <TableHead className="min-w-[145px] text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Department</TableHead>
+                <TableHead className="min-w-[175px] text-[10px] font-bold uppercase tracking-wider text-muted-foreground text-right">Amount</TableHead>
+                <TableHead className="min-w-[130px] text-[10px] font-bold uppercase tracking-wider text-muted-foreground text-center">Status</TableHead>
+                <TableHead className="w-[92px] text-[10px] font-bold uppercase tracking-wider text-muted-foreground text-center">Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {pagedTransactions.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-center py-10 text-muted-foreground text-xs">
-                    No transactions match the selected filters.
-                  </TableCell>
+                  <TableCell colSpan={6} className="text-center py-10 text-muted-foreground text-xs">No transactions match the selected filters.</TableCell>
                 </TableRow>
-              ) : (
-                pagedTransactions.map(txn => (
-                  <TableRow key={txn.id} className="hover:bg-muted/40 transition-colors">
-                    <TableCell className="font-mono text-xs font-bold text-indigo-600 whitespace-nowrap">
-                      <div className="flex items-center gap-1.5">
-                        <span>{txn.expense_number}</span>
-                        {txn.invoice_attachment_id && (
-                          <span title="Lampiran tersedia" className="inline-flex items-center text-emerald-600 bg-emerald-500/10 p-0.5 rounded">
-                            <Paperclip size={11} />
-                          </span>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-                      {txn.request_date}
-                    </TableCell>
-                    <TableCell className="text-xs font-bold text-foreground max-w-[170px] truncate" title={txn.paid_to}>
-                      <div>
-                        <span>{txn.paid_to}</span>
-                        <div className="text-[10px] font-normal text-muted-foreground truncate">
-                          Oleh: {txn.prepared_by_name || 'Staff'}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-xs">
-                      <span className={`inline-block text-[9px] font-black uppercase px-2 py-0.5 rounded border ${
-                        txn.payee_type === 'Individual'
-                          ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20'
-                          : 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20'
-                      }`}>
-                        {txn.payee_type || 'Company'}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {txn.department}
-                    </TableCell>
-                    <TableCell className="text-xs text-foreground max-w-[200px] truncate" title={txn.payment_description || txn.project_name}>
-                      {txn.payment_description || txn.project_name}
-                    </TableCell>
-                    <TableCell className="text-xs text-right font-mono text-foreground font-semibold whitespace-nowrap">
-                      <span className="inline-flex items-center gap-1.5 justify-end">
-                        <img 
-                          src={getCurrencyFlag(txn.currency)} 
-                          alt={txn.currency} 
-                          className="w-3.5 h-3.5 object-contain inline shrink-0" 
-                        />
-                        <span>{formatCurrencyAmount(txn.currency, txn.amount)}</span>
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-xs font-black text-foreground text-right font-mono whitespace-nowrap">
-                      {formatIdr(txn.reporting_amount)}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <div>
-                        <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded border inline-block ${
-                          txn.status === 'DISBURSED' || txn.status === 'PAID'
-                            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
-                            : txn.status === 'APPROVED'
-                            ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20'
-                            : txn.status === 'PENDING_APPROVAL'
-                            ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
-                            : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20'
-                        }`}>
-                          {txn.status}
-                        </span>
-                        {txn.approved_by_name && (txn.status === 'APPROVED' || txn.status === 'DISBURSED' || txn.status === 'PAID') && (
-                          <div className="text-[9px] text-muted-foreground font-medium mt-0.5 truncate max-w-[100px] mx-auto" title={`Approved by: ${txn.approved_by_name}`}>
-                            ✓ {txn.approved_by_name}
+              ) : pagedTransactions.map(txn => {
+                const expanded = expandedTxnId === txn.id;
+                const categoryStyle = txn.category === 'Notaris'
+                  ? 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-500/20'
+                  : txn.category === 'Lawfirm'
+                  ? 'bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/20'
+                  : txn.category === 'Konsultan'
+                  ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20'
+                  : 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20';
+                const statusStyle = txn.status === 'DISBURSED' || txn.status === 'PAID'
+                  ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                  : txn.status === 'APPROVED'
+                  ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20'
+                  : txn.status === 'PENDING_APPROVAL'
+                  ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
+                  : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20';
+                const sameCurrencyAmount = txn.currency === 'IDR' && Math.round(txn.amount) === Math.round(txn.reporting_amount);
+
+                return (
+                  <React.Fragment key={txn.id}>
+                    <TableRow className={`group hover:bg-muted/35 transition-colors ${expanded ? 'bg-muted/25' : ''}`}>
+                      <TableCell className="sticky left-0 z-10 bg-card group-hover:bg-muted/95 border-r border-border/30 py-3">
+                        <button type="button" className="w-full text-left cursor-pointer" onClick={() => setExpandedTxnId(expanded ? null : txn.id)}>
+                          <div className="flex items-center gap-2">
+                            <ChevronDown size={13} className={`shrink-0 text-muted-foreground transition-transform ${expanded ? 'rotate-180' : ''}`} />
+                            <span className="font-mono text-[11px] font-black text-indigo-600">{txn.expense_number}</span>
+                            {txn.invoice_attachment_id && <Paperclip size={11} className="text-emerald-600" />}
                           </div>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <div className="flex items-center justify-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setSelectedTxn(txn)}
-                          className="h-7 w-7 p-0 rounded-lg text-muted-foreground hover:text-indigo-600 cursor-pointer"
-                          title="Lihat Detail Transaksi"
-                        >
-                          <Eye size={13} />
-                        </Button>
-                        {txn.invoice_attachment_id && (
-                          <a
-                            href={`https://drive.google.com/file/d/${txn.invoice_attachment_id}/view`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center justify-center h-7 w-7 p-0 rounded-lg text-emerald-600 hover:bg-emerald-500/10 transition-colors"
-                            title="Buka Lampiran Invoice"
-                          >
-                            <Paperclip size={13} />
-                          </a>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
+                          <p className="mt-1 pl-5 text-xs font-bold text-foreground truncate max-w-[220px]" title={txn.paid_to}>{txn.paid_to}</p>
+                          <p className="mt-0.5 pl-5 text-[10px] text-muted-foreground">{formatDisplayDate(txn.request_date)} · {txn.payee_type || 'Company'}</p>
+                        </button>
+                      </TableCell>
+                      <TableCell className="py-3">
+                        <span className={`inline-flex rounded-md border px-2 py-0.5 text-[9px] font-black uppercase ${categoryStyle}`}>{txn.category || 'Other'}</span>
+                        <p className="mt-1.5 max-w-[190px] truncate text-[11px] font-medium text-foreground" title={txn.payment_description || txn.project_name}>{txn.payment_description || txn.project_name}</p>
+                      </TableCell>
+                      <TableCell className="py-3">
+                        <p className="text-xs font-bold text-foreground">{txn.department || '-'}</p>
+                        <p className="mt-0.5 max-w-[145px] truncate text-[10px] text-muted-foreground" title={txn.company}>{txn.company || '-'}</p>
+                      </TableCell>
+                      <TableCell className="py-3 text-right tabular-nums">
+                        <p className="font-mono text-xs font-black text-foreground">{formatIdr(txn.reporting_amount)}</p>
+                        {!sameCurrencyAmount && <p className="mt-0.5 text-[10px] font-medium text-muted-foreground">Original: {formatCurrencyAmount(txn.currency, txn.amount)}</p>}
+                        <p className="mt-0.5 text-[9px] font-bold uppercase text-muted-foreground">Reporting · IDR</p>
+                      </TableCell>
+                      <TableCell className="py-3 text-center">
+                        <span className={`inline-flex rounded-md border px-2 py-0.5 text-[9px] font-black uppercase ${statusStyle}`}>{txn.status}</span>
+                        {txn.approved_by_name && (txn.status === 'APPROVED' || txn.status === 'DISBURSED' || txn.status === 'PAID') && <p className="mt-1 truncate text-[9px] font-medium text-muted-foreground" title={`Approved by ${txn.approved_by_name}`}>✓ {txn.approved_by_name}</p>}
+                      </TableCell>
+                      <TableCell className="py-3 text-center">
+                        <div className="flex items-center justify-center gap-1">
+                          <Button variant="ghost" size="sm" onClick={() => setSelectedTxn(txn)} className="h-8 w-8 p-0 rounded-lg text-muted-foreground hover:text-indigo-600 cursor-pointer" title="View details"><Eye size={14} /></Button>
+                          {txn.invoice_attachment_id && <a href={`https://drive.google.com/file/d/${txn.invoice_attachment_id}/view`} target="_blank" rel="noopener noreferrer" className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-emerald-600 hover:bg-emerald-500/10" title="Open attachment"><Paperclip size={14} /></a>}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                    {expanded && (
+                      <TableRow className="bg-muted/15 hover:bg-muted/15">
+                        <TableCell colSpan={6} className="p-0">
+                          <div className="grid grid-cols-2 gap-x-6 gap-y-3 border-l-2 border-indigo-500 px-6 py-4 sm:grid-cols-3 lg:grid-cols-6">
+                            <div><span className="block text-[9px] font-bold uppercase text-muted-foreground">Project</span><b className="mt-1 block text-[11px] text-foreground">{txn.project_name || '-'}</b></div>
+                            <div><span className="block text-[9px] font-bold uppercase text-muted-foreground">Prepared By</span><b className="mt-1 block text-[11px] text-foreground">{txn.prepared_by_name || 'Staff'}</b></div>
+                            <div><span className="block text-[9px] font-bold uppercase text-muted-foreground">Original</span><b className="mt-1 block font-mono text-[11px] text-foreground">{formatCurrencyAmount(txn.currency, txn.amount)}</b></div>
+                            <div><span className="block text-[9px] font-bold uppercase text-muted-foreground">Payment Method</span><b className="mt-1 block text-[11px] text-foreground">{txn.payment_method || '-'}</b></div>
+                            <div><span className="block text-[9px] font-bold uppercase text-muted-foreground">Invoice</span><b className="mt-1 block text-[11px] text-foreground">{txn.invoice_number || '-'}</b></div>
+                            <div><span className="block text-[9px] font-bold uppercase text-muted-foreground">Voucher</span><b className="mt-1 block text-[11px] text-foreground">{txn.voucher_number || '-'}</b></div>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </React.Fragment>
+                );
+              })}
             </TableBody>
           </Table>
         </div>
@@ -2246,6 +2138,15 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
                   </div>
 
                   <div>
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase">Kategori Biaya</span>
+                    <p className="mt-0.5">
+                      <span className="inline-flex rounded-md border border-indigo-500/20 bg-indigo-500/10 px-2 py-0.5 text-[10px] font-black text-indigo-700 dark:text-indigo-300">
+                        {selectedTxn.category || 'Other'}
+                      </span>
+                    </p>
+                  </div>
+
+                  <div>
                     <span className="text-[10px] font-bold text-muted-foreground uppercase">No. Invoice / Voucher</span>
                     <p className="font-mono text-foreground mt-0.5 text-[11px]">
                       {selectedTxn.invoice_number || selectedTxn.voucher_number || '-'}
@@ -2425,36 +2326,16 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
                     Atur Anggaran / Budget (FY {filters.fiscalYear || 2026})
                   </DialogTitle>
                   <DialogDescription className="text-xs text-muted-foreground">
-                    Atur nominal budget bulanan atau rincian per project untuk laporan CSL
+                    Atur budget tahunan per kategori biaya. Nilai bulanan dihitung otomatis ÷ 12.
                   </DialogDescription>
                 </div>
               </div>
             </div>
 
-            {/* Tab selector */}
-            <div className="flex items-center gap-2 pt-3 border-t border-border/40 mt-3">
-              <button
-                type="button"
-                onClick={() => setBudgetModalTab('nominal')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                  budgetModalTab === 'nominal'
-                    ? 'bg-indigo-600 text-white shadow-sm'
-                    : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground'
-                }`}
-              >
-                <DollarSign size={13} /> Nominal Budget Bulanan
-              </button>
-              <button
-                type="button"
-                onClick={() => setBudgetModalTab('projects')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                  budgetModalTab === 'projects'
-                    ? 'bg-indigo-600 text-white shadow-sm'
-                    : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground'
-                }`}
-              >
-                <Layers size={13} /> Alokasi per Project
-              </button>
+            <div className="pt-3 border-t border-border/40 mt-3">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-600 text-white shadow-sm">
+                <DollarSign size={13} /> Budget per Kategori Biaya
+              </span>
             </div>
           </DialogHeader>
 
@@ -2657,7 +2538,7 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
                 <div className="grid grid-cols-2 gap-3 p-3.5 rounded-xl bg-indigo-500/5 border border-indigo-500/20">
                   <div>
                     <span className="text-[10px] font-bold text-muted-foreground uppercase block">
-                      Total Budget Bulanan (Projects)
+                      Total Budget Bulanan (Kategori)
                     </span>
                     <p className="text-sm font-black font-mono text-indigo-600 dark:text-indigo-400 mt-0.5">
                       {formatIdr(budgetEditList.reduce((sum, item) => sum + (parseFormattedAmount(item.monthly_amount) || 0), 0))} <span className="text-[10px] font-normal text-muted-foreground">/ bln</span>
@@ -2673,114 +2554,56 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-bold text-foreground">Alokasi Anggaran per Project</p>
-                    <p className="text-[10px] text-muted-foreground">Ketik di kolom bulanan atau tahunan, sistem otomatis mengalikan/membagi</p>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleAddBudgetRow}
-                    className="h-7 text-xs gap-1 text-indigo-600 border-indigo-500/30 hover:bg-indigo-500/10 cursor-pointer"
-                  >
-                    <Plus size={12} /> Add Project
-                  </Button>
+                <div>
+                  <p className="text-xs font-bold text-foreground">Budget Tahunan per Kategori Biaya</p>
+                  <p className="text-[10px] text-muted-foreground">Isi budget tahunan. Budget bulanan otomatis dihitung dari nilai tahunan ÷ 12.</p>
                 </div>
 
-                {budgetEditList.length === 0 ? (
-                  <div className="p-8 text-center border border-dashed rounded-xl text-muted-foreground text-xs">
-                    Belum ada alokasi budget project. Klik &quot;Add Project&quot; di atas untuk menambahkan.
-                  </div>
-                ) : (
-                  <div className="space-y-2.5">
-                    {budgetEditList.map((item, index) => (
-                      <div
-                        key={index}
-                        className="p-3 rounded-xl border border-border/60 bg-muted/20 flex flex-col sm:flex-row sm:items-center gap-3"
-                      >
-                        <div className="flex-1 min-w-0">
-                          <label className="text-[10px] font-bold text-muted-foreground uppercase block mb-1">
-                            Project Name
-                          </label>
-                          <Input
-                            value={item.project_name}
-                            onChange={e => {
-                              const val = e.target.value;
-                              setBudgetEditList(prev => prev.map((p, i) => i === index ? { ...p, project_name: val } : p));
-                            }}
-                            placeholder="e.g. Legal Restructuring"
-                            className="h-8 text-xs bg-background"
-                          />
-                        </div>
-
-                        <div className="w-full sm:w-24 shrink-0">
-                          <label className="text-[10px] font-bold text-muted-foreground uppercase block mb-1">
-                            Dept
-                          </label>
-                          <Input
-                            value={item.department}
-                            onChange={e => {
-                              const val = e.target.value;
-                              setBudgetEditList(prev => prev.map((p, i) => i === index ? { ...p, department: val } : p));
-                            }}
-                            placeholder="CSL"
-                            className="h-8 text-xs bg-background font-medium"
-                          />
-                        </div>
-
-                        <div className="w-full sm:w-36 shrink-0">
-                          <label className="text-[10px] font-bold text-muted-foreground uppercase block mb-1">
-                            Budget / Bulan
-                          </label>
-                          <Input
-                            type="text"
-                            inputMode="numeric"
-                            value={item.monthly_amount}
-                            onChange={e => handleMonthlyChange(index, e.target.value)}
-                            placeholder="e.g. 5.000.000"
-                            className="h-8 text-xs font-mono font-bold text-indigo-600 dark:text-indigo-400 bg-background"
-                          />
-                        </div>
-
-                        <div className="w-full sm:w-36 shrink-0">
-                          <div className="flex items-center justify-between mb-1">
-                            <label className="text-[10px] font-bold text-muted-foreground uppercase">
-                              Setahun (x12)
-                            </label>
-                            {item.actual > 0 && (
-                              <span className="text-[9px] text-muted-foreground font-mono truncate" title={`Actual spend: ${formatIdr(item.actual)}`}>
-                                Act: {formatIdr(item.actual)}
-                              </span>
-                            )}
-                          </div>
-                          <Input
-                            type="text"
-                            inputMode="numeric"
-                            value={item.allocated_amount}
-                            onChange={e => handleAnnualChange(index, e.target.value)}
-                            placeholder="e.g. 60.000.000"
-                            className="h-8 text-xs font-mono font-medium text-foreground bg-background"
-                          />
-                        </div>
-
-                        <div className="sm:pt-5 shrink-0 flex justify-end">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleRemoveBudgetRow(index)}
-                            className="h-8 w-8 p-0 text-muted-foreground hover:text-rose-600 hover:bg-rose-500/10 cursor-pointer"
-                            title="Remove"
-                          >
-                            <Trash2 size={14} />
-                          </Button>
+                <div className="space-y-2.5">
+                  {budgetEditList.map((item, index) => (
+                    <div
+                      key={item.category}
+                      className="p-3 rounded-xl border border-border/60 bg-muted/20 grid grid-cols-1 sm:grid-cols-[minmax(140px,1fr)_180px_180px] sm:items-end gap-3"
+                    >
+                      <div>
+                        <label className="text-[10px] font-bold text-muted-foreground uppercase block mb-1">Kategori Biaya</label>
+                        <div className="h-8 flex items-center rounded-md border border-border/60 bg-background px-3 text-xs font-bold text-foreground">
+                          {item.category}
                         </div>
                       </div>
-                    ))}
-                  </div>
-                )}
+
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="text-[10px] font-bold text-muted-foreground uppercase">Budget Tahunan</label>
+                          {item.actual > 0 && (
+                            <span className="text-[9px] text-muted-foreground font-mono" title={`Actual spend: ${formatIdr(item.actual)}`}>
+                              Actual: {formatIdr(item.actual)}
+                            </span>
+                          )}
+                        </div>
+                        <Input
+                          type="text"
+                          inputMode="numeric"
+                          value={item.allocated_amount}
+                          onChange={e => handleAnnualChange(index, e.target.value)}
+                          placeholder="e.g. 60.000.000"
+                          className="h-8 text-xs font-mono font-bold text-foreground bg-background"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] font-bold text-muted-foreground uppercase block mb-1">Budget Bulanan (÷ 12)</label>
+                        <Input
+                          type="text"
+                          value={item.monthly_amount}
+                          readOnly
+                          aria-readonly="true"
+                          className="h-8 text-xs font-mono font-bold text-indigo-600 dark:text-indigo-400 bg-muted/50 cursor-default"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -2798,7 +2621,7 @@ export const CSLBudgetExpensesReport: React.FC<CSLBudgetExpensesReportProps> = (
             <Button
               type="button"
               size="sm"
-              onClick={budgetModalTab === 'nominal' ? handleSaveMonthlyBudget : handleSaveBudgets}
+              onClick={handleSaveBudgets}
               disabled={isSavingBudgets}
               className="h-8 text-xs gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold cursor-pointer shadow-sm"
             >

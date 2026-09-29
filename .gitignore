@@ -28,8 +28,10 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# SQL migration files (manage via Supabase dashboard, not git)
+# Ad-hoc SQL stays local; versioned Supabase migrations must be tracked.
 *.sql
+!supabase/migrations/
+!supabase/migrations/*.sql
 migration_*.sql
 supabase/check_schema.sql
 supabase/create_*.sql

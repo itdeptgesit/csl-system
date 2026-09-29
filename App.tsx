@@ -26,6 +26,7 @@ import {
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { ToastProvider } from './components/ToastProvider';
+import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 import { supabase } from './lib/supabaseClient';
@@ -791,6 +792,7 @@ const App: React.FC = () => {
     <Provider theme={defaultTheme} colorScheme="light">
       <ToastProvider>
         <InternalApp />
+        <Toaster />
       </ToastProvider>
     </Provider>
   );
