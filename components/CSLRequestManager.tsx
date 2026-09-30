@@ -227,6 +227,8 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
 
   // New Comment State
   const [newComment, setNewComment] = useState('');
+  const [chatFiles, setChatFiles] = useState<File[]>([]);
+  const chatFileRef = useRef<HTMLInputElement>(null);
   const [isInternalComment, setIsInternalComment] = useState(false);
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [mentionState, setMentionState] = useState<{ active: boolean, query: string, index: number }>({ active: false, query: '', index: 0 });
@@ -606,80 +608,100 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
   };
 
   const submitComment = async () => {
-    if (!selectedRequest || !newComment.trim()) return;
+    if (!selectedRequest || (!newComment.trim() && chatFiles.length === 0)) return;
     setIsSubmittingComment(true);
 
     try {
       const hasSpecificMention = cslStaffUsers.some(u => newComment.includes(`@${u.fullName}`));
       const isInternal = isInternalComment || (isCslTeam && (newComment.includes('@admin') || hasSpecificMention));
+      const note = newComment.trim() || `Mengirim ${chatFiles.length} dokumen pendukung`;
+      let attachments: { name: string; url: string; fileId: string | null; size: number; mimeType: string }[] = [];
+
       if (!useMock) {
+        for (const file of chatFiles) {
+          const base64 = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = () => reject(new Error(`Gagal membaca ${file.name}`));
+          });
+          const { data: uploadData, error: uploadError } = await supabase.functions.invoke('upload-to-gdrive', {
+            body: {
+              fileName: file.name,
+              fileMimeType: file.type || 'application/octet-stream',
+              fileBase64: base64,
+              requesterEmail: selectedRequest.requester_email,
+              folderType: 'request',
+            },
+          });
+          if (uploadError || !uploadData?.success) {
+            throw new Error(uploadError?.message || uploadData?.error || `Gagal mengunggah ${file.name}`);
+          }
+          attachments.push({ name: file.name, url: uploadData.gdriveUrl, fileId: uploadData.fileId || null, size: file.size, mimeType: file.type || 'application/octet-stream' });
+        }
+
+        if (attachments.length > 0) {
+          const { error: documentError } = await supabase.from('csl_request_documents').insert(attachments.map(file => ({
+            request_id: selectedRequest.id,
+            doc_name: file.name,
+            doc_type: 'Dokumen Pendukung',
+            gdrive_url: file.url,
+            gdrive_file_id: file.fileId,
+            uploaded_by_name: currentUser?.fullName || currentUser?.email || 'User',
+            uploaded_by_id: currentUser?.id ? String(currentUser.id) : null,
+            is_visible_to_requester: true,
+          })));
+          if (documentError) throw documentError;
+        }
+
         const { error: insertErr } = await supabase.from('csl_request_logs').insert([{
           request_id: selectedRequest.id,
           status: selectedRequest.status,
           actor_name: currentUser?.fullName || currentUser?.email || 'User',
           actor_id: currentUser?.id ? String(currentUser.id) : null,
-          note: newComment.trim(),
-          has_files: false,
+          note,
+          has_files: attachments.length > 0,
+          attachments,
           is_internal: isInternal,
         }]);
-        if (insertErr) {
-          toast.error(`Gagal mengirim komentar: ${insertErr.message}`);
-          setIsSubmittingComment(false);
-          return;
-        }
+        if (insertErr) throw insertErr;
 
-        // Notify requester or CSL staff about new comment
         if (!isInternal) {
+          const notificationAttachments = attachments.map(file => ({ name: file.name, url: file.url }));
           if (currentUser?.email !== selectedRequest.requester_email) {
-            await notifyRequestUpdate(selectedRequest, 'STATUS_CHANGED', `Pesan baru dari ${currentUser?.fullName || 'CSL Team'}:\n\n"${newComment.trim()}"`);
+            await notifyRequestUpdate(selectedRequest, 'STATUS_CHANGED', `Pesan baru dari ${currentUser?.fullName || 'CSL Team'}:\n\n"${note}"`, notificationAttachments);
           } else {
-            await notifyRequestUpdate(selectedRequest, 'USER_RESPONDED', `Pemohon mengirim pesan baru:\n\n"${newComment.trim()}"`);
+            await notifyRequestUpdate(selectedRequest, 'USER_RESPONDED', `Pemohon mengirim pesan baru:\n\n"${note}"`, notificationAttachments);
           }
         } else {
-          // If it's an internal note, notify specifically mentioned users
           const mentionedUsers = cslStaffUsers.filter(u => newComment.includes(`@${u.fullName}`));
           for (const u of mentionedUsers) {
             if (u.email !== currentUser?.email) {
-              await notifyUserMentioned(
-                selectedRequest,
-                currentUser?.fullName || 'CSL Staff',
-                u.id,
-                u.email,
-                u.fullName,
-                newComment.trim()
-              );
+              await notifyUserMentioned(selectedRequest, currentUser?.fullName || 'CSL Staff', u.id, u.email, u.fullName, note);
             }
           }
         }
 
-        // Refresh logs after insert
-        const { data: logs } = await supabase
-          .from('csl_request_logs')
-          .select('*')
-          .eq('request_id', selectedRequest.id)
-          .order('created_at', { ascending: true });
+        const [{ data: logs }, { data: docs }] = await Promise.all([
+          supabase.from('csl_request_logs').select('*').eq('request_id', selectedRequest.id).order('created_at', { ascending: true }),
+          supabase.from('csl_request_documents').select('*').eq('request_id', selectedRequest.id).order('created_at', { ascending: false }),
+        ]);
         if (logs) setRequestLogs(logs);
+        if (docs) setRequestDocuments(docs);
       } else {
-        // In mock mode, show comment locally
+        attachments = chatFiles.map(file => ({ name: file.name, url: '#', fileId: null, size: file.size, mimeType: file.type }));
         setRequestLogs(prev => [...prev, {
-          id: Date.now(),
-          request_id: selectedRequest.id,
-          status: selectedRequest.status,
-          actor_name: currentUser?.fullName || 'User',
-          actor_id: currentUser?.id ? String(currentUser.id) : null,
-          note: newComment.trim(),
-          has_files: false,
-          is_internal: isInternal,
-          created_at: new Date().toISOString(),
+          id: Date.now(), request_id: selectedRequest.id, status: selectedRequest.status,
+          actor_name: currentUser?.fullName || 'User', actor_id: currentUser?.id ? String(currentUser.id) : null,
+          note, has_files: attachments.length > 0, attachments, is_internal: isInternal, created_at: new Date().toISOString(),
         }]);
       }
       setNewComment('');
+      setChatFiles([]);
       setIsInternalComment(false);
-      setTimeout(() => {
-        chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
+      setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
     } catch (err: any) {
-      toast.error(`Error tidak terduga: ${err?.message || 'Unknown error'}`);
+      toast.error(`Gagal mengirim pesan: ${err?.message || 'Unknown error'}`);
     } finally {
       setIsSubmittingComment(false);
     }
@@ -1186,7 +1208,7 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
             const hasDocuments = oldAttachments.length > 0 || requestDocuments.length > 0 || responseFilesList.length > 0;
             const totalDocCount = oldAttachments.length + requestDocuments.length + responseFilesList.length;
 
-            const fallbackEvents: { date: string; status: string; actor: string; note?: string; hasFiles?: boolean; isInternal?: boolean }[] =
+            const fallbackEvents: { date: string; status: string; actor: string; note?: string; hasFiles?: boolean; attachments?: any[]; isInternal?: boolean }[] =
               requestLogs.length === 0
                 ? [{ date: selectedRequest.created_at, status: 'SUBMITTED', actor: selectedRequest.requester_name, note: 'Permintaan diajukan oleh pemohon' }]
                 : [];
@@ -1198,6 +1220,7 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                 actor: l.actor_name,
                 note: l.note,
                 hasFiles: l.has_files,
+                attachments: Array.isArray(l.attachments) ? l.attachments : [],
                 isInternal: l.is_internal,
               }))
             ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
@@ -1799,6 +1822,17 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                                     </div>
                                   )}
                                   <p className="whitespace-pre-wrap">{evt.note}</p>
+                                  {evt.attachments?.length > 0 && (
+                                    <div className="mt-2 space-y-1.5">
+                                      {evt.attachments.map((file: any, fileIndex: number) => (
+                                        <a key={`${file.name}-${fileIndex}`} href={file.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 rounded-lg border border-primary-foreground/25 bg-primary-foreground/10 px-2.5 py-2 hover:bg-primary-foreground/20">
+                                          <FileText size={14} className="shrink-0" />
+                                          <span className="min-w-0 flex-1 truncate font-medium">{file.name}</span>
+                                          <ExternalLink size={12} className="shrink-0" />
+                                        </a>
+                                      ))}
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             );
@@ -1835,6 +1869,17 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                                   }`}
                                 >
                                   <p className="whitespace-pre-wrap">{evt.note}</p>
+                                  {evt.attachments?.length > 0 && (
+                                    <div className="mt-2 space-y-1.5">
+                                      {evt.attachments.map((file: any, fileIndex: number) => (
+                                        <a key={`${file.name}-${fileIndex}`} href={file.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 rounded-lg border border-border bg-background/70 px-2.5 py-2 hover:bg-muted">
+                                          <FileText size={14} className="shrink-0" />
+                                          <span className="min-w-0 flex-1 truncate font-medium">{file.name}</span>
+                                          <ExternalLink size={12} className="shrink-0" />
+                                        </a>
+                                      ))}
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             </div>
@@ -1862,6 +1907,32 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                           </div>
                         )}
 
+                        {chatFiles.length > 0 && (
+                          <div className="flex flex-wrap gap-2 px-1">
+                            {chatFiles.map((file, index) => (
+                              <div key={`${file.name}-${index}`} className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-2.5 py-1.5 text-xs">
+                                <FileText size={13} className="shrink-0" />
+                                <span className="max-w-48 truncate font-medium">{file.name}</span>
+                                <span className="text-[10px] text-muted-foreground">{(file.size / 1024).toFixed(0)} KB</span>
+                                <button type="button" onClick={() => setChatFiles(files => files.filter((_, i) => i !== index))} disabled={isSubmittingComment} aria-label={`Hapus ${file.name}`}>
+                                  <X size={12} />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        <input
+                          ref={chatFileRef}
+                          type="file"
+                          multiple
+                          className="hidden"
+                          disabled={isSubmittingComment}
+                          onChange={event => {
+                            const selected = Array.from(event.target.files || []);
+                            setChatFiles(files => [...files, ...selected]);
+                            event.target.value = '';
+                          }}
+                        />
                         <div className="flex items-end gap-2 relative">
                           {/* Mention Popup */}
                           {mentionState.active && (
@@ -1888,6 +1959,18 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                             </div>
                           )}
 
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            onClick={() => chatFileRef.current?.click()}
+                            disabled={isSubmittingComment}
+                            className="h-10 w-10 shrink-0 rounded-xl"
+                            title="Lampirkan dokumen pendukung"
+                            aria-label="Lampirkan dokumen pendukung"
+                          >
+                            <Paperclip size={15} />
+                          </Button>
                           <Textarea
                             rows={1}
                             placeholder={isInternalComment ? "Tulis catatan internal untuk tim CSL..." : "Ketik pesan atau balasan diskusi... (Enter untuk kirim)"}
@@ -1932,7 +2015,7 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                           />
                           <Button
                             size="icon"
-                            disabled={isSubmittingComment || !newComment.trim()}
+                            disabled={isSubmittingComment || (!newComment.trim() && chatFiles.length === 0)}
                             onClick={submitComment}
                             className="h-10 w-10 shrink-0 rounded-xl bg-primary text-primary-foreground hover:opacity-90 transition-all shadow-xs"
                             title="Kirim Pesan"
