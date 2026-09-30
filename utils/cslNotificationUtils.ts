@@ -1,5 +1,14 @@
 import { supabase } from '../lib/supabaseClient';
 
+function escapeHtml(str: string): string {
+    return (str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
 export type NotificationType = 'Info' | 'Warning' | 'Success' | 'Alert';
 
 /**
@@ -113,19 +122,24 @@ export async function notifyRequestUpdate(
             
         case 'USER_RESPONDED':
             // Notify Assigned PIC, or all CSL staff if unassigned
+            const hasAtt = attachments && attachments.length > 0;
+            const userMsg = hasAtt
+                ? `Pemohon (${request.requester_name}) mengirim pesan & ${attachments.length} lampiran pada ${request.request_number}.`
+                : `Pemohon (${request.requester_name}) mengirim tanggapan pada ${request.request_number}.`;
+            const notifTitle = hasAtt ? 'Pesan & Lampiran Baru dari Pemohon' : 'Pesan Baru dari Pemohon';
             if (assignedPicUserId) {
                 await createInAppNotification(
                     assignedPicUserId,
-                    'Pesan Baru dari Pemohon',
-                    `Pemohon (${request.requester_name}) mengirim tanggapan pada ${request.request_number}.`,
+                    notifTitle,
+                    userMsg,
                     'Info',
                     requestLink
                 );
             } else {
                 await createInAppNotification(
                     null,
-                    'Pesan Baru dari Pemohon',
-                    `Pemohon (${request.requester_name}) mengirim tanggapan pada ${request.request_number}.`,
+                    notifTitle,
+                    userMsg,
                     'Info',
                     requestLink
                 );
@@ -209,7 +223,7 @@ export async function notifyRequestUpdate(
                     <div style="margin: 24px 0;">
                         <h3 style="margin: 0 0 8px 0; color: #0f172a; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">Message / Note</h3>
                         <div style="background-color: #f1f5f9; border-left: 4px solid #3b82f6; padding: 16px; border-radius: 0 8px 8px 0; font-style: italic; color: #475569; font-size: 14px;">
-                            ${additionalInfo.replace(/\n/g, '<br/>')}
+                            ${escapeHtml(additionalInfo).replace(/\n/g, '<br/>')}
                         </div>
                     </div>` : ''}
 
@@ -220,7 +234,7 @@ export async function notifyRequestUpdate(
                             ${attachments.map(att => `
                                 <div style="margin-bottom: 8px; display: flex; align-items: center;">
                                     <span style="background-color: #e0f2fe; color: #0284c7; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; margin-right: 8px;">FILE</span>
-                                    <a href="${att.url}" target="_blank" style="color: #2563eb; text-decoration: none; font-size: 14px; font-weight: 500;">${att.name}</a>
+                                    <a href="${escapeHtml(att.url)}" target="_blank" rel="noopener noreferrer" style="color: #2563eb; text-decoration: none; font-size: 14px; font-weight: 500;">${escapeHtml(att.name)}</a>
                                 </div>
                             `).join('')}
                         </div>

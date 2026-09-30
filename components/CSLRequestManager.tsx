@@ -73,6 +73,11 @@ interface CSLRequestManagerProps {
   view?: 'all' | 'mine' | 'categories';
 }
 
+const CHAT_ATTACHMENT_MAX_FILES = 5;
+const CHAT_ATTACHMENT_MAX_BYTES = 10 * 1024 * 1024;
+const CHAT_ATTACHMENT_ACCEPT = '.pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png';
+const CHAT_ATTACHMENT_EXTENSIONS = new Set(['pdf', 'doc', 'docx', 'xls', 'xlsx', 'jpg', 'jpeg', 'png']);
+
 // ── SLA & Status Styling (Modern Informative Badge Style) ───────────────
 const SLA_BADGE: Record<SLAStatus, { label: string; className: string }> = {
   ON_TRACK: { label: 'On Track', className: 'border-emerald-500/20 text-emerald-700 dark:text-emerald-300 bg-emerald-500/10' },
@@ -446,8 +451,19 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
     return list;
   }, [requests, statusFilter, searchTerm]);
 
+  const closeDetailModal = () => {
+    setSelectedRequest(null);
+    setNewComment('');
+    setChatFiles([]);
+    setIsInternalComment(false);
+    setResponseFiles([]);
+  };
+
   const handleRowClick = async (req: CSLRequest) => {
     setSelectedRequest(req);
+    setNewComment('');
+    setChatFiles([]);
+    setIsInternalComment(false);
     setResponseForm({ status: req.status, response: req.csl_response || '', gdriveLink: '' });
     setResponseFiles([]);
     setRequestLogs([]);
@@ -632,6 +648,7 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
               fileBase64: base64,
               requesterEmail: selectedRequest.requester_email,
               folderType: 'request',
+              requestId: selectedRequest.id,
             },
           });
           if (uploadError || !uploadData?.success) {
@@ -654,7 +671,7 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
           if (documentError) throw documentError;
         }
 
-        const { error: insertErr } = await supabase.from('csl_request_logs').insert([{
+        let { error: insertErr } = await supabase.from('csl_request_logs').insert([{
           request_id: selectedRequest.id,
           status: selectedRequest.status,
           actor_name: currentUser?.fullName || currentUser?.email || 'User',
@@ -664,6 +681,24 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
           attachments,
           is_internal: isInternal,
         }]);
+
+        // Fallback jika migrasi kolom 'attachments' di Supabase belum sempat dijalankan
+        if (insertErr && (insertErr.message?.includes('attachments') || (insertErr as any).code === 'PGRST204')) {
+          const fallbackNote = attachments.length > 0
+            ? `${note}\n\n📎 Lampiran Dokumen:\n` + attachments.map(a => `• ${a.name}: ${a.url}`).join('\n')
+            : note;
+          const retry = await supabase.from('csl_request_logs').insert([{
+            request_id: selectedRequest.id,
+            status: selectedRequest.status,
+            actor_name: currentUser?.fullName || currentUser?.email || 'User',
+            actor_id: currentUser?.id ? String(currentUser.id) : null,
+            note: fallbackNote,
+            has_files: attachments.length > 0,
+            is_internal: isInternal,
+          }]);
+          insertErr = retry.error;
+        }
+
         if (insertErr) throw insertErr;
 
         if (!isInternal) {
@@ -1192,7 +1227,7 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
       )}
 
       {/* Detail Dialog (Shadcn Monochromatic / Neutral Professional UI) */}
-      <Dialog open={!!selectedRequest} onOpenChange={(open) => !open && setSelectedRequest(null)}>
+      <Dialog open={!!selectedRequest} onOpenChange={(open) => !open && closeDetailModal()}>
         <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col p-0 overflow-hidden rounded-xl border bg-background shadow-2xl">
           {selectedRequest && (() => {
             const displaySlaDueDate = selectedRequest.required_date || selectedRequest.sla_due_date;
@@ -1925,11 +1960,28 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                           ref={chatFileRef}
                           type="file"
                           multiple
+                          accept={CHAT_ATTACHMENT_ACCEPT}
                           className="hidden"
                           disabled={isSubmittingComment}
                           onChange={event => {
                             const selected = Array.from(event.target.files || []);
-                            setChatFiles(files => [...files, ...selected]);
+                            const invalid = selected.find(file => {
+                              const extension = file.name.split('.').pop()?.toLowerCase() || '';
+                              return !CHAT_ATTACHMENT_EXTENSIONS.has(extension) || file.size > CHAT_ATTACHMENT_MAX_BYTES;
+                            });
+                            if (invalid) {
+                              toast.error(`File ${invalid.name} tidak didukung atau melebihi 10 MB.`);
+                              event.target.value = '';
+                              return;
+                            }
+                            setChatFiles(files => {
+                              const combined = [...files, ...selected];
+                              if (combined.length > CHAT_ATTACHMENT_MAX_FILES) {
+                                toast.error(`Maksimal ${CHAT_ATTACHMENT_MAX_FILES} file per pesan.`);
+                                return files;
+                              }
+                              return combined;
+                            });
                             event.target.value = '';
                           }}
                         />

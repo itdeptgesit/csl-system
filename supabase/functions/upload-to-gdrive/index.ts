@@ -1,4 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+const REQUEST_EXTENSIONS = new Set(['pdf', 'doc', 'docx', 'xls', 'xlsx', 'jpg', 'jpeg', 'png'])
+const REQUEST_MAX_BYTES = 10 * 1024 * 1024
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -96,9 +100,45 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
   try {
-    const { fileName, fileMimeType, fileBase64, requesterEmail, folderType } = await req.json()
+    const { fileName, fileMimeType, fileBase64, requesterEmail, folderType, requestId } = await req.json()
 
     if (!fileName || !fileBase64) throw new Error('Missing fileName or fileBase64')
+
+    // Chat attachments are bound to a request and may only be uploaded by its
+    // requester or a CSL team member. Legacy non-chat uploads keep their
+    // existing authorization path.
+    if (folderType === 'request' && requestId) {
+      const authorization = req.headers.get('Authorization')
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')
+      const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+      if (!authorization || !supabaseUrl || !serviceRoleKey) throw new Error('Unauthorized request upload')
+
+      const authClient = createClient(supabaseUrl, serviceRoleKey, {
+        global: { headers: { Authorization: authorization } },
+        auth: { persistSession: false },
+      })
+      const { data: authData, error: authError } = await authClient.auth.getUser(authorization.replace(/^Bearer\s+/i, ''))
+      if (authError || !authData.user?.email) throw new Error('Unauthorized request upload')
+
+      const { data: requestRecord, error: requestError } = await authClient
+        .from('csl_requests')
+        .select('requester_email')
+        .eq('id', requestId)
+        .maybeSingle()
+      if (requestError || !requestRecord) throw new Error('Request tidak ditemukan')
+
+      const { data: isCslTeam } = await authClient.rpc('is_csl_team')
+      const callerEmail = authData.user.email.toLowerCase()
+      if (!isCslTeam && requestRecord.requester_email?.toLowerCase() !== callerEmail) {
+        throw new Error('Anda tidak berhak mengunggah dokumen ke request ini')
+      }
+      if (requesterEmail?.toLowerCase() !== requestRecord.requester_email?.toLowerCase()) {
+        throw new Error('Email pemohon tidak sesuai dengan request')
+      }
+
+      const extension = String(fileName).split('.').pop()?.toLowerCase() || ''
+      if (!REQUEST_EXTENSIONS.has(extension)) throw new Error('Tipe file tidak didukung')
+    }
 
     let serviceAccountRaw = Deno.env.get('GDRIVE_SERVICE_ACCOUNT_JSON')
     const rootFolderId = Deno.env.get('GDRIVE_FOLDER_ID') // = CSL System Dev folder
@@ -138,6 +178,9 @@ serve(async (req) => {
     // Decode Base64
     const base64Data = fileBase64.replace(/^data:.*,/, '')
     const fileBytes = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0))
+    if (folderType === 'request' && requestId && fileBytes.length > REQUEST_MAX_BYTES) {
+      throw new Error('Ukuran file melebihi 10 MB')
+    }
     const mimeType = fileMimeType || 'application/octet-stream'
 
     // Build multipart upload body
@@ -171,7 +214,7 @@ serve(async (req) => {
 
     // Share ke requester (jika ada)
     if (requesterEmail) {
-      await fetch(
+      const permissionRes = await fetch(
         `https://www.googleapis.com/drive/v3/files/${fileData.id}/permissions?supportsAllDrives=true&sendNotificationEmail=false`,
         {
           method: 'POST',
@@ -179,6 +222,9 @@ serve(async (req) => {
           body: JSON.stringify({ role: 'reader', type: 'user', emailAddress: requesterEmail }),
         }
       )
+      if (!permissionRes.ok) {
+        throw new Error(`Gagal membagikan file ke pemohon: ${await permissionRes.text()}`)
+      }
     }
 
     return new Response(
