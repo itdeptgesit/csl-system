@@ -102,6 +102,7 @@ const DateCell: React.FC<{
 interface RupsItem {
   id: number;
   company: string;
+  periode?: string;
   status: string;
   owner: string;
   startDate: string;
@@ -109,6 +110,17 @@ interface RupsItem {
   notes: string;
   dueDate?: string;
   reminderEmails?: string;
+  method?: string;
+  stage?: string;
+  notaryName?: string;
+  deedNumber?: string;
+  deedDate?: string;
+  ahuNumber?: string;
+  ahuStatus?: string;
+  documentUrl?: string;
+  documentName?: string;
+  updatedBy?: string;
+  updatedAt?: string;
 }
 
 const DUMMY_RUPS_AR: RupsItem[] = [
@@ -249,6 +261,10 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
   const [asetForm, setAsetForm] = useState(EMPTY_ASET_FORM);
   const [agreementForm, setAgreementForm] = useState(EMPTY_AGREEMENT_FORM);
 
+  // Detail & Legal RUPS Modal
+  const [selectedRupsDetail, setSelectedRupsDetail] = useState<RupsItem | null>(null);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+
   // Reminder Edit Modal
   const [reminderEditOpen, setReminderEditOpen] = useState(false);
   const [reminderEditTarget, setReminderEditTarget] = useState<any>(null);
@@ -289,7 +305,18 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
           dueDate: d.due_date || '',
           finishDate: d.finish_date || '',
           notes: d.notes || '',
-          reminderEmails: d.reminder_emails || ''
+          reminderEmails: d.reminder_emails || '',
+          method: d.method || 'Sirkuler',
+          stage: d.stage || 'Drafting',
+          notaryName: d.notary_name || '',
+          deedNumber: d.deed_number || '',
+          deedDate: d.deed_date || '',
+          ahuNumber: d.ahu_number || '',
+          ahuStatus: d.ahu_status || 'Pending',
+          documentUrl: d.document_url || '',
+          documentName: d.document_name || '',
+          updatedBy: d.updated_by || '',
+          updatedAt: d.updated_at || ''
         })));
       } else {
         // Fallback to dummy if table doesn't exist yet or is empty
@@ -371,15 +398,32 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
       clearTimeout(saveTimeoutRef.current[`${id}-${field}`]);
     }
     // Map camelCase fields to snake_case for Supabase
-    const dbField = field === 'startDate' ? 'start_date' : field === 'dueDate' ? 'due_date' : field === 'finishDate' ? 'finish_date' : field === 'reminderEmails' ? 'reminder_emails' : field;
+    const dbField = field === 'startDate' ? 'start_date' 
+      : field === 'dueDate' ? 'due_date' 
+      : field === 'finishDate' ? 'finish_date' 
+      : field === 'reminderEmails' ? 'reminder_emails'
+      : field === 'notaryName' ? 'notary_name'
+      : field === 'deedNumber' ? 'deed_number'
+      : field === 'deedDate' ? 'deed_date'
+      : field === 'ahuNumber' ? 'ahu_number'
+      : field === 'ahuStatus' ? 'ahu_status'
+      : field === 'documentUrl' ? 'document_url'
+      : field === 'documentName' ? 'document_name'
+      : field;
     const isDateField = dbField.endsWith('_date');
     const dbValue = isDateField ? (toISO(value) || null) : value;
-    const isText = field === 'notes';
+    const isText = field === 'notes' || field === 'deedNumber' || field === 'ahuNumber' || field === 'notaryName';
     const delay = isText ? 700 : 150;
     
     saveTimeoutRef.current[`${id}-${field}`] = setTimeout(async () => {
       try {
-        const { data, error } = await supabase.from('csl_rups_ar').update({ [dbField]: dbValue }).eq('id', id).select();
+        const updaterName = currentUser?.fullName || currentUser?.email || 'User';
+        const updatePayload: Record<string, any> = { 
+          [dbField]: dbValue,
+          updated_by: updaterName,
+          updated_at: new Date().toISOString()
+        };
+        const { data, error } = await supabase.from('csl_rups_ar').update(updatePayload).eq('id', id).select();
         if (error && error.code !== '42P01') {
            toast.error('Gagal menyimpan: ' + error.message);
            console.error('RUPS update error:', error);
@@ -396,8 +440,14 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
   };
 
   const handleUpdateRups = (id: number, field: string, value: string) => {
+    const updaterName = currentUser?.fullName || currentUser?.email || 'User';
     setRupsData(prev => prev.map(item => 
-      item.id === id ? { ...item, [field]: value } : item
+      item.id === id ? { 
+        ...item, 
+        [field]: value, 
+        updatedBy: updaterName, 
+        updatedAt: new Date().toISOString() 
+      } : item
     ));
     updateRupsInDb(id, field, value);
   };
@@ -750,12 +800,14 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
               <TableRow className="border-b border-border/70 hover:bg-muted/60">
                 <TableHead className="h-10 w-12 px-3 text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">#</TableHead>
                 <TableHead className="h-10 min-w-[210px] px-4 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Company</TableHead>
-                <TableHead className="h-10 w-[140px] px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Status</TableHead>
-                <TableHead className="h-10 w-[155px] px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Owner</TableHead>
-                <TableHead className="h-10 w-[145px] px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Start date</TableHead>
-                <TableHead className="h-10 w-[145px] px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Complete date</TableHead>
-                <TableHead className="h-10 min-w-[190px] px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Notes</TableHead>
-                <TableHead className="h-10 w-12 px-2"><span className="sr-only">Aksi</span></TableHead>
+                <TableHead className="h-10 w-[130px] px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Tahapan</TableHead>
+                <TableHead className="h-10 w-[120px] px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Metode</TableHead>
+                <TableHead className="h-10 w-[130px] px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Status</TableHead>
+                <TableHead className="h-10 w-[135px] px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Start date</TableHead>
+                <TableHead className="h-10 w-[135px] px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Complete date</TableHead>
+                <TableHead className="h-10 min-w-[170px] px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Legalitas / Akta</TableHead>
+                <TableHead className="h-10 w-[140px] px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Diperbarui Oleh</TableHead>
+                <TableHead className="h-10 w-16 px-2 text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Aksi</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -764,6 +816,30 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
                   <TableCell className="px-3 py-2.5 text-center font-mono text-xs tabular-nums text-muted-foreground">{(safePage - 1) * PAGE_SIZE + idx + 1}</TableCell>
                   <TableCell className={`px-4 py-2.5 text-sm font-medium ${item.status === 'Blocked' ? 'text-red-500' : 'text-foreground'}`}>
                     {item.company}
+                  </TableCell>
+                  <TableCell className="px-3 py-2.5">
+                    <select
+                      value={item.stage || 'Drafting'}
+                      onChange={(e) => handleUpdateRups(item.id, 'stage', e.target.value)}
+                      className="h-7 w-full cursor-pointer appearance-none rounded-md border border-border/60 bg-transparent px-2 text-left text-[11px] font-semibold outline-none transition-colors hover:bg-muted focus:ring-2 focus:ring-ring/30"
+                    >
+                      <option value="Drafting" className="bg-card">1. Drafting Risalah</option>
+                      <option value="Sirkuler / TTD" className="bg-card">2. Sirkuler / TTD</option>
+                      <option value="Proses Notaris" className="bg-card">3. Notaris / Akta</option>
+                      <option value="Pelaporan AHU" className="bg-card">4. Pelaporan AHU</option>
+                      <option value="Selesai" className="bg-card">5. Selesai</option>
+                    </select>
+                  </TableCell>
+                  <TableCell className="px-3 py-2.5">
+                    <select
+                      value={item.method || 'Sirkuler'}
+                      onChange={(e) => handleUpdateRups(item.id, 'method', e.target.value)}
+                      className="h-7 w-full cursor-pointer appearance-none rounded-md border border-border/60 bg-transparent px-2 text-left text-[11px] font-medium outline-none transition-colors hover:bg-muted focus:ring-2 focus:ring-ring/30"
+                    >
+                      <option value="Sirkuler" className="bg-card">Sirkuler</option>
+                      <option value="RUPS Fisik" className="bg-card">RUPS Fisik</option>
+                      <option value="Hybrid" className="bg-card">Hybrid</option>
+                    </select>
                   </TableCell>
                   <TableCell className="px-3 py-2.5">
                     <select 
@@ -778,26 +854,6 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
                       <option value="In progress" className="bg-card">In progress</option>
                     </select>
                   </TableCell>
-                  <TableCell className="px-3 py-2.5">
-                    <select
-                      value={item.owner}
-                      onChange={(e) => handleUpdateRups(item.id, 'owner', e.target.value)}
-                      className="h-7 w-full min-w-[120px] cursor-pointer rounded-md border border-border/60 bg-transparent px-2 text-xs font-medium text-foreground outline-none transition-colors hover:bg-muted focus:ring-2 focus:ring-ring/30"
-                    >
-                      <option value="">— Pilih Owner —</option>
-                      {/* Current user on top if not in list */}
-                      {currentUser?.fullName && !userList.includes(currentUser.fullName) && (
-                        <option value={currentUser.fullName}>{currentUser.fullName}</option>
-                      )}
-                      {userList.map(name => (
-                        <option key={name} value={name}>{name}</option>
-                      ))}
-                      {/* Fallback: preserve existing owner values not in fetched list */}
-                      {item.owner && !userList.includes(item.owner) && item.owner !== currentUser?.fullName && (
-                        <option value={item.owner}>{item.owner}</option>
-                      )}
-                    </select>
-                  </TableCell>
                   <TableCell className="px-1 py-1.5">
                     <DateCell
                       value={item.startDate}
@@ -810,28 +866,75 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
                       onChange={(v) => handleUpdateRups(item.id, 'finishDate', v)}
                     />
                   </TableCell>
-                  <TableCell className="px-1 py-1.5">
-                    <input 
-                      type="text" 
-                      value={item.notes}
-                      onChange={(e) => handleUpdateRups(item.id, 'notes', e.target.value)}
-                      placeholder="Tambahkan catatan"
-                      className={`h-8 w-full min-w-[170px] rounded-md border border-transparent bg-transparent px-2 text-xs outline-none transition-colors hover:border-border/60 focus:border-border focus:bg-background ${item.status === 'Blocked' ? 'font-medium text-red-500' : 'text-muted-foreground'}`}
-                    />
-                  </TableCell>
-                  <TableCell className="px-2 py-2 text-center">
+                  <TableCell className="px-2 py-1.5">
                     <button
                       onClick={() => {
-                        setReminderEditTarget(item);
-                        setReminderEditDueDate(item.dueDate || '');
-                        setReminderEditEmails(item.reminderEmails || '');
-                        setReminderEditOpen(true);
+                        setSelectedRupsDetail(item);
+                        setDetailModalOpen(true);
                       }}
-                      className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring/30"
-                      title="Edit Email & Reminder"
+                      className="w-full text-left rounded-md px-2 py-1 hover:bg-muted/60 transition-colors border border-transparent hover:border-border/60 group flex flex-col"
                     >
-                      <Pencil className="h-3.5 w-3.5" />
+                      {item.deedNumber ? (
+                        <span className="text-[11px] font-semibold text-foreground truncate block">
+                          Akta: {item.deedNumber}
+                        </span>
+                      ) : (
+                        <span className="text-[11px] text-muted-foreground italic group-hover:text-foreground">
+                          + Input Akta / AHU
+                        </span>
+                      )}
+                      {item.ahuStatus && item.ahuStatus !== 'Pending' ? (
+                        <span className={`text-[9px] font-bold uppercase mt-0.5 px-1 rounded w-fit ${
+                          item.ahuStatus === 'Terbit SK' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40' :
+                          item.ahuStatus === 'Blocked' ? 'bg-red-100 text-red-700 dark:bg-red-950/40' :
+                          'bg-amber-100 text-amber-700 dark:bg-amber-950/40'
+                        }`}>
+                          AHU: {item.ahuStatus}
+                        </span>
+                      ) : item.notes ? (
+                        <span className="text-[10px] text-muted-foreground/70 truncate block max-w-[160px]">
+                          {item.notes}
+                        </span>
+                      ) : null}
                     </button>
+                  </TableCell>
+                  <TableCell className="px-3 py-2.5">
+                    <div className="flex flex-col">
+                      <span className="text-xs font-semibold text-foreground">
+                        {item.updatedBy || item.owner || '—'}
+                      </span>
+                      {item.updatedAt && (
+                        <span className="text-[10px] font-mono text-muted-foreground">
+                          {new Date(item.updatedAt).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' })}
+                        </span>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell className="px-2 py-2 text-center">
+                    <div className="flex items-center justify-center gap-1">
+                      <button
+                        onClick={() => {
+                          setSelectedRupsDetail(item);
+                          setDetailModalOpen(true);
+                        }}
+                        className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring/30"
+                        title="Detail Akta, AHU & Dokumen"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          setReminderEditTarget(item);
+                          setReminderEditDueDate(item.dueDate || '');
+                          setReminderEditEmails(item.reminderEmails || '');
+                          setReminderEditOpen(true);
+                        }}
+                        className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring/30"
+                        title="Reminder Jatuh Tempo & Email"
+                      >
+                        <Bell className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -1313,6 +1416,163 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
                 <Plus className="h-4 w-4 mr-1.5" /> Tambah Task
               </Button>
             )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Modal Detail Akta & AHU Legal RUPS ── */}
+      <Dialog open={detailModalOpen} onOpenChange={setDetailModalOpen}>
+        <DialogContent className="sm:max-w-lg p-0 overflow-hidden rounded-2xl">
+          <DialogHeader className="p-6 pb-4 border-b bg-muted/20">
+            <DialogTitle className="text-lg font-black flex items-center gap-2">
+              Legalitas RUPS-AR
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              {selectedRupsDetail?.company} • Periode {selectedRupsDetail?.periode || activePeriode}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedRupsDetail && (
+            <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] font-black uppercase tracking-wider text-muted-foreground block mb-1">Tahapan Workflow</label>
+                  <select
+                    value={selectedRupsDetail.stage || 'Drafting'}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setSelectedRupsDetail(prev => prev ? { ...prev, stage: v } : null);
+                      handleUpdateRups(selectedRupsDetail.id, 'stage', v);
+                    }}
+                    className="h-9 w-full rounded-lg border border-border/60 bg-muted/30 px-3 text-xs font-semibold outline-none"
+                  >
+                    <option value="Drafting">1. Drafting Risalah / Sirkuler</option>
+                    <option value="Sirkuler / TTD">2. Proses Tanda Tangan Pemegang Saham</option>
+                    <option value="Proses Notaris">3. Proses Notaris (Akta)</option>
+                    <option value="Pelaporan AHU">4. Pelaporan AHU Kemenkumham</option>
+                    <option value="Selesai">5. Selesai (Completed)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] font-black uppercase tracking-wider text-muted-foreground block mb-1">Metode RUPS</label>
+                  <select
+                    value={selectedRupsDetail.method || 'Sirkuler'}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setSelectedRupsDetail(prev => prev ? { ...prev, method: v } : null);
+                      handleUpdateRups(selectedRupsDetail.id, 'method', v);
+                    }}
+                    className="h-9 w-full rounded-lg border border-border/60 bg-muted/30 px-3 text-xs font-semibold outline-none"
+                  >
+                    <option value="Sirkuler">Keputusan Sirkuler</option>
+                    <option value="RUPS Fisik">RUPS Fisik</option>
+                    <option value="Hybrid">Hybrid (Online & Fisik)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="border-t border-border/40 pt-3">
+                <h4 className="text-xs font-black uppercase tracking-wider text-foreground mb-2.5">Data Notaris & Akta</h4>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-1">Nama Notaris</label>
+                    <Input
+                      value={selectedRupsDetail.notaryName || ''}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setSelectedRupsDetail(prev => prev ? { ...prev, notaryName: v } : null);
+                        handleUpdateRups(selectedRupsDetail.id, 'notaryName', v);
+                      }}
+                      placeholder="Contoh: Notaris Ashoya Ratam, S.H., M.Kn."
+                      className="h-9 text-xs bg-muted/30"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-1">Nomor Akta</label>
+                      <Input
+                        value={selectedRupsDetail.deedNumber || ''}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          setSelectedRupsDetail(prev => prev ? { ...prev, deedNumber: v } : null);
+                          handleUpdateRups(selectedRupsDetail.id, 'deedNumber', v);
+                        }}
+                        placeholder="Contoh: 15"
+                        className="h-9 text-xs bg-muted/30 font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-1">Tanggal Akta</label>
+                      <Input
+                        type="date"
+                        value={selectedRupsDetail.deedDate || ''}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          setSelectedRupsDetail(prev => prev ? { ...prev, deedDate: v } : null);
+                          handleUpdateRups(selectedRupsDetail.id, 'deedDate', v);
+                        }}
+                        className="h-9 text-xs bg-muted/30"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t border-border/40 pt-3">
+                <h4 className="text-xs font-black uppercase tracking-wider text-foreground mb-2.5">Penerimaan / SK AHU Kemenkumham</h4>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="col-span-2">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-1">Nomor SK / Bukti AHU</label>
+                    <Input
+                      value={selectedRupsDetail.ahuNumber || ''}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setSelectedRupsDetail(prev => prev ? { ...prev, ahuNumber: v } : null);
+                        handleUpdateRups(selectedRupsDetail.id, 'ahuNumber', v);
+                      }}
+                      placeholder="AHU-0012345.AH.01.02.TAHUN 2026"
+                      className="h-9 text-xs bg-muted/30 font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-1">Status AHU</label>
+                    <select
+                      value={selectedRupsDetail.ahuStatus || 'Pending'}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setSelectedRupsDetail(prev => prev ? { ...prev, ahuStatus: v } : null);
+                        handleUpdateRups(selectedRupsDetail.id, 'ahuStatus', v);
+                      }}
+                      className="h-9 w-full rounded-lg border border-border/60 bg-muted/30 px-2 text-xs font-bold outline-none"
+                    >
+                      <option value="Pending">Pending</option>
+                      <option value="Diajukan">Diajukan</option>
+                      <option value="Terbit SK">Terbit SK</option>
+                      <option value="Blocked">Blocked</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t border-border/40 pt-3">
+                <label className="text-[10px] font-black uppercase tracking-wider text-muted-foreground block mb-1">Catatan Tambahan / Kendala</label>
+                <textarea
+                  value={selectedRupsDetail.notes || ''}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setSelectedRupsDetail(prev => prev ? { ...prev, notes: v } : null);
+                    handleUpdateRups(selectedRupsDetail.id, 'notes', v);
+                  }}
+                  rows={2}
+                  placeholder="Catatan progres, kendala tanda tangan, atau riwayat pemblokiran..."
+                  className="w-full rounded-lg border border-border/60 bg-muted/30 p-2.5 text-xs outline-none focus:border-border resize-none"
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter className="p-4 border-t bg-muted/10">
+            <Button size="sm" onClick={() => setDetailModalOpen(false)} className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl h-9 px-6 ml-auto">
+              Selesai
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
