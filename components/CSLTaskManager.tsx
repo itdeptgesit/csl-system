@@ -240,7 +240,18 @@ const DUMMY_AGREEMENT = [
   { id: 4, requestBy: 'Bu Yayan', taskName: 'Market Research and Business Development Agreement TCS & ACL', status: 'In progress', owner: 'Desi Rahmuni', startDate: '2026-08-18', finishDate: '', notes: 'waiting for Finance confirmation to proceed' },
 ];
 
-const EMPTY_RUPS_FORM = { company: '', periode: new Date().getFullYear().toString(), status: '', owner: '', startDate: '', dueDate: '', finishDate: '', notes: '', reminderEmails: '' };
+const currentYear = new Date().getFullYear();
+const EMPTY_RUPS_FORM = { 
+  company: '', 
+  periode: currentYear.toString(), 
+  status: '', 
+  owner: '', 
+  startDate: '', 
+  dueDate: `${currentYear}-06-30`, // Default 6 bulan dari akhir tahun buku
+  finishDate: '', 
+  notes: '', 
+  reminderEmails: 'corporatesecretary@gesit.co.id' 
+};
 const EMPTY_ASET_FORM = { company: '', taskName: '', status: '', owner: '', startDate: '', dueDate: '', notes: '' };
 const EMPTY_AGREEMENT_FORM = { requestBy: '', taskName: '', status: '', owner: '', startDate: '', finishDate: '', notes: '' };
 
@@ -977,8 +988,11 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
                       <button
                         onClick={() => {
                           setReminderEditTarget(item);
-                          setReminderEditDueDate(item.dueDate || '');
-                          setReminderEditEmails(item.reminderEmails || '');
+                          const periodYear = parseInt(item.periode || activePeriode, 10) || new Date().getFullYear();
+                          // Default RUPS-AR due date: 6 bulan setelah akhir tahun buku berjalan (30 Juni)
+                          const defaultDueDate = `${periodYear}-06-30`;
+                          setReminderEditDueDate(item.dueDate || defaultDueDate);
+                          setReminderEditEmails(item.reminderEmails || 'corporatesecretary@gesit.co.id');
                           setReminderEditOpen(true);
                         }}
                         className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring/30"
@@ -1697,24 +1711,45 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
           </DialogHeader>
           <div className="p-6 space-y-4">
             <div>
-              <label className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground block mb-1">Due Date (Reminder)</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground block">Due Date (Reminder)</label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const periodYear = parseInt(reminderEditTarget?.periode || activePeriode, 10) || new Date().getFullYear();
+                    setReminderEditDueDate(`${periodYear}-06-30`);
+                  }}
+                  className="text-[10px] font-semibold text-indigo-600 hover:text-indigo-500"
+                >
+                  Set 30 Juni (Default UU PT)
+                </button>
+              </div>
               <Input
                 type="date"
                 value={reminderEditDueDate}
                 onChange={(e) => setReminderEditDueDate(e.target.value)}
                 className="h-9 text-sm bg-muted/30"
               />
-              <p className="text-[9px] text-muted-foreground mt-1">Email reminder dikirim 1 minggu sebelum due date</p>
+              <p className="text-[9px] text-muted-foreground mt-1">Default 6 bulan dari penutupan buku (30 Juni). Email reminder otomatis dikirim 1 minggu sebelum due date.</p>
             </div>
             <div>
-              <label className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground block mb-1">Email Reminder</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground block">Email Reminder</label>
+                <button
+                  type="button"
+                  onClick={() => setReminderEditEmails('corporatesecretary@gesit.co.id')}
+                  className="text-[10px] font-semibold text-indigo-600 hover:text-indigo-500"
+                >
+                  Gunakan Grup CSL
+                </button>
+              </div>
               <Input
                 value={reminderEditEmails}
                 onChange={(e) => setReminderEditEmails(e.target.value)}
-                placeholder="email1@test.com, email2@test.com"
+                placeholder="corporatesecretary@gesit.co.id"
                 className="h-9 text-sm bg-muted/30"
               />
-              <p className="text-[9px] text-muted-foreground mt-1">Pisahkan dengan koma untuk banyak email</p>
+              <p className="text-[9px] text-muted-foreground mt-1">Pisahkan dengan koma untuk banyak email (default: corporatesecretary@gesit.co.id)</p>
             </div>
           </div>
           <DialogFooter className="p-4 border-t bg-muted/10 gap-2 flex sm:justify-end">
