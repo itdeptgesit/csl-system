@@ -111,13 +111,58 @@ export async function notifyRequestUpdate(
                 requestLink
             );
             
-            if (request.requester_email) {
-                await sendEmailNotification(
-                    'csl_team@gesit.co.id',
-                    `Permintaan Baru: ${request.request_number}`,
-                    `Permintaan (${request.category_name || request.department || 'CSL'}) diajukan oleh ${request.requester_name} (${request.requester_email}).`
-                );
-            }
+            const newRequestHtml = `
+            <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background-color: #ffffff; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+                <div style="background: linear-gradient(135deg, #0a2540 0%, #1e3a8a 100%); padding: 24px; text-align: center; border-bottom: 3px solid #3b82f6;">
+                    <h2 style="margin: 0; color: #ffffff; font-size: 20px; font-weight: 600; letter-spacing: 0.5px;">Permintaan Baru Diajukan</h2>
+                    <p style="margin: 8px 0 0 0; color: #93c5fd; font-size: 14px; font-family: monospace;">${request.request_number}</p>
+                </div>
+                
+                <div style="padding: 28px 24px; color: #334155; line-height: 1.6;">
+                    <p style="margin-top: 0; font-size: 15px;">Halo <strong>Tim Corporate Secretary & Legal</strong>,</p>
+                    <p style="font-size: 14px; color: #475569;">Ada pengajuan tiket permintaan baru dari user yang memerlukan tindakan/peninjauan:</p>
+                    
+                    <div style="margin: 20px 0; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+                        <table width="100%" cellpadding="10" cellspacing="0" style="border-collapse: collapse; text-align: left; font-size: 13px;">
+                            <tr style="border-bottom: 1px solid #e2e8f0; background-color: #f8fafc;">
+                                <th style="color: #64748b; font-weight: 600; width: 35%;">No. Tiket</th>
+                                <td style="font-weight: 700; color: #0f172a; font-family: monospace;">${request.request_number}</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #e2e8f0;">
+                                <th style="background-color: #f8fafc; color: #64748b; font-weight: 600;">Pemohon</th>
+                                <td style="color: #0f172a; font-weight: 600;">${request.requester_name || 'User'} <span style="color: #64748b; font-weight: normal;">(${request.requester_email || '-'})</span></td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #e2e8f0;">
+                                <th style="background-color: #f8fafc; color: #64748b; font-weight: 600;">Perusahaan / Dept</th>
+                                <td style="color: #334155;">${request.company || 'PT GESIT'} • ${request.department || '-'}</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #e2e8f0;">
+                                <th style="background-color: #f8fafc; color: #64748b; font-weight: 600;">Kategori</th>
+                                <td style="color: #1d4ed8; font-weight: 600;">${request.category_name || '-'}</td>
+                            </tr>
+                            <tr>
+                                <th style="background-color: #f8fafc; color: #64748b; font-weight: 600; vertical-align: top;">Deskripsi</th>
+                                <td style="color: #334155;">${escapeHtml(request.description || '-')}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <p style="margin-bottom: 0; font-size: 13px; color: #64748b;">Silakan masuk ke platform CSL untuk menugaskan PIC atau menindaklanjuti permintaan ini.</p>
+                </div>
+                
+                <div style="background-color: #f8fafc; padding: 14px; text-align: center; border-top: 1px solid #e2e8f0; color: #94a3b8; font-size: 12px;">
+                    <p style="margin: 0;">Automated notification from <strong>CSL Enterprise System</strong></p>
+                </div>
+            </div>
+            `;
+
+            // Kirim notifikasi email ke group Tim Corporate Secretary & Legal
+            await sendEmailNotification(
+                'corporatesecretary@gesit.co.id',
+                `[CSL Ticket] Permintaan Baru Diajukan: ${request.request_number} - ${request.requester_name || 'User'}`,
+                newRequestHtml,
+                true // isHtml
+            );
             break;
             
         case 'USER_RESPONDED':
