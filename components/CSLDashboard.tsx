@@ -351,12 +351,12 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
           <div className="space-y-0.5">
             <div className="flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-emerald-500 inline-block" />
-              <h2 className="text-sm font-bold text-foreground tracking-tight">Anggaran &amp; Realisasi Biaya CSL ({new Date().getFullYear()})</h2>
+              <h2 className="text-sm font-bold text-foreground tracking-tight">Anggaran &amp; Pengeluaran Legal CSL ({new Date().getFullYear()})</h2>
               <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-muted text-muted-foreground border border-border/60">
                 Persetujuan &amp; Offshore
               </span>
             </div>
-            <p className="text-xs text-muted-foreground">Monitoring alokasi pagu tahunan vs realisasi pengeluaran legal operasional</p>
+            <p className="text-xs text-muted-foreground">Monitoring batas maksimal dana vs uang yang sudah terpakai</p>
           </div>
           <Button 
             variant="outline" 
@@ -372,30 +372,30 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
           {/* 3 Metric High-Density Counters */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="p-4 rounded-lg border border-border/70 bg-card/60">
-              <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block">Total Alokasi Budget</span>
+              <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block">Total Anggaran (Setahun)</span>
               <p className="text-xl font-bold font-mono text-foreground mt-1 tracking-tight">
                 {budgetReport ? formatIdr(budgetReport.summary.totalBudget) : 'Rp 0'}
               </p>
               <p className="text-[11px] text-muted-foreground mt-1">
-                {budgetReport?.summary.isBudgetDefined ? 'Pagu resmi tahun berjalan' : 'Pagu anggaran terdaftar'}
+                Jatah dana resmi tahun berjalan
               </p>
             </div>
 
             <div className="p-4 rounded-lg border border-border/70 bg-card/60">
-              <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block">Total Realisasi (Paid/Approved)</span>
+              <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block">Sudah Terpakai (Realisasi)</span>
               <p className="text-xl font-bold font-mono text-emerald-600 dark:text-emerald-400 mt-1 tracking-tight">
                 {budgetReport ? formatIdr(budgetReport.summary.actualExpenses) : 'Rp 0'}
               </p>
               <div className="flex items-center justify-between text-[11px] text-muted-foreground mt-1">
-                <span>Serapan: <strong className="font-mono text-foreground font-semibold">{budgetReport?.summary.budgetUtilization || 0}%</strong></span>
-                <span className="text-[10px] font-mono">
-                  {budgetReport && budgetReport.summary.actualExpenses <= budgetReport.summary.totalBudget ? 'Dalam Batas' : 'Over Pagu'}
+                <span>Terpakai: <strong className="font-mono text-foreground font-semibold">{(Number(budgetReport?.summary.budgetUtilization) || 0).toFixed(1)}%</strong></span>
+                <span className="text-[10px] font-mono text-emerald-600 font-semibold">
+                  {budgetReport && budgetReport.summary.actualExpenses <= budgetReport.summary.totalBudget ? 'Aman' : 'Over Budget'}
                 </span>
               </div>
             </div>
 
             <div className="p-4 rounded-lg border border-border/70 bg-card/60">
-              <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block">Sisa Alokasi Pagu</span>
+              <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block">Sisa Uang Anggaran</span>
               <p className={`text-xl font-bold font-mono mt-1 tracking-tight ${
                 (budgetReport?.summary.budgetRemaining ?? 0) < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-foreground'
               }`}>
@@ -404,7 +404,7 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
               <p className="text-[11px] text-muted-foreground mt-1">
                 {budgetReport && budgetReport.summary.pendingApprovalCount > 0 
                   ? `${budgetReport.summary.pendingApprovalCount} transaksi pending (${formatIdr(budgetReport.summary.pendingApprovalAmount)})`
-                  : 'Tidak ada pengeluaran tertahan'}
+                  : 'Sisa dana yang masih bisa dipakai'}
               </p>
             </div>
           </div>
@@ -413,8 +413,10 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
           {budgetReport && budgetReport.summary.totalBudget > 0 && (
             <div className="space-y-1.5 pt-1">
               <div className="flex justify-between items-center text-xs">
-                <span className="text-muted-foreground font-medium">Tingkat Penyerapan Anggaran</span>
-                <span className="font-mono font-bold text-foreground">{budgetReport.summary.budgetUtilization}%</span>
+                <span className="text-muted-foreground font-medium">Berapa % yang sudah terpakai</span>
+                <span className="font-mono font-bold text-foreground">
+                  {(Number(budgetReport.summary.budgetUtilization) || 0).toFixed(1)}%
+                </span>
               </div>
               <div className="w-full h-2 rounded-full bg-muted overflow-hidden">
                 <div 
@@ -425,7 +427,7 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
                       ? 'bg-amber-500' 
                       : 'bg-emerald-500'
                   }`}
-                  style={{ width: `${Math.min(budgetReport.summary.budgetUtilization, 100)}%` }}
+                  style={{ width: `${Math.min(Number(budgetReport.summary.budgetUtilization) || 0, 100)}%` }}
                 />
               </div>
             </div>
