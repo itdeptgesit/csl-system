@@ -178,7 +178,7 @@ export function AppSidebarModern({
           allowed.add('routine'); allowed.add('routine-monitoring'); allowed.add('routine-lkpm')
         }
         if (g === 'routine_create' || g === 'routine_manage') {
-          allowed.add('routine-activity'); allowed.add('routine-task'); allowed.add('routine-timeline'); allowed.add('routine-lkpm')
+          allowed.add('routine-task'); allowed.add('routine-timeline'); allowed.add('routine-lkpm')
         }
         if (g === 'budget' || g === 'budget_view') {
           allowed.add('budget'); allowed.add('budget-expense'); allowed.add('budget-offshore-invoice')
@@ -190,7 +190,7 @@ export function AppSidebarModern({
           allowed.add('credentials')
         }
         if (g === 'csl_staff' || g === 'staff') {
-          ;['dashboard', 'csl-requests', 'routine', 'routine-activity', 'routine-task', 'routine-lkpm', 'budget', 'budget-expense', 'budget-offshore-invoice', 'directory', 'directory-all', 'directory-lawyer', 'directory-vendor', 'directory-government', 'directory-other', 'credentials', 'reports', 'reports-request', 'reports-task', 'reports-budget', 'profile'].forEach((id) => allowed.add(id))
+          ;['dashboard', 'csl-requests', 'routine', 'routine-task', 'routine-lkpm', 'budget', 'budget-expense', 'budget-offshore-invoice', 'directory', 'directory-all', 'directory-lawyer', 'directory-vendor', 'directory-government', 'directory-other', 'credentials', 'reports', 'reports-request', 'reports-task', 'reports-budget', 'profile'].forEach((id) => allowed.add(id))
         }
         if (g === 'admin' || g === 'csl_admin') {
           APP_MENU_STRUCTURE.forEach((m) => {
@@ -237,7 +237,7 @@ export function AppSidebarModern({
       ;[
         'dashboard',
         'csl-requests',
-        'routine', 'routine-activity', 'routine-task', 'routine-lkpm',
+        'routine', 'routine-task', 'routine-lkpm',
         'budget', 'budget-expense', 'budget-offshore-invoice',
         'directory', 'directory-all', 'directory-lawyer', 'directory-vendor', 'directory-government', 'directory-other',
         'credentials',

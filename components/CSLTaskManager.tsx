@@ -492,7 +492,67 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
       handleUpdateRups(selectedRupsDetail.id, 'documentUrl', gdriveUrl);
       handleUpdateRups(selectedRupsDetail.id, 'documentName', docName);
 
-      toast.success('Dokumen RUPS berhasil diunggah ke Google Drive', { id: toastId });
+      // Auto-set status Completed & stage Selesai when document is uploaded
+      handleUpdateRups(selectedRupsDetail.id, 'status', 'Completed');
+      handleUpdateRups(selectedRupsDetail.id, 'stage', 'Selesai');
+      if (!selectedRupsDetail.finishDate) {
+        const todayStr = new Date().toISOString().split('T')[0];
+        handleUpdateRups(selectedRupsDetail.id, 'finishDate', todayStr);
+      }
+
+      // Auto-rollover: Pastikan record tahun depan otomatis dibuat untuk company ini
+      const currentYearNum = parseInt(selectedRupsDetail.periode || activePeriode, 10) || new Date().getFullYear();
+      const nextYearStr = (currentYearNum + 1).toString();
+      const companyName = selectedRupsDetail.company;
+
+      setTimeout(async () => {
+        try {
+          // Cek apakah company sudah terdaftar di periode tahun depan
+          const { data: existingNext } = await supabase
+            .from('csl_rups_ar')
+            .select('id')
+            .eq('company', companyName)
+            .eq('periode', nextYearStr)
+            .maybeSingle();
+
+          if (!existingNext) {
+            const nextPayload = {
+              company: companyName,
+              periode: nextYearStr,
+              status: 'Not started',
+              stage: 'Drafting',
+              method: selectedRupsDetail.method || 'Sirkuler',
+              due_date: `${nextYearStr}-06-30`,
+              reminder_emails: selectedRupsDetail.reminderEmails || 'corporatesecretary@gesit.co.id',
+              notes: `Rollover otomatis dari periode ${currentYearNum}`,
+              updated_by: 'System (Auto Rollover)'
+            };
+            const { data: insertedNext } = await supabase.from('csl_rups_ar').insert([nextPayload]).select().single();
+            if (insertedNext) {
+              setRupsData(prev => [...prev, {
+                id: insertedNext.id,
+                company: insertedNext.company,
+                periode: insertedNext.periode,
+                status: insertedNext.status,
+                owner: '',
+                startDate: '',
+                dueDate: insertedNext.due_date || `${nextYearStr}-06-30`,
+                finishDate: '',
+                notes: insertedNext.notes || '',
+                reminderEmails: insertedNext.reminder_emails || '',
+                method: insertedNext.method || 'Sirkuler',
+                stage: insertedNext.stage || 'Drafting',
+                updatedBy: 'System (Auto Rollover)'
+              }]);
+              toast.info(`Perusahaan ${companyName} otomatis disiapkan untuk Periode ${nextYearStr}`);
+            }
+          }
+        } catch (rolloverErr) {
+          console.warn('Rollover next year check:', rolloverErr);
+        }
+      }, 300);
+
+      toast.success('Dokumen RUPS berhasil diunggah ke Google Drive & status Selesai', { id: toastId });
     } catch (err: any) {
       console.error('RUPS doc upload error:', err);
       toast.error('Gagal upload: ' + (err.message || 'Error tidak diketahui'), { id: toastId });
@@ -837,9 +897,56 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
         {activeCategory === 'RUPS-AR' && (
           <select
             value={activePeriode}
-            onChange={e => {
-              setActivePeriode(e.target.value);
+            onChange={async (e) => {
+              const newYear = e.target.value;
+              setActivePeriode(newYear);
               setCurrentPage(1);
+
+              // Auto-populate: Jika di periode baru belum ada data, kloning seluruh daftar company dari periode sebelumnya
+              const existingCompaniesInNewYear = rupsData.filter(r => (r.periode || '').toString() === newYear);
+              if (existingCompaniesInNewYear.length === 0) {
+                // Ambil daftar unik seluruh company dari master yang sudah pernah ada
+                const allKnownCompanies = Array.from(new Set(rupsData.map(r => r.company).filter(Boolean)));
+                if (allKnownCompanies.length > 0) {
+                  const payload = allKnownCompanies.map(comp => ({
+                    company: comp,
+                    periode: newYear,
+                    status: 'Not started',
+                    stage: 'Drafting',
+                    method: 'Sirkuler',
+                    due_date: `${newYear}-06-30`,
+                    reminder_emails: 'corporatesecretary@gesit.co.id',
+                    notes: `Jadwal rutin periode ${newYear}`,
+                    updated_by: 'System (Auto Rollover)'
+                  }));
+                  try {
+                    const { data: inserted, error: insertErr } = await supabase.from('csl_rups_ar').insert(payload).select();
+                    if (!insertErr && inserted) {
+                      setRupsData(prev => [
+                        ...prev,
+                        ...inserted.map(d => ({
+                          id: d.id,
+                          company: d.company,
+                          periode: d.periode,
+                          status: d.status,
+                          owner: '',
+                          startDate: '',
+                          dueDate: d.due_date || `${newYear}-06-30`,
+                          finishDate: '',
+                          notes: d.notes || '',
+                          reminderEmails: d.reminder_emails || '',
+                          method: d.method || 'Sirkuler',
+                          stage: d.stage || 'Drafting',
+                          updatedBy: 'System (Auto Rollover)'
+                        }))
+                      ]);
+                      toast.success(`Daftar ${allKnownCompanies.length} perusahaan otomatis disiapkan untuk Periode ${newYear}!`);
+                    }
+                  } catch (e) {
+                    console.error('Auto populate new year failed:', e);
+                  }
+                }
+              }
             }}
             className="h-9 cursor-pointer rounded-lg border border-border/60 bg-background px-3 text-xs font-semibold text-foreground outline-none transition-colors hover:bg-muted focus:ring-2 focus:ring-ring/30"
           >
