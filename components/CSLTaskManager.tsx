@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { UserAccount } from '../types';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { Plus, Search, Filter, CalendarDays, X, Bell, Pencil } from 'lucide-react';
+import { Plus, Search, Filter, CalendarDays, X, Bell, Pencil, Upload, ExternalLink, FileText, Loader2, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -264,6 +264,8 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
   // Detail & Legal RUPS Modal
   const [selectedRupsDetail, setSelectedRupsDetail] = useState<RupsItem | null>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [isUploadingDoc, setIsUploadingDoc] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Reminder Edit Modal
   const [reminderEditOpen, setReminderEditOpen] = useState(false);
@@ -437,6 +439,56 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
         console.error('RUPS update catch:', err);
       }
     }, delay);
+  };
+
+  const handleUploadRupsDoc = async (file: File) => {
+    if (!selectedRupsDetail) return;
+    setIsUploadingDoc(true);
+    const toastId = toast.loading('Mengunggah dokumen ke Google Drive...');
+    try {
+      // Convert to base64
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve((reader.result as string).split(',')[1]);
+        reader.onerror = err => reject(err);
+      });
+      reader.readAsDataURL(file);
+      const base64Data = await base64Promise;
+
+      const formattedFileName = `[RUPS ${selectedRupsDetail.periode || activePeriode}] ${selectedRupsDetail.company} - ${file.name}`;
+
+      const { data: uploadData, error: uploadError } = await supabase.functions.invoke('upload-to-gdrive', {
+        body: {
+          fileName: formattedFileName,
+          fileMimeType: file.type || 'application/pdf',
+          fileBase64: base64Data,
+          requesterEmail: currentUser?.email,
+          folderType: 'rups-ar'
+        }
+      });
+
+      if (uploadError || !uploadData?.success || !uploadData.gdriveUrl) {
+        throw new Error(uploadError?.message || uploadData?.error || 'Gagal upload ke Google Drive');
+      }
+
+      const gdriveUrl = uploadData.gdriveUrl;
+      const docName = file.name;
+
+      // Update state
+      setSelectedRupsDetail(prev => prev ? { ...prev, documentUrl: gdriveUrl, documentName: docName } : null);
+      
+      // Save directly to db
+      handleUpdateRups(selectedRupsDetail.id, 'documentUrl', gdriveUrl);
+      handleUpdateRups(selectedRupsDetail.id, 'documentName', docName);
+
+      toast.success('Dokumen RUPS berhasil diunggah ke Google Drive', { id: toastId });
+    } catch (err: any) {
+      console.error('RUPS doc upload error:', err);
+      toast.error('Gagal upload: ' + (err.message || 'Error tidak diketahui'), { id: toastId });
+    } finally {
+      setIsUploadingDoc(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   const handleUpdateRups = (id: number, field: string, value: string) => {
@@ -1551,6 +1603,63 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
                     </select>
                   </div>
                 </div>
+              </div>
+
+              <div className="border-t border-border/40 pt-3">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-xs font-black uppercase tracking-wider text-foreground">Dokumen RUPS / Akta (Google Drive)</h4>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    className="hidden"
+                    accept=".pdf,.doc,.docx,image/*"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) handleUploadRupsDoc(f);
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={isUploadingDoc}
+                    onClick={() => fileInputRef.current?.click()}
+                    className="h-8 text-xs font-bold rounded-lg border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50"
+                  >
+                    {isUploadingDoc ? (
+                      <>
+                        <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="h-3.5 w-3.5 mr-1.5" /> Upload File
+                      </>
+                    )}
+                  </Button>
+                </div>
+
+                {selectedRupsDetail.documentUrl ? (
+                  <div className="flex items-center justify-between p-2.5 rounded-lg border border-border/60 bg-muted/20">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <FileText className="h-4 w-4 text-indigo-600 shrink-0" />
+                      <span className="text-xs font-semibold text-foreground truncate max-w-[280px]">
+                        {selectedRupsDetail.documentName || 'Dokumen RUPS (Google Drive)'}
+                      </span>
+                    </div>
+                    <a
+                      href={selectedRupsDetail.documentUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-600 hover:text-indigo-500 shrink-0 ml-2"
+                    >
+                      Buka Drive <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-muted-foreground italic">
+                    Belum ada dokumen yang diunggah. Klik upload untuk menyimpan arsip PDF ke Google Drive.
+                  </p>
+                )}
               </div>
 
               <div className="border-t border-border/40 pt-3">

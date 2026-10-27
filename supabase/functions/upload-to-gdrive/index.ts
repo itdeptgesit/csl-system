@@ -165,6 +165,7 @@ serve(async (req) => {
     // • folderType 'document' → subfolder "CSL Documents"
     // • folderType 'request'  → subfolder "User Requests"
     // • folderType 'e-sign'   → subfolder "E-Sign"
+    // • folderType 'rups-ar'  → subfolder "RUPS & Annual Reports"
     // • lainnya               → langsung ke root CSL System Dev
     let targetFolderId = rootFolderId
     if (folderType === 'document') {
@@ -173,6 +174,8 @@ serve(async (req) => {
       targetFolderId = await getOrCreateSubfolder(accessToken, rootFolderId, 'User Requests')
     } else if (folderType === 'e-sign') {
       targetFolderId = await getOrCreateSubfolder(accessToken, rootFolderId, 'E-Sign')
+    } else if (folderType === 'rups-ar') {
+      targetFolderId = await getOrCreateSubfolder(accessToken, rootFolderId, 'RUPS & Annual Reports')
     }
 
     // Decode Base64

@@ -72,6 +72,7 @@ const CSLReportsManager = React.lazy(() => import('./components/CSLReportsManage
 const CSLSettings = React.lazy(() => import('./components/CSLSettings').then(m => ({ default: m.CSLSettings })));
 const CSLTaskManager = React.lazy(() => import('./components/CSLTaskManager').then(m => ({ default: m.CSLTaskManager })));
 const CSLCredentialVault = React.lazy(() => import('./components/CSLCredentialVault').then(m => ({ default: m.CSLCredentialVault })));
+const CSLLkpmTracker = React.lazy(() => import('./components/CSLLkpmTracker').then(m => ({ default: m.CSLLkpmTracker })));
 
 const ICON_MAP: Record<string, React.ElementType> = {
   LayoutDashboard: LayoutDashboard,
@@ -689,6 +690,10 @@ const InternalApp: React.FC = () => {
                              {/* Task Management */}
                              <Route path="routine-task" element={<CSLTaskManager currentUser={currentUser} />} />
 
+                             {/* Routine Tracking LKPM */}
+                             <Route path="routine-lkpm" element={<CSLLkpmTracker currentUser={currentUser} />} />
+                             <Route path="routine/lkpm" element={<CSLLkpmTracker currentUser={currentUser} />} />
+
                              {/* Budget & Cost */}
                              <Route path="budget" element={<CSLBudgetManager currentUser={currentUser} view="expense" />} />
                              <Route path="budget-expense" element={<CSLBudgetManager currentUser={currentUser} view="expense" />} />
@@ -830,10 +835,10 @@ const DashboardLayout: React.FC<any & { children?: React.ReactNode }> = ({
           allowed.add('csl-requests');
         }
         if (g === 'routine_view' || g === 'routine') {
-          allowed.add('routine'); allowed.add('routine-monitoring');
+          allowed.add('routine'); allowed.add('routine-monitoring'); allowed.add('routine-lkpm');
         }
         if (g === 'routine_create' || g === 'routine_manage') {
-          allowed.add('routine-activity'); allowed.add('routine-task'); allowed.add('routine-timeline');
+          allowed.add('routine-activity'); allowed.add('routine-task'); allowed.add('routine-timeline'); allowed.add('routine-lkpm');
         }
         if (g === 'budget' || g === 'budget_view') {
           allowed.add('budget'); allowed.add('budget-expense'); allowed.add('budget-offshore-invoice');
@@ -845,7 +850,7 @@ const DashboardLayout: React.FC<any & { children?: React.ReactNode }> = ({
           allowed.add('credentials');
         }
         if (g === 'csl_staff' || g === 'staff') {
-          ['dashboard', 'csl-requests', 'routine', 'routine-activity', 'routine-task', 'budget', 'budget-expense', 'budget-offshore-invoice', 'directory', 'directory-all', 'directory-lawyer', 'directory-vendor', 'directory-government', 'directory-other', 'credentials', 'reports', 'reports-request', 'reports-task', 'reports-budget', 'profile'].forEach(id => allowed.add(id));
+          ['dashboard', 'csl-requests', 'routine', 'routine-activity', 'routine-task', 'routine-lkpm', 'budget', 'budget-expense', 'budget-offshore-invoice', 'directory', 'directory-all', 'directory-lawyer', 'directory-vendor', 'directory-government', 'directory-other', 'credentials', 'reports', 'reports-request', 'reports-task', 'reports-budget', 'profile'].forEach(id => allowed.add(id));
         }
         if (g === 'admin' || g === 'csl_admin') {
           (APP_MENU_STRUCTURE || []).forEach(m => {
@@ -896,7 +901,7 @@ const DashboardLayout: React.FC<any & { children?: React.ReactNode }> = ({
       [
         'dashboard',
         'csl-requests',
-        'routine', 'routine-activity', 'routine-task',
+        'routine', 'routine-activity', 'routine-task', 'routine-lkpm',
         'budget', 'budget-expense', 'budget-offshore-invoice',
         'directory', 'directory-all', 'directory-lawyer', 'directory-vendor', 'directory-government', 'directory-other',
         'credentials',

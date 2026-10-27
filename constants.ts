@@ -30,7 +30,7 @@ export const MOCK_GROUPS = [
             // Request / Ticketing
             'csl-requests',
             // Routine
-            'routine', 'routine-activity', 'routine-task',
+            'routine', 'routine-activity', 'routine-task', 'routine-lkpm',
             // Budget & Cost
             'budget', 'budget-expense', 'budget-offshore-invoice',
             // Phone Directory
@@ -50,7 +50,8 @@ export const MOCK_GROUPS = [
         allowedMenus: [
             'dashboard',
             'csl-requests',
-            'routine', 'routine-activity', 'routine-task',
+            'routine', 'routine-activity', 'routine-task', 'routine-lkpm',
+            // Budget & Cost
             'budget', 'budget-expense', 'budget-offshore-invoice',
             'directory', 'directory-all', 'directory-lawyer', 'directory-vendor', 'directory-government', 'directory-other',
             'credentials',
@@ -77,7 +78,9 @@ export const APP_MENU_STRUCTURE = [
 
     // ── Routine Activity ──
     { id: 'routine', label: 'Routine Activity', iconName: 'Calendar' },
-    { id: 'routine-task',       label: 'Task',       parentId: 'routine', iconName: 'CheckSquare' },
+    { id: 'routine-activity',   label: 'Aktivitas Rutin',    parentId: 'routine', iconName: 'Activity' },
+    { id: 'routine-task',       label: 'Task Management',    parentId: 'routine', iconName: 'CheckSquare' },
+    { id: 'routine-lkpm',       label: 'Tracking LKPM',      parentId: 'routine', iconName: 'FileCheck' },
 
     // ── Budget & Expenses ──
     { id: 'budget', label: 'Budget & Expenses', iconName: 'Wallet' },
