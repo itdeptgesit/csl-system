@@ -40,7 +40,6 @@ import {
   Settings, Megaphone, Loader2, CheckCircle2, Circle, LayoutDashboard, Kanban, CheckSquare
 } from 'lucide-react';
 
-import { checkAssetLoanOverdue } from './utils/LoanNotificationUtils';
 import { ProfileView } from './components/ProfileView';
 import { CompleteProfileModal } from './components/CompleteProfileModal';
 
@@ -379,25 +378,8 @@ const InternalApp: React.FC = () => {
     if (isAuthenticated) fetchGroups();
   }, [isAuthenticated]);
 
-  useEffect(() => {
-    if (!currentUser) return;
+  // Clean residual IT asset polling interval from Gesit ERP foundation
 
-    const roleLower = currentUser.role?.toLowerCase();
-    if (roleLower !== 'admin' && roleLower !== 'staff') return;
-
-    console.log('App.tsx: Starting overdue check cycle for:', currentUser.role);
-
-    // Run immediately on login
-    checkAssetLoanOverdue(currentUser);
-
-    // Then re-check every 5 minutes to catch newly overdue items
-    const interval = setInterval(() => {
-      console.log('App.tsx: Periodic overdue check...');
-      checkAssetLoanOverdue(currentUser);
-    }, 5 * 60 * 1000);
-
-    return () => clearInterval(interval);
-  }, [currentUser]);
 
   const handleLogin = async (email: string) => {
     console.log("App.tsx: Handling login for", email);

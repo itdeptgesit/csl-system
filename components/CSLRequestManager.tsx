@@ -89,10 +89,13 @@ const SLA_BADGE: Record<SLAStatus, { label: string; className: string }> = {
 };
 
 const STATUS_BADGE: Record<string, string> = {
+  SUBMITTED: 'border-blue-500/25 text-blue-700 dark:text-blue-300 bg-blue-500/10 font-medium',
   PROCESSING: 'border-amber-500/25 text-amber-700 dark:text-amber-300 bg-amber-500/10 font-medium',
   REVIEW_USER: 'border-purple-500/25 text-purple-700 dark:text-purple-300 bg-purple-500/10 font-medium',
   COMPLETED: 'border-emerald-500/25 text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 font-semibold',
+  CLOSED: 'border-emerald-500/25 text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 font-medium',
   REJECTED: 'border-rose-500/25 text-rose-700 dark:text-rose-300 bg-rose-500/10 font-medium',
+  DRAFT: 'border-zinc-500/25 text-zinc-600 dark:text-zinc-400 bg-zinc-500/10 font-medium',
 };
 
 const PRIORITY_BADGE: Record<string, string> = {
@@ -589,7 +592,7 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
       if (!useMock) {
         const { error } = await supabase.from('csl_requests').update(payload).eq('id', selectedRequest.id);
         if (error) {
-          alert(`Gagal menyimpan update: ${error.message}`);
+          toast.error(`Gagal menyimpan update: ${error.message}`);
           setIsSubmitting(false);
           return;
         }
@@ -805,7 +808,7 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
         }]);
 
         if (error) {
-          alert(`Gagal menyimpan dokumen: ${error.message}`);
+          toast.error(`Gagal menyimpan dokumen: ${error.message}`);
           setIsSubmittingDoc(false);
           return;
         }
@@ -866,7 +869,7 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
       setShowDocForm(false);
       toast.success('Dokumen berhasil dilampirkan.');
     } catch (err: any) {
-      alert(`Error tidak terduga: ${err?.message || 'Unknown error'}`);
+      toast.error(`Error tidak terduga: ${err?.message || 'Unknown error'}`);
     } finally {
       setIsSubmittingDoc(false);
       setTimeout(() => {
@@ -986,6 +989,7 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
           <div className="inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground w-full sm:w-auto overflow-x-auto hide-scrollbar">
             {[
               { id: 'ALL', label: 'All' },
+              { id: 'SUBMITTED', label: 'Submitted' },
               { id: 'PROCESSING', label: 'Processing' },
               { id: 'REVIEW_USER', label: 'Review User' },
               { id: 'COMPLETED', label: 'Completed' },

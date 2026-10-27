@@ -107,358 +107,300 @@ export const LoginPage: React.FC<LoginPageProps> = ({
         } catch (err: any) { setError(err.message || 'Google login gagal.'); setIsLoading(false); }
     };
 
-    // ─── Gold accent colour used throughout ────────────────────────────
-    const GOLD = '#C9A84C';
-
     return (
-        <div className="min-h-screen w-full flex font-sans overflow-hidden" style={{ fontFamily: "'Inter', sans-serif" }}>
+        <div className="min-h-screen w-full flex flex-col items-center justify-center p-4 sm:p-7 lg:p-10 font-sans selection:bg-blue-100 selection:text-blue-900"
+            style={{
+                fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif",
+                background: `
+                    radial-gradient(680px 420px at 8% -8%, rgba(47, 107, 255, 0.16), transparent 64%),
+                    radial-gradient(760px 520px at 96% 110%, rgba(201, 162, 39, 0.12), transparent 62%),
+                    linear-gradient(145deg, #eef5ff 0%, #f7f9fc 52%, #eaf2fb 100%)
+                `
+            }}
+        >
+            {/* ══════════ MAIN FLOATING CARD ══════════ */}
+            <main className="w-full max-w-[1160px] min-h-[720px] grid grid-cols-1 lg:grid-cols-12 p-3 sm:p-3.5 rounded-[32px] bg-white/95 backdrop-blur-xl shadow-[0_24px_70px_rgba(16,24,40,0.14),0_4px_18px_rgba(16,24,40,0.08)] border border-white/80 overflow-hidden">
+                
+                {/* ══════════ LEFT BRAND PANEL (7 cols) ══════════ */}
+                <section className="lg:col-span-7 relative overflow-hidden rounded-[24px] p-8 sm:p-11 xl:p-12 text-white flex flex-col justify-between"
+                    style={{ background: 'linear-gradient(155deg, #0a2540 0%, #123f7b 42%, #1450b4 72%, #2f6bff 100%)' }}>
+                    
+                    {/* Background Circles & Hexagon Pattern */}
+                    <div className="absolute -right-44 -bottom-48 w-[440px] h-[440px] rounded-full bg-white/10 pointer-events-none" />
+                    <div className="absolute -left-32 top-64 w-[280px] h-[280px] rounded-full border border-white/10 pointer-events-none" />
+                    <svg className="absolute -right-7 top-28 w-80 h-80 text-white/[0.08] pointer-events-none" viewBox="0 0 200 200" fill="none" aria-hidden="true">
+                        <g stroke="currentColor" strokeWidth="1.4">
+                            <path d="M38 22 58 34v24L38 70 18 58V34Z"/><path d="M92 10 112 22v24L92 58 72 46V22Z"/><path d="M146 28 166 40v24l-20 12-20-12V40Z"/>
+                            <path d="M64 72 84 84v24L64 120 44 108V84Z"/><path d="M118 62l20 12v24l-20 12-20-12V74Z"/><path d="M170 88l20 12v24l-20 12-20-12v-24Z"/>
+                            <path d="M34 126l20 12v24l-20 12-20-12v-24Z"/><path d="M90 126l20 12v24l-20 12-20-12v-24Z"/><path d="M142 142l20 12v24l-20 12-20-12v-24Z"/>
+                        </g>
+                    </svg>
 
-            {/* ══════════ LEFT PANEL ══════════ */}
-            <div className="hidden lg:flex w-[48%] relative flex-col justify-between overflow-hidden"
-                style={{ background: 'linear-gradient(160deg, #0B1A35 0%, #0D2145 50%, #0a1830 100%)' }}>
-
-                {/* Background building image */}
-                <img
-                    src="/image/bg.jpeg"
-                    alt=""
-                    className="absolute inset-0 w-full h-full object-cover opacity-25 mix-blend-luminosity"
-                />
-
-                {/* Gold top accent */}
-                <div className="absolute top-0 left-0 right-0 h-[3px]" style={{ background: `linear-gradient(90deg, transparent, ${GOLD}, transparent)` }} />
-
-                {/* Content */}
-                <div className="relative z-10 flex flex-col h-full p-10 xl:p-14">
-                    {/* Logo + Brand */}
-                    <div className="flex items-center gap-4 mb-auto">
-                        <div className="flex flex-col">
-                            <div className="flex items-center gap-4">
-                                <img src={logoUrl} alt="Logo" className="w-12 h-12 object-contain" />
-                                <div className="w-px h-10" style={{ background: GOLD }} />
-                                <div className="flex flex-col text-[10px] font-bold tracking-widest uppercase leading-tight" style={{ color: `${GOLD}CC` }}>
-                                    <span>Corporate</span>
-                                    <span>Secretary</span>
-                                    <span>Legal</span>
-                                </div>
+                    {/* Top: Brand Mark */}
+                    <div className="relative z-10 flex items-center gap-3.5">
+                        <div className="w-12 h-12 rounded-2xl bg-white/15 border border-white/25 flex items-center justify-center p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]">
+                            <img src={logoUrl} alt="CSL Logo" className="w-full h-full object-contain" />
+                        </div>
+                        <div>
+                            <div className="text-xl font-extrabold tracking-[0.14em] leading-none text-white">CSL</div>
+                            <div className="text-[10px] font-bold tracking-[0.16em] uppercase text-white/75 mt-1.5">
+                                Corporate Secretary Legal
                             </div>
                         </div>
                     </div>
 
-                    {/* Main hero copy */}
-                    <div className="mt-auto mb-16">
-                        <h1 className="text-5xl xl:text-6xl font-black text-white leading-tight tracking-tight mb-6">
-                            Integrity.<br />
-                            Compliance.<br />
-                            <span style={{ color: GOLD }}>Legal Excellence.</span>
+                    {/* Middle: Hero Title & Clean Illustration */}
+                    <div className="relative z-10 my-auto py-6">
+                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/15 text-[10px] font-extrabold uppercase tracking-[0.14em] text-white/90 mb-5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_0_3px_rgba(52,211,153,0.25)] animate-pulse" />
+                            Sistem Internal
+                        </div>
+
+                        <h1 className="text-3xl sm:text-4xl xl:text-5xl font-extrabold text-white leading-[1.12] tracking-tight max-w-lg mb-4">
+                            Urusan perusahaan &amp; legal,{' '}
+                            <span className="text-blue-200">dalam satu akses.</span>
                         </h1>
-                        {/* Gold underline */}
-                        <div className="w-12 h-[3px] rounded-full mb-6" style={{ background: GOLD }} />
-                        <p className="text-sm text-white/60 leading-relaxed max-w-sm">
-                            CSL System terintegrasi untuk mendukung tata kelola perusahaan yang baik, manajemen dokumen hukum, dan kepatuhan secara berkelanjutan.
+
+                        <p className="text-xs sm:text-sm text-white/80 leading-relaxed max-w-md mb-6">
+                            Ruang kerja digital terintegrasi untuk tim Corporate Secretary &amp; Legal: tracking tiket, arsip dokumen, kepatuhan, dan transparansi persetujuan.
                         </p>
+
+                        {/* Visual Mock Illustration */}
+                        <div className="relative w-full max-w-md mx-auto hidden sm:block pt-2">
+                            <svg className="w-full h-auto drop-shadow-xl" viewBox="0 0 520 280" fill="none" aria-hidden="true">
+                                <ellipse cx="260" cy="260" rx="180" ry="14" fill="rgba(4,20,42,0.22)"/>
+                                <g opacity="0.45" fill="#BFD4FF">
+                                    <rect x="52" y="66" width="52" height="178" rx="7"/>
+                                    <rect x="116" y="38" width="62" height="206" rx="7"/>
+                                    <rect x="356" y="54" width="54" height="190" rx="7"/>
+                                    <rect x="420" y="86" width="44" height="158" rx="7"/>
+                                </g>
+                                <g transform="rotate(-3 260 150)">
+                                    <rect x="142" y="42" width="238" height="216" rx="18" fill="rgba(8,34,68,0.25)"/>
+                                    <rect x="132" y="32" width="238" height="216" rx="18" fill="#ffffff"/>
+                                    <circle cx="153" cy="53" r="4" fill="#F97066"/>
+                                    <circle cx="168" cy="53" r="4" fill="#FDB022"/>
+                                    <circle cx="183" cy="53" r="4" fill="#32D583"/>
+                                    <rect x="158" y="78" width="88" height="9" rx="4.5" fill="#101828"/>
+                                    <rect x="158" y="100" width="176" height="7" rx="3.5" fill="#E2E8F0"/>
+                                    <rect x="158" y="117" width="154" height="7" rx="3.5" fill="#E2E8F0"/>
+                                    <rect x="158" y="134" width="168" height="7" rx="3.5" fill="#E2E8F0"/>
+                                    <rect x="158" y="160" width="116" height="7" rx="3.5" fill="#E2E8F0"/>
+                                    <path d="M158 200c20-13 31 8 48-3 13-8 24-2 36 1" stroke="#2F6BFF" strokeWidth="3" strokeLinecap="round"/>
+                                    <circle cx="324" cy="188" r="24" fill="#FFF7DB" stroke="#C9A227" strokeWidth="2"/>
+                                    <path d="M316 188l6 6 10-11" stroke="#B54708" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                </g>
+                            </svg>
+                        </div>
                     </div>
 
-                    {/* Feature pills */}
-                    <div className="grid grid-cols-3 gap-4 mb-10">
-                        {[
-                            { icon: '⚖️', title: 'Governance & Compliance', desc: 'Kelola kepatuhan dan kebijakan perusahaan' },
-                            { icon: '📄', title: 'Legal Document Management', desc: 'Kelola dokumen hukum secara terstruktur' },
-                            { icon: '🏢', title: 'Corporate Action & Disclosure', desc: 'Kelola aksi korporasi dan keterbukaan informasi' },
-                        ].map((f, i) => (
-                            <div key={i} className="flex flex-col items-center text-center p-3 rounded-xl gap-2"
-                                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                                <span className="text-2xl">{f.icon}</span>
-                                <p className="text-[11px] font-bold text-white leading-tight">{f.title}</p>
-                                <p className="text-[9px] text-white/40 leading-tight">{f.desc}</p>
-                            </div>
-                        ))}
+                    {/* Bottom: Institutional Attribution */}
+                    <div className="relative z-10 flex items-center justify-between pt-5 border-t border-white/15 text-[10px] font-extrabold uppercase tracking-[0.14em] text-white/70">
+                        <span><strong className="text-white font-black">The Gesit</strong> Companies</span>
+                        <span>Internal Use Only</span>
                     </div>
+                </section>
 
-                    {/* Bottom security badge */}
-                    <div className="flex items-center gap-2.5" style={{ color: 'rgba(255,255,255,0.35)' }}>
-                        <Shield size={13} />
-                        <span className="text-[11px] font-medium">Keamanan data terjamin dengan standar enterprise grade</span>
-                    </div>
-                </div>
-
-                {/* Gold triangle accent top-right */}
-                <div className="absolute top-0 right-0 w-0 h-0"
-                    style={{
-                        borderTop: `80px solid ${GOLD}`,
-                        borderLeft: '80px solid transparent',
-                    }} />
-            </div>
-
-            {/* ══════════ RIGHT PANEL ══════════ */}
-            <div className="flex-1 flex flex-col bg-white relative overflow-y-auto">
-
-                {/* Top bar */}
-                <div className="flex justify-end items-center px-8 py-5">
-                    <button className="flex items-center gap-2 text-xs font-semibold text-slate-600 border border-slate-200 rounded-lg px-3 py-2 hover:bg-slate-50 transition-colors">
-                        <Globe size={14} />
-                        Bahasa Indonesia
-                        <span className="text-slate-400">▾</span>
-                    </button>
-                </div>
-
-                {/* Form area */}
-                <div className="flex-1 flex flex-col justify-center items-center px-8 py-6">
-                    <div className="w-full max-w-[420px]">
-
-                        {/* ══ EMAIL SENT SCREEN ══ */}
-                        {mode === 'email-sent' && (
-                            <div className="text-center">
-                                {/* Icon */}
-                                <div className="flex justify-center mb-6">
-                                    <div className="w-20 h-20 rounded-2xl flex items-center justify-center"
-                                        style={{ background: 'linear-gradient(135deg, #ecfdf5, #d1fae5)', border: '2px solid #a7f3d0' }}>
-                                        <MailCheck size={36} className="text-emerald-600" />
-                                    </div>
-                                </div>
-
-                                <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: GOLD }}>Satu Langkah Lagi</p>
-                                <h2 className="text-3xl font-black text-slate-900 mb-3 tracking-tight">Cek Email Anda!</h2>
-                                <p className="text-sm text-slate-500 mb-2">
-                                    Kami telah mengirimkan link konfirmasi ke:
-                                </p>
-                                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl mb-7"
-                                    style={{ background: '#f1f5f9', border: '1px solid #e2e8f0' }}>
-                                    <Mail size={14} className="text-slate-500" />
-                                    <span className="text-sm font-bold text-slate-800">{registeredEmail}</span>
-                                </div>
-
-                                {/* Steps */}
-                                <div className="text-left space-y-3 mb-8 p-5 rounded-2xl" style={{ background: '#fafafa', border: '1px solid #e2e8f0' }}>
-                                    <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">Langkah Selanjutnya</p>
-                                    {[
-                                        { step: '1', text: 'Buka inbox email Anda (atau folder Spam)' },
-                                        { step: '2', text: 'Klik link konfirmasi yang kami kirimkan' },
-                                        { step: '3', text: 'Akun Anda aktif — silakan login!' },
-                                    ].map(({ step, text }) => (
-                                        <div key={step} className="flex items-center gap-3">
-                                            <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-white text-[11px] font-black"
-                                                style={{ background: '#0B1A35' }}>
-                                                {step}
-                                            </div>
-                                            <p className="text-xs font-semibold text-slate-600">{text}</p>
-                                        </div>
-                                    ))}
-                                </div>
-
-                                {/* Info box */}
-                                <div className="flex items-start gap-2.5 p-3.5 rounded-xl mb-6 text-left"
-                                    style={{ background: '#fffbeb', border: '1px solid #fde68a' }}>
-                                    <AlertCircle size={14} className="text-amber-500 shrink-0 mt-0.5" />
-                                    <p className="text-xs text-amber-700 font-medium">
-                                        Tidak ada email masuk? Periksa folder <strong>Spam / Junk</strong>, atau tunggu beberapa menit. Link berlaku selama <strong>24 jam</strong>.
-                                    </p>
-                                </div>
-
-                                {/* Action buttons */}
-                                <button
-                                    onClick={() => { setMode('login'); setIdentifier(registeredEmail); setError(''); setSuccessMsg(''); }}
-                                    className="w-full h-12 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 transition-all hover:opacity-90 mb-3"
-                                    style={{ background: '#0B1A35' }}>
-                                    <LogIn size={15} /> Pergi ke Halaman Login
-                                    <ArrowRight size={15} />
-                                </button>
-                            </div>
-                        )}
-
-                        {mode !== 'email-sent' && (<>
-
-                        {/* Mobile logo */}
-                        <div className="lg:hidden flex items-center gap-3 mb-8">
-                            <img src={logoUrl} alt="Logo" className="w-10 h-10 object-contain" />
-                            <span className="text-xl font-black text-slate-900">CSL System</span>
+                {/* ══════════ RIGHT FORM PANEL (5 cols) ══════════ */}
+                <section className="lg:col-span-5 flex flex-col justify-center px-6 sm:px-10 lg:px-12 py-8 bg-white">
+                    <div className="w-full max-w-sm mx-auto">
+                        
+                        {/* Access Pill Badge */}
+                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 text-blue-600 border border-blue-100 text-[10px] font-extrabold uppercase tracking-[0.12em] mb-4">
+                            <Lock size={12} className="shrink-0" />
+                            <span>Akses Internal</span>
                         </div>
 
-                        {/* Heading */}
-                        <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: GOLD }}>
-                            {mode === 'login' ? 'Selamat Datang' : mode === 'register' ? 'Buat Akun Baru' : 'Reset Password'}
-                        </p>
-                        <h2 className="text-3xl font-black text-slate-900 mb-1 tracking-tight">
-                            {mode === 'login' ? 'Login ke CSL System' : mode === 'register' ? 'Daftar Akun' : 'Lupa Password?'}
+                        {/* Title Header */}
+                        <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight leading-tight">
+                            {mode === 'login' ? 'Selamat datang' : mode === 'register' ? 'Buat Akun CSL' : 'Lupa Kata Sandi'}
                         </h2>
-                        <p className="text-sm text-slate-400 mb-8">
+                        <p className="text-xs sm:text-sm text-slate-500 mt-2 leading-relaxed">
                             {mode === 'login'
-                                ? 'Silakan masuk menggunakan akun Anda untuk mengakses sistem.'
+                                ? 'Masuk dengan akun kantor untuk membuka sistem CSL.'
                                 : mode === 'register'
-                                    ? `Hanya email domain ${ALLOWED_DOMAINS.map(d => '@' + d).join(' & ')} yang diizinkan.`
-                                    : 'Masukkan email Anda untuk menerima link reset password.'}
+                                    ? `Pendaftaran terbatas untuk domain: ${ALLOWED_DOMAINS.map(d => '@' + d).join(', ')}.`
+                                    : 'Masukkan email akun Anda untuk mendapatkan tautan verifikasi.'}
                         </p>
 
-                        {/* Alerts */}
+                        {/* Alerts Banner */}
                         {error && (
-                            <div className="flex items-start gap-2.5 mb-5 p-3.5 rounded-xl bg-red-50 border border-red-100">
-                                <AlertCircle size={15} className="text-red-500 shrink-0 mt-0.5" />
-                                <p className="text-xs font-semibold text-red-700">{error}</p>
+                            <div className="flex items-start gap-2.5 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs mt-4">
+                                <AlertCircle size={15} className="text-rose-600 shrink-0 mt-0.5" />
+                                <span className="font-medium">{error}</span>
                             </div>
                         )}
                         {successMsg && (
-                            <div className="flex items-start gap-2.5 mb-5 p-3.5 rounded-xl bg-emerald-50 border border-emerald-100">
+                            <div className="flex items-start gap-2.5 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs mt-4">
                                 <CheckCircle2 size={15} className="text-emerald-600 shrink-0 mt-0.5" />
-                                <p className="text-xs font-semibold text-emerald-700">{successMsg}</p>
+                                <span className="font-medium">{successMsg}</span>
                             </div>
                         )}
 
-                        {/* Form */}
-                        <form onSubmit={mode === 'login' ? handleLogin : mode === 'register' ? handleRegister : handleReset}
-                            className="space-y-4">
-
+                        {/* Login Form */}
+                        <form onSubmit={mode === 'login' ? handleLogin : mode === 'register' ? handleRegister : handleReset} className="space-y-4 mt-6">
+                            
                             {mode === 'register' && (
-                                <div>
-                                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Nama Lengkap</label>
+                                <div className="space-y-1.5">
+                                    <label className="block text-xs font-bold text-slate-800">Nama Lengkap</label>
                                     <div className="relative">
-                                        <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                                        <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                                         <input
-                                            className="w-full h-12 pl-10 pr-4 rounded-xl border border-slate-200 text-sm text-slate-800 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 transition-all"
-                                            style={{ focusRingColor: GOLD } as any}
-                                            onFocus={e => e.target.style.borderColor = GOLD}
-                                            onBlur={e => e.target.style.borderColor = ''}
-                                            placeholder="Nama lengkap Anda"
-                                            value={fullName} onChange={e => setFullName(e.target.value)} required />
+                                            type="text"
+                                            required
+                                            value={fullName}
+                                            onChange={e => setFullName(e.target.value)}
+                                            placeholder="Nama lengkap"
+                                            className="w-full h-12 pl-12 pr-4 rounded-xl border border-slate-200 bg-slate-50/70 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-500/10 transition-all font-medium"
+                                        />
                                     </div>
                                 </div>
                             )}
 
-                            <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                                    {mode === 'login' ? 'Email atau Username' : 'Email Perusahaan'}
+                            <div className="space-y-1.5">
+                                <label className="block text-xs font-bold text-slate-800">
+                                    {mode === 'login' ? 'Email Kantor atau Username' : 'Email Kantor'}
                                 </label>
                                 <div className="relative">
-                                    <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                                    <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                                     <input
-                                        className="w-full h-12 pl-10 pr-4 rounded-xl border border-slate-200 text-sm text-slate-800 bg-white placeholder-slate-400 focus:outline-none transition-all"
-                                        onFocus={e => e.target.style.borderColor = GOLD}
-                                        onBlur={e => e.target.style.borderColor = '#e2e8f0'}
-                                        style={{ borderColor: '#e2e8f0' }}
-                                        placeholder={mode === 'register' ? 'nama@gesit.co.id' : 'Masukkan email atau username'}
                                         type={mode === 'register' ? 'email' : 'text'}
-                                        value={identifier} onChange={e => setIdentifier(e.target.value)} required />
+                                        required
+                                        value={identifier}
+                                        onChange={e => setIdentifier(e.target.value)}
+                                        placeholder="nama@gesit.co.id"
+                                        className="w-full h-12 pl-12 pr-4 rounded-xl border border-slate-200 bg-slate-50/70 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-500/10 transition-all font-medium"
+                                    />
                                 </div>
                             </div>
 
                             {mode !== 'reset' && (
-                                <div>
-                                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Password</label>
+                                <div className="space-y-1.5">
+                                    <label className="block text-xs font-bold text-slate-800">Kata Sandi</label>
                                     <div className="relative">
-                                        <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                                        <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                                         <input
-                                            className="w-full h-12 pl-10 pr-11 rounded-xl border border-slate-200 text-sm text-slate-800 bg-white placeholder-slate-400 focus:outline-none transition-all"
-                                            onFocus={e => e.target.style.borderColor = GOLD}
-                                            onBlur={e => e.target.style.borderColor = '#e2e8f0'}
-                                            style={{ borderColor: '#e2e8f0' }}
-                                            placeholder="Masukkan password"
                                             type={showPassword ? 'text' : 'password'}
-                                            value={password} onChange={e => setPassword(e.target.value)} required />
-                                        <button type="button"
-                                            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors"
-                                            onClick={() => setShowPassword(!showPassword)}>
-                                            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                            required
+                                            value={password}
+                                            onChange={e => setPassword(e.target.value)}
+                                            placeholder="Masukkan kata sandi"
+                                            className="w-full h-12 pl-12 pr-12 rounded-xl border border-slate-200 bg-slate-50/70 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-500/10 transition-all font-medium"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-600 transition-colors p-1"
+                                        >
+                                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                         </button>
                                     </div>
                                 </div>
                             )}
 
                             {mode === 'register' && (
-                                <div>
-                                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Konfirmasi Password</label>
+                                <div className="space-y-1.5">
+                                    <label className="block text-xs font-bold text-slate-800">Ulangi Kata Sandi</label>
                                     <div className="relative">
-                                        <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                                        <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                                         <input
-                                            className="w-full h-12 pl-10 pr-4 rounded-xl border border-slate-200 text-sm text-slate-800 bg-white placeholder-slate-400 focus:outline-none transition-all"
-                                            onFocus={e => e.target.style.borderColor = GOLD}
-                                            onBlur={e => e.target.style.borderColor = '#e2e8f0'}
-                                            style={{ borderColor: '#e2e8f0' }}
-                                            placeholder="Ulangi password"
                                             type={showPassword ? 'text' : 'password'}
-                                            value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required />
+                                            required
+                                            value={confirmPassword}
+                                            onChange={e => setConfirmPassword(e.target.value)}
+                                            placeholder="Ulangi kata sandi"
+                                            className="w-full h-12 pl-12 pr-12 rounded-xl border border-slate-200 bg-slate-50/70 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-500/10 transition-all font-medium"
+                                        />
                                     </div>
                                 </div>
                             )}
 
-                            {/* Remember + Forgot */}
                             {mode === 'login' && (
-                                <div className="flex items-center justify-between">
+                                <div className="flex items-center justify-between pt-0.5">
                                     <label className="flex items-center gap-2 cursor-pointer select-none">
-                                        <div className="relative">
-                                            <input type="checkbox" className="sr-only" checked={rememberMe} onChange={e => setRememberMe(e.target.checked)} />
-                                            <div className="w-4 h-4 rounded flex items-center justify-center transition-all"
-                                                style={{ background: rememberMe ? '#0B1A35' : 'white', border: rememberMe ? 'none' : '1.5px solid #cbd5e1' }}>
-                                                {rememberMe && <svg viewBox="0 0 10 8" className="w-2.5 h-2 fill-white"><path d="M1 4l2.5 2.5L9 1" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" /></svg>}
-                                            </div>
-                                        </div>
-                                        <span className="text-xs font-semibold text-slate-600">Ingat saya</span>
+                                        <input
+                                            type="checkbox"
+                                            checked={rememberMe}
+                                            onChange={e => setRememberMe(e.target.checked)}
+                                            className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                                        />
+                                        <span className="text-xs text-slate-600 font-semibold">Ingat saya</span>
                                     </label>
-                                    <button type="button" onClick={() => switchMode('reset')}
-                                        className="text-xs font-semibold transition-colors hover:opacity-80"
-                                        style={{ color: GOLD }}>
-                                        Lupa password?
+                                    <button
+                                        type="button"
+                                        onClick={() => switchMode('reset')}
+                                        className="text-xs font-bold text-blue-600 hover:text-blue-700 hover:underline"
+                                    >
+                                        Lupa kata sandi?
                                     </button>
                                 </div>
                             )}
 
-                            {/* Submit */}
                             <button
                                 type="submit"
                                 disabled={isLoading}
-                                className="w-full h-12 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-60 mt-2"
-                                style={{ background: '#0B1A35' }}>
-                                {isLoading
-                                    ? <Loader2 size={18} className="animate-spin" />
-                                    : mode === 'login' ? 'Masuk' : mode === 'register' ? 'Buat Akun' : 'Kirim Link Reset'}
+                                className="w-full h-12 rounded-xl bg-blue-600 text-white font-extrabold text-sm hover:bg-blue-700 active:bg-blue-800 transition-all shadow-[0_12px_24px_rgba(47,107,255,0.22)] hover:shadow-[0_16px_30px_rgba(47,107,255,0.28)] flex items-center justify-center gap-2 disabled:opacity-50 mt-3"
+                            >
+                                {isLoading ? (
+                                    <Loader2 size={18} className="animate-spin text-white" />
+                                ) : mode === 'login' ? (
+                                    <>
+                                        <span>Login</span>
+                                        <ArrowRight size={16} />
+                                    </>
+                                ) : mode === 'register' ? (
+                                    'Daftar Akun Baru'
+                                ) : (
+                                    'Kirim Link Verifikasi'
+                                )}
                             </button>
                         </form>
 
-                        {/* Mode switcher links */}
-                        <div className="flex items-center justify-center gap-4 mt-5 text-[11px] font-semibold text-slate-400">
-                            {mode !== 'login' && (
-                                <button onClick={() => switchMode('login')} className="flex items-center gap-1 hover:text-slate-700 transition-colors">
-                                    <LogIn size={11} /> Login
-                                </button>
-                            )}
-                            {mode !== 'register' && (
-                                <button onClick={() => switchMode('register')} className="flex items-center gap-1 hover:text-slate-700 transition-colors">
-                                    <UserPlus size={11} /> Daftar Akun
-                                </button>
-                            )}
-                        </div>
-
-                        {/* Google login */}
+                        {/* Google Workspace OAuth Button (Login only) */}
                         {mode === 'login' && (
-                            <div className="mt-6">
-                                <div className="flex items-center gap-3 mb-4">
-                                    <div className="h-px flex-1 bg-slate-100" />
-                                    <span className="text-[11px] font-medium text-slate-400">atau masuk dengan</span>
-                                    <div className="h-px flex-1 bg-slate-100" />
-                                </div>
+                            <div className="mt-4">
                                 <button
+                                    type="button"
                                     onClick={handleGoogleLogin}
                                     disabled={isLoading}
-                                    className="w-full h-12 rounded-xl border border-slate-200 flex items-center justify-center gap-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-all disabled:opacity-60">
-                                    <svg className="w-5 h-5" viewBox="0 0 24 24">
+                                    className="w-full h-11 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-colors flex items-center justify-center gap-2.5 text-xs font-bold text-slate-700 shadow-sm"
+                                >
+                                    <svg className="w-4 h-4" viewBox="0 0 24 24">
                                         <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
                                         <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
                                         <path d="M5.84 14.1c-.22-.66-.35-1.36-.35-2.1s.13-1.44.35-2.1V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l3.66-2.84z" fill="#FBBC05" />
                                         <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 6.18l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
                                     </svg>
-                                    Masuk dengan Google
+                                    <span>Login via Google</span>
                                 </button>
-                                <p className="text-[11px] text-center text-slate-400 mt-2.5 font-medium">
-                                    🔒 Khusus akun email domain <span className="font-bold text-slate-700">@gesit.co.id</span> &amp; <span className="font-bold text-slate-700">@gnr.co.id</span>
-                                </p>
                             </div>
                         )}
 
-                        <p className="text-center text-[11px] text-slate-400 mt-8 flex items-center justify-center gap-1.5">
-                            <Shield size={11} />
-                            © 2026 CSL System. All rights reserved.
-                        </p>
-                        </>)}
+                        {/* Security Notice Box */}
+                        <div className="flex items-start gap-2.5 p-3 rounded-xl bg-slate-50 border border-slate-200/80 text-slate-500 text-[11px] leading-relaxed mt-5">
+                            <Shield size={16} className="text-blue-600 shrink-0 mt-0.5" />
+                            <span>Halaman ini hanya untuk pengguna internal yang terdaftar. Jaga kerahasiaan akun dan kata sandi Anda.</span>
+                        </div>
+
+                        {/* Mode Switchers */}
+                        <div className="mt-5 text-center text-xs font-semibold text-slate-500">
+                            {mode !== 'login' ? (
+                                <p>Sudah punya akun? <button onClick={() => switchMode('login')} className="text-blue-600 font-bold hover:underline">Masuk</button></p>
+                            ) : (
+                                <p>Belum memiliki akses? <button onClick={() => switchMode('register')} className="text-blue-600 font-bold hover:underline">Daftar Akun</button></p>
+                            )}
+                        </div>
+
                     </div>
-                </div>
-            </div>
+                </section>
+            </main>
+
+            {/* ══════════ PAGE FOOTER ══════════ */}
+            <footer className="mt-6 flex items-center gap-2.5 text-xs font-bold text-slate-500">
+                <span>CSL &mdash; Corporate Secretary Legal</span>
+                <span className="w-1 h-1 rounded-full bg-slate-400" />
+                <span>&copy; 2026 The Gesit Companies</span>
+            </footer>
         </div>
     );
 };

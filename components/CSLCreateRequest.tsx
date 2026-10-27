@@ -8,6 +8,7 @@ import { UserAccount } from '../types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { toast } from 'sonner';
 import { notifyRequestUpdate } from '../utils/cslNotificationUtils';
 
 interface CSLCategory {
@@ -137,7 +138,7 @@ export const CSLCreateRequest: React.FC<CSLCreateRequestProps> = ({ currentUser,
     const { data: insertData, error } = await supabase.from('csl_requests').insert([payload]).select('id').single();
     if (error) {
       console.error('DB insert error:', error.message);
-      alert(`Gagal mengirim: ${error.message}`);
+      toast.error(`Gagal mengirim permintaan: ${error.message}`);
       setIsSubmitting(false);
       return;
     }

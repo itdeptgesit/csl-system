@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { UserAccount } from '../types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { supabase } from '@/lib/supabaseClient';
 import { 
   Kanban, 
@@ -15,16 +14,15 @@ import {
   TrendingUp, 
   FileText, 
   ShieldCheck, 
-  PhoneCall, 
   ArrowUpRight,
-  Globe,
-  CheckSquare,
-  Layers,
-  Sparkles,
   Receipt,
-  UserCheck,
-  ArrowRight
+  ArrowRight,
+  DollarSign,
+  Building2,
+  FileCheck2,
+  PieChart as PieChartIcon
 } from 'lucide-react';
+import { fetchBudgetExpensesReport, formatIdr, BudgetExpensesReportData } from '@/services/cslBudgetReportService';
 
 interface CSLDashboardProps {
   currentUser: UserAccount | null;
@@ -67,21 +65,93 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
   const [myActionItems, setMyActionItems] = useState<any[]>([]);
   const [recentRequests, setRecentRequests] = useState<any[]>([]);
   const [upcomingTasks, setUpcomingTasks] = useState<any[]>([]);
+  const [budgetReport, setBudgetReport] = useState<BudgetExpensesReportData | null>(null);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         const [
           { data: requests },
-          { data: tasks },
+          { data: rupsData },
+          { data: asetData },
+          { data: agreementData },
           { data: expenses },
           { data: offshoreInvoices },
+          budgetData
         ] = await Promise.all([
           supabase.from('csl_requests').select('*').order('created_at', { ascending: false }),
-          supabase.from('csl_tasks').select('*').order('created_at', { ascending: false }),
+          supabase.from('csl_rups_ar').select('*').order('id', { ascending: false }),
+          supabase.from('csl_task_aset').select('*').order('id', { ascending: false }),
+          supabase.from('csl_task_agreement').select('*').order('id', { ascending: false }),
           supabase.from('csl_expense_approvals').select('*'),
           supabase.from('csl_offshore_invoices').select('*'),
+          fetchBudgetExpensesReport({
+            periodType: 'year',
+            fiscalYear: new Date().getFullYear(),
+            payeeType: 'all',
+            company: 'all',
+            department: 'all',
+            project: 'all',
+            status: 'all',
+            category: 'all',
+            currency: 'all',
+            paymentLocation: 'all',
+            paymentMethod: 'all',
+            search: ''
+          }).catch(() => null)
         ]);
+
+        if (budgetData) {
+          setBudgetReport(budgetData);
+        }
+
+        // Aggregate actual tasks from the 3 tables (RUPS, Aset, Agreement)
+        const combinedTasks: any[] = [];
+        if (rupsData && Array.isArray(rupsData)) {
+          rupsData.forEach(r => {
+            combinedTasks.push({
+              id: `rups_${r.id}`,
+              category: 'RUPS & AR',
+              task_name: `${r.company || 'PT'} - RUPS ${r.periode || ''}`,
+              owner: r.owner || 'CSL Team',
+              status: r.status || 'Belum',
+              due_date: r.due_date,
+              finish_date: r.finish_date
+            });
+          });
+        }
+        if (asetData && Array.isArray(asetData)) {
+          asetData.forEach(a => {
+            combinedTasks.push({
+              id: `aset_${a.id}`,
+              category: 'Aset CSL',
+              task_name: `${a.company ? a.company + ': ' : ''}${a.task_name || 'Aset Dokumen'}`,
+              owner: a.owner || 'CSL Team',
+              status: a.status || 'Draft',
+              due_date: a.due_date,
+              finish_date: null
+            });
+          });
+        }
+        if (agreementData && Array.isArray(agreementData)) {
+          agreementData.forEach(g => {
+            combinedTasks.push({
+              id: `agr_${g.id}`,
+              category: 'Perjanjian',
+              task_name: `${g.company ? g.company + ': ' : ''}${g.title || g.description || 'Review Kontrak'}`,
+              owner: g.owner || g.pic || 'Legal',
+              status: g.status || 'Pending',
+              due_date: g.due_date || g.end_date,
+              finish_date: null
+            });
+          });
+        }
+
+        const pendingCombined = combinedTasks.filter(t => 
+          !['selesai', 'completed', 'done', 'closed'].includes(String(t.status).toLowerCase())
+        );
+        setStats(prev => ({ ...prev, pendingTasks: pendingCombined.length }));
+        setUpcomingTasks(pendingCombined.slice(0, 4));
 
         if (requests) {
           const active = requests.filter(r => !['COMPLETED', 'CLOSED', 'REJECTED'].includes(r.status));
@@ -123,12 +193,6 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
           }));
 
           setRecentRequests(requests.slice(0, 6));
-        }
-
-        if (tasks) {
-          const pending = tasks.filter(t => t.status !== 'Completed');
-          setStats(prev => ({ ...prev, pendingTasks: pending.length }));
-          setUpcomingTasks(pending.slice(0, 4));
         }
 
         if (expenses) {
@@ -184,68 +248,75 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
         </div>
       </div>
 
-      {/* ── KPI Stat Cards ── */}
+      {/* ── KPI Stat Cards (Corporate Law & Compliance Precision) ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         {/* Active Requests */}
         <div 
           onClick={() => onNavigate('csl-all-requests')}
-          className="bg-card border border-border/40 p-5 rounded-xl shadow-sm flex flex-col justify-between hover:border-border/80 transition-colors cursor-pointer"
+          className="bg-card border border-border/80 hover:border-blue-500/50 p-4 rounded-xl shadow-sm flex flex-col justify-between transition-all hover:shadow cursor-pointer relative group"
         >
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-muted-foreground">Active Requests</span>
-            <div className="h-8 w-8 rounded-lg bg-muted/60 flex items-center justify-center">
-              <Kanban className="h-4 w-4 text-muted-foreground" />
+            <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Permintaan Legal</span>
+            <div className="h-7 w-7 rounded-md bg-blue-500/10 text-blue-600 flex items-center justify-center">
+              <Kanban className="h-3.5 w-3.5" />
             </div>
           </div>
-          <div className="mt-2">
+          <div className="mt-3">
             <div className="flex items-baseline gap-2">
-              <p className="text-2xl font-bold font-mono text-foreground">{stats.activeRequests}</p>
-              <span className="text-xs text-muted-foreground">Active</span>
+              <p className="text-2xl font-bold font-mono text-foreground tracking-tight">{stats.activeRequests}</p>
+              <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-500/10 px-1.5 py-0.2 rounded border border-emerald-500/20">Aktif</span>
             </div>
-            <p className="text-[11px] text-muted-foreground mt-0.5">Requests currently in progress</p>
+            <p className="text-[11px] text-muted-foreground mt-1 flex items-center justify-between">
+              <span>{stats.totalRequests} total berkas</span>
+              <span className="text-muted-foreground group-hover:text-foreground transition-colors font-medium text-[10px]">Rincian &rarr;</span>
+            </p>
           </div>
         </div>
 
         {/* Pending Tasks */}
         <div 
           onClick={() => onNavigate('routine-task')}
-          className="bg-card border border-border/40 p-5 rounded-xl shadow-sm flex flex-col justify-between hover:border-border/80 transition-colors cursor-pointer"
+          className="bg-card border border-border/80 hover:border-amber-500/50 p-4 rounded-xl shadow-sm flex flex-col justify-between transition-all hover:shadow cursor-pointer relative group"
         >
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-muted-foreground">Pending Tasks</span>
-            <div className="h-8 w-8 rounded-lg bg-muted/60 flex items-center justify-center">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
+            <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Kepatuhan &amp; RUPS</span>
+            <div className="h-7 w-7 rounded-md bg-amber-500/10 text-amber-600 flex items-center justify-center">
+              <Calendar className="h-3.5 w-3.5" />
             </div>
           </div>
-          <div className="mt-2">
+          <div className="mt-3">
             <div className="flex items-baseline gap-2">
-              <p className="text-2xl font-bold font-mono text-foreground">{stats.pendingTasks}</p>
-              <span className="text-xs text-muted-foreground">Tasks</span>
+              <p className="text-2xl font-bold font-mono text-foreground tracking-tight">{stats.pendingTasks}</p>
+              <span className="text-[10px] font-semibold text-amber-600 bg-amber-500/10 px-1.5 py-0.2 rounded border border-amber-500/20">Pending</span>
             </div>
-            <p className="text-[11px] text-muted-foreground mt-0.5">Routines &amp; agreement obligations</p>
+            <p className="text-[11px] text-muted-foreground mt-1 flex items-center justify-between">
+              <span>RUPS, Aset &amp; Kontrak</span>
+              <span className="text-muted-foreground group-hover:text-foreground transition-colors font-medium text-[10px]">Rincian &rarr;</span>
+            </p>
           </div>
         </div>
 
         {/* Pending Approvals (Expenses & Offshore) */}
         <div 
           onClick={() => onNavigate('budget')}
-          className="bg-card border border-border/40 p-5 rounded-xl shadow-sm flex flex-col justify-between hover:border-border/80 transition-colors cursor-pointer"
+          className="bg-card border border-border/80 hover:border-emerald-500/50 p-4 rounded-xl shadow-sm flex flex-col justify-between transition-all hover:shadow cursor-pointer relative group"
         >
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-muted-foreground">Pending Approvals</span>
-            <div className="h-8 w-8 rounded-lg bg-muted/60 flex items-center justify-center">
-              <Wallet className="h-4 w-4 text-muted-foreground" />
+            <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Persetujuan Biaya</span>
+            <div className="h-7 w-7 rounded-md bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
+              <Wallet className="h-3.5 w-3.5" />
             </div>
           </div>
-          <div className="mt-2">
+          <div className="mt-3">
             <div className="flex items-baseline gap-2">
-              <p className="text-2xl font-bold font-mono text-foreground">
+              <p className="text-2xl font-bold font-mono text-foreground tracking-tight">
                 {stats.pendingExpenses + stats.pendingOffshore}
               </p>
-              <span className="text-xs text-muted-foreground">Approvals</span>
+              <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-500/10 px-1.5 py-0.2 rounded border border-emerald-500/20">Menunggu</span>
             </div>
-            <p className="text-[11px] text-muted-foreground mt-0.5">
-              {stats.pendingExpenses} Expenses • {stats.pendingOffshore} Offshore
+            <p className="text-[11px] text-muted-foreground mt-1 flex items-center justify-between">
+              <span>{stats.pendingExpenses} Lokal • {stats.pendingOffshore} Offshore</span>
+              <span className="text-muted-foreground group-hover:text-foreground transition-colors font-medium text-[10px]">Rincian &rarr;</span>
             </p>
           </div>
         </div>
@@ -253,20 +324,173 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
         {/* SLA Compliance */}
         <div 
           onClick={() => onNavigate('reports-request')}
-          className="bg-card border border-border/40 p-5 rounded-xl shadow-sm flex flex-col justify-between hover:border-border/80 transition-colors cursor-pointer"
+          className="bg-card border border-border/80 hover:border-purple-500/50 p-4 rounded-xl shadow-sm flex flex-col justify-between transition-all hover:shadow cursor-pointer relative group"
         >
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-muted-foreground">SLA Compliance</span>
-            <div className="h-8 w-8 rounded-lg bg-muted/60 flex items-center justify-center">
-              <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+            <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Ketepatan SLA</span>
+            <div className="h-7 w-7 rounded-md bg-purple-500/10 text-purple-600 flex items-center justify-center">
+              <ShieldCheck className="h-3.5 w-3.5" />
             </div>
           </div>
-          <div className="mt-2">
+          <div className="mt-3">
             <div className="flex items-baseline gap-2">
-              <p className="text-2xl font-bold font-mono text-foreground">{slaPercentage}%</p>
-              <span className="text-xs text-muted-foreground">Target met</span>
+              <p className="text-2xl font-bold font-mono text-foreground tracking-tight">{slaPercentage}%</p>
+              <span className="text-[10px] font-semibold text-purple-600 bg-purple-500/10 px-1.5 py-0.2 rounded border border-purple-500/20">Tepat Waktu</span>
             </div>
-            <p className="text-[11px] text-muted-foreground mt-0.5">Completed within SLA timeframe</p>
+            <p className="text-[11px] text-muted-foreground mt-1 flex items-center justify-between">
+              <span>{stats.slaCompliantRequests} dari {stats.completedRequests} selesai</span>
+              <span className="text-muted-foreground group-hover:text-foreground transition-colors font-medium text-[10px]">Rincian &rarr;</span>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Budget & Financial Intelligence (Antislop Real Enterprise Ledger) ── */}
+      <div className="rounded-xl border border-border/80 bg-card shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-border/60 bg-muted/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 inline-block" />
+              <h2 className="text-sm font-bold text-foreground tracking-tight">Anggaran &amp; Realisasi Biaya CSL ({new Date().getFullYear()})</h2>
+              <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-muted text-muted-foreground border border-border/60">
+                Persetujuan &amp; Offshore
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground">Monitoring alokasi pagu tahunan vs realisasi pengeluaran legal operasional</p>
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => onNavigate('budget')} 
+            className="h-8 text-xs font-semibold gap-1.5 self-start sm:self-auto border-border/70 hover:bg-muted"
+          >
+            Buka Modul Budget <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground" />
+          </Button>
+        </div>
+
+        <div className="p-5 space-y-5">
+          {/* 3 Metric High-Density Counters */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="p-4 rounded-lg border border-border/70 bg-card/60">
+              <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block">Total Alokasi Budget</span>
+              <p className="text-xl font-bold font-mono text-foreground mt-1 tracking-tight">
+                {budgetReport ? formatIdr(budgetReport.summary.totalBudget) : 'Rp 0'}
+              </p>
+              <p className="text-[11px] text-muted-foreground mt-1">
+                {budgetReport?.summary.isBudgetDefined ? 'Pagu resmi tahun berjalan' : 'Pagu anggaran terdaftar'}
+              </p>
+            </div>
+
+            <div className="p-4 rounded-lg border border-border/70 bg-card/60">
+              <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block">Total Realisasi (Paid/Approved)</span>
+              <p className="text-xl font-bold font-mono text-emerald-600 dark:text-emerald-400 mt-1 tracking-tight">
+                {budgetReport ? formatIdr(budgetReport.summary.actualExpenses) : 'Rp 0'}
+              </p>
+              <div className="flex items-center justify-between text-[11px] text-muted-foreground mt-1">
+                <span>Serapan: <strong className="font-mono text-foreground font-semibold">{budgetReport?.summary.budgetUtilization || 0}%</strong></span>
+                <span className="text-[10px] font-mono">
+                  {budgetReport && budgetReport.summary.actualExpenses <= budgetReport.summary.totalBudget ? 'Dalam Batas' : 'Over Pagu'}
+                </span>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-lg border border-border/70 bg-card/60">
+              <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block">Sisa Alokasi Pagu</span>
+              <p className={`text-xl font-bold font-mono mt-1 tracking-tight ${
+                (budgetReport?.summary.budgetRemaining ?? 0) < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-foreground'
+              }`}>
+                {budgetReport ? formatIdr(budgetReport.summary.budgetRemaining) : 'Rp 0'}
+              </p>
+              <p className="text-[11px] text-muted-foreground mt-1">
+                {budgetReport && budgetReport.summary.pendingApprovalCount > 0 
+                  ? `${budgetReport.summary.pendingApprovalCount} transaksi pending (${formatIdr(budgetReport.summary.pendingApprovalAmount)})`
+                  : 'Tidak ada pengeluaran tertahan'}
+              </p>
+            </div>
+          </div>
+
+          {/* Progress Bar Serapan */}
+          {budgetReport && budgetReport.summary.totalBudget > 0 && (
+            <div className="space-y-1.5 pt-1">
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-muted-foreground font-medium">Tingkat Penyerapan Anggaran</span>
+                <span className="font-mono font-bold text-foreground">{budgetReport.summary.budgetUtilization}%</span>
+              </div>
+              <div className="w-full h-2 rounded-full bg-muted overflow-hidden">
+                <div 
+                  className={`h-full transition-all duration-500 ${
+                    budgetReport.summary.budgetUtilization > 100 
+                      ? 'bg-rose-500' 
+                      : budgetReport.summary.budgetUtilization > 80 
+                      ? 'bg-amber-500' 
+                      : 'bg-emerald-500'
+                  }`}
+                  style={{ width: `${Math.min(budgetReport.summary.budgetUtilization, 100)}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Real Transaction Feed vs Category Breakdown */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-border/50">
+            {/* Top Categories */}
+            <div className="space-y-2.5">
+              <span className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
+                <PieChartIcon className="w-3.5 h-3.5 text-muted-foreground" />
+                Realisasi Per Kategori Biaya
+              </span>
+              <div className="space-y-2">
+                {budgetReport && budgetReport.expenseByCategory.length > 0 ? (
+                  budgetReport.expenseByCategory.slice(0, 4).map((cat, idx) => (
+                    <div key={idx} className="flex items-center justify-between text-xs py-1 border-b border-border/30 last:border-0">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-primary/70" />
+                        <span className="font-medium text-foreground">{cat.category}</span>
+                        <span className="text-[10px] text-muted-foreground font-mono">({cat.transactionCount} txn)</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="font-mono font-bold text-foreground">{formatIdr(cat.amount)}</span>
+                        <span className="text-[10px] text-muted-foreground ml-2 font-mono">({cat.percentage}%)</span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-xs text-muted-foreground py-3">Belum ada pengeluaran tercatat periode ini.</p>
+                )}
+              </div>
+            </div>
+
+            {/* Recent Expenses List */}
+            <div className="space-y-2.5">
+              <span className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
+                <Receipt className="w-3.5 h-3.5 text-muted-foreground" />
+                Transaksi Pengeluaran Terkini
+              </span>
+              <div className="space-y-2">
+                {budgetReport && budgetReport.transactions.length > 0 ? (
+                  budgetReport.transactions.slice(0, 4).map((txn, idx) => (
+                    <div key={idx} className="flex items-center justify-between text-xs py-1 border-b border-border/30 last:border-0">
+                      <div className="min-w-0 pr-2">
+                        <p className="font-medium text-foreground truncate">{txn.payment_description || txn.project_name}</p>
+                        <p className="text-[10px] text-muted-foreground truncate">
+                          {txn.company} • <span className="font-mono">{txn.expense_number}</span>
+                        </p>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <span className="font-mono font-bold text-foreground">{formatIdr(txn.reporting_amount)}</span>
+                        <span className={`block text-[9px] font-bold uppercase ${
+                          ['PAID', 'DISBURSED', 'APPROVED'].includes(txn.status) ? 'text-emerald-600' : 'text-amber-600'
+                        }`}>
+                          {txn.status}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-xs text-muted-foreground py-3">Belum ada transaksi.</p>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -315,28 +539,28 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
           <div className="rounded-xl border border-border/80 bg-card shadow-sm overflow-hidden">
             <div className="px-5 py-4 border-b border-border/60 flex items-center justify-between">
               <div>
-                <h3 className="font-semibold text-sm text-foreground">Requests Pipeline by Status</h3>
-                <p className="text-xs text-muted-foreground mt-0.5">Real-time status overview of all legal requests</p>
+                <h3 className="font-semibold text-sm text-foreground">Pipeline Permintaan Legal</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">Ringkasan status seluruh tiket bantuan hukum berjalan</p>
               </div>
               <Badge variant="outline" className="text-xs font-mono">
-                {stats.totalRequests} Total
+                {stats.totalRequests} Total Tiket
               </Badge>
             </div>
             <div className="p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
               {[
-                { status: 'DRAFT', label: 'Draft', count: statusCounts.DRAFT, style: STATUS_STYLE.DRAFT },
-                { status: 'SUBMITTED', label: 'Submitted', count: statusCounts.SUBMITTED, style: STATUS_STYLE.SUBMITTED },
-                { status: 'PROCESSING', label: 'Processing', count: statusCounts.PROCESSING, style: STATUS_STYLE.PROCESSING },
-                { status: 'REVIEW_USER', label: 'Review', count: statusCounts.REVIEW_USER, style: STATUS_STYLE.REVIEW_USER },
-                { status: 'COMPLETED', label: 'Completed', count: statusCounts.COMPLETED, style: STATUS_STYLE.COMPLETED },
+                { status: 'DRAFT', label: 'Draft', count: statusCounts.DRAFT, style: 'bg-slate-500/10 text-slate-700 border-slate-300 dark:text-slate-300' },
+                { status: 'SUBMITTED', label: 'Submitted', count: statusCounts.SUBMITTED, style: 'bg-blue-500/10 text-blue-700 border-blue-300 dark:text-blue-300' },
+                { status: 'PROCESSING', label: 'Diproses', count: statusCounts.PROCESSING, style: 'bg-amber-500/10 text-amber-700 border-amber-300 dark:text-amber-300' },
+                { status: 'REVIEW_USER', label: 'Review User', count: statusCounts.REVIEW_USER, style: 'bg-purple-500/10 text-purple-700 border-purple-300 dark:text-purple-300' },
+                { status: 'COMPLETED', label: 'Selesai', count: statusCounts.COMPLETED, style: 'bg-emerald-500/10 text-emerald-700 border-emerald-300 dark:text-emerald-300' },
               ].map((s) => (
                 <div 
                   key={s.status} 
                   onClick={() => onNavigate('csl-all-requests')}
-                  className={`flex flex-col items-center justify-center p-3 rounded-lg border ${s.style} cursor-pointer hover:opacity-80 transition-opacity`}
+                  className={`flex flex-col items-center justify-center p-3.5 rounded-lg border ${s.style} cursor-pointer hover:opacity-90 hover:scale-[1.02] transition-all`}
                 >
-                  <span className="text-xl font-bold font-mono">{s.count}</span>
-                  <span className="text-[10px] font-semibold mt-0.5 tracking-wide">{s.label}</span>
+                  <span className="text-2xl font-black font-mono tracking-tight">{s.count}</span>
+                  <span className="text-[11px] font-semibold mt-1 tracking-wide">{s.label}</span>
                 </div>
               ))}
             </div>
