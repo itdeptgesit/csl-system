@@ -1124,6 +1124,32 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
         </div>
       )}
 
+      {/* Category Tabs */}
+      <div className="flex items-center gap-1.5 border-b border-border/50 pb-2 overflow-x-auto">
+        {[
+          { id: 'RUPS-AR', label: 'RUPS & Annual Report', count: rupsData.length },
+          { id: 'ASET', label: 'Sertifikasi & Aset', count: asetData.length },
+          { id: 'AGREEMENT', label: 'Perjanjian & Legalitas', count: agreementData.length },
+        ].map(cat => (
+          <button
+            key={cat.id}
+            onClick={() => handleCategoryChange(cat.id)}
+            className={`flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+              activeCategory === cat.id
+                ? 'bg-[#4A3570] text-white shadow-xs'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+            }`}
+          >
+            <span>{cat.label}</span>
+            <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
+              activeCategory === cat.id ? 'bg-white/20 text-white' : 'bg-muted text-muted-foreground'
+            }`}>
+              {cat.count}
+            </span>
+          </button>
+        ))}
+      </div>
+
       {/* Toolbar */}
       <div className="flex flex-col gap-3 rounded-xl border border-border/60 bg-card p-3 sm:flex-row sm:items-center">
         <div className="relative w-full flex-1">
@@ -1892,11 +1918,8 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
                     <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-1">Nama Notaris</label>
                     <Input
                       value={selectedRupsDetail.notaryName || ''}
-                      onChange={(e) => {
-                        const v = e.target.value;
-                        setSelectedRupsDetail(prev => prev ? { ...prev, notaryName: v } : null);
-                        handleUpdateRups(selectedRupsDetail.id, 'notaryName', v);
-                      }}
+                      onChange={(e) => setSelectedRupsDetail(prev => prev ? { ...prev, notaryName: e.target.value } : null)}
+                      onBlur={(e) => handleUpdateRups(selectedRupsDetail.id, 'notaryName', e.target.value)}
                       placeholder="Contoh: Notaris Ashoya Ratam, S.H., M.Kn."
                       className="h-9 text-xs bg-muted/30"
                     />
@@ -1906,11 +1929,8 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
                       <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-1">Nomor Akta</label>
                       <Input
                         value={selectedRupsDetail.deedNumber || ''}
-                        onChange={(e) => {
-                          const v = e.target.value;
-                          setSelectedRupsDetail(prev => prev ? { ...prev, deedNumber: v } : null);
-                          handleUpdateRups(selectedRupsDetail.id, 'deedNumber', v);
-                        }}
+                        onChange={(e) => setSelectedRupsDetail(prev => prev ? { ...prev, deedNumber: e.target.value } : null)}
+                        onBlur={(e) => handleUpdateRups(selectedRupsDetail.id, 'deedNumber', e.target.value)}
                         placeholder="Contoh: 15"
                         className="h-9 text-xs bg-muted/30 font-mono"
                       />
@@ -1920,11 +1940,8 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
                       <Input
                         type="date"
                         value={selectedRupsDetail.deedDate || ''}
-                        onChange={(e) => {
-                          const v = e.target.value;
-                          setSelectedRupsDetail(prev => prev ? { ...prev, deedDate: v } : null);
-                          handleUpdateRups(selectedRupsDetail.id, 'deedDate', v);
-                        }}
+                        onChange={(e) => setSelectedRupsDetail(prev => prev ? { ...prev, deedDate: e.target.value } : null)}
+                        onBlur={(e) => handleUpdateRups(selectedRupsDetail.id, 'deedDate', e.target.value)}
                         className="h-9 text-xs bg-muted/30"
                       />
                     </div>
@@ -1939,11 +1956,8 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
                     <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-1">Nomor SK / Bukti AHU</label>
                     <Input
                       value={selectedRupsDetail.ahuNumber || ''}
-                      onChange={(e) => {
-                        const v = e.target.value;
-                        setSelectedRupsDetail(prev => prev ? { ...prev, ahuNumber: v } : null);
-                        handleUpdateRups(selectedRupsDetail.id, 'ahuNumber', v);
-                      }}
+                      onChange={(e) => setSelectedRupsDetail(prev => prev ? { ...prev, ahuNumber: e.target.value } : null)}
+                      onBlur={(e) => handleUpdateRups(selectedRupsDetail.id, 'ahuNumber', e.target.value)}
                       placeholder="AHU-0012345.AH.01.02.TAHUN 2026"
                       className="h-9 text-xs bg-muted/30 font-mono"
                     />
@@ -2029,11 +2043,8 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
                 <label className="text-[10px] font-black uppercase tracking-wider text-muted-foreground block mb-1">Catatan Tambahan / Kendala</label>
                 <textarea
                   value={selectedRupsDetail.notes || ''}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    setSelectedRupsDetail(prev => prev ? { ...prev, notes: v } : null);
-                    handleUpdateRups(selectedRupsDetail.id, 'notes', v);
-                  }}
+                  onChange={(e) => setSelectedRupsDetail(prev => prev ? { ...prev, notes: e.target.value } : null)}
+                  onBlur={(e) => handleUpdateRups(selectedRupsDetail.id, 'notes', e.target.value)}
                   rows={2}
                   placeholder="Catatan progres, kendala tanda tangan, atau riwayat pemblokiran..."
                   className="w-full rounded-lg border border-border/60 bg-muted/30 p-2.5 text-xs outline-none focus:border-border resize-none"
