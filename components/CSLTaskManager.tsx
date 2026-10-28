@@ -437,20 +437,35 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
     saveTimeoutRef.current[`${id}-${field}`] = setTimeout(async () => {
       try {
         const updaterName = currentUser?.fullName || currentUser?.email || 'User';
-        const updatePayload: Record<string, any> = { 
+        // 1. Try update with metadata
+        let { data, error } = await supabase.from('csl_rups_ar').update({ 
           [dbField]: dbValue,
           updated_by: updaterName,
           updated_at: new Date().toISOString()
-        };
-        const { data, error } = await supabase.from('csl_rups_ar').update(updatePayload).eq('id', id).select();
+        }).eq('id', id).select();
+
+        // 2. If failure is due to missing updated_by or updated_at, retry with only [dbField]
+        if (error && (error.message?.includes('updated_by') || error.message?.includes('updated_at'))) {
+          const retry = await supabase.from('csl_rups_ar').update({ [dbField]: dbValue }).eq('id', id).select();
+          error = retry.error;
+          data = retry.data;
+        }
+
+        // 3. If failure is due to dbField itself missing in Supabase schema cache (e.g. 'method' or 'stage')
+        if (error && (error.message?.includes('schema cache') || error.message?.includes('column') || error.code === 'PGRST204')) {
+          console.warn(`Kolom '${dbField}' belum ada di tabel csl_rups_ar Supabase:`, error.message);
+          toast.warning(`Kolom '${dbField}' belum ada di database Supabase (tersimpan lokal). Jalankan script migration_fix_rups_ar_missing_columns.sql di SQL Editor.`, { duration: 4000 });
+          return;
+        }
+
         if (error && error.code !== '42P01') {
-           toast.error('Gagal menyimpan: ' + error.message);
-           console.error('RUPS update error:', error);
+          toast.error('Gagal menyimpan: ' + error.message);
+          console.error('RUPS update error:', error);
         } else if (!error) {
-           // Only toast for non-text fields (notes = silent save)
-           if (field !== 'notes') {
-             toast.success('Disimpan', { duration: 1500 });
-           }
+          // Only toast for non-text fields (notes = silent save)
+          if (field !== 'notes') {
+            toast.success('Disimpan', { duration: 1500 });
+          }
         }
       } catch (err) {
         console.error('RUPS update catch:', err);
@@ -1017,16 +1032,20 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
   };
 
   // Summary Analytics for Task Management (Rekomendasi #4)
+  // Summary Analytics for Task Management (Independent of statusFilter so cards stay accurate)
   const taskStats = React.useMemo(() => {
-    let list: { status: string; company?: string }[] = [];
+    let list: { status: string; company?: string; periode?: string }[] = [];
     if (activeCategory === 'RUPS-AR') {
-      list = filteredRups;
+      list = rupsData.filter(item => {
+        const p = (item as any).periode || new Date().getFullYear().toString();
+        return p === activePeriode;
+      });
     } else if (activeCategory === 'ASET') {
-      list = filteredAset;
+      list = asetData;
     } else if (activeCategory === 'AGREEMENT') {
-      list = filteredAgreement;
+      list = agreementData;
     } else {
-      list = filteredRups;
+      list = rupsData;
     }
 
     const total = list.length;
@@ -1038,7 +1057,7 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
     const blockedList = list.filter(i => (i.status || '').toLowerCase() === 'blocked');
 
     return { total, completed, inProgress, notStarted, blocked, pct, blockedList };
-  }, [activeCategory, filteredRups, filteredAset, filteredAgreement]);
+  }, [activeCategory, rupsData, asetData, agreementData, activePeriode]);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-12">
@@ -1058,105 +1077,209 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
         </div>
       </PageHeader>
 
-      {/* Ringkasan Analisis & KPI Tugas */}
+      {/* Ringkasan Analisis & KPI Tugas Interaktif (Klik card untuk filter data) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-4 rounded-xl bg-card border border-border/60 shadow-xs flex flex-col justify-between">
+        {/* Card 1: TOTAL TUGAS RUPS */}
+        <div 
+          role="button"
+          tabIndex={0}
+          onClick={() => {
+            setStatusFilter('ALL');
+            setCurrentPage(1);
+          }}
+          className={`p-4 rounded-xl bg-card border shadow-xs flex flex-col justify-between cursor-pointer transition-all duration-200 hover:shadow-md active:scale-[0.99] select-none ${
+            statusFilter === 'ALL'
+              ? 'border-indigo-400 dark:border-indigo-600 ring-2 ring-indigo-500/20 bg-indigo-50/20 dark:bg-indigo-950/20 shadow-xs'
+              : 'border-border/60 hover:border-indigo-300 dark:hover:border-indigo-800 hover:bg-muted/30'
+          }`}
+          title="Klik untuk menampilkan seluruh tugas"
+        >
           <div className="flex items-center justify-between text-muted-foreground mb-1">
             <span className="text-[11px] font-bold uppercase tracking-wider">Total Tugas RUPS</span>
-            <Layers className="size-4 text-blue-500" />
+            <div className="flex items-center gap-1.5">
+              {statusFilter === 'ALL' && (
+                <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300">
+                  Aktif
+                </span>
+              )}
+              <Layers className="size-4 text-blue-500" />
+            </div>
           </div>
           <div>
             <div className="text-2xl font-black text-foreground">{taskStats.total}</div>
-            <div className="text-[11px] text-muted-foreground font-medium mt-0.5">
-              Kepatuhan RUPS · Periode {activePeriode}
+            <div className="text-[11px] text-muted-foreground font-medium mt-0.5 flex items-center justify-between">
+              <span>Kepatuhan RUPS · Periode {activePeriode}</span>
+              <span className="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400">Semua Data</span>
             </div>
           </div>
         </div>
 
-        <div className="p-4 rounded-xl bg-card border border-border/60 shadow-xs flex flex-col justify-between">
+        {/* Card 2: TUGAS SELESAI */}
+        <div 
+          role="button"
+          tabIndex={0}
+          onClick={() => {
+            setStatusFilter(statusFilter === 'Completed' ? 'ALL' : 'Completed');
+            setCurrentPage(1);
+          }}
+          className={`p-4 rounded-xl bg-card border shadow-xs flex flex-col justify-between cursor-pointer transition-all duration-200 hover:shadow-md active:scale-[0.99] select-none ${
+            statusFilter === 'Completed'
+              ? 'border-emerald-500 dark:border-emerald-500 ring-2 ring-emerald-500/25 bg-emerald-50/30 dark:bg-emerald-950/30 shadow-xs'
+              : 'border-border/60 hover:border-emerald-300 dark:hover:border-emerald-800 hover:bg-muted/30'
+          }`}
+          title="Klik untuk memfilter tugas yang berstatus Selesai (Completed)"
+        >
           <div className="flex items-center justify-between text-muted-foreground mb-1">
             <span className="text-[11px] font-bold uppercase tracking-wider">Tugas Selesai</span>
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-              {taskStats.pct}%
-            </span>
+            <div className="flex items-center gap-1.5">
+              {statusFilter === 'Completed' && (
+                <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-emerald-200/80 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200">
+                  Aktif
+                </span>
+              )}
+              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                {taskStats.pct}%
+              </span>
+            </div>
           </div>
           <div>
-            <div className="text-2xl font-black text-foreground">{taskStats.completed}</div>
-            <div className="text-[11px] text-muted-foreground font-medium mt-0.5">
-              Telah diselesaikan sepenuhnya
+            <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{taskStats.completed}</div>
+            <div className="text-[11px] text-muted-foreground font-medium mt-0.5 flex items-center justify-between">
+              <span>Telah diselesaikan</span>
+              <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                {statusFilter === 'Completed' ? 'Klik untuk reset' : 'Klik filter →'}
+              </span>
             </div>
           </div>
         </div>
 
-        <div className="p-4 rounded-xl bg-card border border-border/60 shadow-xs flex flex-col justify-between">
+        {/* Card 3: DALAM PROSES */}
+        <div 
+          role="button"
+          tabIndex={0}
+          onClick={() => {
+            setStatusFilter(statusFilter === 'In progress' ? 'ALL' : 'In progress');
+            setCurrentPage(1);
+          }}
+          className={`p-4 rounded-xl bg-card border shadow-xs flex flex-col justify-between cursor-pointer transition-all duration-200 hover:shadow-md active:scale-[0.99] select-none ${
+            statusFilter === 'In progress'
+              ? 'border-blue-500 dark:border-blue-500 ring-2 ring-blue-500/25 bg-blue-50/30 dark:bg-blue-950/30 shadow-xs'
+              : 'border-border/60 hover:border-blue-300 dark:hover:border-blue-800 hover:bg-muted/30'
+          }`}
+          title="Klik untuk memfilter tugas yang berstatus Dalam Proses (In progress)"
+        >
           <div className="flex items-center justify-between text-muted-foreground mb-1">
             <span className="text-[11px] font-bold uppercase tracking-wider">Dalam Proses</span>
-            <Clock className="size-4 text-blue-500" />
+            <div className="flex items-center gap-1.5">
+              {statusFilter === 'In progress' && (
+                <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-blue-200/80 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                  Aktif
+                </span>
+              )}
+              <Clock className="size-4 text-blue-500" />
+            </div>
           </div>
           <div>
-            <div className="text-2xl font-black text-foreground">{taskStats.inProgress}</div>
-            <div className="text-[11px] text-muted-foreground font-medium mt-0.5">
-              Sedang dikerjakan oleh PIC
+            <div className="text-2xl font-black text-blue-600 dark:text-blue-400">{taskStats.inProgress}</div>
+            <div className="text-[11px] text-muted-foreground font-medium mt-0.5 flex items-center justify-between">
+              <span>Sedang dikerjakan</span>
+              <span className="text-[10px] font-semibold text-blue-600 dark:text-blue-400">
+                {statusFilter === 'In progress' ? 'Klik untuk reset' : 'Klik filter →'}
+              </span>
             </div>
           </div>
         </div>
 
-        <div className="p-4 rounded-xl bg-card border border-border/60 shadow-xs flex flex-col justify-between">
+        {/* Card 4: PERLU PERHATIAN */}
+        <div 
+          role="button"
+          tabIndex={0}
+          onClick={() => {
+            const nextFilter = statusFilter === 'Blocked' ? 'ALL' : (taskStats.blocked > 0 ? 'Blocked' : 'Not started');
+            setStatusFilter(nextFilter as any);
+            setCurrentPage(1);
+          }}
+          className={`p-4 rounded-xl bg-card border shadow-xs flex flex-col justify-between cursor-pointer transition-all duration-200 hover:shadow-md active:scale-[0.99] select-none ${
+            statusFilter === 'Blocked'
+              ? 'border-rose-500 dark:border-rose-500 ring-2 ring-rose-500/25 bg-rose-50/30 dark:bg-rose-950/30 shadow-xs'
+              : statusFilter === 'Not started'
+              ? 'border-amber-500 dark:border-amber-500 ring-2 ring-amber-500/25 bg-amber-50/30 dark:bg-amber-950/30 shadow-xs'
+              : 'border-border/60 hover:border-rose-300 dark:hover:border-rose-800 hover:bg-muted/30'
+          }`}
+          title="Klik untuk memfilter tugas yang memerlukan perhatian (Blocked / Belum Mulai)"
+        >
           <div className="flex items-center justify-between text-muted-foreground mb-1">
             <span className="text-[11px] font-bold uppercase tracking-wider">Perlu Perhatian</span>
-            <AlertTriangle className={`size-4 ${taskStats.blocked > 0 ? 'text-rose-500' : 'text-amber-500'}`} />
+            <div className="flex items-center gap-1.5">
+              {(statusFilter === 'Blocked' || statusFilter === 'Not started') && (
+                <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-rose-200/80 text-rose-800 dark:bg-rose-900 dark:text-rose-200">
+                  {statusFilter}
+                </span>
+              )}
+              <AlertTriangle className={`size-4 ${taskStats.blocked > 0 ? 'text-rose-500' : 'text-amber-500'}`} />
+            </div>
           </div>
           <div>
-            <div className={`text-2xl font-black ${taskStats.blocked > 0 ? 'text-rose-600' : 'text-foreground'}`}>
-              {taskStats.blocked} <span className="text-xs font-normal text-muted-foreground">Blocked / {taskStats.notStarted} Belum Mulai</span>
+            <div className="text-2xl font-black flex items-baseline gap-2">
+              <span 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setStatusFilter(statusFilter === 'Blocked' ? 'ALL' : 'Blocked');
+                  setCurrentPage(1);
+                }}
+                className={`cursor-pointer hover:underline ${taskStats.blocked > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-foreground'}`}
+                title="Filter khusus status Blocked"
+              >
+                {taskStats.blocked} <span className="text-xs font-bold text-rose-600">Blocked</span>
+              </span>
+              <span className="text-xs text-muted-foreground">/</span>
+              <span 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setStatusFilter(statusFilter === 'Not started' ? 'ALL' : 'Not started');
+                  setCurrentPage(1);
+                }}
+                className="text-xs font-semibold text-muted-foreground hover:text-foreground cursor-pointer hover:underline"
+                title="Filter khusus status Belum Mulai (Not started)"
+              >
+                {taskStats.notStarted} Belum Mulai
+              </span>
             </div>
-            <div className="text-[11px] text-muted-foreground font-medium mt-0.5">
-              {taskStats.blocked > 0 ? 'Terdapat tugas terkendala' : 'Tidak ada tugas yang terblokir'}
+            <div className="text-[11px] text-muted-foreground font-medium mt-0.5 flex items-center justify-between">
+              <span>{taskStats.blocked > 0 ? 'Terdapat tugas terkendala' : 'Tidak ada tugas terblokir'}</span>
+              <span className="text-[10px] font-semibold text-rose-600 dark:text-rose-400">
+                {statusFilter === 'Blocked' || statusFilter === 'Not started' ? 'Klik reset' : 'Klik filter →'}
+              </span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Alert Perlu Perhatian jika ada tugas Blocked */}
+      {/* Alert Perlu Perhatian jika ada tugas Blocked (Klik untuk langsung filter) */}
       {taskStats.blockedList.length > 0 && (
-        <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-900 dark:text-rose-200 text-xs flex items-center justify-between">
+        <div 
+          role="button"
+          tabIndex={0}
+          onClick={() => {
+            setStatusFilter(statusFilter === 'Blocked' ? 'ALL' : 'Blocked');
+            setCurrentPage(1);
+          }}
+          className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-900 dark:text-rose-200 text-xs flex items-center justify-between cursor-pointer hover:bg-rose-100/70 dark:hover:bg-rose-900/50 transition-all active:scale-[0.995]"
+          title="Klik untuk langsung memfilter daftar tugas Blocked"
+        >
           <div className="flex items-center gap-2.5">
             <AlertTriangle className="size-4 text-rose-600 shrink-0" />
             <span className="font-semibold">
               Perlu Perhatian: Terdapat {taskStats.blockedList.length} tugas berstatus Blocked ({taskStats.blockedList.map(b => b.company).filter(Boolean).slice(0, 3).join(', ')})
             </span>
           </div>
-          <span className="text-[11px] font-bold uppercase px-2 py-0.5 rounded bg-rose-100 text-rose-800 dark:bg-rose-900/60 dark:text-rose-200">
-            Perlu Tindak Lanjut
+          <span className="text-[11px] font-bold uppercase px-2.5 py-1 rounded-lg bg-rose-200/80 text-rose-800 dark:bg-rose-900 dark:text-rose-200 flex items-center gap-1 shadow-xs">
+            {statusFilter === 'Blocked' ? '✓ Memfilter Blocked (Klik Reset)' : 'Lihat Tugas Blocked →'}
           </span>
         </div>
       )}
 
-      {/* Category Tabs */}
-      <div className="flex items-center gap-1.5 border-b border-border/50 pb-2 overflow-x-auto">
-        {[
-          { id: 'RUPS-AR', label: 'RUPS & Annual Report', count: rupsData.length },
-          { id: 'ASET', label: 'Sertifikasi & Aset', count: asetData.length },
-          { id: 'AGREEMENT', label: 'Perjanjian & Legalitas', count: agreementData.length },
-        ].map(cat => (
-          <button
-            key={cat.id}
-            onClick={() => handleCategoryChange(cat.id)}
-            className={`flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all ${
-              activeCategory === cat.id
-                ? 'bg-[#4A3570] text-white shadow-xs'
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-            }`}
-          >
-            <span>{cat.label}</span>
-            <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
-              activeCategory === cat.id ? 'bg-white/20 text-white' : 'bg-muted text-muted-foreground'
-            }`}>
-              {cat.count}
-            </span>
-          </button>
-        ))}
-      </div>
+
 
       {/* Toolbar */}
       <div className="flex flex-col gap-3 rounded-xl border border-border/60 bg-card p-3 sm:flex-row sm:items-center">

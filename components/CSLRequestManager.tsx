@@ -462,6 +462,23 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
     setResponseFiles([]);
   };
 
+  // Keyboard shortcut to close popup modal on ESC & prevent background scroll
+  useEffect(() => {
+    if (!selectedRequest) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        closeDetailModal();
+      }
+    };
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [selectedRequest]);
+
   const handleRowClick = async (req: CSLRequest) => {
     setSelectedRequest(req);
     setNewComment('');
@@ -1277,24 +1294,22 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
         };
 
         return (
-          <>
-            {/* Backdrop Scrim */}
+          <div
+            className="fixed inset-0 z-50 bg-[#0a192f]/50 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 md:p-6 animate-in fade-in duration-200"
+            onClick={closeDetailModal}
+          >
+            {/* Centered Modal Pop-up Card */}
             <div
-              onClick={closeDetailModal}
-              className="fixed inset-0 bg-[#0a192f]/35 z-50 backdrop-blur-xs transition-opacity duration-200"
-            />
-
-            {/* Slide-over Sheet (580px max width for tabs, responsive) */}
-            <aside
-              className="fixed top-0 right-0 bottom-0 w-[580px] max-w-[94vw] bg-white dark:bg-slate-900 border-l border-[#e6e9f0] dark:border-slate-800 shadow-2xl z-50 overflow-hidden flex flex-col animate-in slide-in-from-right duration-300"
+              onClick={(e) => e.stopPropagation()}
+              className="relative w-full max-w-4xl lg:max-w-5xl max-h-[90vh] bg-card dark:bg-slate-900 border border-border shadow-2xl rounded-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200"
             >
               <div className="w-full flex flex-col h-full overflow-hidden">
                 {/* Header */}
-                <div className="px-6 py-4 border-b border-[#e6e9f0] dark:border-slate-800 bg-[#fafbfc] dark:bg-slate-900/60 shrink-0">
+                <div className="px-6 py-4 border-b border-border bg-muted/30 dark:bg-slate-900/60 shrink-0">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex flex-col gap-1.5 flex-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-lg font-bold font-mono tracking-tight text-[#0a2540] dark:text-white">
+                        <span className="text-xl font-bold font-mono tracking-tight text-[#0a2540] dark:text-white">
                           {selectedRequest.request_number}
                         </span>
                         <span className={`inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold ${STATUS_BADGE[selectedRequest.status] || ''}`}>
@@ -2225,8 +2240,8 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                   )}
                 </Tabs>
               </div>
-            </aside>
-          </>
+            </div>
+          </div>
         );
       })()}
 

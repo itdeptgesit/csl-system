@@ -697,6 +697,7 @@ const InternalApp: React.FC = () => {
 
                              {/* Routine TBK */}
                              <Route path="routine-tbk" element={<CSLTbkTracker currentUser={currentUser} />} />
+                             <Route path="tracking-tbk" element={<CSLTbkTracker currentUser={currentUser} />} />
 
                              {/* Routine Offshore Co */}
                              <Route path="routine-offshore" element={<CSLOffshoreTracker currentUser={currentUser} />} />
@@ -861,8 +862,8 @@ const DashboardLayout: React.FC<any & { children?: React.ReactNode }> = ({
         if (g === 'routine-lkpm' || g === 'routine_lkpm') {
           allowed.add('routine'); allowed.add('routine-lkpm');
         }
-        if (g === 'routine-tbk' || g === 'routine_tbk') {
-          allowed.add('routine'); allowed.add('routine-tbk');
+        if (g === 'routine-tbk' || g === 'routine_tbk' || g === 'tracking-tbk') {
+          allowed.add('routine'); allowed.add('routine-tbk'); allowed.add('tracking-tbk');
         }
         if (g === 'routine-offshore' || g === 'routine_offshore') {
           allowed.add('routine'); allowed.add('routine-offshore');
@@ -883,7 +884,7 @@ const DashboardLayout: React.FC<any & { children?: React.ReactNode }> = ({
           allowed.add('credentials');
         }
         if (g === 'csl_staff' || g === 'staff') {
-          ['dashboard', 'csl-requests', 'routine', 'routine-rups', 'routine-lkpm', 'routine-tbk', 'routine-offshore', 'routine-admgt', 'routine-task', 'companies', 'settings-companies', 'budget', 'budget-expense', 'budget-offshore-invoice', 'directory', 'directory-all', 'directory-lawyer', 'directory-vendor', 'directory-government', 'directory-other', 'credentials', 'profile'].forEach(id => allowed.add(id));
+          ['dashboard', 'csl-requests', 'routine', 'routine-rups', 'routine-lkpm', 'routine-tbk', 'tracking-tbk', 'routine-offshore', 'routine-admgt', 'routine-task', 'companies', 'settings-companies', 'budget', 'budget-expense', 'budget-offshore-invoice', 'directory', 'directory-all', 'directory-lawyer', 'directory-vendor', 'directory-government', 'directory-other', 'credentials', 'profile'].forEach(id => allowed.add(id));
         }
         if (g === 'admin' || g === 'csl_admin') {
           (APP_MENU_STRUCTURE || []).forEach(m => {
@@ -941,7 +942,7 @@ const DashboardLayout: React.FC<any & { children?: React.ReactNode }> = ({
       [
         'dashboard',
         'csl-requests',
-        'routine', 'routine-rups', 'routine-lkpm', 'routine-tbk', 'routine-offshore', 'routine-admgt', 'routine-task',
+        'routine', 'routine-rups', 'routine-lkpm', 'routine-tbk', 'tracking-tbk', 'routine-offshore', 'routine-admgt', 'routine-task',
         'companies', 'settings-companies',
         'budget', 'budget-expense', 'budget-offshore-invoice',
         'directory', 'directory-all', 'directory-lawyer', 'directory-vendor', 'directory-government', 'directory-other',

@@ -137,16 +137,24 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onLogout, user, onUpda
                 department: user.department || '',
                 jobTitle: user.jobTitle || ''
             });
-            setAvatarUrl(user.avatarUrl || undefined);
+            setAvatarUrl(user.avatarUrl || '');
         }
 
         const fetchMasterData = async () => {
             try {
                 const { data: companies } = await supabase.from('companies').select('id, name').order('name');
-                if (companies) setCompanyList(companies);
+                let listCo = companies || [];
+                if (user?.company && !listCo.some(c => c.name === user.company)) {
+                    listCo = [{ id: 0, name: user.company }, ...listCo];
+                }
+                setCompanyList(listCo);
 
                 const { data: depts } = await supabase.from('departments').select('name').order('name');
-                if (depts) setDepartmentList(depts);
+                let listDepts = depts || [];
+                if (user?.department && !listDepts.some(d => d.name === user.department)) {
+                    listDepts = [{ name: user.department }, ...listDepts];
+                }
+                setDepartmentList(listDepts);
             } catch (err) {
                 console.error("Error fetching master data:", err);
             }

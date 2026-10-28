@@ -806,10 +806,16 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
           updatePayload.id = authUserId;
         }
 
-        let { error } = await supabaseAdmin.from('user_accounts').update(updatePayload).eq('email', emailTrim);
+        let { error } = await supabaseAdmin
+          .from('user_accounts')
+          .update(updatePayload)
+          .eq('id', editingUser.id);
 
         if (error) {
-          const fallback = await supabase.from('user_accounts').update(updatePayload).eq('email', emailTrim);
+          const fallback = await supabase
+            .from('user_accounts')
+            .update(updatePayload)
+            .eq('id', editingUser.id);
           if (fallback.error) throw fallback.error;
         }
         showFeedback(`User "${userForm.name}" updated!`);
