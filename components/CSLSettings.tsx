@@ -64,7 +64,13 @@ import {
   ExternalLink,
   ChevronRight,
   X,
-  Search
+  Search,
+  CalendarCheck,
+  Landmark,
+  Globe,
+  Layers,
+  Shield,
+  Sparkles
 } from 'lucide-react';
 import { toast } from 'sonner';
 import lkpmData from '../data/lkpm_data.json';
@@ -90,13 +96,17 @@ interface MenuPermissions {
   requests_create: boolean;
   requests_review: boolean;
   routine_view: boolean;
-  routine_manage: boolean;
+  routine_rups: boolean;
+  routine_lkpm: boolean;
+  routine_tbk: boolean;
+  routine_offshore: boolean;
+  routine_admgt: boolean;
+  companies: boolean;
   budget_view: boolean;
   budget_approve: boolean;
   directory_view: boolean;
   directory_manage: boolean;
   credentials: boolean;
-  reports_view: boolean;
   settings_manage: boolean;
 }
 
@@ -158,65 +168,183 @@ const DEFAULT_SUPER_ADMIN_PERMISSIONS: MenuPermissions = {
   requests_create: true,
   requests_review: true,
   routine_view: true,
-  routine_manage: true,
+  routine_rups: true,
+  routine_lkpm: true,
+  routine_tbk: true,
+  routine_offshore: true,
+  routine_admgt: true,
+  companies: true,
   budget_view: true,
   budget_approve: true,
   directory_view: true,
   directory_manage: true,
   credentials: true,
-  reports_view: true,
   settings_manage: true,
 };
 
-// Default Admin Permissions (full except delete)
+// Default Admin Permissions
 const DEFAULT_ADMIN_PERMISSIONS: MenuPermissions = {
   dashboard: true,
   requests_view: true,
   requests_create: true,
   requests_review: true,
   routine_view: true,
-  routine_manage: true,
+  routine_rups: true,
+  routine_lkpm: true,
+  routine_tbk: true,
+  routine_offshore: true,
+  routine_admgt: true,
+  companies: true,
   budget_view: true,
   budget_approve: true,
   directory_view: true,
   directory_manage: true,
   credentials: true,
-  reports_view: true,
   settings_manage: false,
 };
 
-// Default Staff Permissions (operational, no approve budget / settings)
+// Default Staff Permissions
 const DEFAULT_STAFF_PERMISSIONS: MenuPermissions = {
   dashboard: true,
   requests_view: true,
   requests_create: true,
   requests_review: true,
   routine_view: true,
-  routine_manage: true,
+  routine_rups: true,
+  routine_lkpm: true,
+  routine_tbk: true,
+  routine_offshore: true,
+  routine_admgt: true,
+  companies: true,
   budget_view: true,
   budget_approve: false,
   directory_view: true,
   directory_manage: false,
   credentials: true,
-  reports_view: true,
   settings_manage: false,
 };
 
-// Default User / Requester Permissions (submit requests only)
+// Default User / Requester Permissions
 const DEFAULT_REQUESTER_PERMISSIONS: MenuPermissions = {
   dashboard: false,
   requests_view: true,
   requests_create: true,
   requests_review: false,
   routine_view: false,
-  routine_manage: false,
+  routine_rups: false,
+  routine_lkpm: false,
+  routine_tbk: false,
+  routine_offshore: false,
+  routine_admgt: false,
+  companies: false,
   budget_view: false,
   budget_approve: false,
   directory_view: false,
   directory_manage: false,
   credentials: false,
-  reports_view: false,
   settings_manage: false,
+};
+
+// ── Helper to convert groups array to MenuPermissions ──
+const parseGroupsToPermissions = (groupsArr: string[], role: string): MenuPermissions => {
+  const roleLower = (role || '').trim().toLowerCase();
+  const isSuperAdmin = roleLower === 'super admin' || roleLower === 'super_admin' || roleLower === 'owner' || groupsArr.includes('super_admin');
+  const isAdmin = roleLower === 'admin' || groupsArr.includes('admin') || groupsArr.includes('csl_admin');
+  const isStaff = roleLower === 'staff' || roleLower === 'csl staff' || groupsArr.includes('staff') || groupsArr.includes('csl_staff');
+
+  if (isSuperAdmin) return { ...DEFAULT_SUPER_ADMIN_PERMISSIONS };
+
+  if (!groupsArr || groupsArr.length === 0) {
+    if (isAdmin) return { ...DEFAULT_ADMIN_PERMISSIONS };
+    if (isStaff) return { ...DEFAULT_STAFF_PERMISSIONS };
+    return { ...DEFAULT_REQUESTER_PERMISSIONS };
+  }
+
+  const g = groupsArr.map(x => String(x).toLowerCase());
+
+  const hasRoutineBase = g.includes('routine') || g.includes('routine_view') || g.includes('routine_create') || g.includes('routine_manage') || isStaff || isAdmin;
+  const hasRoutineRups = hasRoutineBase || g.includes('routine-rups') || g.includes('routine_rups');
+  const hasRoutineLkpm = hasRoutineBase || g.includes('routine-lkpm') || g.includes('routine_lkpm');
+  const hasRoutineTbk = hasRoutineBase || g.includes('routine-tbk') || g.includes('routine_tbk');
+  const hasRoutineOffshore = hasRoutineBase || g.includes('routine-offshore') || g.includes('routine_offshore');
+  const hasRoutineAdmgt = hasRoutineBase || g.includes('routine-admgt') || g.includes('routine_admgt');
+
+  return {
+    dashboard: g.includes('dashboard') || isAdmin || isStaff,
+    requests_view: g.includes('req_view') || g.includes('requests_view') || g.includes('csl-requests') || isAdmin || isStaff || true,
+    requests_create: g.includes('req_submit') || g.includes('requests_create') || isAdmin || isStaff || true,
+    requests_review: g.includes('req_review') || g.includes('requests_review') || isAdmin || isStaff,
+    routine_view: hasRoutineBase || hasRoutineRups || hasRoutineLkpm || hasRoutineTbk || hasRoutineOffshore || hasRoutineAdmgt,
+    routine_rups: hasRoutineRups,
+    routine_lkpm: hasRoutineLkpm,
+    routine_tbk: hasRoutineTbk,
+    routine_offshore: hasRoutineOffshore,
+    routine_admgt: hasRoutineAdmgt,
+    companies: g.includes('companies') || g.includes('companies_view') || g.includes('settings-companies') || isAdmin || isStaff,
+    budget_view: g.includes('budget') || g.includes('budget_view') || isAdmin || isStaff,
+    budget_approve: (g.includes('budget') && isAdmin) || g.includes('budget_approve') || isAdmin,
+    directory_view: g.includes('directory') || g.includes('directory_view') || isAdmin || isStaff,
+    directory_manage: g.includes('directory_manage') || isAdmin,
+    credentials: g.includes('credentials') || g.includes('credentials_view') || isAdmin || isStaff,
+    settings_manage: g.includes('settings') || g.includes('settings_manage') || isSuperAdmin,
+  };
+};
+
+// ── Helper to convert MenuPermissions to groups array for database persistence ──
+const convertPermissionsToGroups = (perms: MenuPermissions, role: string): string[] => {
+  const roleLower = (role || '').trim().toLowerCase();
+  const groups: string[] = [];
+
+  if (roleLower === 'super admin' || roleLower === 'super_admin' || roleLower === 'owner') {
+    groups.push('super_admin');
+  } else if (roleLower === 'admin') {
+    groups.push('admin');
+  } else if (roleLower === 'staff' || roleLower === 'csl staff') {
+    groups.push('staff');
+  }
+
+  if (perms.dashboard) groups.push('dashboard');
+  
+  if (perms.requests_view) groups.push('req_view');
+  if (perms.requests_create) groups.push('req_submit');
+  if (perms.requests_review) groups.push('req_review');
+  if (perms.requests_view || perms.requests_create || perms.requests_review) groups.push('csl-requests');
+
+  const anyRoutine = perms.routine_rups || perms.routine_lkpm || perms.routine_tbk || perms.routine_offshore || perms.routine_admgt || perms.routine_view;
+  if (anyRoutine) groups.push('routine');
+  if (perms.routine_rups) groups.push('routine-rups');
+  if (perms.routine_lkpm) groups.push('routine-lkpm');
+  if (perms.routine_tbk) groups.push('routine-tbk');
+  if (perms.routine_offshore) groups.push('routine-offshore');
+  if (perms.routine_admgt) groups.push('routine-admgt');
+
+  if (perms.companies) {
+    groups.push('companies');
+    groups.push('companies_view');
+  }
+
+  if (perms.budget_view || perms.budget_approve) {
+    groups.push('budget');
+    if (perms.budget_approve) groups.push('budget_approve');
+  }
+
+  if (perms.directory_view || perms.directory_manage) {
+    groups.push('directory');
+    if (perms.directory_manage) groups.push('directory_manage');
+  }
+
+  if (perms.credentials) {
+    groups.push('credentials');
+  }
+
+  if (perms.settings_manage) {
+    groups.push('settings');
+    groups.push('settings-users');
+    groups.push('settings-departments');
+    groups.push('settings-system');
+  }
+
+  return Array.from(new Set(groups));
 };
 
 // ── Mock Data Defaults ───────────────────────────────────────────────────────
@@ -260,8 +388,10 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
   const [isUploadingESign, setIsUploadingESign] = useState(false);
 
   // User Permissions Modal State
+  const [userTab, setUserTab] = useState<'users' | 'matrix'>('users');
   const [permUser, setPermUser] = useState<UserItem | null>(null);
   const [userPerms, setUserPerms] = useState<MenuPermissions>(DEFAULT_REQUESTER_PERMISSIONS);
+  const [isSavingPerms, setIsSavingPerms] = useState(false);
 
   // Company Modal State
   const [companyModalOpen, setCompanyModalOpen] = useState(false);
@@ -457,31 +587,8 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
         } else if (data) {
           const mapped: UserItem[] = data.map((u: any) => {
             const role = u.role || 'User';
-            const roleLower = role.trim().toLowerCase();
-            const defaultPerms =
-              roleLower === 'super admin' || roleLower === 'super_admin'
-                ? DEFAULT_SUPER_ADMIN_PERMISSIONS
-                : roleLower === 'admin'
-                ? DEFAULT_ADMIN_PERMISSIONS
-                : roleLower === 'staff'
-                ? DEFAULT_STAFF_PERMISSIONS
-                : DEFAULT_REQUESTER_PERMISSIONS;
             const groupsArr: string[] = u.groups || [];
-            const permissions = groupsArr.length > 0 ? {
-              dashboard: groupsArr.includes('dashboard'),
-              requests_view: groupsArr.includes('req_view') || groupsArr.includes('requests_view') || groupsArr.includes('csl-requests'),
-              requests_create: groupsArr.includes('req_submit') || groupsArr.includes('requests_create'),
-              requests_review: groupsArr.includes('req_review') || groupsArr.includes('requests_review'),
-              routine_view: groupsArr.includes('routine_view') || groupsArr.includes('routine'),
-              routine_manage: groupsArr.includes('routine_create') || groupsArr.includes('routine_manage'),
-              budget_view: groupsArr.includes('budget') || groupsArr.includes('budget_view'),
-              budget_approve: groupsArr.includes('budget') || groupsArr.includes('budget_approve'),
-              directory_view: groupsArr.includes('directory') || groupsArr.includes('directory_view'),
-              directory_manage: groupsArr.includes('directory_manage'),
-              credentials: groupsArr.includes('credentials') || groupsArr.includes('credentials_view'),
-              reports_view: groupsArr.includes('reports') || groupsArr.includes('reports_view'),
-              settings_manage: groupsArr.includes('settings') || groupsArr.includes('settings_manage'),
-            } : defaultPerms;
+            const permissions = parseGroupsToPermissions(groupsArr, role);
 
             return {
               id: u.id,
@@ -743,67 +850,65 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
   // ── Permissions Modal Handlers ─────────────────────────────────────────────
   const openPermissionsModal = (u: UserItem) => {
     setPermUser(u);
-    const roleLower = (u.role || '').trim().toLowerCase();
-    const defaultPerms =
-      roleLower === 'super admin' || roleLower === 'super_admin'
-        ? DEFAULT_SUPER_ADMIN_PERMISSIONS
-        : roleLower === 'admin'
-        ? DEFAULT_ADMIN_PERMISSIONS
-        : roleLower === 'staff'
-        ? DEFAULT_STAFF_PERMISSIONS
-        : DEFAULT_REQUESTER_PERMISSIONS;
-
-    if (u.groups && Array.isArray(u.groups) && u.groups.length > 0) {
-      const g = u.groups;
-      setUserPerms({
-        dashboard: g.includes('dashboard'),
-        requests_view: g.includes('req_view') || g.includes('requests_view') || g.includes('csl-requests'),
-        requests_create: g.includes('req_submit') || g.includes('requests_create'),
-        requests_review: g.includes('req_review') || g.includes('requests_review'),
-        routine_view: g.includes('routine_view') || g.includes('routine'),
-        routine_manage: g.includes('routine_create') || g.includes('routine_manage'),
-        budget_view: g.includes('budget') || g.includes('budget_view'),
-        budget_approve: g.includes('budget') || g.includes('budget_approve'),
-        directory_view: g.includes('directory') || g.includes('directory_view'),
-        directory_manage: g.includes('directory_manage'),
-        credentials: g.includes('credentials') || g.includes('credentials_view'),
-        reports_view: g.includes('reports') || g.includes('reports_view'),
-        settings_manage: g.includes('settings') || g.includes('settings_manage'),
-      });
-    } else {
-      setUserPerms(u.permissions || defaultPerms);
-    }
+    const perms = u.permissions || parseGroupsToPermissions(u.groups || [], u.role);
+    setUserPerms(perms);
   };
 
   const handleSavePermissions = async () => {
     if (!permUser) return;
-    // Konversi MenuPermissions object ke array menu IDs (format yang sama dengan MenuPermissionsModal)
-    const menuIds: string[] = [];
-    if (userPerms.dashboard) menuIds.push('dashboard');
-    if (userPerms.requests_view) menuIds.push('req_view');
-    if (userPerms.requests_create) menuIds.push('req_submit');
-    if (userPerms.requests_review) menuIds.push('req_review');
-    if (userPerms.routine_view) menuIds.push('routine_view');
-    if (userPerms.routine_manage) menuIds.push('routine_create');
-    if (userPerms.budget_view || userPerms.budget_approve) menuIds.push('budget');
-    if (userPerms.directory_view || userPerms.directory_manage) menuIds.push('directory');
-    if (userPerms.credentials) menuIds.push('credentials');
-    if (userPerms.reports_view) menuIds.push('reports');
-    if (userPerms.settings_manage) menuIds.push('settings');
+    setIsSavingPerms(true);
+    const menuIds = convertPermissionsToGroups(userPerms, permUser.role);
 
     try {
-      const { error } = await supabaseAdmin
+      let { error } = await supabaseAdmin
         .from('user_accounts')
         .update({ groups: menuIds })
         .eq('id', permUser.id);
-      if (error) throw error;
+      if (error) {
+        const fallback = await supabase
+          .from('user_accounts')
+          .update({ groups: menuIds })
+          .eq('id', permUser.id);
+        if (fallback.error) throw fallback.error;
+      }
       // Update local state setelah DB berhasil
-      setUsers(users.map(u => u.id === permUser.id ? { ...u, groups: menuIds, permissions: userPerms } : u));
-      showFeedback(`Permissions saved for ${permUser.name}`);
+      setUsers(prev => prev.map(u => u.id === permUser.id ? { ...u, groups: menuIds, permissions: userPerms } : u));
+      toast.success(`Hak akses menu berhasil disimpan untuk ${permUser.name}`);
+      showFeedback(`Hak akses menu berhasil disimpan untuk ${permUser.name}`);
+      setPermUser(null);
     } catch (err: any) {
+      toast.error(`Gagal menyimpan: ${err.message}`);
       showFeedback(`Gagal menyimpan: ${err.message}`);
+    } finally {
+      setIsSavingPerms(false);
     }
-    setPermUser(null);
+  };
+
+  const handleToggleUserMenu = async (u: UserItem, menuKey: keyof MenuPermissions) => {
+    const currentVal = !!u.permissions[menuKey];
+    const updatedPerms: MenuPermissions = {
+      ...u.permissions,
+      [menuKey]: !currentVal,
+    };
+    if (['routine_rups', 'routine_lkpm', 'routine_tbk', 'routine_offshore', 'routine_admgt'].includes(menuKey) && !currentVal) {
+      updatedPerms.routine_view = true;
+    }
+    const newGroups = convertPermissionsToGroups(updatedPerms, u.role);
+
+    // Optimistic local state update
+    setUsers(prev => prev.map(item => item.id === u.id ? { ...item, groups: newGroups, permissions: updatedPerms } : item));
+
+    try {
+      let { error } = await supabaseAdmin.from('user_accounts').update({ groups: newGroups }).eq('id', u.id);
+      if (error) {
+        const fallback = await supabase.from('user_accounts').update({ groups: newGroups }).eq('id', u.id);
+        if (fallback.error) throw fallback.error;
+      }
+      toast.success(`Hak akses menu diperbarui untuk ${u.name}`);
+    } catch (err: any) {
+      setUsers(prev => prev.map(item => item.id === u.id ? u : item));
+      toast.error(`Gagal mengubah akses: ${err.message}`);
+    }
   };
 
   const applyPreset = (preset: 'super_admin' | 'admin' | 'staff' | 'user') => {
@@ -1115,51 +1220,373 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
     return (
       <div className="space-y-6 animate-in fade-in duration-500 pb-12 font-sans">
         {feedbackBanner}
-        <PageHeader title="Pengguna & Hak Akses Menu" description="Kelola akun pengguna, peran sistem, dan hak akses menu untuk setiap personel">
-          <Button onClick={() => openUserModal()} size="sm" className="bg-[#0a2540] hover:bg-[#16375c] text-white font-bold text-xs shadow-xs rounded-xl h-9 px-4">
-            <Plus className="h-4 w-4 mr-1.5" /> Tambah Pengguna
-          </Button>
+        <PageHeader title="Pengguna & Hak Akses Menu" description="Kelola akun pengguna, peran sistem, dan konfigurasi hak akses menu untuk setiap personel">
+          {userTab === 'users' && (
+            <Button onClick={() => openUserModal()} size="sm" className="bg-[#0a2540] hover:bg-[#16375c] text-white font-bold text-xs shadow-xs rounded-xl h-9 px-4">
+              <Plus className="h-4 w-4 mr-1.5" /> Tambah Pengguna
+            </Button>
+          )}
         </PageHeader>
 
-        <div className="bg-card border border-[#e6e9f0] rounded-2xl overflow-hidden shadow-xs">
-          <Table>
-            <TableHeader className="bg-[#fafbfc]">
-              <TableRow>
-                {['Nama Pengguna', 'Email', 'Peran (Role)', 'Cakupan Akses', 'Aksi'].map(h => (
-                  <TableHead key={h} className="text-[11px] font-bold uppercase tracking-wider text-[#758196]">{h}</TableHead>
-                ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {users.map(u => (
-                <TableRow key={u.id} className="hover:bg-muted/30">
-                  <TableCell className="text-sm font-bold text-foreground">{u.name}</TableCell>
-                  <TableCell className="text-xs text-muted-foreground">{u.email}</TableCell>
-                  <TableCell>
-                    <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400">
-                      {u.role}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <Button onClick={() => openPermissionsModal(u)} variant="outline" size="sm" className="h-7 text-[11px] font-bold rounded-xl border-indigo-200 text-indigo-600 hover:bg-indigo-50">
-                      <ShieldCheck size={13} className="mr-1" /> Configure Permissions
-                    </Button>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
-                      <Button onClick={() => openUserModal(u)} variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground">
-                        <Pencil size={14} />
-                      </Button>
-                      <Button onClick={() => setDeleteConfirm({ type: 'user', id: u.id, name: u.name })} variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30">
-                        <Trash2 size={14} />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+        {/* ── Sub Navigation Tabs ── */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-border/40 pb-3">
+          <div className="flex items-center gap-1.5 p-1 bg-muted/40 rounded-2xl border border-border/30 w-fit">
+            <button
+              type="button"
+              onClick={() => setUserTab('users')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                userTab === 'users'
+                  ? 'bg-[#0a2540] text-white shadow-xs'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
+              }`}
+            >
+              <Users size={15} />
+              <span>Daftar Pengguna ({users.length})</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setUserTab('matrix')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                userTab === 'matrix'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
+              }`}
+            >
+              <ShieldCheck size={15} />
+              <span>Matriks Hak Akses Menu</span>
+              <span className="text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-white/20 text-white">
+                Interaktif
+              </span>
+            </button>
+          </div>
+
+          <div className="text-[11px] font-semibold text-muted-foreground">
+            {userTab === 'matrix' ? '💡 Klik langsung pada checkbox untuk toggle akses instan' : 'Total ' + users.length + ' akun terdaftar'}
+          </div>
         </div>
+
+        {/* ── TAB 1: DAFTAR PENGGUNA TABLE ── */}
+        {userTab === 'users' && (
+          <div className="bg-card border border-[#e6e9f0] rounded-2xl overflow-hidden shadow-xs">
+            <Table>
+              <TableHeader className="bg-[#fafbfc]">
+                <TableRow>
+                  {['Nama Pengguna', 'Email', 'Peran (Role)', 'Cakupan Akses Menu', 'Aksi'].map(h => (
+                    <TableHead key={h} className="text-[11px] font-bold uppercase tracking-wider text-[#758196]">{h}</TableHead>
+                  ))}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {users.map(u => {
+                  const p = u.permissions;
+                  const activeModulesCount = [
+                    p.dashboard,
+                    p.requests_view,
+                    p.routine_view || p.routine_rups || p.routine_lkpm || p.routine_tbk || p.routine_offshore || p.routine_admgt,
+                    p.companies,
+                    p.budget_view,
+                    p.directory_view,
+                    p.credentials,
+                    p.settings_manage,
+                  ].filter(Boolean).length;
+
+                  return (
+                    <TableRow key={u.id} className="hover:bg-muted/30">
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200/60 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 flex items-center justify-center font-black text-xs shrink-0">
+                            {u.name ? u.name.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase() : 'U'}
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-foreground">{u.name}</p>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground font-mono">{u.email}</TableCell>
+                      <TableCell>
+                        <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-lg border ${
+                          (u.role || '').toLowerCase().includes('super')
+                            ? 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300'
+                            : (u.role || '').toLowerCase().includes('admin')
+                            ? 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300'
+                            : (u.role || '').toLowerCase().includes('staff')
+                            ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300'
+                            : 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300'
+                        }`}>
+                          {u.role}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Button onClick={() => openPermissionsModal(u)} variant="outline" size="sm" className="h-7 text-[11px] font-bold rounded-xl border-indigo-200 text-indigo-700 hover:bg-indigo-50 dark:border-indigo-900 dark:text-indigo-400">
+                            <ShieldCheck size={13} className="mr-1.5 text-indigo-600" /> Atur Hak Akses
+                          </Button>
+                          <span className="text-[10px] font-semibold text-muted-foreground px-2 py-0.5 rounded-md bg-muted/40">
+                            {activeModulesCount} / 8 Modul
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Button onClick={() => openUserModal(u)} variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground" title="Edit Akun">
+                            <Pencil size={14} />
+                          </Button>
+                          <Button onClick={() => setDeleteConfirm({ type: 'user', id: u.id, name: u.name })} variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30" title="Hapus Akun">
+                            <Trash2 size={14} />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+
+        {/* ── TAB 2: MATRIKS HAK AKSES MENU ── */}
+        {userTab === 'matrix' && (
+          <div className="space-y-4">
+            {/* Guide Card */}
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-indigo-50/70 via-slate-50 to-purple-50/50 dark:from-indigo-950/30 dark:via-zinc-900 dark:to-purple-950/20 border border-indigo-100 dark:border-indigo-900/40 flex flex-col md:flex-row md:items-center justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <div className="p-2 rounded-xl bg-indigo-600 text-white shrink-0 mt-0.5">
+                  <ShieldCheck size={18} />
+                </div>
+                <div>
+                  <h4 className="text-xs font-black uppercase tracking-wider text-indigo-950 dark:text-indigo-200">
+                    Matriks Akses Modul & Sub-Menu Aplikasi CSL
+                  </h4>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    Klik ikon status pada tabel di bawah untuk mengubah izin menu secara instan, atau klik <strong>"Atur Detail"</strong> untuk preset peran & kontrol sub-menu rutin.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 text-[11px] font-bold text-muted-foreground self-start md:self-auto">
+                <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                  <CheckSquare size={14} /> Diizinkan
+                </span>
+                <span className="flex items-center gap-1 text-slate-400">
+                  <Square size={14} /> Dibatasi
+                </span>
+              </div>
+            </div>
+
+            {/* Matrix Table */}
+            <div className="bg-card border border-[#e6e9f0] rounded-2xl overflow-x-auto shadow-xs">
+              <Table className="min-w-[1000px]">
+                <TableHeader className="bg-[#fafbfc]">
+                  <TableRow>
+                    <TableHead className="text-[11px] font-bold uppercase tracking-wider text-[#758196] sticky left-0 bg-[#fafbfc] z-10 w-52">
+                      Pengguna & Role
+                    </TableHead>
+                    <TableHead className="text-[11px] font-bold uppercase tracking-wider text-center text-[#758196] w-24">
+                      Dashboard
+                    </TableHead>
+                    <TableHead className="text-[11px] font-bold uppercase tracking-wider text-center text-[#758196] w-28">
+                      Request
+                    </TableHead>
+                    <TableHead className="text-[11px] font-bold uppercase tracking-wider text-center text-[#758196] w-36">
+                      Routine (5 Menu)
+                    </TableHead>
+                    <TableHead className="text-[11px] font-bold uppercase tracking-wider text-center text-[#758196] w-32">
+                      Companies
+                    </TableHead>
+                    <TableHead className="text-[11px] font-bold uppercase tracking-wider text-center text-[#758196] w-32">
+                      Budget & Exp
+                    </TableHead>
+                    <TableHead className="text-[11px] font-bold uppercase tracking-wider text-center text-[#758196] w-28">
+                      Directory
+                    </TableHead>
+                    <TableHead className="text-[11px] font-bold uppercase tracking-wider text-center text-[#758196] w-28">
+                      Vault
+                    </TableHead>
+                    <TableHead className="text-[11px] font-bold uppercase tracking-wider text-center text-[#758196] w-28">
+                      Settings
+                    </TableHead>
+                    <TableHead className="text-[11px] font-bold uppercase tracking-wider text-center text-[#758196] w-24">
+                      Aksi
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {users.map(u => {
+                    const p = u.permissions;
+                    const routineActiveCount = [
+                      p.routine_rups,
+                      p.routine_lkpm,
+                      p.routine_tbk,
+                      p.routine_offshore,
+                      p.routine_admgt
+                    ].filter(Boolean).length;
+
+                    return (
+                      <TableRow key={u.id} className="hover:bg-muted/30">
+                        {/* User column */}
+                        <TableCell className="sticky left-0 bg-card z-10 font-sans border-r border-border/20">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-7 h-7 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200/60 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 flex items-center justify-center font-black text-[10px] shrink-0">
+                              {u.name ? u.name.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase() : 'U'}
+                            </div>
+                            <div className="truncate max-w-[160px]">
+                              <p className="text-xs font-bold text-foreground truncate">{u.name}</p>
+                              <p className="text-[10px] text-muted-foreground truncate">{u.role}</p>
+                            </div>
+                          </div>
+                        </TableCell>
+
+                        {/* Dashboard */}
+                        <TableCell className="text-center">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleUserMenu(u, 'dashboard')}
+                            className="p-1 rounded-lg hover:bg-muted/50 transition-colors inline-flex items-center justify-center"
+                            title={p.dashboard ? 'Nonaktifkan Dashboard' : 'Aktifkan Dashboard'}
+                          >
+                            {p.dashboard ? (
+                              <CheckSquare size={18} className="text-emerald-600 fill-emerald-50 dark:fill-emerald-950/40" />
+                            ) : (
+                              <Square size={18} className="text-muted-foreground/40" />
+                            )}
+                          </button>
+                        </TableCell>
+
+                        {/* Request */}
+                        <TableCell className="text-center">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleUserMenu(u, 'requests_view')}
+                            className="p-1 rounded-lg hover:bg-muted/50 transition-colors inline-flex items-center justify-center"
+                            title={p.requests_view ? 'Nonaktifkan Request' : 'Aktifkan Request'}
+                          >
+                            {p.requests_view ? (
+                              <CheckSquare size={18} className="text-emerald-600 fill-emerald-50 dark:fill-emerald-950/40" />
+                            ) : (
+                              <Square size={18} className="text-muted-foreground/40" />
+                            )}
+                          </button>
+                        </TableCell>
+
+                        {/* Routine (RUPS, LKPM, TBK, Offshore, Ad-MGT) */}
+                        <TableCell className="text-center">
+                          <div className="flex items-center justify-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => handleToggleUserMenu(u, 'routine_view')}
+                              className="p-1 rounded-lg hover:bg-muted/50 transition-colors inline-flex items-center justify-center"
+                              title={p.routine_view ? 'Nonaktifkan Routine Activity' : 'Aktifkan Routine Activity'}
+                            >
+                              {p.routine_view ? (
+                                <CheckSquare size={18} className="text-emerald-600 fill-emerald-50 dark:fill-emerald-950/40" />
+                              ) : (
+                                <Square size={18} className="text-muted-foreground/40" />
+                              )}
+                            </button>
+                            <span className="text-[10px] font-black px-1.5 py-0.5 rounded-md bg-muted/50 text-muted-foreground">
+                              {routineActiveCount}/5
+                            </span>
+                          </div>
+                        </TableCell>
+
+                        {/* Companies & Entities */}
+                        <TableCell className="text-center">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleUserMenu(u, 'companies')}
+                            className="p-1 rounded-lg hover:bg-muted/50 transition-colors inline-flex items-center justify-center"
+                            title={p.companies ? 'Nonaktifkan Companies & Entities' : 'Aktifkan Companies & Entities'}
+                          >
+                            {p.companies ? (
+                              <CheckSquare size={18} className="text-emerald-600 fill-emerald-50 dark:fill-emerald-950/40" />
+                            ) : (
+                              <Square size={18} className="text-muted-foreground/40" />
+                            )}
+                          </button>
+                        </TableCell>
+
+                        {/* Budget & Expenses */}
+                        <TableCell className="text-center">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleUserMenu(u, 'budget_view')}
+                            className="p-1 rounded-lg hover:bg-muted/50 transition-colors inline-flex items-center justify-center"
+                            title={p.budget_view ? 'Nonaktifkan Budget & Expenses' : 'Aktifkan Budget & Expenses'}
+                          >
+                            {p.budget_view ? (
+                              <CheckSquare size={18} className="text-emerald-600 fill-emerald-50 dark:fill-emerald-950/40" />
+                            ) : (
+                              <Square size={18} className="text-muted-foreground/40" />
+                            )}
+                          </button>
+                        </TableCell>
+
+                        {/* Phone Directory */}
+                        <TableCell className="text-center">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleUserMenu(u, 'directory_view')}
+                            className="p-1 rounded-lg hover:bg-muted/50 transition-colors inline-flex items-center justify-center"
+                            title={p.directory_view ? 'Nonaktifkan Phone Directory' : 'Aktifkan Phone Directory'}
+                          >
+                            {p.directory_view ? (
+                              <CheckSquare size={18} className="text-emerald-600 fill-emerald-50 dark:fill-emerald-950/40" />
+                            ) : (
+                              <Square size={18} className="text-muted-foreground/40" />
+                            )}
+                          </button>
+                        </TableCell>
+
+                        {/* Credentials Vault */}
+                        <TableCell className="text-center">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleUserMenu(u, 'credentials')}
+                            className="p-1 rounded-lg hover:bg-muted/50 transition-colors inline-flex items-center justify-center"
+                            title={p.credentials ? 'Nonaktifkan Credentials Vault' : 'Aktifkan Credentials Vault'}
+                          >
+                            {p.credentials ? (
+                              <CheckSquare size={18} className="text-emerald-600 fill-emerald-50 dark:fill-emerald-950/40" />
+                            ) : (
+                              <Square size={18} className="text-muted-foreground/40" />
+                            )}
+                          </button>
+                        </TableCell>
+
+                        {/* Settings */}
+                        <TableCell className="text-center">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleUserMenu(u, 'settings_manage')}
+                            className="p-1 rounded-lg hover:bg-muted/50 transition-colors inline-flex items-center justify-center"
+                            title={p.settings_manage ? 'Nonaktifkan Settings' : 'Aktifkan Settings'}
+                          >
+                            {p.settings_manage ? (
+                              <CheckSquare size={18} className="text-emerald-600 fill-emerald-50 dark:fill-emerald-950/40" />
+                            ) : (
+                              <Square size={18} className="text-muted-foreground/40" />
+                            )}
+                          </button>
+                        </TableCell>
+
+                        {/* Action: Detail Config */}
+                        <TableCell className="text-center">
+                          <Button
+                            onClick={() => openPermissionsModal(u)}
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 px-2 text-[10px] font-bold rounded-lg text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/30"
+                          >
+                            <ShieldCheck size={13} className="mr-1" /> Detail
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        )}
 
         {/* Edit User Basic Info Modal */}
         <Dialog open={userModalOpen} onOpenChange={setUserModalOpen}>
@@ -1249,85 +1676,389 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
 
         {/* 🛡️ MENU PERMISSIONS MATRIX MODAL */}
         <Dialog open={!!permUser} onOpenChange={() => setPermUser(null)}>
-          <DialogContent className="sm:max-w-lg p-0 overflow-hidden font-sans border border-border/60 shadow-2xl rounded-2xl">
-            <DialogHeader className="p-6 pb-4 border-b border-border/30 bg-muted/20">
-              <div className="flex items-center gap-2 text-indigo-600 mb-1">
-                <ShieldCheck size={20} />
-                <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600">Access Control Matrix</span>
+          <DialogContent className="sm:max-w-2xl p-0 overflow-hidden font-sans border border-border/60 shadow-2xl rounded-2xl max-h-[90vh] flex flex-col">
+            <DialogHeader className="p-6 pb-4 border-b border-border/30 bg-muted/20 shrink-0">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-indigo-600">
+                  <ShieldCheck size={20} />
+                  <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600">
+                    Konfigurasi Hak Akses Menu
+                  </span>
+                </div>
+                <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                  {permUser?.role}
+                </span>
               </div>
-              <DialogTitle className="text-xl font-black text-foreground">Menu Permissions - {permUser?.name}</DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground mt-1">
-                Grant or revoke menu access rights specifically for account <strong className="text-foreground">{permUser?.email}</strong>.
+              <DialogTitle className="text-xl font-black text-foreground mt-1">
+                Atur Hak Akses — {permUser?.name}
+              </DialogTitle>
+              <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+                Pilih menu dan sub-menu yang dapat diakses oleh akun <strong className="text-foreground">{permUser?.email}</strong>.
               </DialogDescription>
             </DialogHeader>
 
-            <div className="p-6 space-y-5 max-h-[75vh] overflow-y-auto">
+            <div className="p-6 space-y-6 overflow-y-auto flex-1">
               {/* Role Preset Shortcut */}
-              <div className="space-y-2">
-                <label className="text-[11px] font-bold text-foreground block">Apply Quick Preset by Role</label>
+              <div className="space-y-2 p-3.5 rounded-xl bg-muted/30 border border-border/30">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-bold text-foreground block">
+                    Terapkan Template Preset Peran:
+                  </label>
+                  <span className="text-[10px] text-muted-foreground font-semibold">1-Klik untuk isi otomatis</span>
+                </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  <button type="button" onClick={() => applyPreset('super_admin')} className="text-[10px] font-extrabold uppercase py-2 px-2 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-700 hover:bg-purple-100 border border-purple-200 flex items-center justify-center gap-1">
-                    <Crown size={12} className="text-purple-600" /> Super Admin
+                  <button
+                    type="button"
+                    onClick={() => applyPreset('super_admin')}
+                    className="text-[10px] font-extrabold uppercase py-2 px-2.5 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 hover:bg-purple-100 border border-purple-200 dark:border-purple-800 flex items-center justify-center gap-1.5 transition-all"
+                  >
+                    <Crown size={13} className="text-purple-600" /> Super Admin
                   </button>
-                  <button type="button" onClick={() => applyPreset('admin')} className="text-[10px] font-extrabold uppercase py-2 px-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 flex items-center justify-center gap-1">
-                    <ShieldCheck size={12} className="text-indigo-600" /> Admin
+                  <button
+                    type="button"
+                    onClick={() => applyPreset('admin')}
+                    className="text-[10px] font-extrabold uppercase py-2 px-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 border border-indigo-200 dark:border-indigo-800 flex items-center justify-center gap-1.5 transition-all"
+                  >
+                    <ShieldCheck size={13} className="text-indigo-600" /> Admin Legal
                   </button>
-                  <button type="button" onClick={() => applyPreset('staff')} className="text-[10px] font-extrabold uppercase py-2 px-2 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-700 hover:bg-blue-100 border border-blue-200 flex items-center justify-center gap-1">
-                    <Briefcase size={12} className="text-blue-600" /> Staff
+                  <button
+                    type="button"
+                    onClick={() => applyPreset('staff')}
+                    className="text-[10px] font-extrabold uppercase py-2 px-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 hover:bg-blue-100 border border-blue-200 dark:border-blue-800 flex items-center justify-center gap-1.5 transition-all"
+                  >
+                    <Briefcase size={13} className="text-blue-600" /> Staff Legal
                   </button>
-                  <button type="button" onClick={() => applyPreset('user')} className="text-[10px] font-extrabold uppercase py-2 px-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 flex items-center justify-center gap-1">
-                    <FileText size={12} className="text-emerald-600" /> User
+                  <button
+                    type="button"
+                    onClick={() => applyPreset('user')}
+                    className="text-[10px] font-extrabold uppercase py-2 px-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 border border-emerald-200 dark:border-emerald-800 flex items-center justify-center gap-1.5 transition-all"
+                  >
+                    <FileText size={13} className="text-emerald-600" /> Requester
                   </button>
                 </div>
               </div>
 
-              {/* Granular Menu Permission Switches */}
-              <div className="space-y-3 pt-2">
-                <h4 className="text-xs font-black uppercase tracking-wider text-muted-foreground">Module & Menu Toggles</h4>
+              {/* Granular Menu Permission Switches Grouped Cleanly */}
+              <div className="space-y-4">
+                <h4 className="text-xs font-black uppercase tracking-wider text-muted-foreground">
+                  Daftar Modul & Hak Akses Menu
+                </h4>
 
-                {[
-                  { key: 'dashboard', label: 'Dashboard & Quick Metrics', icon: LayoutDashboard, color: 'text-indigo-600', desc: 'Access hero landing page and system overview' },
-                  { key: 'requests_view', label: 'Request Management - View Requests', icon: Kanban, color: 'text-blue-600', desc: 'View list of legal requests' },
-                  { key: 'requests_create', label: 'Request Management - Submit Request', icon: PlusCircle, color: 'text-blue-600', desc: 'Create new legal service requests' },
-                  { key: 'requests_review', label: 'Request Management - Review & Process', icon: CheckCircle2, color: 'text-blue-600', desc: 'Assign staff, update status, and review tickets' },
-                  { key: 'routine_view', label: 'Routine Activities - View Monitoring', icon: Calendar, color: 'text-emerald-600', desc: 'Access recurring compliance and tax schedules' },
-                  { key: 'routine_manage', label: 'Routine Activities - Create Schedules', icon: Activity, color: 'text-emerald-600', desc: 'Define new routine schedules' },
-                  { key: 'budget_view', label: 'Budget & Cost - View Monitoring', icon: Wallet, color: 'text-violet-600', desc: 'View budget allocations and expenditure graphs' },
-                  { key: 'budget_approve', label: 'Budget & Cost - Approve & Disburse', icon: Coins, color: 'text-violet-600', desc: 'Approve cost requests and disburse funds' },
-                  { key: 'directory_view', label: 'Phone Directory - Access Contacts', icon: Phone, color: 'text-rose-600', desc: 'Search lawyers, vendors, and government agencies' },
-                  { key: 'directory_manage', label: 'Phone Directory - Add Contacts', icon: BookUser, color: 'text-rose-600', desc: 'Register new external contacts' },
-                  { key: 'credentials', label: 'Credentials Vault - Shared Accounts', icon: Key, color: 'text-amber-600', desc: 'Secure shared website credentials and passwords' },
-                  { key: 'reports_view', label: 'Reports & Analytics', icon: BarChart2, color: 'text-teal-600', desc: 'View SLA compliance and team productivity reports' },
-                  { key: 'settings_manage', label: 'Settings & User Permissions', icon: Settings, color: 'text-slate-600', desc: 'Configure system categories, SLA, and user access' },
-                ].map((item) => {
-                  const isChecked = (userPerms as any)[item.key];
-                  const ItemIcon = item.icon;
-                  return (
-                    <div key={item.key} onClick={() => setUserPerms({ ...userPerms, [item.key]: !isChecked })} className="flex items-center justify-between p-3 bg-muted/30 hover:bg-muted/50 border border-border/20 rounded-xl cursor-pointer transition-colors">
-                      <div className="flex items-start gap-3">
-                        <div className="p-2 rounded-lg bg-card border border-border/20 shadow-xs mt-0.5">
-                          <ItemIcon className={`h-4 w-4 ${item.color}`} />
-                        </div>
-                        <div className="space-y-0.5">
-                          <p className="text-xs font-bold text-foreground">{item.label}</p>
-                          <p className="text-[11px] text-muted-foreground">{item.desc}</p>
-                        </div>
+                {/* 1. Dashboard */}
+                <div
+                  onClick={() => setUserPerms({ ...userPerms, dashboard: !userPerms.dashboard })}
+                  className="flex items-center justify-between p-3.5 bg-muted/20 hover:bg-muted/40 border border-border/30 rounded-xl cursor-pointer transition-colors"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 rounded-lg bg-card border border-border/30 shadow-xs mt-0.5 text-indigo-600">
+                      <LayoutDashboard size={16} />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-foreground">Dashboard & Metrik Operasional</p>
+                      <p className="text-[11px] text-muted-foreground">Halaman utama ringkasan tiket legal, metrik status, dan quick links</p>
+                    </div>
+                  </div>
+                  <div className="shrink-0 text-indigo-600 ml-2">
+                    {userPerms.dashboard ? <CheckSquare size={20} className="text-indigo-600 fill-indigo-100" /> : <Square size={20} className="text-muted-foreground/40" />}
+                  </div>
+                </div>
+
+                {/* 2. Request / Ticketing */}
+                <div className="p-3.5 bg-muted/20 border border-border/30 rounded-xl space-y-3">
+                  <div
+                    onClick={() => {
+                      const next = !userPerms.requests_view;
+                      setUserPerms({ ...userPerms, requests_view: next, requests_create: next, requests_review: next ? userPerms.requests_review : false });
+                    }}
+                    className="flex items-center justify-between cursor-pointer"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 rounded-lg bg-card border border-border/30 shadow-xs mt-0.5 text-blue-600">
+                        <Kanban size={16} />
                       </div>
-                      <div className="shrink-0 text-indigo-600 ml-2">
-                        {isChecked ? <CheckSquare size={20} className="text-indigo-600 fill-indigo-100" /> : <Square size={20} className="text-muted-foreground/40" />}
+                      <div>
+                        <p className="text-xs font-bold text-foreground">Request / Ticketing (CSL Service Desk)</p>
+                        <p className="text-[11px] text-muted-foreground">Akses modul ticketing permohonan layanan hukum dan corporate secretary</p>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
+                    <div className="shrink-0 text-indigo-600 ml-2">
+                      {userPerms.requests_view ? <CheckSquare size={20} className="text-indigo-600 fill-indigo-100" /> : <Square size={20} className="text-muted-foreground/40" />}
+                    </div>
+                  </div>
 
-              <DialogFooter className="pt-4 border-t border-border/30 gap-2 flex sm:justify-end">
-                <Button type="button" variant="outline" size="sm" onClick={() => setPermUser(null)} className="text-xs font-bold rounded-xl h-9">Cancel</Button>
-                <Button type="button" onClick={handleSavePermissions} size="sm" className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl h-9 px-5">
-                  <Save size={14} className="mr-1.5" /> Save User Permissions
-                </Button>
-              </DialogFooter>
+                  {userPerms.requests_view && (
+                    <div className="pl-11 pt-2 border-t border-border/20 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                      <label className="flex items-center gap-2 cursor-pointer p-1.5 rounded-lg hover:bg-muted/40">
+                        <input
+                          type="checkbox"
+                          checked={userPerms.requests_create}
+                          onChange={e => setUserPerms({ ...userPerms, requests_create: e.target.checked })}
+                          className="rounded text-indigo-600 focus:ring-indigo-500"
+                        />
+                        <span className="font-semibold text-foreground">Ajukan Request Baru</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer p-1.5 rounded-lg hover:bg-muted/40">
+                        <input
+                          type="checkbox"
+                          checked={userPerms.requests_review}
+                          onChange={e => setUserPerms({ ...userPerms, requests_review: e.target.checked })}
+                          className="rounded text-indigo-600 focus:ring-indigo-500"
+                        />
+                        <span className="font-semibold text-foreground">Review & Proses Tiket</span>
+                      </label>
+                    </div>
+                  )}
+                </div>
+
+                {/* 3. Routine Activity (RUPS, LKPM, TBK, Offshore, Ad-MGT) */}
+                <div className="p-3.5 bg-muted/20 border border-border/30 rounded-xl space-y-3">
+                  <div
+                    onClick={() => {
+                      const next = !userPerms.routine_view;
+                      setUserPerms({
+                        ...userPerms,
+                        routine_view: next,
+                        routine_rups: next,
+                        routine_lkpm: next,
+                        routine_tbk: next,
+                        routine_offshore: next,
+                        routine_admgt: next,
+                      });
+                    }}
+                    className="flex items-center justify-between cursor-pointer"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 rounded-lg bg-card border border-border/30 shadow-xs mt-0.5 text-emerald-600">
+                        <Calendar size={16} />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-foreground">Routine Activity</p>
+                        <p className="text-[11px] text-muted-foreground">Kepatuhan korporasi rutin, RUPS, LKPM, TBK, Offshore, dan administrasi</p>
+                      </div>
+                    </div>
+                    <div className="shrink-0 text-indigo-600 ml-2">
+                      {userPerms.routine_view ? <CheckSquare size={20} className="text-indigo-600 fill-indigo-100" /> : <Square size={20} className="text-muted-foreground/40" />}
+                    </div>
+                  </div>
+
+                  {userPerms.routine_view && (
+                    <div className="pl-11 pt-2 border-t border-border/20 space-y-2">
+                      <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Pilih Sub-Menu Rutin:</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                        <label className="flex items-center gap-2 cursor-pointer p-1.5 rounded-lg hover:bg-muted/40">
+                          <input
+                            type="checkbox"
+                            checked={userPerms.routine_rups}
+                            onChange={e => setUserPerms({ ...userPerms, routine_rups: e.target.checked })}
+                            className="rounded text-indigo-600 focus:ring-indigo-500"
+                          />
+                          <CalendarCheck size={14} className="text-emerald-600" />
+                          <span className="font-semibold text-foreground">RUPS - AR</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer p-1.5 rounded-lg hover:bg-muted/40">
+                          <input
+                            type="checkbox"
+                            checked={userPerms.routine_lkpm}
+                            onChange={e => setUserPerms({ ...userPerms, routine_lkpm: e.target.checked })}
+                            className="rounded text-indigo-600 focus:ring-indigo-500"
+                          />
+                          <FileCheck size={14} className="text-emerald-600" />
+                          <span className="font-semibold text-foreground">Tracking LKPM</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer p-1.5 rounded-lg hover:bg-muted/40">
+                          <input
+                            type="checkbox"
+                            checked={userPerms.routine_tbk}
+                            onChange={e => setUserPerms({ ...userPerms, routine_tbk: e.target.checked })}
+                            className="rounded text-indigo-600 focus:ring-indigo-500"
+                          />
+                          <Landmark size={14} className="text-emerald-600" />
+                          <span className="font-semibold text-foreground">TBK (Perusahaan Terbuka)</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer p-1.5 rounded-lg hover:bg-muted/40">
+                          <input
+                            type="checkbox"
+                            checked={userPerms.routine_offshore}
+                            onChange={e => setUserPerms({ ...userPerms, routine_offshore: e.target.checked })}
+                            className="rounded text-indigo-600 focus:ring-indigo-500"
+                          />
+                          <Globe size={14} className="text-emerald-600" />
+                          <span className="font-semibold text-foreground">Offshore Co</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer p-1.5 rounded-lg hover:bg-muted/40 sm:col-span-2">
+                          <input
+                            type="checkbox"
+                            checked={userPerms.routine_admgt}
+                            onChange={e => setUserPerms({ ...userPerms, routine_admgt: e.target.checked })}
+                            className="rounded text-indigo-600 focus:ring-indigo-500"
+                          />
+                          <Layers size={14} className="text-emerald-600" />
+                          <span className="font-semibold text-foreground">Ad-MGT (Administrasi & Manajemen)</span>
+                        </label>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* 4. Companies & Entities */}
+                <div
+                  onClick={() => setUserPerms({ ...userPerms, companies: !userPerms.companies })}
+                  className="flex items-center justify-between p-3.5 bg-muted/20 hover:bg-muted/40 border border-border/30 rounded-xl cursor-pointer transition-colors"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 rounded-lg bg-card border border-border/30 shadow-xs mt-0.5 text-amber-600">
+                      <Building2 size={16} />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-foreground">Companies & Entities (Master Perusahaan)</p>
+                      <p className="text-[11px] text-muted-foreground">Master entitas, berkas legalitas, kop surat resmi, logo, & stempel perusahaan</p>
+                    </div>
+                  </div>
+                  <div className="shrink-0 text-indigo-600 ml-2">
+                    {userPerms.companies ? <CheckSquare size={20} className="text-indigo-600 fill-indigo-100" /> : <Square size={20} className="text-muted-foreground/40" />}
+                  </div>
+                </div>
+
+                {/* 5. Budget & Expenses */}
+                <div className="p-3.5 bg-muted/20 border border-border/30 rounded-xl space-y-3">
+                  <div
+                    onClick={() => {
+                      const next = !userPerms.budget_view;
+                      setUserPerms({ ...userPerms, budget_view: next, budget_approve: next ? userPerms.budget_approve : false });
+                    }}
+                    className="flex items-center justify-between cursor-pointer"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 rounded-lg bg-card border border-border/30 shadow-xs mt-0.5 text-violet-600">
+                        <Wallet size={16} />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-foreground">Budget & Expenses</p>
+                        <p className="text-[11px] text-muted-foreground">Monitoring anggaran, transaksi pengeluaran legal, dan analisis grafik biaya</p>
+                      </div>
+                    </div>
+                    <div className="shrink-0 text-indigo-600 ml-2">
+                      {userPerms.budget_view ? <CheckSquare size={20} className="text-indigo-600 fill-indigo-100" /> : <Square size={20} className="text-muted-foreground/40" />}
+                    </div>
+                  </div>
+
+                  {userPerms.budget_view && (
+                    <div className="pl-11 pt-2 border-t border-border/20">
+                      <label className="flex items-center gap-2 cursor-pointer p-1.5 rounded-lg hover:bg-muted/40 text-xs">
+                        <input
+                          type="checkbox"
+                          checked={userPerms.budget_approve}
+                          onChange={e => setUserPerms({ ...userPerms, budget_approve: e.target.checked })}
+                          className="rounded text-indigo-600 focus:ring-indigo-500"
+                        />
+                        <Coins size={14} className="text-violet-600" />
+                        <span className="font-semibold text-foreground">Izin Approval & Disburse Biaya Legal</span>
+                      </label>
+                    </div>
+                  )}
+                </div>
+
+                {/* 6. Phone Directory */}
+                <div className="p-3.5 bg-muted/20 border border-border/30 rounded-xl space-y-3">
+                  <div
+                    onClick={() => {
+                      const next = !userPerms.directory_view;
+                      setUserPerms({ ...userPerms, directory_view: next, directory_manage: next ? userPerms.directory_manage : false });
+                    }}
+                    className="flex items-center justify-between cursor-pointer"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 rounded-lg bg-card border border-border/30 shadow-xs mt-0.5 text-rose-600">
+                        <Phone size={16} />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-foreground">Phone Directory</p>
+                        <p className="text-[11px] text-muted-foreground">Direktori kontak eksternal, advokat, notaris, vendor, dan instansi regulator</p>
+                      </div>
+                    </div>
+                    <div className="shrink-0 text-indigo-600 ml-2">
+                      {userPerms.directory_view ? <CheckSquare size={20} className="text-indigo-600 fill-indigo-100" /> : <Square size={20} className="text-muted-foreground/40" />}
+                    </div>
+                  </div>
+
+                  {userPerms.directory_view && (
+                    <div className="pl-11 pt-2 border-t border-border/20">
+                      <label className="flex items-center gap-2 cursor-pointer p-1.5 rounded-lg hover:bg-muted/40 text-xs">
+                        <input
+                          type="checkbox"
+                          checked={userPerms.directory_manage}
+                          onChange={e => setUserPerms({ ...userPerms, directory_manage: e.target.checked })}
+                          className="rounded text-indigo-600 focus:ring-indigo-500"
+                        />
+                        <BookUser size={14} className="text-rose-600" />
+                        <span className="font-semibold text-foreground">Izin Tambah / Edit / Kelola Kontak</span>
+                      </label>
+                    </div>
+                  )}
+                </div>
+
+                {/* 7. Credentials Vault */}
+                <div
+                  onClick={() => setUserPerms({ ...userPerms, credentials: !userPerms.credentials })}
+                  className="flex items-center justify-between p-3.5 bg-muted/20 hover:bg-muted/40 border border-border/30 rounded-xl cursor-pointer transition-colors"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 rounded-lg bg-card border border-border/30 shadow-xs mt-0.5 text-amber-500">
+                      <Key size={16} />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-foreground">Credentials Vault (Brankas Akun)</p>
+                      <p className="text-[11px] text-muted-foreground">Akses brankas penyimpanan akun bersama, portal AHU/OSS, dan password terenkripsi</p>
+                    </div>
+                  </div>
+                  <div className="shrink-0 text-indigo-600 ml-2">
+                    {userPerms.credentials ? <CheckSquare size={20} className="text-indigo-600 fill-indigo-100" /> : <Square size={20} className="text-muted-foreground/40" />}
+                  </div>
+                </div>
+
+                {/* 8. Settings & System */}
+                <div
+                  onClick={() => setUserPerms({ ...userPerms, settings_manage: !userPerms.settings_manage })}
+                  className="flex items-center justify-between p-3.5 bg-muted/20 hover:bg-muted/40 border border-border/30 rounded-xl cursor-pointer transition-colors"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 rounded-lg bg-card border border-border/30 shadow-xs mt-0.5 text-slate-600">
+                      <Settings size={16} />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-foreground">Settings & Konfigurasi Sistem</p>
+                      <p className="text-[11px] text-muted-foreground">Kelola pengguna, penetapan peran & hak akses, struktur departemen, dan SLA</p>
+                    </div>
+                  </div>
+                  <div className="shrink-0 text-indigo-600 ml-2">
+                    {userPerms.settings_manage ? <CheckSquare size={20} className="text-indigo-600 fill-indigo-100" /> : <Square size={20} className="text-muted-foreground/40" />}
+                  </div>
+                </div>
+              </div>
             </div>
+
+            <DialogFooter className="p-4 px-6 border-t border-border/30 gap-2 flex sm:justify-end bg-card shrink-0">
+              <Button type="button" variant="outline" size="sm" onClick={() => setPermUser(null)} className="text-xs font-bold rounded-xl h-9 px-4">
+                Batal
+              </Button>
+              <Button
+                type="button"
+                onClick={handleSavePermissions}
+                disabled={isSavingPerms}
+                size="sm"
+                className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl h-9 px-5 shadow-sm"
+              >
+                {isSavingPerms ? (
+                  <>
+                    <Loader2 size={14} className="mr-1.5 animate-spin" /> Menyimpan...
+                  </>
+                ) : (
+                  <>
+                    <Save size={14} className="mr-1.5" /> Simpan Hak Akses
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
 

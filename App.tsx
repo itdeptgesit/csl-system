@@ -855,6 +855,24 @@ const DashboardLayout: React.FC<any & { children?: React.ReactNode }> = ({
         if (g === 'routine_create' || g === 'routine_manage') {
           allowed.add('routine'); allowed.add('routine-rups'); allowed.add('routine-lkpm'); allowed.add('routine-tbk'); allowed.add('routine-offshore'); allowed.add('routine-admgt');
         }
+        if (g === 'routine-rups' || g === 'routine_rups') {
+          allowed.add('routine'); allowed.add('routine-rups');
+        }
+        if (g === 'routine-lkpm' || g === 'routine_lkpm') {
+          allowed.add('routine'); allowed.add('routine-lkpm');
+        }
+        if (g === 'routine-tbk' || g === 'routine_tbk') {
+          allowed.add('routine'); allowed.add('routine-tbk');
+        }
+        if (g === 'routine-offshore' || g === 'routine_offshore') {
+          allowed.add('routine'); allowed.add('routine-offshore');
+        }
+        if (g === 'routine-admgt' || g === 'routine_admgt') {
+          allowed.add('routine'); allowed.add('routine-admgt');
+        }
+        if (g === 'companies' || g === 'companies_view' || g === 'settings-companies') {
+          allowed.add('companies');
+        }
         if (g === 'budget' || g === 'budget_view') {
           allowed.add('budget'); allowed.add('budget-expense'); allowed.add('budget-offshore-invoice');
         }
@@ -865,19 +883,26 @@ const DashboardLayout: React.FC<any & { children?: React.ReactNode }> = ({
           allowed.add('credentials');
         }
         if (g === 'csl_staff' || g === 'staff') {
-          ['dashboard', 'csl-requests', 'routine', 'routine-rups', 'routine-lkpm', 'routine-tbk', 'routine-offshore', 'routine-admgt', 'routine-task', 'companies', 'settings-companies', 'budget', 'budget-expense', 'budget-offshore-invoice', 'directory', 'directory-all', 'directory-lawyer', 'directory-vendor', 'directory-government', 'directory-other', 'credentials', 'reports', 'reports-request', 'reports-task', 'reports-budget', 'profile'].forEach(id => allowed.add(id));
+          ['dashboard', 'csl-requests', 'routine', 'routine-rups', 'routine-lkpm', 'routine-tbk', 'routine-offshore', 'routine-admgt', 'routine-task', 'companies', 'settings-companies', 'budget', 'budget-expense', 'budget-offshore-invoice', 'directory', 'directory-all', 'directory-lawyer', 'directory-vendor', 'directory-government', 'directory-other', 'credentials', 'profile'].forEach(id => allowed.add(id));
         }
         if (g === 'admin' || g === 'csl_admin') {
           (APP_MENU_STRUCTURE || []).forEach(m => {
             if (m.id !== 'settings-users' && m.id !== 'settings-system') allowed.add(m.id);
           });
           allowed.add('credentials');
-        }
-        if (g === 'reports' || g === 'reports_view') {
-          allowed.add('reports'); allowed.add('reports-request'); allowed.add('reports-task'); allowed.add('reports-budget');
+          allowed.add('companies');
         }
         if (g === 'settings' || g === 'settings_manage') {
-          allowed.add('settings'); allowed.add('settings-categories'); allowed.add('settings-sla'); allowed.add('settings-notifications'); allowed.add('settings-users'); allowed.add('settings-companies'); allowed.add('settings-departments'); allowed.add('settings-system');
+          allowed.add('settings'); allowed.add('settings-categories'); allowed.add('settings-sla'); allowed.add('settings-notifications'); allowed.add('settings-users'); allowed.add('settings-companies'); allowed.add('companies'); allowed.add('settings-departments'); allowed.add('settings-system');
+        }
+        if (g === 'settings-users') {
+          allowed.add('settings'); allowed.add('settings-users');
+        }
+        if (g === 'settings-departments') {
+          allowed.add('settings'); allowed.add('settings-departments');
+        }
+        if (g === 'settings-system') {
+          allowed.add('settings'); allowed.add('settings-system');
         }
       });
 

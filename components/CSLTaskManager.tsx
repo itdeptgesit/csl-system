@@ -261,6 +261,7 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
   const [currentPage, setCurrentPage] = useState(1);
   const [userList, setUserList] = useState<string[]>([]);
   const [activePeriode, setActivePeriode] = useState(new Date().getFullYear().toString());
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'Completed' | 'Not started' | 'In progress' | 'Blocked'>('ALL');
   const saveTimeoutRef = useRef<{ [key: string]: NodeJS.Timeout }>({});
 
   // Modal State
@@ -821,8 +822,9 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
       item.owner.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.notes.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.status.toLowerCase().includes(searchTerm.toLowerCase());
+    const statusMatches = statusFilter === 'ALL' || item.status === statusFilter;
     
-    return p === activePeriode && searchMatches;
+    return p === activePeriode && searchMatches && statusMatches;
   });
 
   const totalPages = Math.max(1, Math.ceil(filteredRups.length / PAGE_SIZE));
@@ -830,24 +832,30 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
   const pagedRups = filteredRups.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   // ASET Pagination
-  const filteredAset = asetData.filter(item =>
-    item.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.taskName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.owner.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.notes.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredAset = asetData.filter(item => {
+    const searchMatches =
+      item.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.taskName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.owner.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.notes.toLowerCase().includes(searchTerm.toLowerCase());
+    const statusMatches = statusFilter === 'ALL' || item.status === statusFilter;
+    return searchMatches && statusMatches;
+  });
   
   const totalPagesAset = Math.max(1, Math.ceil(filteredAset.length / PAGE_SIZE));
   const safePageAset = Math.min(currentPage, totalPagesAset);
   const pagedAset = filteredAset.slice((safePageAset - 1) * PAGE_SIZE, safePageAset * PAGE_SIZE);
 
   // AGREEMENT Pagination
-  const filteredAgreement = agreementData.filter(item =>
-    item.requestBy.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.taskName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.owner.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.notes.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredAgreement = agreementData.filter(item => {
+    const searchMatches =
+      item.requestBy.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.taskName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.owner.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.notes.toLowerCase().includes(searchTerm.toLowerCase());
+    const statusMatches = statusFilter === 'ALL' || item.status === statusFilter;
+    return searchMatches && statusMatches;
+  });
   const totalPagesAgreement = Math.max(1, Math.ceil(filteredAgreement.length / PAGE_SIZE));
   const safePageAgreement = Math.min(currentPage, totalPagesAgreement);
   const pagedAgreement = filteredAgreement.slice((safePageAgreement - 1) * PAGE_SIZE, safePageAgreement * PAGE_SIZE);
@@ -931,8 +939,8 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
         task_name: asetForm.taskName,
         status: asetForm.status,
         owner: asetForm.owner,
-        start_date: asetForm.startDate || null,
-        due_date: asetForm.dueDate || null,
+        start_date: toISO(asetForm.startDate) || null,
+        due_date: toISO(asetForm.dueDate) || null,
         notes: asetForm.notes
       };
 
@@ -971,8 +979,8 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
         task_name: agreementForm.taskName,
         status: agreementForm.status,
         owner: agreementForm.owner,
-        start_date: agreementForm.startDate || null,
-        finish_date: agreementForm.finishDate || null,
+        start_date: toISO(agreementForm.startDate) || null,
+        finish_date: toISO(agreementForm.finishDate) || null,
         notes: agreementForm.notes
       };
 
@@ -1224,9 +1232,23 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
           </select>
         )}
 
-        <Button variant="outline" size="sm" className="h-9 rounded-lg border-border/60 bg-background text-xs font-semibold shadow-none hover:bg-muted">
-          <Filter className="mr-1.5 h-4 w-4" /> Filter
-        </Button>
+        <div className="flex items-center gap-1.5">
+          <Filter className="h-3.5 w-3.5 text-muted-foreground ml-1" />
+          <select
+            value={statusFilter}
+            onChange={(e) => {
+              setStatusFilter(e.target.value as any);
+              setCurrentPage(1);
+            }}
+            className="h-9 cursor-pointer rounded-lg border border-border/60 bg-background px-3 text-xs font-semibold text-foreground outline-none transition-colors hover:bg-muted focus:ring-2 focus:ring-ring/30"
+          >
+            <option value="ALL">Semua Status</option>
+            <option value="Completed">Completed</option>
+            <option value="In progress">In progress</option>
+            <option value="Not started">Not started</option>
+            <option value="Blocked">Blocked</option>
+          </select>
+        </div>
       </div>
 
       {/* Content Area */}

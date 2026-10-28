@@ -13,8 +13,13 @@ import {
   Eye,
   Settings,
   Phone,
-  BarChart2,
-  Key
+  Key,
+  Building2,
+  CalendarCheck,
+  FileCheck,
+  Landmark,
+  Globe,
+  Layers
 } from 'lucide-react';
 import { UserAccount } from '../types';
 
@@ -26,10 +31,10 @@ interface MenuPermissionsModalProps {
 }
 
 const PRESETS = {
-  'FULL ADMIN': ['dashboard', 'req_view', 'req_submit', 'req_review', 'routine_view', 'routine_create', 'budget', 'directory', 'credentials', 'reports', 'settings'],
-  'LEGAL STAFF': ['dashboard', 'req_view', 'req_submit', 'req_review', 'routine_view', 'directory', 'credentials', 'reports'],
+  'FULL ADMIN': ['dashboard', 'req_view', 'req_submit', 'req_review', 'routine_view', 'routine-rups', 'routine-lkpm', 'routine-tbk', 'routine-offshore', 'routine-admgt', 'companies', 'budget', 'directory', 'credentials', 'settings'],
+  'LEGAL STAFF': ['dashboard', 'req_view', 'req_submit', 'req_review', 'routine_view', 'routine-rups', 'routine-lkpm', 'routine-tbk', 'routine-offshore', 'routine-admgt', 'companies', 'budget', 'directory', 'credentials'],
   'REQUESTER': ['dashboard', 'req_submit', 'req_view'],
-  'AUDITOR': ['dashboard', 'req_view', 'routine_view', 'budget', 'credentials', 'reports']
+  'AUDITOR': ['dashboard', 'req_view', 'routine_view', 'companies', 'budget', 'credentials']
 };
 
 const MENU_ITEMS = [
@@ -37,13 +42,17 @@ const MENU_ITEMS = [
   { id: 'req_view', icon: Kanban, title: 'Request Management - View Requests', desc: 'View list of legal requests' },
   { id: 'req_submit', icon: CheckCircle2, title: 'Request Management - Submit Request', desc: 'Create new legal service requests' },
   { id: 'req_review', icon: ShieldCheck, title: 'Request Management - Review & Process', desc: 'Assign staff, update status, and review tickets' },
-  { id: 'routine_view', icon: Calendar, title: 'Routine Activities - View Monitoring', desc: 'Access recurring compliance and tax schedules' },
-  { id: 'routine_create', icon: Activity, title: 'Routine Activities - Create Schedules', desc: 'Define new routine schedules' },
-  { id: 'budget', icon: Briefcase, title: 'Budget & Cost Management', desc: 'View and approve expense requests' },
-  { id: 'directory', icon: Phone, title: 'Phone Directory - Access Contacts', desc: 'Search lawyers, vendors, and government agencies' },
-  { id: 'credentials', icon: Key, title: 'Credentials Vault - Shared Accounts', desc: 'Secure shared website credentials and passwords' },
-  { id: 'reports', icon: BarChart2, title: 'Reports & Analytics', desc: 'View SLA compliance and team productivity reports' },
-  { id: 'settings', icon: Settings, title: 'System Settings & Users', desc: 'Manage user access, companies, and app settings' },
+  { id: 'routine_view', icon: Calendar, title: 'Routine Activities - Monitoring Rutin', desc: 'Akses modul kepatuhan dan aktivitas rutin hukum' },
+  { id: 'routine-rups', icon: CalendarCheck, title: 'Routine - RUPS & Annual Report', desc: 'Monitoring jadwal dan risalah RUPS tahunan' },
+  { id: 'routine-lkpm', icon: FileCheck, title: 'Routine - Tracking LKPM', desc: 'Laporan Kegiatan Penanaman Modal BKPM' },
+  { id: 'routine-tbk', icon: Landmark, title: 'Routine - TBK (Perusahaan Terbuka)', desc: 'Kepatuhan emiten dan laporan pasar modal' },
+  { id: 'routine-offshore', icon: Globe, title: 'Routine - Offshore Co', desc: 'Kepatuhan entitas dan perusahaan luar negeri' },
+  { id: 'routine-admgt', icon: Layers, title: 'Routine - Ad-MGT', desc: 'Administrasi & manajemen operasional rutin' },
+  { id: 'companies', icon: Building2, title: 'Companies & Entities', desc: 'Master entitas, berkas legalitas, logo, kop surat, & stempel' },
+  { id: 'budget', icon: Briefcase, title: 'Budget & Expenses', desc: 'Monitoring transaksi dan analisis pengeluaran legal' },
+  { id: 'directory', icon: Phone, title: 'Phone Directory - Access Contacts', desc: 'Direktori lawyer, vendor, dan instansi regulator' },
+  { id: 'credentials', icon: Key, title: 'Credentials Vault - Shared Accounts', desc: 'Brankas akun dan password bersama portal hukum/instansi' },
+  { id: 'settings', icon: Settings, title: 'System Settings & Users', desc: 'Pengaturan pengguna, hak akses, departemen, dan SLA' },
 ];
 
 export const MenuPermissionsModal: React.FC<MenuPermissionsModalProps> = ({ isOpen, onClose, user, onSave }) => {

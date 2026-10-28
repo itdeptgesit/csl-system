@@ -196,6 +196,21 @@ export function AppSidebarModern({
         if (g === 'routine_create' || g === 'routine_manage') {
           allowed.add('routine'); allowed.add('routine-rups'); allowed.add('routine-lkpm'); allowed.add('routine-tbk'); allowed.add('routine-offshore'); allowed.add('routine-admgt')
         }
+        if (g === 'routine-rups' || g === 'routine_rups') {
+          allowed.add('routine'); allowed.add('routine-rups')
+        }
+        if (g === 'routine-lkpm' || g === 'routine_lkpm') {
+          allowed.add('routine'); allowed.add('routine-lkpm')
+        }
+        if (g === 'routine-tbk' || g === 'routine_tbk') {
+          allowed.add('routine'); allowed.add('routine-tbk')
+        }
+        if (g === 'routine-offshore' || g === 'routine_offshore') {
+          allowed.add('routine'); allowed.add('routine-offshore')
+        }
+        if (g === 'routine-admgt' || g === 'routine_admgt') {
+          allowed.add('routine'); allowed.add('routine-admgt')
+        }
         if (g === 'companies' || g === 'companies_view' || g === 'settings-companies') {
           allowed.add('companies')
         }
@@ -213,6 +228,15 @@ export function AppSidebarModern({
         }
         if (g === 'settings' || g === 'settings_manage') {
           allowed.add('settings'); allowed.add('settings-categories'); allowed.add('settings-sla'); allowed.add('settings-notifications'); allowed.add('settings-users'); allowed.add('settings-companies'); allowed.add('companies'); allowed.add('settings-departments'); allowed.add('settings-system')
+        }
+        if (g === 'settings-users') {
+          allowed.add('settings'); allowed.add('settings-users')
+        }
+        if (g === 'settings-departments') {
+          allowed.add('settings'); allowed.add('settings-departments')
+        }
+        if (g === 'settings-system') {
+          allowed.add('settings'); allowed.add('settings-system')
         }
       })
 
