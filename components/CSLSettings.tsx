@@ -54,8 +54,21 @@ import {
   Briefcase,
   Network,
   PenTool,
-  Loader2
+  Loader2,
+  UserCheck,
+  Mail,
+  FileSpreadsheet,
+  Image,
+  Stamp,
+  Upload,
+  ExternalLink,
+  ChevronRight,
+  X,
+  Search
 } from 'lucide-react';
+import { toast } from 'sonner';
+import lkpmData from '../data/lkpm_data.json';
+import groupEmailCompanies from '../data/group_email_companies.json';
 
 interface CSLSettingsProps {
   currentUser: UserAccount | null;
@@ -96,12 +109,39 @@ interface UserItem {
   permissions: MenuPermissions;
 }
 
-interface CompanyItem {
+export interface CompanyAssetMetadata {
+  drive_file_id: string;
+  drive_web_view_link: string;
+  file_name: string;
+  file_size: number;
+  mime_type?: string;
+  uploaded_at: string;
+  uploaded_by?: string;
+  preview_url?: string;
+}
+
+export interface CompanyItem {
   id: number | string;
   name: string;
   code: string;
+  short_name?: string;
+  status?: 'Aktif' | 'Nonaktif';
+  npwp?: string;
+  nib?: string;
+  ahu_number?: string;
+  address?: string;
+  city?: string;
+  postal_code?: string;
+  phone?: string;
+  email?: string;
+  website?: string;
   departments: number;
   employees: number;
+  assets?: {
+    logo?: CompanyAssetMetadata | null;
+    kop?: CompanyAssetMetadata | null;
+    stempel?: CompanyAssetMetadata | null;
+  };
 }
 
 export interface DepartmentItem {
@@ -226,7 +266,52 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
   // Company Modal State
   const [companyModalOpen, setCompanyModalOpen] = useState(false);
   const [editingCompany, setEditingCompany] = useState<CompanyItem | null>(null);
-  const [companyForm, setCompanyForm] = useState({ name: '', code: '', departments: 1, employees: 10 });
+  const [companyForm, setCompanyForm] = useState({ name: '', code: '', npwp: '', city: '', departments: 1, employees: 10 });
+  const [companySearch, setCompanySearch] = useState('');
+  const [selectedCompany, setSelectedCompany] = useState<CompanyItem | null>(null);
+  const [companyAssets, setCompanyAssets] = useState<Record<string, { logo?: string | null; kop?: string | null; stempel?: string | null }>>(() => {
+    try {
+      const saved = localStorage.getItem('csl_company_assets');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return {};
+  });
+
+  const handleUploadAsset = (code: string, key: 'logo' | 'kop' | 'stempel') => {
+    const fileNames = {
+      logo: `logo-${code.toLowerCase()}.png`,
+      kop: `kop-surat-${code.toLowerCase()}.pdf`,
+      stempel: `stempel-${code.toLowerCase()}.png`,
+    };
+    const labels = {
+      logo: 'Logo Perusahaan',
+      kop: 'Kop Surat',
+      stempel: 'Stempel',
+    };
+    const updated = {
+      ...companyAssets,
+      [code]: {
+        ...(companyAssets[code] || {}),
+        [key]: fileNames[key],
+      },
+    };
+    setCompanyAssets(updated);
+    localStorage.setItem('csl_company_assets', JSON.stringify(updated));
+    toast.success(`${labels[key]} terunggah ke Google Drive (folder CSL-LINK/Companies/${code}/).`);
+  };
+
+  const handleDeleteAsset = (code: string, key: 'logo' | 'kop' | 'stempel') => {
+    const updated = {
+      ...companyAssets,
+      [code]: {
+        ...(companyAssets[code] || {}),
+        [key]: null,
+      },
+    };
+    setCompanyAssets(updated);
+    localStorage.setItem('csl_company_assets', JSON.stringify(updated));
+    toast.info('Berkas dihapus dari profil (berkas asli tetap di Drive).');
+  };
 
   const [deleteConfirm, setDeleteConfirm] = useState<{ type: 'category' | 'user' | 'company' | 'department'; id: number | string; name: string } | null>(null);
 
@@ -236,13 +321,21 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
   const [editingDept, setEditingDept] = useState<DepartmentItem | null>(null);
   const [deptForm, setDeptForm] = useState({ name: '', code: '' });
 
-  // Single Designated Approver Routing State
+  // Single Designated Approver & Backup Approver State per Rekomendasi #6
   const [expenseApprover, setExpenseApprover] = useState<string>(() => {
     try {
       const s = localStorage.getItem('csl_expense_approver');
       if (s) return s;
     } catch {}
     return 'natalia@gesit.co.id';
+  });
+
+  const [expenseBackupApprover, setExpenseBackupApprover] = useState<string>(() => {
+    try {
+      const s = localStorage.getItem('csl_expense_backup_approver');
+      if (s) return s;
+    } catch {}
+    return 'rudi@gesit.co.id';
   });
 
   const [offshoreApprover, setOffshoreApprover] = useState<string>(() => {
@@ -253,22 +346,97 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
     return 'natalia@gesit.co.id';
   });
 
+  const [offshoreBackupApprover, setOffshoreBackupApprover] = useState<string>(() => {
+    try {
+      const s = localStorage.getItem('csl_offshore_backup_approver');
+      if (s) return s;
+    } catch {}
+    return 'rudi@gesit.co.id';
+  });
+
   const handleSaveApprovers = async () => {
-    // Save to local storage first (fallback)
     localStorage.setItem('csl_expense_approver', expenseApprover);
+    localStorage.setItem('csl_expense_backup_approver', expenseBackupApprover);
     localStorage.setItem('csl_offshore_approver', offshoreApprover);
+    localStorage.setItem('csl_offshore_backup_approver', offshoreBackupApprover);
     
-    // Save to Supabase (upsert)
     try {
       await supabase.from('csl_system_settings').upsert([
         { setting_key: 'csl_expense_approver', setting_value: expenseApprover },
-        { setting_key: 'csl_offshore_approver', setting_value: offshoreApprover }
+        { setting_key: 'csl_expense_backup_approver', setting_value: expenseBackupApprover },
+        { setting_key: 'csl_offshore_approver', setting_value: offshoreApprover },
+        { setting_key: 'csl_offshore_backup_approver', setting_value: offshoreBackupApprover }
       ], { onConflict: 'setting_key' });
     } catch (e) {
       console.warn('System settings table may not exist yet, using localStorage only.', e);
     }
     
-    showFeedback('Pengaturan System & Approver berhasil disimpan!');
+    showFeedback('Pengaturan sistem, approver utama & cadangan berhasil disimpan!');
+  };
+
+  // Sync Master Companies from LKPM 81 entities per Rekomendasi #5
+  const handleSyncLkpmCompanies = async () => {
+    setIsLoading(true);
+    try {
+      const raw2026 = (lkpmData as any)['2026']?.perusahaan || [];
+      let added = 0;
+      for (const p of raw2026) {
+        const name = (p.nama || '').trim();
+        if (!name) continue;
+        const exists = companies.some(c => c.name.toLowerCase() === name.toLowerCase());
+        if (!exists) {
+          const code = name.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 6) || 'CO';
+          await supabase.from('companies').insert([{
+            name,
+            code,
+            departments: 1,
+            employees: 1
+          }]);
+          added++;
+        }
+      }
+      toast.success(`Sinkronisasi LKPM selesai. ${added} entitas baru berhasil didaftarkan ke master perusahaan.`);
+      const { data } = await supabase.from('companies').select('*').order('name');
+      if (data) setCompanies(data);
+    } catch (e: any) {
+      toast.error('Gagal sinkronisasi data LKPM: ' + e.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Sync Master Companies from Group Email Cleaned List (79 entities)
+  const handleSyncGroupEmailCompanies = async () => {
+    setIsLoading(true);
+    try {
+      const { data: dbData } = await supabase.from('companies').select('*');
+      const existingNames = new Set((dbData || []).map(c => c.name.toLowerCase().trim()));
+      const existingCodes = new Set((dbData || []).map(c => (c.code || '').toUpperCase().trim()));
+
+      let added = 0;
+      for (const item of groupEmailCompanies) {
+        const normName = item.name.toLowerCase().trim();
+        const normCode = item.code.toUpperCase().trim();
+        if (!existingNames.has(normName) && !existingCodes.has(normCode)) {
+          await supabase.from('companies').insert([{
+            name: item.name,
+            code: item.code,
+            departments: 1,
+            employees: 1
+          }]);
+          existingNames.add(normName);
+          existingCodes.add(normCode);
+          added++;
+        }
+      }
+      toast.success(`Sinkronisasi Group Email selesai: ${added} entitas baru berhasil didaftarkan.`);
+      const { data } = await supabase.from('companies').select('*').order('name');
+      if (data) setCompanies(data);
+    } catch (e: any) {
+      toast.error('Gagal sinkronisasi data Group Email: ' + e.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // ── Fetch DB Data ──────────────────────────────────────────────────────────
@@ -649,41 +817,53 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
   const openCompanyModal = (c?: CompanyItem) => {
     if (c) {
       setEditingCompany(c);
-      setCompanyForm({ name: c.name, code: c.code, departments: c.departments, employees: c.employees });
+      setCompanyForm({
+        name: c.name,
+        code: c.code,
+        npwp: (c as any).npwp || '',
+        city: (c as any).city || (c as any).address || '',
+        departments: c.departments || 1,
+        employees: c.employees || 10,
+      });
     } else {
       setEditingCompany(null);
-      setCompanyForm({ name: '', code: '', departments: 1, employees: 10 });
+      setCompanyForm({ name: '', code: '', npwp: '', city: '', departments: 1, employees: 10 });
     }
     setCompanyModalOpen(true);
   };
 
   const handleSaveCompany = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!companyForm.name.trim()) return;
+    if (!companyForm.name.trim() || !companyForm.code.trim()) {
+      toast.error('Kode dan nama resmi wajib diisi.');
+      return;
+    }
     try {
+      const code = companyForm.code.toUpperCase().trim();
+      const name = companyForm.name.trim();
       if (editingCompany) {
         const { error } = await supabase.from('companies').update({
-          name: companyForm.name.trim(),
-          code: companyForm.code.toUpperCase().trim() || 'COMP',
+          name,
+          code,
           departments: Number(companyForm.departments),
           employees: Number(companyForm.employees),
         }).eq('id', editingCompany.id);
         if (error) throw error;
-        showFeedback(`Company "${companyForm.name}" updated!`);
+        toast.success(`Entitas "${name}" (${code}) berhasil diperbarui!`);
       } else {
         const { error } = await supabase.from('companies').insert([{
-          name: companyForm.name.trim(),
-          code: companyForm.code.toUpperCase().trim() || 'COMP',
+          name,
+          code,
           departments: Number(companyForm.departments),
           employees: Number(companyForm.employees),
         }]);
         if (error) throw error;
-        showFeedback(`Company "${companyForm.name}" added!`);
+        toast.success(`Entitas "${name}" (${code}) berhasil didaftarkan!`);
       }
       setCompanyModalOpen(false);
       await fetchData();
     } catch (err: any) {
-      showFeedback(`Error: ${err.message}`);
+      toast.error(`Gagal menyimpan entitas: ${err.message}`);
     }
   };
 
@@ -935,18 +1115,18 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
     return (
       <div className="space-y-6 animate-in fade-in duration-500 pb-12 font-sans">
         {feedbackBanner}
-        <PageHeader title="Users & Menu Access Permissions" description="Manage user accounts, system roles, and menu access rights for each user">
-          <Button onClick={() => openUserModal()} size="sm" className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md">
-            <Plus className="h-4 w-4 mr-1.5" /> Add User Account
+        <PageHeader title="Pengguna & Hak Akses Menu" description="Kelola akun pengguna, peran sistem, dan hak akses menu untuk setiap personel">
+          <Button onClick={() => openUserModal()} size="sm" className="bg-[#0a2540] hover:bg-[#16375c] text-white font-bold text-xs shadow-xs rounded-xl h-9 px-4">
+            <Plus className="h-4 w-4 mr-1.5" /> Tambah Pengguna
           </Button>
         </PageHeader>
 
-        <div className="bg-card border border-border/40 rounded-2xl overflow-hidden shadow-sm">
+        <div className="bg-card border border-[#e6e9f0] rounded-2xl overflow-hidden shadow-xs">
           <Table>
-            <TableHeader className="bg-muted/30">
+            <TableHeader className="bg-[#fafbfc]">
               <TableRow>
-                {['User Name', 'Email', 'Role', 'Access Scope', 'Actions'].map(h => (
-                  <TableHead key={h} className="text-[10px] font-black uppercase tracking-widest">{h}</TableHead>
+                {['Nama Pengguna', 'Email', 'Peran (Role)', 'Cakupan Akses', 'Aksi'].map(h => (
+                  <TableHead key={h} className="text-[11px] font-bold uppercase tracking-wider text-[#758196]">{h}</TableHead>
                 ))}
               </TableRow>
             </TableHeader>
@@ -1176,82 +1356,737 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
 
   // ── Companies View ────────────────────────────────────────────────────────
   if (view === 'companies') {
-    return (
-      <div className="space-y-6 animate-in fade-in duration-500 pb-12 font-sans">
-        {feedbackBanner}
-        <PageHeader title="Companies & Entities" description="Manage registered corporate entities and subsidiaries">
-          <Button onClick={() => openCompanyModal()} size="sm" className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md">
-            <Plus className="h-4 w-4 mr-1.5" /> Add Company
-          </Button>
-        </PageHeader>
+    const totalCount = companies.length;
+    let logoCount = 0;
+    let kopCount = 0;
+    let stempelCount = 0;
 
-        <div className="bg-card border border-border/40 rounded-2xl overflow-hidden shadow-sm">
-          <Table>
-            <TableHeader className="bg-muted/30">
-              <TableRow>
-                {['Company Code', 'Company / Entity Name', 'Departments', 'Employees', 'Actions'].map(h => (
-                  <TableHead key={h} className="text-[10px] font-black uppercase tracking-widest">{h}</TableHead>
-                ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {companies.map(c => (
-                <TableRow key={c.id} className="hover:bg-muted/30">
-                  <TableCell>
-                    <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400">
-                      {c.code}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-sm font-bold text-foreground">{c.name}</TableCell>
-                  <TableCell className="text-xs text-muted-foreground">{c.departments}</TableCell>
-                  <TableCell className="text-xs text-muted-foreground">{c.employees}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
-                      <Button onClick={() => openCompanyModal(c)} variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground">
-                        <Pencil size={14} />
-                      </Button>
-                      <Button onClick={() => setDeleteConfirm({ type: 'company', id: c.id, name: c.name })} variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30">
-                        <Trash2 size={14} />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {companies.length === 0 && !isLoading && (
-                <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center text-xs font-semibold text-muted-foreground">
-                    No companies or entities found.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+    companies.forEach(c => {
+      const a = companyAssets[c.code];
+      if (a?.logo) logoCount++;
+      if (a?.kop) kopCount++;
+      if (a?.stempel) stempelCount++;
+    });
+
+    const filteredCompanies = companies.filter(c => {
+      const q = companySearch.trim().toLowerCase();
+      if (!q) return true;
+      return (c.name + ' ' + c.code).toLowerCase().includes(q);
+    });
+
+    return (
+      <div className="space-y-5 animate-in fade-in duration-500 pb-12 font-sans">
+        {feedbackBanner}
+
+        {/* TITLE & ACTIONS */}
+        <div className="flex items-end justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="text-[28px] font-bold text-[#0a2540] dark:text-white tracking-tight leading-tight">
+              Companies &amp; Entities
+            </h1>
+            <div className="text-[#c9a227] text-[11px] font-bold tracking-[1.8px] mt-1.5 uppercase">
+              PENGATURAN · MASTER ENTITAS &amp; BERKAS RESMI
+            </div>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              onClick={handleSyncGroupEmailCompanies}
+              variant="outline"
+              size="sm"
+              disabled={isLoading}
+              className="h-9 text-xs font-semibold gap-1.5 border-[#e6e9f0] hover:bg-[#f6f7f9]"
+              title="Sinkronkan 79 entitas dari Group-Email-Cleaned-List.xlsx"
+            >
+              <FileSpreadsheet className={`h-3.5 w-3.5 text-[#0a2540] ${isLoading ? 'animate-spin' : ''}`} />
+              Sinkronkan Group Email (79)
+            </Button>
+            <Button
+              onClick={handleSyncLkpmCompanies}
+              variant="outline"
+              size="sm"
+              disabled={isLoading}
+              className="h-9 text-xs font-semibold gap-1.5 border-[#e6e9f0] hover:bg-[#f6f7f9]"
+            >
+              <RefreshCcw className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`} /> Sinkronkan LKPM (81)
+            </Button>
+            <Button
+              onClick={() => openCompanyModal()}
+              size="sm"
+              className="bg-[#0a2540] hover:bg-[#16375c] text-white font-semibold text-xs shadow-xs rounded-xl h-9 px-4 gap-1.5"
+            >
+              <Plus className="h-4 w-4" /> Tambah Perusahaan
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={fetchData}
+              className="w-9 h-9 rounded-xl border-[#e6e9f0]"
+              title="Muat ulang master entitas"
+            >
+              <RefreshCcw size={15} className={isLoading ? 'animate-spin' : ''} />
+            </Button>
+          </div>
         </div>
 
-        {/* Company Modal */}
+        {/* 4 KPIS ROW */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+          {/* Card 1: Entitas */}
+          <div className="bg-card border border-[#e6e9f0] dark:border-slate-800 rounded-2xl p-5 shadow-xs">
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-9 h-9 rounded-xl bg-[#e8effe] flex items-center justify-center text-[#2f6bff]">
+                <Building2 size={19} />
+              </div>
+            </div>
+            <div className="text-[30px] font-bold text-[#0a2540] dark:text-white leading-none tracking-tight">
+              {totalCount}
+            </div>
+            <div className="text-[13px] font-semibold text-slate-800 dark:text-slate-200 mt-1.5">Entitas Terdaftar</div>
+            <div className="text-[12px] text-[#758196] font-medium mt-0.5">Master perusahaan CSL-LINK</div>
+          </div>
+
+          {/* Card 2: Logo */}
+          <div className="bg-card border border-[#e6e9f0] dark:border-slate-800 rounded-2xl p-5 shadow-xs">
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-9 h-9 rounded-xl bg-[#e8effe] flex items-center justify-center text-[#2f6bff]">
+                <Image size={19} />
+              </div>
+            </div>
+            <div className="text-[30px] font-bold text-[#0a2540] dark:text-white leading-none tracking-tight">
+              {logoCount} / {totalCount}
+            </div>
+            <div className="text-[13px] font-semibold text-slate-800 dark:text-slate-200 mt-1.5">Logo Terunggah</div>
+            <div className="text-[12px] text-[#758196] font-medium mt-0.5">Tersimpan di Google Drive</div>
+          </div>
+
+          {/* Card 3: Kop Surat */}
+          <div className="bg-card border border-[#e6e9f0] dark:border-slate-800 rounded-2xl p-5 shadow-xs">
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-9 h-9 rounded-xl bg-[#fdf2dc] flex items-center justify-center text-[#d99a26]">
+                <FileText size={19} />
+              </div>
+            </div>
+            <div className="text-[30px] font-bold text-[#0a2540] dark:text-white leading-none tracking-tight">
+              {kopCount} / {totalCount}
+            </div>
+            <div className="text-[13px] font-semibold text-slate-800 dark:text-slate-200 mt-1.5">Kop Surat Terunggah</div>
+            <div className="text-[12px] text-[#758196] font-medium mt-0.5">Untuk surat resmi per entitas</div>
+          </div>
+
+          {/* Card 4: Stempel */}
+          <div className="bg-card border border-[#e6e9f0] dark:border-slate-800 rounded-2xl p-5 shadow-xs">
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-9 h-9 rounded-xl bg-[#e4f6ec] flex items-center justify-center text-[#12995c]">
+                <Stamp size={19} />
+              </div>
+            </div>
+            <div className="text-[30px] font-bold text-[#0a2540] dark:text-white leading-none tracking-tight">
+              {stempelCount} / {totalCount}
+            </div>
+            <div className="text-[13px] font-semibold text-slate-800 dark:text-slate-200 mt-1.5">Stempel Terunggah</div>
+            <div className="text-[12px] text-[#758196] font-medium mt-0.5">Untuk dokumen resmi per entitas</div>
+          </div>
+        </div>
+
+        {/* SEARCH & HINT BAR */}
+        <div className="flex flex-wrap items-center gap-3 pt-1">
+          <div className="relative flex-1 max-w-sm">
+            <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Input
+              placeholder="Cari perusahaan / kode..."
+              value={companySearch}
+              onChange={(e) => setCompanySearch(e.target.value)}
+              className="w-full pl-9 h-9 rounded-full bg-white dark:bg-slate-900 border-[#e6e9f0] dark:border-slate-800 text-xs"
+            />
+          </div>
+          <span className="text-[12.5px] text-[#758196] font-semibold">
+            Klik baris untuk profil lengkap &amp; unggah berkas ke Google Drive.
+          </span>
+        </div>
+
+        {/* DATA TABLE */}
+        <div className="bg-card border border-[#e6e9f0] dark:border-slate-800 rounded-2xl overflow-hidden shadow-xs">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader className="bg-[#fafbfc] dark:bg-slate-800/60">
+                <TableRow className="border-b border-[#e6e9f0] dark:border-slate-800">
+                  <TableHead className="py-3 px-4 text-[11px] font-bold uppercase tracking-wider text-[#758196] min-w-[240px]">
+                    Entitas
+                  </TableHead>
+                  <TableHead className="py-3 px-3 text-[11px] font-bold uppercase tracking-wider text-[#758196]">
+                    Departemen
+                  </TableHead>
+                  <TableHead className="py-3 px-3 text-[11px] font-bold uppercase tracking-wider text-[#758196]">
+                    Karyawan
+                  </TableHead>
+                  <TableHead className="py-3 px-3 text-[11px] font-bold uppercase tracking-wider text-[#758196]">
+                    Logo
+                  </TableHead>
+                  <TableHead className="py-3 px-3 text-[11px] font-bold uppercase tracking-wider text-[#758196]">
+                    Kop Surat
+                  </TableHead>
+                  <TableHead className="py-3 px-3 text-[11px] font-bold uppercase tracking-wider text-[#758196]">
+                    Stempel
+                  </TableHead>
+                  <TableHead className="py-3 px-4 text-[11px] font-bold uppercase tracking-wider text-[#758196] min-w-[170px]">
+                    Kelengkapan Berkas
+                  </TableHead>
+                  <TableHead className="py-3 px-4 text-[11px] font-bold uppercase tracking-wider text-[#758196] text-right">
+                    Aksi
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody className="divide-y divide-[#e6e9f0] dark:divide-slate-800">
+                {filteredCompanies.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="h-28 text-center text-xs font-semibold text-[#758196]">
+                      Tidak ada entitas yang cocok dengan pencarian.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredCompanies.map(c => {
+                    const a = companyAssets[c.code] || {};
+                    const dc = (a.logo ? 1 : 0) + (a.kop ? 1 : 0) + (a.stempel ? 1 : 0);
+                    return (
+                      <TableRow
+                        key={c.id}
+                        onClick={() => setSelectedCompany(c)}
+                        className="hover:bg-[#fafbfc] dark:hover:bg-slate-800/40 cursor-pointer transition-colors"
+                      >
+                        {/* Entitas */}
+                        <TableCell className="py-3 px-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-[#e8effe] text-[#2f6bff] font-bold text-xs flex items-center justify-center shrink-0">
+                              {(c.code || 'CO').slice(0, 2).toUpperCase()}
+                            </div>
+                            <div>
+                              <div className="font-semibold text-sm text-[#0a2540] dark:text-white leading-tight">
+                                {c.name}
+                              </div>
+                              <div className="text-[11.5px] text-[#758196] font-medium mt-0.5">
+                                Kode {c.code}
+                              </div>
+                            </div>
+                          </div>
+                        </TableCell>
+
+                        {/* Departemen */}
+                        <TableCell className="py-3 px-3 text-xs text-slate-700 dark:text-slate-300 font-medium">
+                          {c.departments || 0}
+                        </TableCell>
+
+                        {/* Karyawan */}
+                        <TableCell className="py-3 px-3 text-xs text-slate-700 dark:text-slate-300 font-medium">
+                          {c.employees || 0}
+                        </TableCell>
+
+                        {/* Logo Chip */}
+                        <TableCell className="py-3 px-3">
+                          {a.logo ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11.5px] font-semibold bg-[#e4f6ec] text-[#12995c]">
+                              <span className="size-1.5 rounded-full bg-current" /> Ada
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11.5px] font-semibold bg-[#eef0f4] text-[#667085]">
+                              <span className="size-1.5 rounded-full bg-current" /> Belum
+                            </span>
+                          )}
+                        </TableCell>
+
+                        {/* Kop Surat Chip */}
+                        <TableCell className="py-3 px-3">
+                          {a.kop ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11.5px] font-semibold bg-[#e4f6ec] text-[#12995c]">
+                              <span className="size-1.5 rounded-full bg-current" /> Ada
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11.5px] font-semibold bg-[#eef0f4] text-[#667085]">
+                              <span className="size-1.5 rounded-full bg-current" /> Belum
+                            </span>
+                          )}
+                        </TableCell>
+
+                        {/* Stempel Chip */}
+                        <TableCell className="py-3 px-3">
+                          {a.stempel ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11.5px] font-semibold bg-[#e4f6ec] text-[#12995c]">
+                              <span className="size-1.5 rounded-full bg-current" /> Ada
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11.5px] font-semibold bg-[#eef0f4] text-[#667085]">
+                              <span className="size-1.5 rounded-full bg-current" /> Belum
+                            </span>
+                          )}
+                        </TableCell>
+
+                        {/* Kelengkapan Berkas */}
+                        <TableCell className="py-3 px-4">
+                          <div className="flex items-center gap-2.5">
+                            <div className="h-2 w-20 rounded-full bg-[#eef0f4] dark:bg-slate-800 overflow-hidden">
+                              <div
+                                className={`h-full rounded-full transition-all duration-300 ${
+                                  dc === 3 ? 'bg-[#12995c]' : 'bg-[#2f6bff]'
+                                }`}
+                                style={{ width: `${(dc / 3) * 100}%` }}
+                              />
+                            </div>
+                            <span className="font-semibold text-[12px] text-slate-700 dark:text-slate-300">
+                              {dc} dari 3
+                            </span>
+                          </div>
+                        </TableCell>
+
+                        {/* Aksi */}
+                        <TableCell className="py-3 px-4 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedCompany(c);
+                              }}
+                              className="inline-flex items-center gap-1 px-3 py-1 rounded-full border border-[#e6e9f0] bg-white dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-[#f6f7f9]"
+                            >
+                              Profil <ChevronRight size={13} className="text-[#758196]" />
+                            </button>
+                            <Button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openCompanyModal(c);
+                              }}
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-7 p-0 text-[#758196] hover:text-[#0a2540]"
+                              title="Edit Entitas"
+                            >
+                              <Pencil size={13} />
+                            </Button>
+                            <Button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeleteConfirm({ type: 'company', id: c.id, name: c.name });
+                              }}
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-7 p-0 text-red-500 hover:text-red-600 hover:bg-red-50"
+                              title="Hapus Entitas"
+                            >
+                              <Trash2 size={13} />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
+
+        {/* FOOTNOTE */}
+        <p className="text-center text-[#98a2b5] text-xs font-medium pt-2">
+          Keadaan berkas per 27 Okt 2026: belum ada logo, kop surat, dan stempel yang terunggah — form lama hanya berisi Kode &amp; Nama. Berkas tersimpan di Google Drive (folder CSL-LINK/Companies/{'{KODE}'}/).
+        </p>
+
+        {/* DETAIL SLIDE-OVER PANEL */}
+        {selectedCompany && (
+          <>
+            {/* Scrim Backdrop */}
+            <div
+              className="fixed inset-0 bg-[#0a192f]/40 z-50 backdrop-blur-xs transition-opacity duration-200"
+              onClick={() => setSelectedCompany(null)}
+            />
+
+            {/* Panel Sheet */}
+            <aside className="fixed top-0 right-0 bottom-0 w-[470px] max-w-[92vw] z-50 bg-white dark:bg-slate-900 border-l border-[#e6e9f0] dark:border-slate-800 shadow-2xl p-6 overflow-y-auto flex flex-col justify-between animate-in slide-in-from-right duration-200">
+              <div>
+                {/* Header with Close */}
+                <div className="flex items-start justify-between gap-4 mb-4">
+                  <div>
+                    <h2 className="text-xl font-bold text-[#0a2540] dark:text-white leading-tight">
+                      {selectedCompany.name}
+                    </h2>
+                    <p className="text-xs text-[#758196] font-semibold mt-1">
+                      Profil Entitas · Kode {selectedCompany.code}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setSelectedCompany(null)}
+                    className="w-8 h-8 rounded-full border border-[#e6e9f0] dark:border-slate-700 bg-white dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-50"
+                  >
+                    <X size={15} />
+                  </button>
+                </div>
+
+                {/* IDENTITAS */}
+                <h3 className="text-[12px] font-bold tracking-[0.8px] text-[#758196] uppercase mb-2.5">
+                  IDENTITAS
+                </h3>
+                <div className="grid grid-cols-2 gap-2.5 mb-6">
+                  <div className="bg-[#fbfbfc] dark:bg-slate-800/60 border border-[#e6e9f0] dark:border-slate-700/80 rounded-xl p-3">
+                    <span className="block text-[10px] tracking-wider text-[#758196] font-bold uppercase mb-0.5">
+                      KODE ENTITAS
+                    </span>
+                    <b className="font-mono text-sm text-[#0a2540] dark:text-white">{selectedCompany.code}</b>
+                  </div>
+                  <div className="bg-[#fbfbfc] dark:bg-slate-800/60 border border-[#e6e9f0] dark:border-slate-700/80 rounded-xl p-3">
+                    <span className="block text-[10px] tracking-wider text-[#758196] font-bold uppercase mb-0.5">
+                      STATUS
+                    </span>
+                    <b className="text-sm text-[#12995c]">Aktif</b>
+                  </div>
+                  <div className="bg-[#fbfbfc] dark:bg-slate-800/60 border border-[#e6e9f0] dark:border-slate-700/80 rounded-xl p-3">
+                    <span className="block text-[10px] tracking-wider text-[#758196] font-bold uppercase mb-0.5">
+                      NPWP
+                    </span>
+                    <b className="text-xs font-mono text-slate-800 dark:text-slate-200">
+                      {(selectedCompany as any).npwp || '-'}
+                    </b>
+                  </div>
+                  <div className="bg-[#fbfbfc] dark:bg-slate-800/60 border border-[#e6e9f0] dark:border-slate-700/80 rounded-xl p-3">
+                    <span className="block text-[10px] tracking-wider text-[#758196] font-bold uppercase mb-0.5">
+                      NIB
+                    </span>
+                    <b className="text-xs font-mono text-slate-800 dark:text-slate-200">
+                      {(selectedCompany as any).nib || '-'}
+                    </b>
+                  </div>
+                  <div className="bg-[#fbfbfc] dark:bg-slate-800/60 border border-[#e6e9f0] dark:border-slate-700/80 rounded-xl p-3">
+                    <span className="block text-[10px] tracking-wider text-[#758196] font-bold uppercase mb-0.5">
+                      DEPARTEMEN
+                    </span>
+                    <b className="text-xs text-slate-800 dark:text-slate-200">
+                      {selectedCompany.departments || 0} departemen
+                    </b>
+                  </div>
+                  <div className="bg-[#fbfbfc] dark:bg-slate-800/60 border border-[#e6e9f0] dark:border-slate-700/80 rounded-xl p-3">
+                    <span className="block text-[10px] tracking-wider text-[#758196] font-bold uppercase mb-0.5">
+                      KARYAWAN
+                    </span>
+                    <b className="text-xs text-slate-800 dark:text-slate-200">
+                      {selectedCompany.employees || 0} karyawan
+                    </b>
+                  </div>
+                  <div className="col-span-2 bg-[#fbfbfc] dark:bg-slate-800/60 border border-[#e6e9f0] dark:border-slate-700/80 rounded-xl p-3">
+                    <span className="block text-[10px] tracking-wider text-[#758196] font-bold uppercase mb-0.5">
+                      ALAMAT
+                    </span>
+                    <b className="text-xs font-normal text-slate-700 dark:text-slate-300">
+                      {(selectedCompany as any).address || 'Jakarta, Indonesia'}
+                    </b>
+                  </div>
+                  <div className="bg-[#fbfbfc] dark:bg-slate-800/60 border border-[#e6e9f0] dark:border-slate-700/80 rounded-xl p-3">
+                    <span className="block text-[10px] tracking-wider text-[#758196] font-bold uppercase mb-0.5">
+                      TELEPON
+                    </span>
+                    <b className="text-xs text-slate-800 dark:text-slate-200">
+                      {(selectedCompany as any).phone || '-'}
+                    </b>
+                  </div>
+                  <div className="bg-[#fbfbfc] dark:bg-slate-800/60 border border-[#e6e9f0] dark:border-slate-700/80 rounded-xl p-3">
+                    <span className="block text-[10px] tracking-wider text-[#758196] font-bold uppercase mb-0.5">
+                      EMAIL
+                    </span>
+                    <b className="text-xs font-mono text-slate-800 dark:text-slate-200 truncate block">
+                      {(() => {
+                        const em = groupEmailCompanies.find(ge =>
+                          ge.name.toLowerCase().trim() === selectedCompany.name.toLowerCase().trim() ||
+                          ge.code.toUpperCase().trim() === selectedCompany.code.toUpperCase().trim()
+                        );
+                        return em?.email || '-';
+                      })()}
+                    </b>
+                  </div>
+                </div>
+
+                {/* BRANDING & DOKUMEN · GOOGLE DRIVE */}
+                <h3 className="text-[12px] font-bold tracking-[0.8px] text-[#758196] uppercase mb-2.5">
+                  BRANDING &amp; DOKUMEN · GOOGLE DRIVE
+                </h3>
+                <div className="space-y-2.5 mb-4">
+                  {/* Logo Zone */}
+                  {(() => {
+                    const f = companyAssets[selectedCompany.code]?.logo;
+                    if (f) {
+                      return (
+                        <div className="flex items-center gap-3 border border-[#bfe8d2] bg-[#e4f6ec] rounded-xl p-3.5">
+                          <div className="w-10 h-10 rounded-xl bg-white border border-[#bfe8d2] flex items-center justify-center text-[#12995c] shrink-0">
+                            <Image size={19} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <b className="text-sm text-slate-900 block leading-tight">Logo Perusahaan</b>
+                            <span className="font-mono text-[11.5px] text-slate-700 block truncate">{f}</span>
+                            <span className="text-[11px] text-[#12995c] font-medium block">Tersimpan di Google Drive</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => toast.info(`Membuka berkas ${f} di Google Drive...`)}
+                              className="px-2.5 py-1 text-xs font-semibold bg-white rounded-lg border border-[#bfe8d2] text-[#12995c] hover:bg-white/80 inline-flex items-center gap-1"
+                            >
+                              <ExternalLink size={12} /> Drive
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteAsset(selectedCompany.code, 'logo')}
+                              className="px-2.5 py-1 text-xs font-semibold bg-white rounded-lg border border-rose-200 text-rose-600 hover:bg-rose-50"
+                            >
+                              Hapus
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return (
+                      <div className="flex items-center justify-between gap-3 border-2 border-dashed border-[#e6e9f0] rounded-xl p-3.5 bg-[#fbfbfc]">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-white border border-[#e6e9f0] flex items-center justify-center text-[#2f6bff] shrink-0">
+                            <Image size={19} />
+                          </div>
+                          <div>
+                            <b className="text-sm text-slate-900 block leading-tight">Logo Perusahaan</b>
+                            <span className="text-[11.5px] text-[#758196] font-medium">PNG / SVG · latar transparan · maks 2 MB</span>
+                          </div>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleUploadAsset(selectedCompany.code, 'logo')}
+                          className="text-xs font-semibold gap-1.5 border-[#e6e9f0] h-8"
+                        >
+                          <Upload size={13} /> Unggah ke Drive
+                        </Button>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Kop Surat Zone */}
+                  {(() => {
+                    const f = companyAssets[selectedCompany.code]?.kop;
+                    if (f) {
+                      return (
+                        <div className="flex items-center gap-3 border border-[#bfe8d2] bg-[#e4f6ec] rounded-xl p-3.5">
+                          <div className="w-10 h-10 rounded-xl bg-white border border-[#bfe8d2] flex items-center justify-center text-[#12995c] shrink-0">
+                            <FileText size={19} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <b className="text-sm text-slate-900 block leading-tight">Kop Surat</b>
+                            <span className="font-mono text-[11.5px] text-slate-700 block truncate">{f}</span>
+                            <span className="text-[11px] text-[#12995c] font-medium block">Tersimpan di Google Drive</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => toast.info(`Membuka berkas ${f} di Google Drive...`)}
+                              className="px-2.5 py-1 text-xs font-semibold bg-white rounded-lg border border-[#bfe8d2] text-[#12995c] hover:bg-white/80 inline-flex items-center gap-1"
+                            >
+                              <ExternalLink size={12} /> Drive
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteAsset(selectedCompany.code, 'kop')}
+                              className="px-2.5 py-1 text-xs font-semibold bg-white rounded-lg border border-rose-200 text-rose-600 hover:bg-rose-50"
+                            >
+                              Hapus
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return (
+                      <div className="flex items-center justify-between gap-3 border-2 border-dashed border-[#e6e9f0] rounded-xl p-3.5 bg-[#fbfbfc]">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-white border border-[#e6e9f0] flex items-center justify-center text-[#d99a26] shrink-0">
+                            <FileText size={19} />
+                          </div>
+                          <div>
+                            <b className="text-sm text-slate-900 block leading-tight">Kop Surat</b>
+                            <span className="text-[11.5px] text-[#758196] font-medium">PNG / PDF · ukuran A4 · maks 5 MB</span>
+                          </div>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleUploadAsset(selectedCompany.code, 'kop')}
+                          className="text-xs font-semibold gap-1.5 border-[#e6e9f0] h-8"
+                        >
+                          <Upload size={13} /> Unggah ke Drive
+                        </Button>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Stempel Zone */}
+                  {(() => {
+                    const f = companyAssets[selectedCompany.code]?.stempel;
+                    if (f) {
+                      return (
+                        <div className="flex items-center gap-3 border border-[#bfe8d2] bg-[#e4f6ec] rounded-xl p-3.5">
+                          <div className="w-10 h-10 rounded-xl bg-white border border-[#bfe8d2] flex items-center justify-center text-[#12995c] shrink-0">
+                            <Stamp size={19} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <b className="text-sm text-slate-900 block leading-tight">Stempel Perusahaan</b>
+                            <span className="font-mono text-[11.5px] text-slate-700 block truncate">{f}</span>
+                            <span className="text-[11px] text-[#12995c] font-medium block">Tersimpan di Google Drive</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => toast.info(`Membuka berkas ${f} di Google Drive...`)}
+                              className="px-2.5 py-1 text-xs font-semibold bg-white rounded-lg border border-[#bfe8d2] text-[#12995c] hover:bg-white/80 inline-flex items-center gap-1"
+                            >
+                              <ExternalLink size={12} /> Drive
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteAsset(selectedCompany.code, 'stempel')}
+                              className="px-2.5 py-1 text-xs font-semibold bg-white rounded-lg border border-rose-200 text-rose-600 hover:bg-rose-50"
+                            >
+                              Hapus
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return (
+                      <div className="flex items-center justify-between gap-3 border-2 border-dashed border-[#e6e9f0] rounded-xl p-3.5 bg-[#fbfbfc]">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-white border border-[#e6e9f0] flex items-center justify-center text-[#12995c] shrink-0">
+                            <Stamp size={19} />
+                          </div>
+                          <div>
+                            <b className="text-sm text-slate-900 block leading-tight">Stempel</b>
+                            <span className="text-[11.5px] text-[#758196] font-medium">PNG · latar transparan · maks 2 MB</span>
+                          </div>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleUploadAsset(selectedCompany.code, 'stempel')}
+                          className="text-xs font-semibold gap-1.5 border-[#e6e9f0] h-8"
+                        >
+                          <Upload size={13} /> Unggah ke Drive
+                        </Button>
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                {/* Note Box */}
+                <div className="bg-[#eef0f4] dark:bg-slate-800/70 border border-[#e6e9f0] dark:border-slate-700 rounded-xl p-3.5 text-xs text-[#667085] dark:text-slate-300 font-medium leading-relaxed">
+                  Berkas tersimpan di Google Drive pada folder{' '}
+                  <span className="font-mono font-bold text-slate-800 dark:text-white">
+                    CSL-LINK/Companies/{selectedCompany.code}/
+                  </span>{' '}
+                  — aplikasi hanya menyimpan tautan berkasnya. Kop surat &amp; stempel otomatis terpasang pada surat resmi yang dibuat sistem untuk entitas ini.
+                </div>
+              </div>
+
+              {/* Panel Footer */}
+              <div className="pt-4 border-t border-[#e6e9f0] dark:border-slate-800 mt-6 flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  className="flex-1 text-xs font-bold"
+                  onClick={() => setSelectedCompany(null)}
+                >
+                  Tutup
+                </Button>
+                <Button
+                  className="flex-1 text-xs font-bold bg-[#0a2540] hover:bg-[#16375c] text-white gap-1.5"
+                  onClick={() => {
+                    openCompanyModal(selectedCompany);
+                  }}
+                >
+                  <Pencil size={13} /> Edit Profil
+                </Button>
+              </div>
+            </aside>
+          </>
+        )}
+
+        {/* MODAL TAMBAH / EDIT PERUSAHAAN */}
         <Dialog open={companyModalOpen} onOpenChange={setCompanyModalOpen}>
-          <DialogContent className="sm:max-w-md font-sans border border-border/60 shadow-2xl rounded-2xl">
-            <DialogHeader className="p-6 pb-4 border-b border-border/30 bg-muted/20">
-              <div className="flex items-center gap-2 text-indigo-600 mb-1">
-                <Building2 size={18} />
-                <span className="text-[10px] font-black uppercase tracking-widest">Entity Config</span>
-              </div>
-              <DialogTitle className="text-xl font-black">{editingCompany ? 'Edit Company' : 'Add New Company'}</DialogTitle>
+          <DialogContent className="sm:max-w-[520px] font-sans border border-[#e6e9f0] shadow-2xl rounded-2xl p-6">
+            <DialogHeader>
+              <DialogTitle className="text-lg font-bold text-[#0a2540] dark:text-white">
+                {editingCompany ? 'Edit Profil Entitas' : 'Tambah Perusahaan'}
+              </DialogTitle>
+              <DialogDescription className="text-xs text-[#758196] font-medium mt-1">
+                Identitas dasar dulu — logo, kop surat, dan stempel diunggah lewat panel profil setelah entitas tersimpan.
+              </DialogDescription>
             </DialogHeader>
-            <form onSubmit={handleSaveCompany} className="p-6 space-y-4">
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="text-[11px] font-bold text-foreground mb-1 block">Code *</label>
-                  <Input required placeholder="GESIT" value={companyForm.code} onChange={e => setCompanyForm({...companyForm, code: e.target.value})} className="h-10 text-sm font-mono uppercase bg-muted/30" />
+
+            <form onSubmit={handleSaveCompany} className="space-y-3.5 py-2">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-[#758196]">
+                    KODE ENTITAS *
+                  </label>
+                  <Input
+                    required
+                    placeholder="cth. GESIT"
+                    value={companyForm.code}
+                    onChange={e => setCompanyForm({ ...companyForm, code: e.target.value })}
+                    className="text-xs font-mono uppercase"
+                  />
                 </div>
-                <div className="col-span-2">
-                  <label className="text-[11px] font-bold text-foreground mb-1 block">Company Name *</label>
-                  <Input required placeholder="PT GESIT Utama" value={companyForm.name} onChange={e => setCompanyForm({...companyForm, name: e.target.value})} className="h-10 text-sm bg-muted/30" />
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-[#758196]">
+                    NAMA RESMI *
+                  </label>
+                  <Input
+                    required
+                    placeholder="cth. PT GESIT Utama"
+                    value={companyForm.name}
+                    onChange={e => setCompanyForm({ ...companyForm, name: e.target.value })}
+                    className="text-xs font-semibold"
+                  />
                 </div>
               </div>
-              <DialogFooter className="pt-4 border-t border-border/30 gap-2 flex sm:justify-end">
-                <Button type="button" variant="outline" size="sm" onClick={() => setCompanyModalOpen(false)} className="text-xs font-bold rounded-xl h-9">Cancel</Button>
-                <Button type="submit" size="sm" className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl h-9 px-5">Save Entity</Button>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-[#758196]">
+                    NPWP
+                  </label>
+                  <Input
+                    placeholder="Nomor NPWP"
+                    value={(companyForm as any).npwp || ''}
+                    onChange={e => setCompanyForm({ ...companyForm, npwp: e.target.value } as any)}
+                    className="text-xs font-mono"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-[#758196]">
+                    KOTA / DOMISILI
+                  </label>
+                  <Input
+                    placeholder="cth. Jakarta"
+                    value={(companyForm as any).city || ''}
+                    onChange={e => setCompanyForm({ ...companyForm, city: e.target.value } as any)}
+                    className="text-xs"
+                  />
+                </div>
+              </div>
+
+              <DialogFooter className="pt-4 border-t border-[#e6e9f0] gap-2 flex sm:justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCompanyModalOpen(false)}
+                  className="text-xs font-semibold"
+                >
+                  Batal
+                </Button>
+                <Button
+                  type="submit"
+                  size="sm"
+                  className="bg-[#0a2540] hover:bg-[#16375c] text-white text-xs font-bold px-4"
+                >
+                  {editingCompany ? 'Simpan Perubahan' : 'Simpan Entitas'}
+                </Button>
               </DialogFooter>
             </form>
           </DialogContent>
@@ -1285,18 +2120,18 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
     return (
       <div className="space-y-6 animate-in fade-in duration-500 pb-12 font-sans">
         {feedbackBanner}
-        <PageHeader title="Departments" description="Manage organizational departments and divisions">
-          <Button onClick={() => openDeptModal()} size="sm" className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md">
-            <Plus className="h-4 w-4 mr-1.5" /> Add Department
+        <PageHeader title="Departemen & Divisi" description="Kelola struktur departemen organisasi dan unit kerja">
+          <Button onClick={() => openDeptModal()} size="sm" className="bg-[#0a2540] hover:bg-[#16375c] text-white font-bold text-xs shadow-xs rounded-xl h-9 px-4">
+            <Plus className="h-4 w-4 mr-1.5" /> Tambah Departemen
           </Button>
         </PageHeader>
 
-        <div className="bg-card border border-border/40 rounded-2xl overflow-hidden shadow-sm">
+        <div className="bg-card border border-[#e6e9f0] rounded-2xl overflow-hidden shadow-xs">
           <Table>
-            <TableHeader className="bg-muted/30">
+            <TableHeader className="bg-[#fafbfc]">
               <TableRow>
-                {['Dept Code', 'Department Name', 'Members', 'Actions'].map(h => (
-                  <TableHead key={h} className="text-[10px] font-black uppercase tracking-widest">{h}</TableHead>
+                {['Kode Departemen', 'Nama Departemen', 'Jumlah Anggota', 'Aksi'].map(h => (
+                  <TableHead key={h} className="text-[11px] font-bold uppercase tracking-wider text-[#758196]">{h}</TableHead>
                 ))}
               </TableRow>
             </TableHeader>
@@ -1389,20 +2224,20 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-12 font-sans">
       {feedbackBanner}
-      <PageHeader title="System Settings" description="Global configuration, notification preferences, and maintenance" />
+      <PageHeader title="Pengaturan Sistem" description="Konfigurasi global, preferensi notifikasi email, dan alur persetujuan berkas legal" />
 
       <div className="space-y-6">
         {/* General Info */}
-        <div className="bg-card border border-border/40 rounded-2xl p-6 shadow-sm space-y-4">
-          <h3 className="text-sm font-extrabold text-foreground flex items-center gap-2"><Settings size={18} className="text-indigo-600" /> General Information</h3>
+        <div className="bg-card border border-[#e6e9f0] rounded-2xl p-6 shadow-xs space-y-4">
+          <h3 className="text-sm font-bold text-[#0a2540] flex items-center gap-2"><Settings size={18} className="text-[#0a2540]" /> Informasi Umum</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="text-[11px] font-bold text-foreground mb-1 block">Application Name</label>
-              <Input defaultValue="CSL-LINK" className="h-10 text-sm bg-muted/30 font-bold" />
+              <label className="text-[11px] font-bold text-[#758196] uppercase tracking-wider mb-1 block">Nama Aplikasi</label>
+              <Input defaultValue="CSL-LINK" className="h-10 text-sm bg-[#fafbfc] border-[#e6e9f0] font-bold text-[#0a2540]" />
             </div>
             <div>
-              <label className="text-[11px] font-bold text-foreground mb-1 block">Default Language</label>
-              <select className="w-full h-10 px-3 text-sm bg-muted/30 border border-border/30 rounded-xl font-semibold">
+              <label className="text-[11px] font-bold text-[#758196] uppercase tracking-wider mb-1 block">Bahasa Default</label>
+              <select className="w-full h-10 px-3 text-sm bg-[#fafbfc] border border-[#e6e9f0] rounded-xl font-semibold text-[#16233a]">
                 <option>Bahasa Indonesia</option>
                 <option>English</option>
               </select>
@@ -1410,10 +2245,10 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
           </div>
         </div>
 
-        {/* Notification Settings — embedded */}
-        <div className="bg-card border border-border/40 rounded-2xl p-6 shadow-sm space-y-4">
-          <h3 className="text-sm font-extrabold text-foreground flex items-center gap-2"><Bell size={18} className="text-indigo-600" /> Notification Settings</h3>
-          <p className="text-xs text-muted-foreground">Configure email alerts and system notification preferences.</p>
+        {/* Notification Settings */}
+        <div className="bg-card border border-[#e6e9f0] rounded-2xl p-6 shadow-xs space-y-4">
+          <h3 className="text-sm font-bold text-[#0a2540] flex items-center gap-2"><Bell size={18} className="text-[#0a2540]" /> Pengaturan Notifikasi Global</h3>
+          <p className="text-xs text-[#758196]">Konfigurasi preferensi pengiriman email pemberitahuan sistem kepada seluruh pengguna.</p>
           <div className="space-y-1">
             {[
               { label: 'Email notifikasi saat request baru masuk', defaultOn: true },
@@ -1423,14 +2258,14 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
               { label: 'Notifikasi in-app untuk tugas urgent', defaultOn: false },
               { label: 'Laporan ringkasan aktivitas mingguan', defaultOn: false },
             ].map((item, idx) => (
-              <div key={idx} className="flex items-center justify-between py-3 border-b border-border/20 last:border-0">
+              <div key={idx} className="flex items-center justify-between py-3 border-b border-[#e6e9f0]/60 last:border-0">
                 <div className="flex items-center gap-3">
-                  <Bell size={14} className="text-indigo-600 shrink-0" />
-                  <span className="text-sm font-semibold text-foreground">{item.label}</span>
+                  <Bell size={14} className="text-[#0a2540] shrink-0" />
+                  <span className="text-sm font-semibold text-[#16233a]">{item.label}</span>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input type="checkbox" defaultChecked={item.defaultOn} className="sr-only peer" />
-                  <div className="w-9 h-5 bg-muted rounded-full peer peer-checked:bg-indigo-600 transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full" />
+                  <div className="w-9 h-5 bg-[#eef0f4] rounded-full peer peer-checked:bg-[#0a2540] transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full" />
                 </label>
               </div>
             ))}
@@ -1438,105 +2273,141 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
         </div>
 
         {/* Approval Routing & Approvers Configuration */}
-        <div className="bg-card border border-border/40 rounded-2xl p-6 shadow-sm space-y-6">
-          <div className="flex items-center gap-2 text-indigo-600">
+        <div className="bg-card border border-[#e6e9f0] rounded-2xl p-6 shadow-xs space-y-6">
+          <div className="flex items-center gap-2 text-[#0a2540]">
             <ShieldCheck size={20} />
-            <h3 className="text-base font-bold text-foreground">Designated Single Approver Configuration</h3>
+            <h3 className="text-base font-bold text-[#0a2540]">Konfigurasi Approver Tunggal &amp; Cadangan (Workflow Approvals)</h3>
           </div>
-          <p className="text-xs text-muted-foreground">
-            Pilih <strong>1 orang Approver utama</strong> untuk masing-masing modul. Notifikasi email persetujuan hanya akan dikirimkan kepada 1 approver yang dipilih. Pengaturan ini akan tersimpan global di Supabase database.
+          <p className="text-xs text-[#758196]">
+            Tentukan <strong>Approver Utama</strong> dan <strong>Approver Cadangan</strong> untuk setiap modul agar operasional tidak terhenti saat PIC utama berhalangan (Rekomendasi audit 27 Okt 2026).
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
             {/* Expenses Approval Approver */}
-            <div className="border border-border/40 rounded-xl p-4 bg-muted/10 space-y-3">
+            <div className="border border-[#e6e9f0] rounded-xl p-4 bg-[#fafbfc] space-y-3">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-emerald-600">
+                <div className="flex items-center gap-2 text-emerald-700">
                   <Wallet size={16} />
-                  <h4 className="text-xs font-bold text-foreground">Expenses Approval Approver</h4>
+                  <h4 className="text-xs font-bold text-[#0a2540]">Persetujuan Pengeluaran (Expenses)</h4>
                 </div>
-                <span className="text-[10px] font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">
-                  1 Approver Selected
+                <span className="text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-full">
+                  Approver Terpilih
                 </span>
               </div>
-              <p className="text-[11px] text-muted-foreground">
-                Pilih 1 orang yang menerima email & menyetujui Expenses Approval (Biaya Operasional).
+              <p className="text-[11px] text-[#758196]">
+                Approver utama untuk persetujuan biaya operasional lokal.
               </p>
-              <div className="space-y-2 max-h-52 overflow-y-auto pt-1">
+              <div className="space-y-2 max-h-48 overflow-y-auto pt-1">
                 {users.length === 0 ? (
-                  <p className="text-xs text-muted-foreground italic py-2">Loading users...</p>
+                  <p className="text-xs text-[#758196] italic py-2">Memuat pengguna...</p>
                 ) : (
                   users.filter(u => u.role?.toLowerCase().includes('admin')).map(u => {
                     const isSelected = expenseApprover === u.email;
                     return (
                       <label key={`exp-${u.id}`} className={`flex items-center justify-between p-2.5 rounded-xl border cursor-pointer transition-all ${
-                        isSelected ? 'bg-emerald-50/70 border-emerald-300 dark:bg-emerald-950/30 dark:border-emerald-800' : 'bg-card border-border/30 hover:border-indigo-300'
+                        isSelected ? 'bg-emerald-50/70 border-emerald-300 dark:bg-emerald-950/30' : 'bg-card border-[#e6e9f0] hover:border-[#0a2540]/30'
                       }`}>
                         <div>
-                          <p className="text-xs font-bold text-foreground">{u.name}</p>
-                          <p className="text-[10px] text-muted-foreground">{u.email} • <span className="font-semibold text-indigo-600">{u.role}</span></p>
+                          <p className="text-xs font-bold text-[#0a2540]">{u.name}</p>
+                          <p className="text-[10px] text-[#758196]">{u.email} • <span className="font-semibold text-[#0a2540]">{u.role}</span></p>
                         </div>
                         <input
                           type="radio"
                           name="expense_approver_radio"
                           checked={isSelected}
                           onChange={() => setExpenseApprover(u.email)}
-                          className="h-4 w-4 text-emerald-600 border-gray-300 focus:ring-emerald-500 cursor-pointer"
+                          className="h-4 w-4 text-[#0a2540] border-gray-300 focus:ring-[#0a2540] cursor-pointer"
                         />
                       </label>
                     );
                   })
                 )}
               </div>
+
+              {/* Backup Approver */}
+              <div className="pt-3 border-t border-[#e6e9f0]">
+                <label className="text-[11px] font-bold text-[#758196] uppercase tracking-wider block mb-1.5">
+                  Approver Cadangan (Backup Approver)
+                </label>
+                <select
+                  value={expenseBackupApprover}
+                  onChange={e => setExpenseBackupApprover(e.target.value)}
+                  className="w-full h-9 px-3 text-xs bg-white border border-[#e6e9f0] rounded-lg font-semibold text-[#16233a]"
+                >
+                  {users.filter(u => u.role?.toLowerCase().includes('admin')).map(u => (
+                    <option key={`exp-bk-${u.id}`} value={u.email}>
+                      {u.name} ({u.email})
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             {/* Offshore Invoice Payment Approver */}
-            <div className="border border-border/40 rounded-xl p-4 bg-muted/10 space-y-3">
+            <div className="border border-[#e6e9f0] rounded-xl p-4 bg-[#fafbfc] space-y-3">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-blue-600">
+                <div className="flex items-center gap-2 text-blue-700">
                   <Briefcase size={16} />
-                  <h4 className="text-xs font-bold text-foreground">Offshore Invoice Approver</h4>
+                  <h4 className="text-xs font-bold text-[#0a2540]">Persetujuan Invoice Luar Negeri (Offshore)</h4>
                 </div>
-                <span className="text-[10px] font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
-                  1 Approver Selected
+                <span className="text-[10px] font-bold bg-blue-50 text-blue-800 border border-blue-200 px-2 py-0.5 rounded-full">
+                  Approver Terpilih
                 </span>
               </div>
-              <p className="text-[11px] text-muted-foreground">
-                Pilih 1 orang yang menerima email & menyetujui Offshore Invoice Payment (Luar Negeri).
+              <p className="text-[11px] text-[#758196]">
+                Approver utama untuk persetujuan invoice pembayaran valas / offshore.
               </p>
-              <div className="space-y-2 max-h-52 overflow-y-auto pt-1">
+              <div className="space-y-2 max-h-48 overflow-y-auto pt-1">
                 {users.length === 0 ? (
-                  <p className="text-xs text-muted-foreground italic py-2">Loading users...</p>
+                  <p className="text-xs text-[#758196] italic py-2">Memuat pengguna...</p>
                 ) : (
                   users.filter(u => u.role?.toLowerCase().includes('admin')).map(u => {
                     const isSelected = offshoreApprover === u.email;
                     return (
                       <label key={`off-${u.id}`} className={`flex items-center justify-between p-2.5 rounded-xl border cursor-pointer transition-all ${
-                        isSelected ? 'bg-blue-50/70 border-blue-300 dark:bg-blue-950/30 dark:border-blue-800' : 'bg-card border-border/30 hover:border-indigo-300'
+                        isSelected ? 'bg-blue-50/70 border-blue-300 dark:bg-blue-950/30' : 'bg-card border-[#e6e9f0] hover:border-[#0a2540]/30'
                       }`}>
                         <div>
-                          <p className="text-xs font-bold text-foreground">{u.name}</p>
-                          <p className="text-[10px] text-muted-foreground">{u.email} • <span className="font-semibold text-indigo-600">{u.role}</span></p>
+                          <p className="text-xs font-bold text-[#0a2540]">{u.name}</p>
+                          <p className="text-[10px] text-[#758196]">{u.email} • <span className="font-semibold text-[#0a2540]">{u.role}</span></p>
                         </div>
                         <input
                           type="radio"
                           name="offshore_approver_radio"
                           checked={isSelected}
                           onChange={() => setOffshoreApprover(u.email)}
-                          className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500 cursor-pointer"
+                          className="h-4 w-4 text-[#0a2540] border-gray-300 focus:ring-[#0a2540] cursor-pointer"
                         />
                       </label>
                     );
                   })
                 )}
               </div>
+
+              {/* Backup Approver */}
+              <div className="pt-3 border-t border-[#e6e9f0]">
+                <label className="text-[11px] font-bold text-[#758196] uppercase tracking-wider block mb-1.5">
+                  Approver Cadangan (Backup Approver)
+                </label>
+                <select
+                  value={offshoreBackupApprover}
+                  onChange={e => setOffshoreBackupApprover(e.target.value)}
+                  className="w-full h-9 px-3 text-xs bg-white border border-[#e6e9f0] rounded-lg font-semibold text-[#16233a]"
+                >
+                  {users.filter(u => u.role?.toLowerCase().includes('admin')).map(u => (
+                    <option key={`off-bk-${u.id}`} value={u.email}>
+                      {u.name} ({u.email})
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
         </div>
 
         <div className="flex justify-end pt-2">
-          <Button onClick={handleSaveApprovers} size="sm" className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl h-9 px-6 shadow-md">
-            <Save size={14} className="mr-1.5" /> Simpan Pengaturan
+          <Button onClick={handleSaveApprovers} size="sm" className="bg-[#0a2540] hover:bg-[#16375c] text-white text-xs font-bold rounded-xl h-9 px-6 shadow-xs">
+            <Save size={14} className="mr-1.5" /> Simpan Pengaturan Sistem
           </Button>
         </div>
       </div>

@@ -425,11 +425,11 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
 
   const getPageMeta = () => {
     switch (activeCategory) {
-      case 'lawyer': return { title: 'Lawyers & Notaries Directory', desc: 'Retainer legal counsel, litigation attorneys, PPAT, and notary offices', icon: Scale };
-      case 'vendor': return { title: 'Legal Vendors & Sworn Translators', desc: 'Certified legal translation agencies, document legalization, and IP attorneys', icon: Store };
-      case 'government': return { title: 'Government Agencies & Ministries', desc: 'Kemenkumham, OSS BKPM, BPN, Tax Office, and provincial authority contacts', icon: Landmark };
-      case 'other': return { title: 'Other External Contacts', desc: 'External advisors, consultants, and emergency legal escalations', icon: User };
-      default: return { title: 'All Phone Directory Contacts', desc: 'Centralized phone directory for legal counsel, partners, vendors, and statutory agencies', icon: Phone };
+      case 'lawyer': return { title: 'Direktori Pengacara & Notaris', desc: 'Konsultan hukum retainer, advokat litigasi, PPAT, dan kantor notaris rekanan', icon: Scale };
+      case 'vendor': return { title: 'Vendor Hukum & Penerjemah Tersumpah', desc: 'Lembaga penerjemah tersumpah, legalisasi dokumen, dan konsultan HKI', icon: Store };
+      case 'government': return { title: 'Instansi Pemerintah & Kementerian', desc: 'Kemenkumham, OSS BKPM, BPN, Kantor Pajak, dan dinas perizinan daerah', icon: Landmark };
+      case 'other': return { title: 'Kontak Eksternal Lainnya', desc: 'Penasihat eksternal, konsultan independen, dan kontak darurat legal', icon: User };
+      default: return { title: 'Direktori Kontak CSL-LINK', desc: 'Direktori nomor telepon terpadu untuk mitra hukum, notaris, instansi, dan vendor', icon: Phone };
     }
   };
 
@@ -485,9 +485,9 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
           <Button 
             onClick={openAddModal} 
             size="sm" 
-            className="h-9"
+            className="h-9 bg-[#0a2540] hover:bg-[#16375c] text-white font-bold text-xs shadow-xs"
           >
-            <Plus className="h-4 w-4 mr-2" /> Add Contact
+            <Plus className="h-4 w-4 mr-2" /> Tambah Kontak
           </Button>
         </div>
       </PageHeader>
@@ -508,28 +508,28 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
           <div className="bg-card border border-border/40 p-5 rounded-xl shadow-sm flex flex-col justify-between hover:border-border/80 transition-colors">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">Total Directory</span>
+              <span className="text-sm font-medium text-muted-foreground">Total Kontak</span>
               <Phone size={16} className="text-muted-foreground" />
             </div>
             <p className="text-2xl font-bold font-mono text-foreground mt-2">{contacts.length}</p>
           </div>
           <div className="bg-card border border-border/40 p-5 rounded-xl shadow-sm flex flex-col justify-between hover:border-border/80 transition-colors">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">Lawyers & Notaries</span>
+              <span className="text-sm font-medium text-muted-foreground">Pengacara &amp; Notaris</span>
               <Scale size={16} className="text-muted-foreground" />
             </div>
             <p className="text-2xl font-bold font-mono text-foreground mt-2">{contacts.filter(c => c.category === 'Lawyer').length}</p>
           </div>
           <div className="bg-card border border-border/40 p-5 rounded-xl shadow-sm flex flex-col justify-between hover:border-border/80 transition-colors">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">Govt Agencies</span>
+              <span className="text-sm font-medium text-muted-foreground">Instansi Pemerintah</span>
               <Landmark size={16} className="text-muted-foreground" />
             </div>
             <p className="text-2xl font-bold font-mono text-foreground mt-2">{contacts.filter(c => c.category === 'Government').length}</p>
           </div>
           <div className="bg-card border border-border/40 p-5 rounded-xl shadow-sm flex flex-col justify-between hover:border-border/80 transition-colors">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">Legal Vendors</span>
+              <span className="text-sm font-medium text-muted-foreground">Vendor Legal</span>
               <Store size={16} className="text-muted-foreground" />
             </div>
             <p className="text-2xl font-bold font-mono text-foreground mt-2">{contacts.filter(c => c.category === 'Vendor').length}</p>
@@ -668,12 +668,12 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent border-b border-border/40">
-                <TableHead className="text-xs font-semibold text-foreground/80 pl-6">Contact Details</TableHead>
-                <TableHead className="text-xs font-semibold text-foreground/80">Category</TableHead>
-                <TableHead className="text-xs font-semibold text-foreground/80">Phone</TableHead>
+                <TableHead className="text-xs font-semibold text-foreground/80 pl-6">Detail Kontak</TableHead>
+                <TableHead className="text-xs font-semibold text-foreground/80">Kategori</TableHead>
+                <TableHead className="text-xs font-semibold text-foreground/80">Telepon</TableHead>
                 <TableHead className="text-xs font-semibold text-foreground/80">Email</TableHead>
-                <TableHead className="text-xs font-semibold text-foreground/80">City</TableHead>
-                <TableHead className="text-xs font-semibold text-foreground/80 text-right pr-6">Actions</TableHead>
+                <TableHead className="text-xs font-semibold text-foreground/80">Kota</TableHead>
+                <TableHead className="text-xs font-semibold text-foreground/80 text-right pr-6">Aksi</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

@@ -5,10 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { supabase } from '@/lib/supabaseClient';
 import { CSLBudgetExpensesReport } from './CSLBudgetExpensesReport';
+import { getUnifiedStatusBadge } from '../utils/cslStatusHelper';
 import { 
   Download, 
-  Filter, 
-  TrendingUp
+  Filter
 } from 'lucide-react';
 
 interface CSLReportsManagerProps {
@@ -87,79 +87,77 @@ export const CSLReportsManager: React.FC<CSLReportsManagerProps> = ({ currentUse
       acc[dept] = (acc[dept] || 0) + 1;
       return acc;
     }, {});
-    const topDept = Object.entries(deptStats).sort((a, b) => (b[1] as number) - (a[1] as number))[0] || ['-', 0];
+    const topDept: [string, number] = (Object.entries(deptStats) as [string, number][]).sort((a, b) => b[1] - a[1])[0] || ['-', 0];
 
     return (
       <div className="space-y-6 animate-in fade-in duration-500 pb-12 font-sans">
-        <PageHeader title="Request Volume & SLA Report" description="Comprehensive analysis of incoming legal and corporate secretary requests">
+        <PageHeader title="Laporan Permintaan & Kepatuhan SLA" description="Analisis menyeluruh atas volume dan kepatuhan waktu penanganan berkas legal">
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" className="text-xs font-bold rounded-xl h-9">
-              <Filter size={13} className="mr-1.5" /> Filter Period
+              <Filter size={13} className="mr-1.5" /> Filter Periode
             </Button>
-            <Button size="sm" className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl h-9 px-4 shadow-md">
-              <Download size={13} className="mr-1.5" /> Export PDF
+            <Button size="sm" className="bg-[#0a2540] hover:bg-[#16375c] text-white font-bold text-xs rounded-xl h-9 px-4 shadow-xs">
+              <Download size={13} className="mr-1.5" /> Ekspor PDF
             </Button>
           </div>
         </PageHeader>
 
+        {/* Top Metric Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-5">
           <div className="bg-card border border-border/40 p-5 rounded-2xl shadow-sm">
-            <span className="text-[10px] font-black uppercase text-muted-foreground">Total Requests</span>
+            <span className="text-[10px] font-black uppercase text-muted-foreground">Total Permintaan</span>
             <p className="text-3xl font-black text-foreground mt-1">{totalRequests}</p>
-            <span className="text-xs text-emerald-600 font-semibold mt-1 inline-block"><TrendingUp size={12} className="inline mr-1"/> Live Data</span>
           </div>
           <div className="bg-card border border-border/40 p-5 rounded-2xl shadow-sm">
-            <span className="text-[10px] font-black uppercase text-muted-foreground">Completed</span>
+            <span className="text-[10px] font-black uppercase text-muted-foreground">Selesai (Completed)</span>
             <p className="text-3xl font-black text-emerald-600 mt-1">{completedRequests}</p>
-            <span className="text-xs text-muted-foreground font-semibold mt-1 inline-block">{(totalRequests ? (completedRequests/totalRequests*100).toFixed(1) : 0)}% completion rate</span>
           </div>
           <div className="bg-card border border-border/40 p-5 rounded-2xl shadow-sm">
-            <span className="text-[10px] font-black uppercase text-muted-foreground">Active / Processing</span>
-            <p className="text-3xl font-black text-indigo-600 mt-1">{activeRequests}</p>
+            <span className="text-[10px] font-black uppercase text-muted-foreground">Aktif / Diproses</span>
+            <p className="text-3xl font-black text-blue-600 mt-1">{activeRequests}</p>
           </div>
           <div className="bg-card border border-border/40 p-5 rounded-2xl shadow-sm">
-            <span className="text-[10px] font-black uppercase text-muted-foreground">Top Requesting Dept</span>
-            <p className="text-3xl font-black text-foreground mt-1">{topDept[0]}</p>
-            <span className="text-xs text-indigo-600 font-semibold mt-1 inline-block">{String(topDept[1])} requests</span>
+            <span className="text-[10px] font-black uppercase text-muted-foreground">Departemen Terbanyak</span>
+            <p className="text-lg font-bold text-foreground truncate mt-2">{topDept[0]}</p>
+            <span className="text-[11px] text-muted-foreground font-semibold">{topDept[1]} Permintaan</span>
           </div>
         </div>
 
+        {/* Requests Table */}
         <div className="bg-card border border-border/40 rounded-2xl overflow-hidden shadow-sm">
           <Table>
             <TableHeader className="bg-muted/30">
               <TableRow>
-                <TableHead className="text-[10px] font-black uppercase tracking-widest w-[120px]">Request No</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-widest">Description</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-widest">Department</TableHead>
+                <TableHead className="text-[10px] font-black uppercase tracking-widest w-[140px]">No. Permintaan</TableHead>
+                <TableHead className="text-[10px] font-black uppercase tracking-widest">Deskripsi</TableHead>
+                <TableHead className="text-[10px] font-black uppercase tracking-widest">Departemen</TableHead>
                 <TableHead className="text-[10px] font-black uppercase tracking-widest">Status</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-widest">Date</TableHead>
+                <TableHead className="text-[10px] font-black uppercase tracking-widest">Tanggal</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
-                <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Loading...</TableCell></TableRow>
+                <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Memuat data laporan...</TableCell></TableRow>
               ) : requests.length === 0 ? (
-                <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Tidak ada data request.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Tidak ada data permintaan.</TableCell></TableRow>
               ) : (
-                requests.slice(0, 15).map((req, idx) => (
-                  <TableRow key={idx} className="hover:bg-muted/40">
-                    <TableCell className="font-bold text-xs text-indigo-600">{req.request_number}</TableCell>
-                    <TableCell className="text-xs font-medium text-foreground max-w-[300px] truncate">{req.description}</TableCell>
-                    <TableCell className="font-mono text-xs text-muted-foreground">{req.department || req.company}</TableCell>
-                    <TableCell>
-                      <span className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-md border ${
-                        ['COMPLETED', 'CLOSED'].includes(req.status)
-                          ? 'bg-slate-200 text-slate-700 border-slate-300 dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600'
-                          : ['PROCESSING', 'RESPONDED'].includes(req.status)
-                          ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-700/40'
-                          : 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-white/5 dark:text-slate-300 dark:border-white/10'
-                      }`}>
-                        {req.status}
-                      </span>
-                    </TableCell>
-                    <TableCell className="font-mono text-xs text-muted-foreground">{new Date(req.created_at).toLocaleDateString('id-ID')}</TableCell>
-                  </TableRow>
-                ))
+                requests.slice(0, 15).map((req, idx) => {
+                  const badge = getUnifiedStatusBadge(req.status);
+                  return (
+                    <TableRow key={idx} className="hover:bg-muted/40">
+                      <TableCell className="font-bold text-xs text-[#0a2540] dark:text-blue-400">{req.request_number}</TableCell>
+                      <TableCell className="text-xs font-medium text-foreground max-w-[300px] truncate">{req.description}</TableCell>
+                      <TableCell className="font-mono text-xs text-muted-foreground">{req.department || req.company}</TableCell>
+                      <TableCell>
+                        <span className={`inline-flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${badge.className}`}>
+                          <span className={`size-1.5 rounded-full ${badge.dotColor}`} />
+                          {badge.label}
+                        </span>
+                      </TableCell>
+                      <TableCell className="font-mono text-xs text-muted-foreground">{new Date(req.created_at).toLocaleDateString('id-ID')}</TableCell>
+                    </TableRow>
+                  );
+                })
               )}
             </TableBody>
           </Table>
@@ -184,44 +182,44 @@ export const CSLReportsManager: React.FC<CSLReportsManagerProps> = ({ currentUse
 
     return (
       <div className="space-y-6 animate-in fade-in duration-500 pb-12 font-sans">
-        <PageHeader title="Task & Routine Activity Report" description="Tracking statutory tax filings, quarterly compliance audits, and OSS renewals">
+        <PageHeader title="Laporan & Pemantauan Tugas CSL" description="Distribusi dan status penyelesaian tugas rutin di seluruh kategori">
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" className="text-xs font-bold rounded-xl h-9">
-              <Filter size={13} className="mr-1.5" /> Filter Period
+              <Filter size={13} className="mr-1.5" /> Filter Periode
             </Button>
-            <Button size="sm" className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl h-9 px-4 shadow-md">
-              <Download size={13} className="mr-1.5" /> Export PDF
+            <Button size="sm" className="bg-[#0a2540] hover:bg-[#16375c] text-white font-bold text-xs rounded-xl h-9 px-4 shadow-xs">
+              <Download size={13} className="mr-1.5" /> Ekspor PDF
             </Button>
           </div>
         </PageHeader>
 
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-5">
           <div className="bg-card border border-border/40 p-5 rounded-2xl shadow-sm">
-            <span className="text-[10px] font-black uppercase text-muted-foreground">Total Tasks</span>
+            <span className="text-[10px] font-black uppercase text-muted-foreground">Total Tugas</span>
             <p className="text-3xl font-black text-foreground mt-1">{totalTasks}</p>
           </div>
           <div className="bg-card border border-border/40 p-5 rounded-2xl shadow-sm">
-            <span className="text-[10px] font-black uppercase text-muted-foreground">Completed</span>
+            <span className="text-[10px] font-black uppercase text-muted-foreground">Selesai (Completed)</span>
             <p className="text-3xl font-black text-emerald-600 mt-1">{completedTasks}</p>
           </div>
           <div className="bg-card border border-border/40 p-5 rounded-2xl shadow-sm">
-            <span className="text-[10px] font-black uppercase text-muted-foreground">In Progress</span>
-            <p className="text-3xl font-black text-indigo-600 mt-1">{inProgressTasks}</p>
+            <span className="text-[10px] font-black uppercase text-muted-foreground">Dalam Proses</span>
+            <p className="text-3xl font-black text-blue-600 mt-1">{inProgressTasks}</p>
           </div>
           <div className="bg-card border border-border/40 p-5 rounded-2xl shadow-sm">
-            <span className="text-[10px] font-black uppercase text-muted-foreground">Blocked / Issues</span>
-            <p className="text-3xl font-black text-red-600 mt-1">{blockedTasks}</p>
+            <span className="text-[10px] font-black uppercase text-muted-foreground">Terkendala (Blocked)</span>
+            <p className="text-3xl font-black text-rose-600 mt-1">{blockedTasks}</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-card border border-border/40 rounded-2xl p-5 shadow-sm">
-            <h3 className="text-sm font-bold mb-4">Task Categories</h3>
+            <h3 className="text-sm font-bold mb-4">Kategori Tugas</h3>
             <div className="space-y-3">
               {(Object.entries(catStats) as [string, number][]).map(([cat, count]) => (
                 <div key={cat} className="flex items-center justify-between">
                   <span className="text-xs font-medium text-muted-foreground">{cat}</span>
-                  <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400">{count}</span>
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200">{count}</span>
                 </div>
               ))}
               {Object.keys(catStats).length === 0 && (
@@ -234,28 +232,34 @@ export const CSLReportsManager: React.FC<CSLReportsManagerProps> = ({ currentUse
             <Table>
               <TableHeader className="bg-muted/30">
                 <TableRow>
-                  <TableHead className="text-[10px] font-black uppercase tracking-widest">Category</TableHead>
-                  <TableHead className="text-[10px] font-black uppercase tracking-widest">Task Name</TableHead>
-                  <TableHead className="text-[10px] font-black uppercase tracking-widest">Owner</TableHead>
+                  <TableHead className="text-[10px] font-black uppercase tracking-widest">Kategori</TableHead>
+                  <TableHead className="text-[10px] font-black uppercase tracking-widest">Nama Tugas / Perusahaan</TableHead>
+                  <TableHead className="text-[10px] font-black uppercase tracking-widest">Penanggung Jawab</TableHead>
                   <TableHead className="text-[10px] font-black uppercase tracking-widest">Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">Loading...</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">Memuat data tugas...</TableCell></TableRow>
                 ) : tasks.length === 0 ? (
-                  <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">Tidak ada data task.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">Tidak ada data tugas.</TableCell></TableRow>
                 ) : (
-                  tasks.slice(0, 10).map((t, idx) => (
-                    <TableRow key={idx} className="hover:bg-muted/40">
-                      <TableCell className="font-bold text-xs text-indigo-600">{t.category}</TableCell>
-                      <TableCell className="text-xs font-medium text-foreground">{t.task_name || t.company || '-'}</TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{t.owner || '-'}</TableCell>
-                      <TableCell>
-                        <span className="text-[9px] font-black uppercase text-muted-foreground bg-muted px-2 py-0.5 rounded-md">{t.status || 'Pending'}</span>
-                      </TableCell>
-                    </TableRow>
-                  ))
+                  tasks.slice(0, 10).map((t, idx) => {
+                    const badge = getUnifiedStatusBadge(t.status);
+                    return (
+                      <TableRow key={idx} className="hover:bg-muted/40">
+                        <TableCell className="font-bold text-xs text-[#0a2540] dark:text-blue-400">{t.category}</TableCell>
+                        <TableCell className="text-xs font-medium text-foreground">{t.task_name || t.company || '-'}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{t.owner || '-'}</TableCell>
+                        <TableCell>
+                          <span className={`inline-flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${badge.className}`}>
+                            <span className={`size-1.5 rounded-full ${badge.dotColor}`} />
+                            {badge.label}
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
                 )}
               </TableBody>
             </Table>

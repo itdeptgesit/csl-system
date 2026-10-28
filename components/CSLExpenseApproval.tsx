@@ -25,13 +25,22 @@ import {
   Search, Trash2, Receipt, DollarSign, MoreVertical, Eye,
   Building2, Landmark, FileText, Loader2, Globe, User, AlertCircle, Paperclip,
   Upload, Download, CloudUpload, X as XIcon, Pencil, ShieldCheck,
-  UserCheck, CalendarClock, Calendar, Layers, CreditCard, ExternalLink
+  UserCheck, CalendarClock, Calendar, Layers, CreditCard, ExternalLink,
+  BarChart3, ArrowRight, AlertTriangle
 } from 'lucide-react';
 import { getCurrencyFlag } from '@/services/cslBudgetReportService';
+import { CSLBudgetExpensesReport } from './CSLBudgetExpensesReport';
 import { sendEmailNotification } from '../utils/cslNotificationUtils';
 import { generateExpenseApprovalPdf } from '../utils/cslExpensePdf';
 import { generateOffshoreInvoicePdf } from '../utils/cslOffshoreInvoicePdf';
 import { fetchLiveExchangeRate } from '../utils/cslExchangeRateUtils';
+import {
+  getUnifiedStatusBadge,
+  formatCslDate,
+  formatCslCurrency,
+  formatCslNumber,
+  formatCslRange
+} from '../utils/cslStatusHelper';
 
 export interface UnifiedExpenseApproval {
   id: string;
@@ -336,7 +345,12 @@ const ProgressOverlay: React.FC<ProgressOverlayProps> = ({ open, title, subtitle
 };
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const CSLExpenseApproval: React.FC<{ currentUser: UserAccount | null }> = ({ currentUser }) => {
+export interface CSLExpenseApprovalProps {
+  currentUser: UserAccount | null;
+  initialMainTab?: 'transaksi' | 'analisis';
+}
+
+export const CSLExpenseApproval: React.FC<CSLExpenseApprovalProps> = ({ currentUser, initialMainTab = 'transaksi' }) => {
   const navigate = useNavigate();
   const [expenses, setExpenses] = useState<UnifiedExpenseApproval[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -361,6 +375,13 @@ export const CSLExpenseApproval: React.FC<{ currentUser: UserAccount | null }> =
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [activeMainTab, setActiveMainTab] = useState<'analisis' | 'transaksi'>(initialMainTab);
+
+  useEffect(() => {
+    if (initialMainTab) {
+      setActiveMainTab(initialMainTab);
+    }
+  }, [initialMainTab]);
   const [activeTab, setActiveTab] = useState('ALL');
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 10;
@@ -1027,6 +1048,29 @@ export const CSLExpenseApproval: React.FC<{ currentUser: UserAccount | null }> =
     return map;
   }, [expenses]);
 
+  // Category breakdown for Progress per Group in Analisis view
+  const categoryBreakdown = useMemo(() => {
+    const map: Record<string, { count: number; total: number }> = {
+      Notaris: { count: 0, total: 0 },
+      Lawfirm: { count: 0, total: 0 },
+      Konsultan: { count: 0, total: 0 },
+      Other: { count: 0, total: 0 },
+    };
+    expenses.forEach((e) => {
+      const cat = (e.category || 'Other') as string;
+      const key = EXPENSE_CATEGORIES.includes(cat as any) ? cat : 'Other';
+      if (!map[key]) map[key] = { count: 0, total: 0 };
+      map[key].count += 1;
+      map[key].total += Number(e.reporting_amount) || 0;
+    });
+    return map;
+  }, [expenses]);
+
+  // Pending items for Tindak Lanjut antrean kerja
+  const pendingApprovals = useMemo(() => {
+    return expenses.filter(e => e.status === 'PENDING_APPROVAL').slice(0, 5);
+  }, [expenses]);
+
   const tabOptions = [
     { key: 'ALL', label: 'All' },
     { key: 'Company', label: 'Company' },
@@ -1040,12 +1084,18 @@ export const CSLExpenseApproval: React.FC<{ currentUser: UserAccount | null }> =
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-12 font-sans">
 
-      {/* ── Page Header ── */}
-      <PageHeader
-        title="Budget & Expenses"
-        description="Unified management of company & individual operational expenses and disbursements"
-      >
-        <div className="flex items-center gap-2">
+      {/* ── Page Title & Actions Bar (design.md §13.1) ── */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-1">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#0a2540] dark:text-white">
+            Budget &amp; Expenses
+          </h1>
+          <div className="text-[11px] font-bold tracking-widest text-[#c9a227] dark:text-amber-400 uppercase mt-1">
+            Anggaran Operasional &amp; Pengeluaran Legal
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
           {selectedIds.length > 0 && (
             <Button
               variant="outline"
@@ -1057,13 +1107,13 @@ export const CSLExpenseApproval: React.FC<{ currentUser: UserAccount | null }> =
                 const total = selectedItems.length;
 
                 const steps: ProgressStep[] = [
-                  { label: `Preparing ${total} voucher${total > 1 ? 's' : ''}`, status: 'pending' },
-                  individualItems.length > 0 ? { label: `Generating ${individualItems.length} Individual voucher${individualItems.length > 1 ? 's' : ''}`, status: 'pending' } : null,
-                  companyItems.length > 0 ? { label: `Generating ${companyItems.length} Company voucher${companyItems.length > 1 ? 's' : ''}`, status: 'pending' } : null,
-                  { label: 'Opening print dialog', status: 'pending' },
+                  { label: `Menyiapkan ${total} berkas voucher`, status: 'pending' },
+                  individualItems.length > 0 ? { label: `Membuat voucher Individu (${individualItems.length})`, status: 'pending' } : null,
+                  companyItems.length > 0 ? { label: `Membuat voucher Perusahaan (${companyItems.length})`, status: 'pending' } : null,
+                  { label: 'Membuka dialog cetak', status: 'pending' },
                 ].filter(Boolean) as ProgressStep[];
 
-                setExportProgress({ open: true, progress: 0, subtitle: `${total} expense request${total > 1 ? 's' : ''}`, steps });
+                setExportProgress({ open: true, progress: 0, subtitle: `${total} berkas pengeluaran`, steps });
 
                 const advance = (idx: number, prog: number) => {
                   setExportProgress(prev => ({
@@ -1094,22 +1144,23 @@ export const CSLExpenseApproval: React.FC<{ currentUser: UserAccount | null }> =
                 await sleep(600);
                 setExportProgress(p => ({ ...p, open: false }));
               }}
-              className="h-9 text-xs gap-1.5"
+              className="h-9 text-xs gap-1.5 font-semibold shadow-xs"
             >
-              <Printer className="h-3.5 w-3.5" /> Print {selectedIds.length} request{selectedIds.length > 1 ? 's' : ''}
+              <Printer className="h-3.5 w-3.5" /> Cetak {selectedIds.length} Voucher
             </Button>
           )}
+
           <Button
             variant="outline"
             size="sm"
-            onClick={() => navigate('/reports-budget')}
-            className="h-9 text-xs gap-1.5 font-bold"
+            onClick={fetchData}
+            title="Muat ulang data pengeluaran"
+            className="h-9 text-xs gap-1.5 font-semibold shadow-xs"
           >
-            <FileText className="h-3.5 w-3.5 text-indigo-500" /> Budget Report
+            <RefreshCcw className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+            <span>Muat Ulang</span>
           </Button>
-          <Button variant="ghost" size="sm" onClick={fetchData} className="h-9 text-xs gap-1.5">
-            <RefreshCcw className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`} /> Refresh
-          </Button>
+
           <Button
             size="sm"
             onClick={() => {
@@ -1118,85 +1169,145 @@ export const CSLExpenseApproval: React.FC<{ currentUser: UserAccount | null }> =
               setAttachmentFile(null);
               setIsFormOpen(true);
             }}
-            className="h-9 text-xs gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold shadow-md"
+            className="h-9 text-xs gap-1.5 bg-[#0a2540] hover:bg-[#16375c] text-white font-bold shadow-xs"
           >
-            <Plus className="h-3.5 w-3.5" /> Add Expense
+            <Plus className="h-3.5 w-3.5" />
+            <span>Tambah Pengeluaran</span>
           </Button>
         </div>
-      </PageHeader>
-
-      {/* ── KPI Stat Cards ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        <div className="bg-card border border-border/40 p-5 rounded-xl shadow-sm flex flex-col justify-between hover:border-border/80 transition-colors">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-muted-foreground">Total Requests</span>
-            <Receipt size={16} className="text-muted-foreground" />
-          </div>
-          <div className="mt-2">
-            <div className="flex items-baseline gap-2">
-              <p className="text-2xl font-bold font-mono text-foreground">{totalRequestsCount}</p>
-              <span className="text-xs text-muted-foreground">Requests</span>
-            </div>
-            <p className="text-xs font-semibold font-mono text-foreground mt-1 truncate">
-              {formatRp(totalReportingAmount)}
-            </p>
-            <p className="text-[11px] text-muted-foreground mt-0.5">Consolidated total (IDR)</p>
-          </div>
-        </div>
-
-        <div className="bg-card border border-border/40 p-5 rounded-xl shadow-sm flex flex-col justify-between hover:border-border/80 transition-colors">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-muted-foreground">Pending Approval</span>
-            <Clock size={16} className="text-amber-500" />
-          </div>
-          <div className="mt-2">
-            <div className="flex items-baseline gap-2">
-              <p className="text-2xl font-bold font-mono text-amber-600">{pendingCount}</p>
-              <span className="text-xs text-muted-foreground">Requests</span>
-            </div>
-            <p className="text-xs font-semibold font-mono text-amber-600 mt-1 truncate">
-              {formatRp(pendingReportingAmount)}
-            </p>
-            <p className="text-[11px] text-muted-foreground mt-0.5">Awaiting review</p>
-          </div>
-        </div>
-
-        <div className="bg-card border border-border/40 p-5 rounded-xl shadow-sm flex flex-col justify-between hover:border-border/80 transition-colors">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-muted-foreground">Approved / Disbursed</span>
-            <CheckCircle2 size={16} className="text-emerald-500" />
-          </div>
-          <div className="mt-2">
-            <div className="flex items-baseline gap-2">
-              <p className="text-2xl font-bold font-mono text-emerald-600">{approvedCount}</p>
-              <span className="text-xs text-muted-foreground">Requests</span>
-            </div>
-            <p className="text-xs font-semibold font-mono text-emerald-600 mt-1 truncate">
-              {formatRp(approvedReportingAmount)}
-            </p>
-            <p className="text-[11px] text-muted-foreground mt-0.5">Ready or paid out</p>
-          </div>
-        </div>
-
-        <div className="bg-card border border-border/40 p-5 rounded-xl shadow-sm flex flex-col justify-between hover:border-border/80 transition-colors">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-muted-foreground">Currency Exposure</span>
-            <Globe size={16} className="text-indigo-500" />
-          </div>
-          <div className="mt-1 space-y-0.5 overflow-y-auto max-h-16">
-            {Object.keys(currencyExposure).length === 0 ? (
-              <p className="text-xs text-muted-foreground">No data</p>
-            ) : (
-              Object.entries(currencyExposure).map(([cur, val]) => (
-                <div key={cur} className="flex justify-between text-xs font-mono">
-                  <span className="font-semibold text-muted-foreground">{cur}:</span>
-                  <span className="font-bold text-foreground">{formatCurrencyAmount(cur, val)}</span>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
       </div>
+
+      {/* ── View Switcher: Transaksi vs Analisis (design.md §13.2) ── */}
+      <div className="inline-flex bg-slate-200/80 dark:bg-slate-800 p-1 rounded-xl shadow-inner border border-slate-300/80 dark:border-slate-700">
+        <button
+          onClick={() => setActiveMainTab('transaksi')}
+          className={`inline-flex items-center gap-2 px-5 py-2 rounded-lg text-xs font-bold transition-all ${
+            activeMainTab === 'transaksi'
+              ? 'bg-[#0a2540] text-white shadow-sm'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+          }`}
+        >
+          <Receipt className="size-3.5" />
+          <span>Transaksi ({expenses.length})</span>
+        </button>
+        <button
+          onClick={() => setActiveMainTab('analisis')}
+          className={`inline-flex items-center gap-2 px-5 py-2 rounded-lg text-xs font-bold transition-all ${
+            activeMainTab === 'analisis'
+              ? 'bg-[#0a2540] text-white shadow-sm'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+          }`}
+        >
+          <BarChart3 className="size-3.5" />
+          <span>Analisis</span>
+        </button>
+      </div>
+
+      {/* ── KONTEN TAB ANALISIS (Image 2) ── */}
+      {activeMainTab === 'analisis' && (
+        <div className="space-y-6 pt-1">
+          <CSLBudgetExpensesReport currentUser={currentUser} />
+        </div>
+      )}
+
+      {/* ── KONTEN TAB TRANSAKSI (Image 1) ── */}
+      {activeMainTab === 'transaksi' && (
+        <div className="space-y-6 pt-1">
+          {/* 1. KPI Stat Cards (Matching Image 1) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Card 1: Total Requests */}
+            <div className="bg-card border border-border/80 p-5 rounded-2xl shadow-xs flex flex-col justify-between hover:border-border transition-colors">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-muted-foreground">Total Requests</span>
+                <div className="size-8 rounded-lg border border-border/60 text-muted-foreground flex items-center justify-center">
+                  <DollarSign size={15} />
+                </div>
+              </div>
+              <div className="mt-3">
+                <p className="text-2xl font-bold font-mono text-foreground">
+                  {totalRequestsCount} <span className="text-sm font-medium text-muted-foreground font-sans">Requests</span>
+                </p>
+                <p className="text-sm font-bold font-mono text-foreground mt-1">
+                  {formatCslCurrency(totalReportingAmount)}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Consolidated total (IDR)
+                </p>
+              </div>
+            </div>
+
+            {/* Card 2: Pending Approval */}
+            <div className="bg-card border border-border/80 p-5 rounded-2xl shadow-xs flex flex-col justify-between hover:border-border transition-colors">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-muted-foreground">Pending Approval</span>
+                <div className="size-8 rounded-lg border border-amber-300 dark:border-amber-800 text-amber-500 flex items-center justify-center">
+                  <Clock size={15} />
+                </div>
+              </div>
+              <div className="mt-3">
+                <p className="text-2xl font-bold font-mono text-amber-600 dark:text-amber-400">
+                  {pendingCount} <span className="text-sm font-medium text-amber-600/70 font-sans">Requests</span>
+                </p>
+                <p className="text-sm font-bold font-mono text-amber-600 dark:text-amber-400 mt-1">
+                  {formatCslCurrency(pendingReportingAmount)}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Awaiting review
+                </p>
+              </div>
+            </div>
+
+            {/* Card 3: Approved / Disbursed */}
+            <div className="bg-card border border-border/80 p-5 rounded-2xl shadow-xs flex flex-col justify-between hover:border-border transition-colors">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-muted-foreground">Approved / Disbursed</span>
+                <div className="size-8 rounded-lg border border-emerald-300 dark:border-emerald-800 text-emerald-500 flex items-center justify-center">
+                  <CheckCircle2 size={15} />
+                </div>
+              </div>
+              <div className="mt-3">
+                <p className="text-2xl font-bold font-mono text-emerald-600 dark:text-emerald-400">
+                  {approvedCount} <span className="text-sm font-medium text-emerald-600/70 font-sans">Requests</span>
+                </p>
+                <p className="text-sm font-bold font-mono text-emerald-600 dark:text-emerald-400 mt-1">
+                  {formatCslCurrency(approvedReportingAmount)}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Ready or paid out
+                </p>
+              </div>
+            </div>
+
+            {/* Card 4: Currency Exposure */}
+            <div className="bg-card border border-border/80 p-5 rounded-2xl shadow-xs flex flex-col justify-between hover:border-border transition-colors">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-muted-foreground">Currency Exposure</span>
+                <div className="size-8 rounded-lg border border-indigo-300 dark:border-indigo-800 text-indigo-500 flex items-center justify-center">
+                  <Globe size={15} />
+                </div>
+              </div>
+              <div className="mt-3 space-y-1">
+                <div className="flex justify-between items-center text-xs font-mono">
+                  <span className="font-semibold text-muted-foreground">HKD:</span>
+                  <span className="font-bold text-foreground">
+                    {formatCslCurrency(currencyExposure['HKD'] || 0, 'HKD')}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-xs font-mono">
+                  <span className="font-semibold text-muted-foreground">IDR:</span>
+                  <span className="font-bold text-foreground">
+                    {formatCslCurrency(currencyExposure['IDR'] || 0, 'IDR')}
+                  </span>
+                </div>
+                {Object.entries(currencyExposure).filter(([c]) => c !== 'HKD' && c !== 'IDR').map(([cur, val]) => (
+                  <div key={cur} className="flex justify-between items-center text-xs font-mono">
+                    <span className="font-semibold text-muted-foreground">{cur}:</span>
+                    <span className="font-bold text-foreground">{formatCslCurrency(val, cur)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
 
       {/* ── Toolbar & Tabs ── */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -1233,11 +1344,11 @@ export const CSLExpenseApproval: React.FC<{ currentUser: UserAccount | null }> =
       <div className="rounded-xl border border-border/80 bg-card shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-border/60 flex flex-wrap items-center justify-between gap-3 bg-card">
           <div>
-            <h3 className="font-semibold text-sm text-foreground">Expense Requests &amp; Invoices</h3>
+            <h3 className="font-bold text-sm text-foreground">Expense Requests &amp; Invoices</h3>
             <p className="text-xs text-muted-foreground mt-0.5">Manage operational costs, payee classifications, and payment vouchers</p>
           </div>
           <span className="text-xs font-mono text-muted-foreground bg-muted/50 border border-border/50 px-2.5 py-1 rounded-md">
-            {filteredExpenses.length} Record{filteredExpenses.length !== 1 ? 's' : ''}
+            {filteredExpenses.length} Records
           </span>
         </div>
 
@@ -1296,9 +1407,9 @@ export const CSLExpenseApproval: React.FC<{ currentUser: UserAccount | null }> =
                   </TableCell>
 
                   <TableCell>
-                    <p className="font-mono text-xs font-semibold text-foreground">{exp.expense_number}</p>
+                    <p className="font-mono text-xs font-semibold text-[#0a2540] dark:text-white">{exp.expense_number}</p>
                     <p className="text-[11px] text-muted-foreground mt-0.5">
-                      {new Date(exp.request_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      {formatDisplayDate(exp.request_date)}
                     </p>
                     {exp.invoice_number && (
                       <p className="text-[10px] font-mono text-muted-foreground mt-0.5 truncate max-w-[130px]" title={`Invoice: ${exp.invoice_number}`}>
@@ -1306,7 +1417,7 @@ export const CSLExpenseApproval: React.FC<{ currentUser: UserAccount | null }> =
                       </p>
                     )}
                     {exp.invoice_attachment_id && (
-                      <span className="inline-flex items-center gap-0.5 mt-1 text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                      <span className="inline-flex items-center gap-1 mt-1 text-[9px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
                         <Paperclip className="w-2.5 h-2.5" />
                         Invoice Attached
                       </span>
@@ -1314,7 +1425,7 @@ export const CSLExpenseApproval: React.FC<{ currentUser: UserAccount | null }> =
                   </TableCell>
 
                   <TableCell>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                    <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
                       exp.payee_type === 'Individual'
                         ? 'border-purple-500/30 text-purple-600 bg-purple-500/10'
                         : 'border-blue-500/30 text-blue-600 bg-blue-500/10'
@@ -1324,24 +1435,32 @@ export const CSLExpenseApproval: React.FC<{ currentUser: UserAccount | null }> =
                   </TableCell>
 
                   <TableCell>
-                    <p className="text-xs font-medium text-foreground max-w-[160px] truncate" title={exp.paid_to}>
+                    <p className="text-xs font-bold text-foreground max-w-[160px] truncate" title={exp.paid_to}>
                       {exp.paid_to}
                     </p>
                     <p className="text-[11px] text-muted-foreground">{exp.company}</p>
                   </TableCell>
 
                   <TableCell>
-                    <span className="inline-flex items-center whitespace-nowrap rounded-md border border-indigo-500/20 bg-indigo-500/10 px-2 py-0.5 text-[10px] font-bold text-indigo-700 dark:text-indigo-300">
+                    <span className={`inline-flex items-center whitespace-nowrap rounded-md border px-2 py-0.5 text-[10px] font-bold ${
+                      exp.category === 'Konsultan'
+                        ? 'border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300'
+                        : exp.category === 'Notaris'
+                        ? 'border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300'
+                        : exp.category === 'Lawfirm'
+                        ? 'border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300'
+                        : 'border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300'
+                    }`}>
                       {exp.category || 'Other'}
                     </span>
                   </TableCell>
 
                   <TableCell>
-                    <p className="text-xs font-medium text-foreground max-w-[200px] truncate" title={exp.project_name}>
+                    <p className="text-xs font-medium text-foreground max-w-[220px] truncate" title={exp.project_name}>
                       {exp.project_name}
                     </p>
                     {exp.payment_description && exp.payment_description !== exp.project_name && (
-                      <p className="text-[11px] text-muted-foreground max-w-[200px] truncate">
+                      <p className="text-[11px] text-muted-foreground max-w-[220px] truncate">
                         {exp.payment_description}
                       </p>
                     )}
@@ -1349,38 +1468,50 @@ export const CSLExpenseApproval: React.FC<{ currentUser: UserAccount | null }> =
 
                   <TableCell>
                     <div className="flex items-center gap-1.5 whitespace-nowrap">
-                      <img 
-                        src={getCurrencyFlag(exp.currency)} 
-                        alt={exp.currency} 
-                        className="w-3.5 h-3.5 object-contain inline shrink-0" 
-                      />
-                      <span className="font-mono text-xs font-bold text-foreground">
-                        {formatCurrencyAmount(exp.currency, exp.amount)}
-                      </span>
+                      {exp.currency && exp.currency !== 'IDR' ? (
+                        <span className="size-4 rounded-full bg-rose-500/20 text-rose-600 dark:text-rose-400 flex items-center justify-center text-[10px] font-bold shrink-0">
+                          ★
+                        </span>
+                      ) : (
+                        <span className="size-4 rounded-full bg-rose-500/20 text-rose-600 dark:text-rose-400 flex items-center justify-center text-[10px] font-bold shrink-0">
+                          ●
+                        </span>
+                      )}
+                      <div>
+                        <p className="font-mono text-xs font-bold text-foreground">
+                          {formatCurrencyAmount(exp.currency, exp.amount)}
+                        </p>
+                        {exp.currency !== 'IDR' && exp.reporting_amount > 0 && (
+                          <p className="text-[10px] text-muted-foreground font-mono mt-0.5">
+                            ≈ {formatRp(exp.reporting_amount)}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                    {exp.currency !== 'IDR' && (
-                      <p className="text-[10px] font-mono text-muted-foreground mt-0.5 pl-5">
-                        ≈ {formatRp(exp.reporting_amount)}
-                      </p>
-                    )}
                   </TableCell>
 
                   <TableCell>
-                    <p className="text-xs font-medium text-foreground">{exp.prepared_by_name}</p>
+                    <p className="text-xs font-bold text-foreground">{exp.prepared_by_name}</p>
                     <p className="text-[11px] text-muted-foreground">{exp.department}</p>
                   </TableCell>
 
                   <TableCell>
-                    <Badge variant="outline" className={`text-[10px] px-2 py-0.5 rounded-md border ${STATUS_STYLE[exp.status] || ''}`}>
-                      {formatStatusText(exp.status)}
-                    </Badge>
+                    {(() => {
+                      const b = getUnifiedStatusBadge(exp.status);
+                      return (
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${b.className}`}>
+                          <span className={`size-1.5 rounded-full ${b.dotColor}`} />
+                          {b.label}
+                        </span>
+                      );
+                    })()}
                     {exp.approved_by_name && (exp.status === 'APPROVED' || exp.status === 'DISBURSED' || exp.status === 'PAID') && (
-                      <div className="text-[9px] text-muted-foreground font-medium mt-0.5 truncate max-w-[120px]" title={`Approved by: ${exp.approved_by_name}`}>
+                      <div className="text-[9px] text-muted-foreground font-medium mt-0.5 truncate max-w-[120px]" title={`Disetujui oleh: ${exp.approved_by_name}`}>
                         ✓ {exp.approved_by_name}
                       </div>
                     )}
                     {exp.approved_by_name && exp.status === 'REJECTED' && (
-                      <div className="text-[9px] text-rose-500 font-medium mt-0.5 truncate max-w-[120px]" title={`Rejected by: ${exp.approved_by_name}`}>
+                      <div className="text-[9px] text-rose-500 font-medium mt-0.5 truncate max-w-[120px]" title={`Ditolak oleh: ${exp.approved_by_name}`}>
                         ✕ {exp.approved_by_name}
                       </div>
                     )}
@@ -1388,80 +1519,93 @@ export const CSLExpenseApproval: React.FC<{ currentUser: UserAccount | null }> =
 
                   <TableCell className="text-right pr-5" onClick={e => e.stopPropagation()}>
                     <DropdownMenu>
-                      <DropdownMenuTrigger render={<Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground" />}>
+                      <DropdownMenuTrigger render={<Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground hover:bg-muted" />}>
                         <MoreVertical className="h-4 w-4" />
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-52">
-                        <DropdownMenuItem onClick={() => setViewingDetail(exp)} className="gap-2 text-xs">
-                          <Eye className="h-3.5 w-3.5" /> View details
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handlePrintPdf(exp)} className="gap-2 text-xs">
-                          <Printer className="h-3.5 w-3.5" /> Print PDF voucher
-                        </DropdownMenuItem>
+                        <DropdownMenuContent align="end" className="w-52">
+                          <DropdownMenuItem onClick={() => setViewingDetail(exp)} className="gap-2 text-xs">
+                            <Eye className="h-3.5 w-3.5" /> Lihat Rincian
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handlePrintPdf(exp)} className="gap-2 text-xs">
+                            <Printer className="h-3.5 w-3.5" /> Cetak PDF Voucher
+                          </DropdownMenuItem>
 
-                        {isDesignatedApprover && exp.status === 'PENDING_APPROVAL' && (
-                          <>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={() => { setSelected(exp); setConfirmAction('approve'); }}
-                              className="gap-2 text-xs text-emerald-600 focus:text-emerald-600 cursor-pointer"
-                            >
-                              <CheckCircle2 className="h-3.5 w-3.5" /> Approve request
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => { setSelected(exp); setConfirmAction('reject'); }}
-                              className="gap-2 text-xs text-rose-600 focus:text-rose-600 cursor-pointer"
-                            >
-                              <XCircle className="h-3.5 w-3.5" /> Reject request
-                            </DropdownMenuItem>
-                          </>
-                        )}
+                          {isDesignatedApprover && exp.status === 'PENDING_APPROVAL' && (
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() => { setSelected(exp); setConfirmAction('approve'); }}
+                                className="gap-2 text-xs text-emerald-600 focus:text-emerald-600 cursor-pointer"
+                              >
+                                <CheckCircle2 className="h-3.5 w-3.5" /> Setujui Permintaan
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => { setSelected(exp); setConfirmAction('reject'); }}
+                                className="gap-2 text-xs text-rose-600 focus:text-rose-600 cursor-pointer"
+                              >
+                                <XCircle className="h-3.5 w-3.5" /> Tolak Permintaan
+                              </DropdownMenuItem>
+                            </>
+                          )}
 
-                        {isDesignatedApprover && exp.status === 'APPROVED' && (
-                          <>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={() => { setSelected(exp); setConfirmAction('disburse'); }}
-                              className="gap-2 text-xs text-blue-600 focus:text-blue-600 cursor-pointer"
-                            >
-                              <DollarSign className="h-3.5 w-3.5" /> Mark as disbursed / paid
-                            </DropdownMenuItem>
-                          </>
-                        )}
+                          {isDesignatedApprover && exp.status === 'APPROVED' && (
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() => { setSelected(exp); setConfirmAction('disburse'); }}
+                                className="gap-2 text-xs text-blue-600 focus:text-blue-600 cursor-pointer"
+                              >
+                                <DollarSign className="h-3.5 w-3.5" /> Tandai Telah Dicairkan
+                              </DropdownMenuItem>
+                            </>
+                          )}
 
-                        {isSuperAdmin && (
-                          <>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={() => handleOpenEdit(exp)}
-                              className="gap-2 text-xs text-amber-600 focus:text-amber-600 cursor-pointer"
-                            >
-                              <Pencil className="h-3.5 w-3.5" /> Edit request
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => { setSelected(exp); setConfirmAction('delete'); }}
-                              className="gap-2 text-xs text-rose-600 focus:text-rose-600 cursor-pointer"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" /> Delete request
-                            </DropdownMenuItem>
-                          </>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                          {isSuperAdmin && (
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() => handleOpenEdit(exp)}
+                                className="gap-2 text-xs text-amber-600 focus:text-amber-600 cursor-pointer"
+                              >
+                                <Pencil className="h-3.5 w-3.5" /> Edit Permintaan
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => { setSelected(exp); setConfirmAction('delete'); }}
+                                className="gap-2 text-xs text-rose-600 focus:text-rose-600 cursor-pointer"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" /> Hapus Permintaan
+                              </DropdownMenuItem>
+                            </>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                   </TableCell>
                 </TableRow>
               ))}
               </TableBody>
             </Table>
 
+            {/* Subtotal Row (design.md §14.3) */}
+            <div className="px-5 py-2.5 bg-slate-50 dark:bg-slate-900/60 border-t border-border/40 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground font-medium">
+              <span>
+                <strong className="text-foreground">Subtotal Halaman Ini</strong> ({pagedExpenses.length} entri):{' '}
+                <span className="font-mono font-bold text-foreground">
+                  {formatCslCurrency(pagedExpenses.reduce((sum, e) => sum + (Number(e.reporting_amount) || 0), 0))}
+                </span>
+              </span>
+              <span>
+                <strong className="text-foreground">Total Keseluruhan</strong> ({filteredExpenses.length} entri):{' '}
+                <span className="font-mono font-bold text-[#0a2540] dark:text-emerald-400">
+                  {formatCslCurrency(filteredExpenses.reduce((sum, e) => sum + (Number(e.reporting_amount) || 0), 0))}
+                </span>
+              </span>
+            </div>
+
             {/* ── Pagination ── */}
             {filteredExpenses.length > 0 && (
               <div className="px-5 py-3 border-t border-border/40 flex flex-wrap items-center justify-between gap-3 bg-card">
                 <p className="text-xs text-muted-foreground">
-                  Showing{' '}
-                  <span className="font-semibold text-foreground">
-                    {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filteredExpenses.length)}
-                  </span>{' '}of{' '}<span className="font-semibold text-foreground">{filteredExpenses.length}</span>{' '}record{filteredExpenses.length !== 1 ? 's' : ''}
+                  Menampilkan <span className="font-semibold text-foreground">{formatCslRange((currentPage - 1) * PAGE_SIZE + 1, Math.min(currentPage * PAGE_SIZE, filteredExpenses.length), filteredExpenses.length)}</span>
                 </p>
                 <div className="flex items-center gap-1">
                   <button
@@ -1478,7 +1622,7 @@ export const CSLExpenseApproval: React.FC<{ currentUser: UserAccount | null }> =
                       onClick={() => setCurrentPage(p)}
                       className={`h-7 min-w-[28px] px-1.5 rounded-md border text-xs font-medium transition-colors ${
                         currentPage === p
-                          ? 'border-indigo-500 bg-indigo-500 text-white'
+                          ? 'border-[#0a2540] bg-[#0a2540] text-white'
                           : 'border-border/60 text-muted-foreground hover:bg-muted/50'
                       }`}
                     >
@@ -1499,6 +1643,8 @@ export const CSLExpenseApproval: React.FC<{ currentUser: UserAccount | null }> =
           </>
         )}
       </div>
+      </div>
+      )}
 
       {/* ── CREATE / EDIT EXPENSE REQUEST DIALOG (WITH AUTOMATIC EXCHANGE RATE) ── */}
       <Dialog open={isFormOpen} onOpenChange={(open) => {
@@ -2071,33 +2217,53 @@ export const CSLExpenseApproval: React.FC<{ currentUser: UserAccount | null }> =
         </DialogContent>
       </Dialog>
 
-      {/* ── EXPENSE DETAIL DIALOG (LENGKAP: AUDIT TRAIL, APPROVER, CREATOR & LAMPIRAN) ── */}
-      <Dialog open={!!viewingDetail} onOpenChange={(open) => !open && setViewingDetail(null)}>
-        <DialogContent className="sm:max-w-2xl p-0 overflow-hidden font-sans border-border/80 dark:border-slate-800 shadow-2xl">
-          {/* Modal Header */}
-          <DialogHeader className="px-6 py-4 border-b border-border/50 bg-muted/20 shrink-0">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-indigo-500/10 text-indigo-600 flex items-center justify-center shrink-0">
-                  <Receipt className="h-5 w-5" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <span className="text-[10px] font-black uppercase text-indigo-600 tracking-wider">Transaction Detail</span>
-                    {viewingDetail?.status && (
-                      <Badge variant="outline" className={`text-[9px] font-black uppercase px-2 py-0.5 rounded border ${STATUS_STYLE[viewingDetail.status] || ''}`}>
-                        {formatStatusText(viewingDetail.status)}
-                      </Badge>
-                    )}
-                  </div>
-                  <DialogTitle className="text-base font-black text-foreground">{viewingDetail?.expense_number}</DialogTitle>
-                </div>
-              </div>
-            </div>
-          </DialogHeader>
+      {/* ── EXPENSE DETAIL SLIDE-OVER DRAWER (design.md §1.4, §6, §13.5) ── */}
+      {viewingDetail && (
+        <>
+          {/* Backdrop Scrim */}
+          <div
+            onClick={() => setViewingDetail(null)}
+            className="fixed inset-0 bg-[#0a192f]/35 z-50 backdrop-blur-xs transition-opacity duration-200"
+          />
 
-          {viewingDetail && (
-            <div className="p-6 space-y-4 text-xs font-sans max-h-[72vh] overflow-y-auto">
+          {/* Slide-Over Drawer Sheet */}
+          <aside
+            className="fixed top-0 right-0 bottom-0 w-[540px] max-w-[94vw] bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl z-50 p-6 overflow-y-auto flex flex-col justify-between animate-in slide-in-from-right duration-200"
+          >
+            <div>
+              {/* Header with Close */}
+              <div className="flex items-start justify-between gap-4 pb-4 border-b border-border/50">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-[#0a2540] dark:text-blue-400 flex items-center justify-center shrink-0 border border-slate-200 dark:border-slate-700">
+                    <Receipt className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className="text-[10px] font-bold uppercase text-[#c9a227] tracking-wider">Rincian Transaksi Pengeluaran</span>
+                      {(() => {
+                        const b = getUnifiedStatusBadge(viewingDetail.status);
+                        return (
+                          <span className={`inline-flex items-center gap-1.5 px-2 py-0.2 rounded-full text-[10px] font-bold border ${b.className}`}>
+                            <span className={`size-1.5 rounded-full ${b.dotColor}`} />
+                            {b.label}
+                          </span>
+                        );
+                      })()}
+                    </div>
+                    <h2 className="text-lg font-bold font-mono text-[#0a2540] dark:text-white">{viewingDetail.expense_number}</h2>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setViewingDetail(null)}
+                  className="p-1.5 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors"
+                  aria-label="Tutup rincian"
+                >
+                  <XIcon className="size-4" />
+                </button>
+              </div>
+
+              <div className="py-4 space-y-4 text-xs font-sans">
               
               {/* 1. AUDIT TRAIL CARD (SIAPA YG BUAT, KAPAN DIBUAT, SIAPA YG APPROVED, KAPAN DIAPPROVED) */}
               <div className="bg-muted/30 border border-border/60 dark:border-slate-800/80 rounded-xl p-4 space-y-3">
@@ -2398,49 +2564,51 @@ export const CSLExpenseApproval: React.FC<{ currentUser: UserAccount | null }> =
               </div>
 
             </div>
-          )}
+            </div>
 
-          <DialogFooter className="px-6 py-4 border-t border-border/40 gap-2 bg-card dark:bg-slate-900/60 flex-wrap">
-            <Button variant="outline" size="sm" onClick={() => setViewingDetail(null)} className="h-8 text-xs">
-              Tutup
-            </Button>
-            {isSuperAdmin && viewingDetail && (
-              <>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const target = viewingDetail;
-                    setViewingDetail(null);
-                    handleOpenEdit(target);
-                  }}
-                  className="h-8 text-xs gap-1.5 text-amber-600 border-amber-500/30 hover:bg-amber-500/10 cursor-pointer"
-                >
-                  <Pencil className="h-3.5 w-3.5" /> Edit Request
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const target = viewingDetail;
-                    setViewingDetail(null);
-                    setSelected(target);
-                    setConfirmAction('delete');
-                  }}
-                  className="h-8 text-xs gap-1.5 text-rose-600 border-rose-500/30 hover:bg-rose-500/10 cursor-pointer"
-                >
-                  <Trash2 className="h-3.5 w-3.5" /> Delete Request
-                </Button>
-              </>
-            )}
-            {viewingDetail && (
-              <Button size="sm" onClick={() => handlePrintPdf(viewingDetail)} className="h-8 text-xs gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold">
-                <Printer className="h-3.5 w-3.5" /> Print PDF Voucher
+            {/* Actions Footer (design.md §13.5) */}
+            <div className="pt-4 border-t border-border/40 gap-2 bg-white dark:bg-slate-900 flex items-center justify-between flex-wrap sticky bottom-0">
+              <Button variant="outline" size="sm" onClick={() => setViewingDetail(null)} className="h-8 text-xs font-semibold">
+                Tutup
               </Button>
-            )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+              <div className="flex items-center gap-2">
+                {isSuperAdmin && (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const target = viewingDetail;
+                        setViewingDetail(null);
+                        handleOpenEdit(target);
+                      }}
+                      className="h-8 text-xs gap-1.5 text-amber-600 border-amber-500/30 hover:bg-amber-500/10 cursor-pointer"
+                    >
+                      <Pencil className="h-3.5 w-3.5" /> Edit
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const target = viewingDetail;
+                        setViewingDetail(null);
+                        setSelected(target);
+                        setConfirmAction('delete');
+                      }}
+                      className="h-8 text-xs gap-1.5 text-rose-600 border-rose-500/30 hover:bg-rose-500/10 cursor-pointer"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" /> Hapus
+                    </Button>
+                  </>
+                )}
+                <Button size="sm" onClick={() => handlePrintPdf(viewingDetail)} className="h-8 text-xs gap-1.5 bg-[#0a2540] hover:bg-[#16375c] text-white font-bold shadow-xs">
+                  <Printer className="h-3.5 w-3.5" /> Cetak PDF Voucher
+                </Button>
+              </div>
+            </div>
+          </aside>
+        </>
+      )}
 
       {/* ── CONFIRMATION DIALOG (DELETE, APPROVE, REJECT, DISBURSE) ── */}
       <AlertDialog open={!!confirmAction} onOpenChange={(open) => { if (!open) { setConfirmAction(null); setSelected(null); } }}>

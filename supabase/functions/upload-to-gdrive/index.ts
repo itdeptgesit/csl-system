@@ -100,7 +100,7 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
   try {
-    const { fileName, fileMimeType, fileBase64, requesterEmail, folderType, requestId } = await req.json()
+    const { fileName, fileMimeType, fileBase64, requesterEmail, folderType, requestId, companyCode } = await req.json()
 
     if (!fileName || !fileBase64) throw new Error('Missing fileName or fileBase64')
 
@@ -176,6 +176,15 @@ serve(async (req) => {
       targetFolderId = await getOrCreateSubfolder(accessToken, rootFolderId, 'E-Sign')
     } else if (folderType === 'rups-ar') {
       targetFolderId = await getOrCreateSubfolder(accessToken, rootFolderId, 'RUPS & Annual Reports')
+    } else if (folderType === 'company' || folderType === 'companies') {
+      const cslFolderId = await getOrCreateSubfolder(accessToken, rootFolderId, 'CSL-LINK')
+      const companiesFolderId = await getOrCreateSubfolder(accessToken, cslFolderId, 'Companies')
+      const targetCode = companyCode || (fileName.includes('-') ? fileName.split('-').pop()?.split('.')[0] : '')
+      if (targetCode) {
+        targetFolderId = await getOrCreateSubfolder(accessToken, companiesFolderId, targetCode.toUpperCase().trim())
+      } else {
+        targetFolderId = companiesFolderId
+      }
     }
 
     // Decode Base64

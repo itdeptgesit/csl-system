@@ -73,6 +73,9 @@ const CSLSettings = React.lazy(() => import('./components/CSLSettings').then(m =
 const CSLTaskManager = React.lazy(() => import('./components/CSLTaskManager').then(m => ({ default: m.CSLTaskManager })));
 const CSLCredentialVault = React.lazy(() => import('./components/CSLCredentialVault').then(m => ({ default: m.CSLCredentialVault })));
 const CSLLkpmTracker = React.lazy(() => import('./components/CSLLkpmTracker').then(m => ({ default: m.CSLLkpmTracker })));
+const CSLTbkTracker = React.lazy(() => import('./components/CSLTbkTracker').then(m => ({ default: m.CSLTbkTracker })));
+const CSLOffshoreTracker = React.lazy(() => import('./components/CSLOffshoreTracker').then(m => ({ default: m.CSLOffshoreTracker })));
+const CSLAdMgtTracker = React.lazy(() => import('./components/CSLAdMgtTracker').then(m => ({ default: m.CSLAdMgtTracker })));
 
 const ICON_MAP: Record<string, React.ElementType> = {
   LayoutDashboard: LayoutDashboard,
@@ -153,8 +156,8 @@ const PublicLayout: React.FC<{
         )}
 
         <main className="flex-1 overflow-y-auto flex flex-col custom-scrollbar">
-          <div className="flex-1 p-4 md:p-8">
-            <div className="max-w-7xl mx-auto h-full text-slate-900 dark:text-slate-100">
+          <div className={`flex-1 ${location.pathname.includes('routine-lkpm') || location.pathname.includes('routine/lkpm') ? 'p-2 sm:p-4 md:p-6' : 'p-4 md:p-8'}`}>
+            <div className={`${location.pathname.includes('routine-lkpm') || location.pathname.includes('routine/lkpm') ? 'w-full' : 'max-w-7xl mx-auto'} h-full text-slate-900 dark:text-slate-100`}>
               {children}
             </div>
           </div>
@@ -681,21 +684,34 @@ const InternalApp: React.FC = () => {
                              <Route path="csl-my-tickets" element={<CSLRequestManager currentUser={currentUser} view="all" />} />
                              <Route path="csl-categories" element={<CSLRequestManager currentUser={currentUser} view="categories" />} />
                              
-                             {/* Routine Activity */}
-                             <Route path="routine" element={<CSLRoutineManager currentUser={currentUser} view="monitoring" />} />
-                             <Route path="routine-timeline" element={<CSLRoutineManager currentUser={currentUser} view="timeline" />} />
-                             <Route path="routine-monitoring" element={<CSLRoutineManager currentUser={currentUser} view="monitoring" />} />
-                             
-                             {/* Task Management */}
-                             <Route path="routine-task" element={<CSLTaskManager currentUser={currentUser} />} />
+                             {/* Routine Activity - 5 Submenus */}
+                             <Route path="routine" element={<Navigate to="/routine-rups" replace />} />
+                             <Route path="routine-rups" element={<CSLTaskManager currentUser={currentUser} />} />
+                             <Route path="routine-task" element={<Navigate to="/routine-rups" replace />} />
+                             <Route path="routine-timeline" element={<Navigate to="/routine-rups" replace />} />
+                             <Route path="routine-monitoring" element={<Navigate to="/routine-rups" replace />} />
 
                              {/* Routine Tracking LKPM */}
                              <Route path="routine-lkpm" element={<CSLLkpmTracker currentUser={currentUser} />} />
-                             <Route path="routine/lkpm" element={<CSLLkpmTracker currentUser={currentUser} />} />
+                             <Route path="routine/lkpm" element={<Navigate to="/routine-lkpm" replace />} />
+
+                             {/* Routine TBK */}
+                             <Route path="routine-tbk" element={<CSLTbkTracker currentUser={currentUser} />} />
+
+                             {/* Routine Offshore Co */}
+                             <Route path="routine-offshore" element={<CSLOffshoreTracker currentUser={currentUser} />} />
+
+                             {/* Routine Ad-MGT */}
+                             <Route path="routine-admgt" element={<CSLAdMgtTracker currentUser={currentUser} />} />
+
+                             {/* Companies & Entities */}
+                             <Route path="companies" element={<CSLSettings currentUser={currentUser} view="companies" />} />
+                             <Route path="settings-companies" element={<Navigate to="/companies" replace />} />
 
                              {/* Budget & Cost */}
                              <Route path="budget" element={<CSLBudgetManager currentUser={currentUser} view="expense" />} />
                              <Route path="budget-expense" element={<CSLBudgetManager currentUser={currentUser} view="expense" />} />
+                             <Route path="budget-report" element={<CSLBudgetManager currentUser={currentUser} view="report" />} />
                              <Route path="budget-offshore-invoice" element={<CSLBudgetManager currentUser={currentUser} view="offshore-invoice" />} />
 
                              {/* Phone Directory */}
@@ -711,9 +727,9 @@ const InternalApp: React.FC = () => {
                              <Route path="reports" element={<CSLReportsManager currentUser={currentUser} view="request" />} />
                              <Route path="reports-request" element={<CSLReportsManager currentUser={currentUser} view="request" />} />
                              <Route path="reports-task" element={<CSLReportsManager currentUser={currentUser} view="task" />} />
-                             <Route path="reports-budget" element={<CSLReportsManager currentUser={currentUser} view="budget" />} />
-                             <Route path="budget-expenses/report" element={<CSLReportsManager currentUser={currentUser} view="budget" />} />
-                             <Route path="budget/report" element={<CSLReportsManager currentUser={currentUser} view="budget" />} />
+                             <Route path="reports-budget" element={<CSLBudgetManager currentUser={currentUser} view="report" />} />
+                             <Route path="budget-expenses/report" element={<CSLBudgetManager currentUser={currentUser} view="report" />} />
+                             <Route path="budget/report" element={<CSLBudgetManager currentUser={currentUser} view="report" />} />
 
                              {/* Settings */}
                              <Route path="settings" element={<CSLSettings currentUser={currentUser} view="categories" />} />
@@ -834,10 +850,10 @@ const DashboardLayout: React.FC<any & { children?: React.ReactNode }> = ({
           allowed.add('csl-requests');
         }
         if (g === 'routine_view' || g === 'routine') {
-          allowed.add('routine'); allowed.add('routine-monitoring'); allowed.add('routine-lkpm');
+          allowed.add('routine'); allowed.add('routine-rups'); allowed.add('routine-lkpm'); allowed.add('routine-tbk'); allowed.add('routine-offshore'); allowed.add('routine-admgt');
         }
         if (g === 'routine_create' || g === 'routine_manage') {
-          allowed.add('routine-task'); allowed.add('routine-timeline'); allowed.add('routine-lkpm');
+          allowed.add('routine'); allowed.add('routine-rups'); allowed.add('routine-lkpm'); allowed.add('routine-tbk'); allowed.add('routine-offshore'); allowed.add('routine-admgt');
         }
         if (g === 'budget' || g === 'budget_view') {
           allowed.add('budget'); allowed.add('budget-expense'); allowed.add('budget-offshore-invoice');
@@ -849,7 +865,7 @@ const DashboardLayout: React.FC<any & { children?: React.ReactNode }> = ({
           allowed.add('credentials');
         }
         if (g === 'csl_staff' || g === 'staff') {
-          ['dashboard', 'csl-requests', 'routine', 'routine-task', 'routine-lkpm', 'budget', 'budget-expense', 'budget-offshore-invoice', 'directory', 'directory-all', 'directory-lawyer', 'directory-vendor', 'directory-government', 'directory-other', 'credentials', 'reports', 'reports-request', 'reports-task', 'reports-budget', 'profile'].forEach(id => allowed.add(id));
+          ['dashboard', 'csl-requests', 'routine', 'routine-rups', 'routine-lkpm', 'routine-tbk', 'routine-offshore', 'routine-admgt', 'routine-task', 'companies', 'settings-companies', 'budget', 'budget-expense', 'budget-offshore-invoice', 'directory', 'directory-all', 'directory-lawyer', 'directory-vendor', 'directory-government', 'directory-other', 'credentials', 'reports', 'reports-request', 'reports-task', 'reports-budget', 'profile'].forEach(id => allowed.add(id));
         }
         if (g === 'admin' || g === 'csl_admin') {
           (APP_MENU_STRUCTURE || []).forEach(m => {
@@ -900,7 +916,8 @@ const DashboardLayout: React.FC<any & { children?: React.ReactNode }> = ({
       [
         'dashboard',
         'csl-requests',
-        'routine', 'routine-task', 'routine-lkpm',
+        'routine', 'routine-rups', 'routine-lkpm', 'routine-tbk', 'routine-offshore', 'routine-admgt', 'routine-task',
+        'companies', 'settings-companies',
         'budget', 'budget-expense', 'budget-offshore-invoice',
         'directory', 'directory-all', 'directory-lawyer', 'directory-vendor', 'directory-government', 'directory-other',
         'credentials',

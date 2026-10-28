@@ -1,7 +1,6 @@
 import React from 'react';
 import { UserAccount } from '../types';
 import { CSLExpenseApproval } from './CSLExpenseApproval';
-import { CSLBudgetExpensesReport } from './CSLBudgetExpensesReport';
 
 interface CSLBudgetManagerProps {
   currentUser: UserAccount | null;
@@ -9,8 +8,10 @@ interface CSLBudgetManagerProps {
 }
 
 export const CSLBudgetManager: React.FC<CSLBudgetManagerProps> = ({ currentUser, view }) => {
-  if (view === 'report') {
-    return <CSLBudgetExpensesReport currentUser={currentUser} />;
-  }
-  return <CSLExpenseApproval currentUser={currentUser} />;
+  return (
+    <CSLExpenseApproval
+      currentUser={currentUser}
+      initialMainTab={view === 'report' ? 'analisis' : 'transaksi'}
+    />
+  );
 };

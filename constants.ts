@@ -1,5 +1,5 @@
 
-export const APP_NAME = 'CSL ERP';
+export const APP_NAME = 'CSL-LINK';
 
 export const ALLOWED_EMAIL_DOMAINS = ['gesit.co.id', 'gnr.co.id', 'gnr.id'];
 
@@ -30,17 +30,17 @@ export const MOCK_GROUPS = [
             // Request / Ticketing
             'csl-requests',
             // Routine
-            'routine', 'routine-task', 'routine-lkpm',
-            // Budget & Cost
-            'budget', 'budget-expense', 'budget-offshore-invoice',
+            'routine', 'routine-rups', 'routine-lkpm', 'routine-tbk', 'routine-offshore', 'routine-admgt', 'routine-task',
+            // Companies & Entities
+            'companies', 'settings-companies',
+            // Budget & Expenses
+            'budget', 'budget-expense', 'budget-report', 'budget-offshore-invoice',
             // Phone Directory
             'directory', 'directory-all', 'directory-lawyer', 'directory-vendor', 'directory-government', 'directory-other',
             // Credentials Vault
             'credentials',
-            // Reports
-            'reports', 'reports-request', 'reports-task', 'reports-budget',
             // Settings
-            'settings', 'settings-users', 'settings-companies', 'settings-departments', 'settings-system',
+            'settings', 'settings-users', 'settings-departments', 'settings-system',
         ]
     },
     {
@@ -50,12 +50,12 @@ export const MOCK_GROUPS = [
         allowedMenus: [
             'dashboard',
             'csl-requests',
-            'routine', 'routine-task', 'routine-lkpm',
-            // Budget & Cost
-            'budget', 'budget-expense', 'budget-offshore-invoice',
+            'routine', 'routine-rups', 'routine-lkpm', 'routine-tbk', 'routine-offshore', 'routine-admgt', 'routine-task',
+            'companies', 'settings-companies',
+            // Budget & Expenses
+            'budget', 'budget-expense', 'budget-report', 'budget-offshore-invoice',
             'directory', 'directory-all', 'directory-lawyer', 'directory-vendor', 'directory-government', 'directory-other',
             'credentials',
-            'reports', 'reports-request', 'reports-task', 'reports-budget',
         ]
     },
     {
@@ -75,11 +75,16 @@ export const APP_MENU_STRUCTURE = [
     // ── Request / Ticketing ──
     { id: 'csl-requests', label: 'Request / Ticketing', iconName: 'Kanban' },
 
-
     // ── Routine Activity ──
     { id: 'routine', label: 'Routine Activity', iconName: 'Calendar' },
-    { id: 'routine-task',       label: 'Task Management',    parentId: 'routine', iconName: 'CheckSquare' },
+    { id: 'routine-rups',       label: 'RUPS - AR',          parentId: 'routine', iconName: 'CalendarCheck' },
     { id: 'routine-lkpm',       label: 'Tracking LKPM',      parentId: 'routine', iconName: 'FileCheck' },
+    { id: 'routine-tbk',        label: 'TBK',                parentId: 'routine', iconName: 'Landmark' },
+    { id: 'routine-offshore',   label: 'Offshore Co',        parentId: 'routine', iconName: 'Globe' },
+    { id: 'routine-admgt',      label: 'Ad-MGT',             parentId: 'routine', iconName: 'Layers' },
+
+    // ── Companies & Entities ──
+    { id: 'companies', label: 'Companies & Entities', iconName: 'Building2' },
 
     // ── Budget & Expenses ──
     { id: 'budget', label: 'Budget & Expenses', iconName: 'Wallet' },
@@ -90,16 +95,9 @@ export const APP_MENU_STRUCTURE = [
     // ── Credentials Vault ──
     { id: 'credentials', label: 'Credentials Vault', iconName: 'Key' },
 
-    // ── Reports ──
-    { id: 'reports', label: 'Reports', iconName: 'BarChart2' },
-    { id: 'reports-request', label: 'Request Report', parentId: 'reports', iconName: 'FileBarChart' },
-    { id: 'reports-task',    label: 'Task Report',    parentId: 'reports', iconName: 'CheckSquare' },
-    { id: 'reports-budget',  label: 'Budget Report',  parentId: 'reports', iconName: 'Wallet' },
-
     // ── Settings ──
     { id: 'settings', label: 'Settings', iconName: 'Settings' },
     { id: 'settings-users',         label: 'User & Roles',         parentId: 'settings', iconName: 'Users' },
-    { id: 'settings-companies',     label: 'Companies',            parentId: 'settings', iconName: 'Building2' },
     { id: 'settings-departments',   label: 'Departments',          parentId: 'settings', iconName: 'Network' },
     { id: 'settings-system',        label: 'System Settings',      parentId: 'settings', iconName: 'Cpu' },
 ];

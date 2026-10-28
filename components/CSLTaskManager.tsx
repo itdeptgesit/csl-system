@@ -1,13 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { UserAccount } from '../types';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { Plus, Search, Filter, CalendarDays, X, Bell, Pencil, Upload, ExternalLink, FileText, Loader2, CheckCircle2 } from 'lucide-react';
+import { Plus, Search, Filter, CalendarDays, X, Bell, Pencil, Upload, ExternalLink, FileText, Loader2, CheckCircle2, Clock, AlertTriangle, Layers, Copy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { supabase } from '../lib/supabaseClient';
+import { formatCslDate } from '../utils/cslStatusHelper';
 
 // Helper: parse stored value (ISO yyyy-mm-dd or m/d/yyyy) → ISO for input type=date
 function toISO(val: string): string {
@@ -23,22 +24,18 @@ function toISO(val: string): string {
   return '';
 }
 
-// Helper: ISO → M/D/YYYY display
+// Helper: Indonesian display date 5 Okt 2026 (design.md §14.2)
 function toDisplay(val: string): string {
   if (!val) return '';
-  if (/^\d{4}-\d{2}-\d{2}$/.test(val)) {
-    const [y, m, d] = val.split('-');
-    return `${parseInt(m)}/${parseInt(d)}/${y}`;
-  }
-  return val;
+  return formatCslDate(val);
 }
 
-// DateCell: shows M/D/YYYY text + calendar icon; click icon opens native date picker
+// DateCell: shows date text + calendar icon; click icon opens native date picker
 const DateCell: React.FC<{
   value: string;
   onChange: (val: string) => void;
   placeholder?: string;
-}> = ({ value, onChange, placeholder = 'm/d/yyyy' }) => {
+}> = ({ value, onChange, placeholder = '5 Okt 2026' }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [manualVal, setManualVal] = useState('');
   const [isManual, setIsManual] = useState(false);
@@ -208,11 +205,11 @@ const DUMMY_ASET = [
 
 const getStatusStyle = (status: string) => {
   switch (status) {
-    case 'Completed': return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400';
-    case 'Not started': return 'bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400';
-    case 'Blocked': return 'bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400';
-    case 'In progress': return 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400';
-    default: return 'bg-muted text-muted-foreground';
+    case 'Completed': return 'bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800 font-semibold';
+    case 'In progress': return 'bg-blue-50 text-blue-800 border border-blue-200 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800 font-medium';
+    case 'Not started': return 'bg-amber-50 text-amber-900 border border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800 font-medium';
+    case 'Blocked': return 'bg-rose-50 text-rose-800 border border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800 font-semibold';
+    default: return 'bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 font-medium';
   }
 };
 
@@ -283,6 +280,14 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
   const [reminderEditTarget, setReminderEditTarget] = useState<any>(null);
   const [reminderEditDueDate, setReminderEditDueDate] = useState('');
   const [reminderEditEmails, setReminderEditEmails] = useState('');
+
+  // Copy Year Modal State
+  const [copyModalOpen, setCopyModalOpen] = useState(false);
+  const [sourceYear, setSourceYear] = useState(new Date().getFullYear().toString());
+  const [targetYear, setTargetYear] = useState((new Date().getFullYear() + 1).toString());
+  const [keepOwner, setKeepOwner] = useState(true);
+  const [keepMethod, setKeepMethod] = useState(true);
+  const [isCopyingYear, setIsCopyingYear] = useState(false);
 
   // Fetch all active users for the Owner dropdown
   useEffect(() => {
@@ -562,6 +567,109 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
     }
   };
 
+  const handleBatchCopyYear = async () => {
+    if (sourceYear === targetYear) {
+      toast.error('Tahun sumber dan tahun tujuan tidak boleh sama!');
+      return;
+    }
+    setIsCopyingYear(true);
+    const toastId = toast.loading(`Sedang menyalin daftar entitas dari ${sourceYear} ke ${targetYear}...`);
+
+    try {
+      // 1. Dapatkan semua perusahaan dari tahun sumber
+      const sourceItems = rupsData.filter(r => (r.periode || '').toString() === sourceYear);
+      if (sourceItems.length === 0) {
+        toast.error(`Tidak ditemukan data perusahaan pada Periode ${sourceYear}`, { id: toastId });
+        setIsCopyingYear(false);
+        return;
+      }
+
+      // 2. Dapatkan perusahaan yang sudah ada di tahun tujuan
+      const existingInTarget = new Set(
+        rupsData
+          .filter(r => (r.periode || '').toString() === targetYear)
+          .map(r => r.company.trim().toLowerCase())
+      );
+
+      // 3. Filter hanya yang belum ada di target (hindari duplikat)
+      const toCopy = sourceItems.filter(item => !existingInTarget.has(item.company.trim().toLowerCase()));
+
+      if (toCopy.length === 0) {
+        toast.info(`Semua perusahaan dari Periode ${sourceYear} sudah terdaftar di Periode ${targetYear}.`, { id: toastId });
+        setActivePeriode(targetYear);
+        setCopyModalOpen(false);
+        setIsCopyingYear(false);
+        return;
+      }
+
+      const payload = toCopy.map(item => ({
+        company: item.company,
+        periode: targetYear,
+        status: 'Not started',
+        stage: 'Drafting',
+        owner: keepOwner ? (item.owner || '') : '',
+        method: keepMethod ? (item.method || 'Sirkuler') : 'Sirkuler',
+        due_date: `${targetYear}-06-30`,
+        reminder_emails: item.reminderEmails || 'corporatesecretary@gesit.co.id',
+        notes: `Disalin dari Periode ${sourceYear}`,
+        updated_by: currentUser?.fullName || currentUser?.email || 'User'
+      }));
+
+      // Insert ke Supabase
+      const { data: inserted, error } = await supabase
+        .from('csl_rups_ar')
+        .insert(payload)
+        .select();
+
+      if (error && error.code !== '42P01') {
+        console.warn('Supabase copy year warning:', error);
+      }
+
+      const newEntries: RupsItem[] = (inserted && inserted.length > 0)
+        ? inserted.map((d: any) => ({
+            id: d.id,
+            company: d.company,
+            periode: d.periode,
+            status: d.status,
+            owner: d.owner || '',
+            startDate: '',
+            dueDate: d.due_date || `${targetYear}-06-30`,
+            finishDate: '',
+            notes: d.notes || '',
+            reminderEmails: d.reminder_emails || '',
+            method: d.method || 'Sirkuler',
+            stage: d.stage || 'Drafting',
+            updatedBy: d.updated_by || 'User'
+          }))
+        : payload.map((p, idx) => ({
+            id: Math.max(0, ...rupsData.map(r => r.id)) + idx + 1,
+            company: p.company,
+            periode: p.periode,
+            status: p.status,
+            owner: p.owner,
+            startDate: '',
+            dueDate: p.due_date,
+            finishDate: '',
+            notes: p.notes,
+            reminderEmails: p.reminder_emails,
+            method: p.method,
+            stage: p.stage,
+            updatedBy: p.updated_by
+          }));
+
+      setRupsData(prev => [...prev, ...newEntries]);
+      setActivePeriode(targetYear);
+      setCurrentPage(1);
+      setCopyModalOpen(false);
+      toast.success(`Berhasil menyalin ${newEntries.length} perusahaan ke Periode ${targetYear}!`, { id: toastId });
+    } catch (err: any) {
+      console.error('Copy year error:', err);
+      toast.error('Gagal menyalin data: ' + (err.message || 'Error tidak diketahui'), { id: toastId });
+    } finally {
+      setIsCopyingYear(false);
+    }
+  };
+
   const handleUpdateRups = (id: number, field: string, value: string) => {
     const updaterName = currentUser?.fullName || currentUser?.email || 'User';
     setRupsData(prev => prev.map(item => 
@@ -646,13 +754,26 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
   const handleSaveReminderEdit = async () => {
     if (!reminderEditTarget) return;
     const id = reminderEditTarget.id;
+    const updaterName = currentUser?.fullName || currentUser?.email || 'User';
+    const nowIso = new Date().toISOString();
     setRupsData(prev => prev.map(item =>
-      item.id === id ? { ...item, dueDate: reminderEditDueDate, reminderEmails: reminderEditEmails } : item
+      item.id === id ? { 
+        ...item, 
+        dueDate: reminderEditDueDate, 
+        reminderEmails: reminderEditEmails,
+        updatedBy: updaterName,
+        updatedAt: nowIso
+      } : item
     ));
     try {
       const { error } = await supabase
         .from('csl_rups_ar')
-        .update({ due_date: toISO(reminderEditDueDate) || null, reminder_emails: reminderEditEmails })
+        .update({ 
+          due_date: toISO(reminderEditDueDate) || null, 
+          reminder_emails: reminderEditEmails,
+          updated_by: updaterName,
+          updated_at: nowIso
+        })
         .eq('id', id);
       if (error && error.code !== '42P01') {
         toast.error('Gagal menyimpan: ' + error.message);
@@ -719,16 +840,21 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
     if (activeCategory === 'RUPS-AR') {
       if (!rupsForm.company.trim()) { toast.error('Company wajib diisi!'); return; }
       
+      const updaterName = currentUser?.fullName || currentUser?.email || 'User';
+      const nowIso = new Date().toISOString();
+
       const payload = {
         company: rupsForm.company,
         periode: (rupsForm as any).periode || new Date().getFullYear().toString(),
         status: rupsForm.status,
-        owner: rupsForm.owner,
+        owner: rupsForm.owner || '',
         start_date: toISO(rupsForm.startDate) || null,
         due_date: toISO((rupsForm as any).dueDate) || null,
         finish_date: toISO(rupsForm.finishDate) || null,
         notes: rupsForm.notes,
-        reminder_emails: (rupsForm as any).reminderEmails || ''
+        reminder_emails: (rupsForm as any).reminderEmails || '',
+        updated_by: updaterName,
+        updated_at: nowIso
       };
 
       try {
@@ -755,8 +881,10 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
           dueDate: data.due_date || '',
           finishDate: data.finish_date || '',
           notes: data.notes || '',
-          reminderEmails: data.reminder_emails || ''
-        } : { id: Math.max(0, ...rupsData.map(r => r.id)) + 1, ...rupsForm };
+          reminderEmails: data.reminder_emails || '',
+          updatedBy: updaterName,
+          updatedAt: nowIso
+        } : { id: Math.max(0, ...rupsData.map(r => r.id)) + 1, ...rupsForm, updatedBy: updaterName, updatedAt: nowIso };
 
         setRupsData(prev => [newEntry, ...prev]);
         setRupsForm(EMPTY_RUPS_FORM);
@@ -764,7 +892,7 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
       } catch (err) {
         // Local fallback
         const newId = Math.max(0, ...rupsData.map(r => r.id)) + 1;
-        setRupsData(prev => [{ id: newId, ...rupsForm }, ...prev]);
+        setRupsData(prev => [{ id: newId, ...rupsForm, updatedBy: updaterName, updatedAt: nowIso }, ...prev]);
         setRupsForm(EMPTY_RUPS_FORM);
         toast.success('Task RUPS-AR berhasil ditambahkan (Lokal)');
       }
@@ -853,34 +981,121 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
     setCurrentPage(1);
   };
 
+  // Summary Analytics for Task Management (Rekomendasi #4)
+  const taskStats = React.useMemo(() => {
+    let list: { status: string; company?: string }[] = [];
+    if (activeCategory === 'RUPS-AR') {
+      list = filteredRups;
+    } else if (activeCategory === 'ASET') {
+      list = filteredAset;
+    } else if (activeCategory === 'AGREEMENT') {
+      list = filteredAgreement;
+    } else {
+      list = filteredRups;
+    }
+
+    const total = list.length;
+    const completed = list.filter(i => (i.status || '').toLowerCase() === 'completed').length;
+    const inProgress = list.filter(i => (i.status || '').toLowerCase() === 'in progress').length;
+    const notStarted = list.filter(i => (i.status || '').toLowerCase() === 'not started').length;
+    const blocked = list.filter(i => (i.status || '').toLowerCase() === 'blocked').length;
+    const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+    const blockedList = list.filter(i => (i.status || '').toLowerCase() === 'blocked');
+
+    return { total, completed, inProgress, notStarted, blocked, pct, blockedList };
+  }, [activeCategory, filteredRups, filteredAset, filteredAgreement]);
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-12">
-      <PageHeader title="Task Management" description="Kelola berbagai aktivitas dan tugas CSL">
+      <PageHeader title="Tracking RUPS - AR" description="Monitoring kepatuhan RUPS Tahunan & Akta Perusahaan Grup Gesit">
         <div className="flex gap-2">
-          <Button size="sm" onClick={() => setIsModalOpen(true)} className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs">
-            <Plus className="h-4 w-4 mr-1.5" /> Buat Task Baru
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => setCopyModalOpen(true)} 
+            className="border-border/60 hover:bg-muted font-bold text-xs shadow-xs text-foreground"
+          >
+            <Copy className="h-4 w-4 mr-1.5" /> Salin Data ke Tahun Baru
+          </Button>
+          <Button size="sm" onClick={() => setIsModalOpen(true)} className="bg-[#0a2540] hover:bg-[#16375c] text-white font-bold text-xs shadow-xs">
+            <Plus className="h-4 w-4 mr-1.5" /> Buat Tugas Baru
           </Button>
         </div>
       </PageHeader>
 
-      {/* Category Tabs */}
-      <div className="rounded-xl border border-border/60 bg-card p-1.5 overflow-x-auto hide-scrollbar">
-        <div className="flex min-w-max gap-1">
-          {TASK_CATEGORIES.map(cat => (
-            <button
-              key={cat}
-              onClick={() => handleCategoryChange(cat)}
-              className={`whitespace-nowrap rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${
-                activeCategory === cat
-                  ? 'bg-foreground text-background shadow-sm'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
+      {/* Ringkasan Analisis & KPI Tugas */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="p-4 rounded-xl bg-card border border-border/60 shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between text-muted-foreground mb-1">
+            <span className="text-[11px] font-bold uppercase tracking-wider">Total Tugas RUPS</span>
+            <Layers className="size-4 text-blue-500" />
+          </div>
+          <div>
+            <div className="text-2xl font-black text-foreground">{taskStats.total}</div>
+            <div className="text-[11px] text-muted-foreground font-medium mt-0.5">
+              Kepatuhan RUPS · Periode {activePeriode}
+            </div>
+          </div>
+        </div>
+
+        <div className="p-4 rounded-xl bg-card border border-border/60 shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between text-muted-foreground mb-1">
+            <span className="text-[11px] font-bold uppercase tracking-wider">Tugas Selesai</span>
+            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+              {taskStats.pct}%
+            </span>
+          </div>
+          <div>
+            <div className="text-2xl font-black text-foreground">{taskStats.completed}</div>
+            <div className="text-[11px] text-muted-foreground font-medium mt-0.5">
+              Telah diselesaikan sepenuhnya
+            </div>
+          </div>
+        </div>
+
+        <div className="p-4 rounded-xl bg-card border border-border/60 shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between text-muted-foreground mb-1">
+            <span className="text-[11px] font-bold uppercase tracking-wider">Dalam Proses</span>
+            <Clock className="size-4 text-blue-500" />
+          </div>
+          <div>
+            <div className="text-2xl font-black text-foreground">{taskStats.inProgress}</div>
+            <div className="text-[11px] text-muted-foreground font-medium mt-0.5">
+              Sedang dikerjakan oleh PIC
+            </div>
+          </div>
+        </div>
+
+        <div className="p-4 rounded-xl bg-card border border-border/60 shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between text-muted-foreground mb-1">
+            <span className="text-[11px] font-bold uppercase tracking-wider">Perlu Perhatian</span>
+            <AlertTriangle className={`size-4 ${taskStats.blocked > 0 ? 'text-rose-500' : 'text-amber-500'}`} />
+          </div>
+          <div>
+            <div className={`text-2xl font-black ${taskStats.blocked > 0 ? 'text-rose-600' : 'text-foreground'}`}>
+              {taskStats.blocked} <span className="text-xs font-normal text-muted-foreground">Blocked / {taskStats.notStarted} Belum Mulai</span>
+            </div>
+            <div className="text-[11px] text-muted-foreground font-medium mt-0.5">
+              {taskStats.blocked > 0 ? 'Terdapat tugas terkendala' : 'Tidak ada tugas yang terblokir'}
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* Alert Perlu Perhatian jika ada tugas Blocked */}
+      {taskStats.blockedList.length > 0 && (
+        <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-900 dark:text-rose-200 text-xs flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <AlertTriangle className="size-4 text-rose-600 shrink-0" />
+            <span className="font-semibold">
+              Perlu Perhatian: Terdapat {taskStats.blockedList.length} tugas berstatus Blocked ({taskStats.blockedList.map(b => b.company).filter(Boolean).slice(0, 3).join(', ')})
+            </span>
+          </div>
+          <span className="text-[11px] font-bold uppercase px-2 py-0.5 rounded bg-rose-100 text-rose-800 dark:bg-rose-900/60 dark:text-rose-200">
+            Perlu Tindak Lanjut
+          </span>
+        </div>
+      )}
 
       {/* Toolbar */}
       <div className="flex flex-col gap-3 rounded-xl border border-border/60 bg-card p-3 sm:flex-row sm:items-center">
@@ -889,7 +1104,7 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
           <Input
             value={searchTerm}
             onChange={e => handleSearchChange(e.target.value)}
-            placeholder={`Cari task di kategori ${activeCategory}...`}
+            placeholder="Cari perusahaan, PIC, notaris, status RUPS..."
             className="h-9 rounded-lg border-border/60 bg-background pl-9 text-sm shadow-none"
           />
         </div>
@@ -969,12 +1184,12 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
             <TableHeader className="bg-muted/60">
               <TableRow className="border-b border-border/70 hover:bg-muted/60">
                 <TableHead className="h-10 w-12 px-3 text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">#</TableHead>
-                <TableHead className="h-10 min-w-[210px] px-4 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Company</TableHead>
+                <TableHead className="h-10 min-w-[210px] px-4 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Perusahaan</TableHead>
                 <TableHead className="h-10 w-[130px] px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Tahapan</TableHead>
                 <TableHead className="h-10 w-[120px] px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Metode</TableHead>
                 <TableHead className="h-10 w-[130px] px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Status</TableHead>
-                <TableHead className="h-10 w-[135px] px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Start date</TableHead>
-                <TableHead className="h-10 w-[135px] px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Complete date</TableHead>
+                <TableHead className="h-10 w-[135px] px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Tanggal Mulai</TableHead>
+                <TableHead className="h-10 w-[135px] px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Tanggal Selesai</TableHead>
                 <TableHead className="h-10 min-w-[170px] px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Legalitas / Akta</TableHead>
                 <TableHead className="h-10 w-[140px] px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Diperbarui Oleh</TableHead>
                 <TableHead className="h-10 w-16 px-2 text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Aksi</TableHead>
@@ -1168,13 +1383,13 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
             <TableHeader className="bg-[#6B4B8B] text-white">
               <TableRow className="hover:bg-[#6B4B8B]">
                 <TableHead className="w-12 text-center text-white/90 font-bold">#</TableHead>
-                <TableHead className="text-white/90 font-bold border-l border-white/20">Company Name</TableHead>
-                <TableHead className="text-white/90 font-bold border-l border-white/20">Task</TableHead>
+                <TableHead className="text-white/90 font-bold border-l border-white/20">Perusahaan</TableHead>
+                <TableHead className="text-white/90 font-bold border-l border-white/20">Tugas</TableHead>
                 <TableHead className="text-white/90 font-bold border-l border-white/20">Status</TableHead>
-                <TableHead className="text-white/90 font-bold border-l border-white/20">Owner</TableHead>
-                <TableHead className="text-white/90 font-bold border-l border-white/20">Start date</TableHead>
-                <TableHead className="text-white/90 font-bold border-l border-white/20">Due date</TableHead>
-                <TableHead className="text-white/90 font-bold border-l border-white/20">Notes</TableHead>
+                <TableHead className="text-white/90 font-bold border-l border-white/20">Penanggung Jawab</TableHead>
+                <TableHead className="text-white/90 font-bold border-l border-white/20">Tanggal Mulai</TableHead>
+                <TableHead className="text-white/90 font-bold border-l border-white/20">Tenggat Waktu</TableHead>
+                <TableHead className="text-white/90 font-bold border-l border-white/20">Catatan</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -1303,13 +1518,13 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
             <TableHeader className="bg-[#4A3570] text-white">
               <TableRow className="hover:bg-[#4A3570]">
                 <TableHead className="w-10 text-center text-white/90 font-bold">#</TableHead>
-                <TableHead className="text-white/90 font-bold border-l border-white/20">Request by/for</TableHead>
-                <TableHead className="text-white/90 font-bold border-l border-white/20">Task</TableHead>
+                <TableHead className="text-white/90 font-bold border-l border-white/20">Pemohon / Pihak</TableHead>
+                <TableHead className="text-white/90 font-bold border-l border-white/20">Tugas</TableHead>
                 <TableHead className="text-white/90 font-bold border-l border-white/20">Status</TableHead>
-                <TableHead className="text-white/90 font-bold border-l border-white/20">Owner</TableHead>
-                <TableHead className="text-white/90 font-bold border-l border-white/20">Start date</TableHead>
-                <TableHead className="text-white/90 font-bold border-l border-white/20">Finish date</TableHead>
-                <TableHead className="text-white/90 font-bold border-l border-white/20">Notes</TableHead>
+                <TableHead className="text-white/90 font-bold border-l border-white/20">Penanggung Jawab</TableHead>
+                <TableHead className="text-white/90 font-bold border-l border-white/20">Tanggal Mulai</TableHead>
+                <TableHead className="text-white/90 font-bold border-l border-white/20">Tanggal Selesai</TableHead>
+                <TableHead className="text-white/90 font-bold border-l border-white/20">Catatan</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -1865,6 +2080,123 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
             </Button>
             <Button size="sm" onClick={handleSaveReminderEdit} className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl h-9 px-5">
               Simpan
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Dialog Salin Data Periode ── */}
+      <Dialog open={copyModalOpen} onOpenChange={setCopyModalOpen}>
+        <DialogContent className="sm:max-w-[480px] p-0 overflow-hidden rounded-2xl border border-border/60 bg-card shadow-2xl">
+          <DialogHeader className="p-6 pb-4 border-b border-border/40 bg-gradient-to-br from-muted/50 to-background">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-200">
+                <Copy className="h-5 w-5" />
+              </div>
+              <div>
+                <DialogTitle className="text-base font-bold text-foreground">
+                  Salin Data RUPS ke Tahun Baru
+                </DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+                  Duplikasi seluruh daftar PT dari tahun sebelumnya tanpa perlu input ulang nama PT satu per satu.
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="p-6 space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block mb-1.5">
+                  Dari Tahun (Sumber)
+                </label>
+                <select
+                  value={sourceYear}
+                  onChange={(e) => setSourceYear(e.target.value)}
+                  className="w-full h-9 text-xs font-semibold border border-border/60 bg-background rounded-lg px-3 focus:outline-none focus:ring-2 focus:ring-ring/30"
+                >
+                  {[2024, 2025, 2026, 2027, 2028].map(y => (
+                    <option key={y} value={y.toString()}>
+                      Periode {y} ({rupsData.filter(r => (r.periode || '').toString() === y.toString()).length} PT)
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block mb-1.5">
+                  Ke Tahun (Tujuan)
+                </label>
+                <select
+                  value={targetYear}
+                  onChange={(e) => setTargetYear(e.target.value)}
+                  className="w-full h-9 text-xs font-semibold border border-border/60 bg-background rounded-lg px-3 focus:outline-none focus:ring-2 focus:ring-ring/30"
+                >
+                  {[2025, 2026, 2027, 2028, 2029].map(y => (
+                    <option key={y} value={y.toString()}>Periode {y}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="p-3 rounded-xl bg-muted/40 border border-border/40 space-y-2">
+              <p className="text-[11px] font-semibold text-foreground flex items-center gap-1.5">
+                <CheckCircle2 className="h-3.5 w-3.5 text-blue-600" /> Pengaturan Duplikasi:
+              </p>
+              <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={keepOwner}
+                  onChange={(e) => setKeepOwner(e.target.checked)}
+                  className="rounded border-border/60 text-blue-600 focus:ring-blue-500"
+                />
+                Pertahankan PIC / Owner dari tahun sebelumnya
+              </label>
+              <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={keepMethod}
+                  onChange={(e) => setKeepMethod(e.target.checked)}
+                  className="rounded border-border/60 text-blue-600 focus:ring-blue-500"
+                />
+                Pertahankan Metode RUPS (Sirkuler / Fisik)
+              </label>
+            </div>
+
+            <div className="text-[11px] text-muted-foreground bg-blue-50/50 border border-blue-100 dark:bg-blue-950/20 dark:border-blue-900/50 p-2.5 rounded-lg flex gap-2">
+              <Clock className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
+              <span>
+                Status seluruh tugas di tahun baru otomatis diatur ke <b>Not started (Drafting)</b> dengan batas jatuh tempo <b>30 Juni {targetYear}</b>. Berkas akta lama tidak akan terbawa.
+              </span>
+            </div>
+          </div>
+
+          <DialogFooter className="p-4 border-t border-border/40 bg-muted/20 gap-2 flex sm:justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setCopyModalOpen(false)}
+              disabled={isCopyingYear}
+              className="text-xs font-semibold rounded-lg h-9"
+            >
+              Batal
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleBatchCopyYear}
+              disabled={isCopyingYear}
+              className="bg-[#0a2540] hover:bg-[#16375c] text-white text-xs font-bold rounded-lg h-9 px-4 gap-1.5"
+            >
+              {isCopyingYear ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" /> Menyalin...
+                </>
+              ) : (
+                <>
+                  <Copy className="h-3.5 w-3.5" /> Salin Data ke {targetYear}
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -906,10 +906,10 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
 
   const pageTitle = 'Request / Ticketing';
   const pageDesc = isAdmin
-    ? 'Overview of all CSL requests across departments & staff'
+    ? 'Ikhtisar seluruh permintaan legal CSL antar departemen & staf'
     : isStaff
-      ? 'Requests assigned to you and unassigned requests awaiting action'
-      : 'Track your submitted requests and their SLA status';
+      ? 'Permintaan yang ditugaskan kepada Anda dan menunggu tindakan'
+      : 'Pantau status dan kepatuhan SLA dari permintaan yang Anda ajukan';
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-10">
@@ -921,10 +921,10 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
             </span>
           )}
           <Button variant="outline" size="sm" onClick={fetchData} className="text-xs font-bold">
-            <RefreshCcw className="h-3.5 w-3.5 mr-1.5" /> Refresh
+            <RefreshCcw className="h-3.5 w-3.5 mr-1.5" /> Segarkan
           </Button>
-          <Button size="sm" onClick={() => setIsCreateOpen(true)} className="bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs h-9">
-            <Plus className="h-4 w-4 mr-1.5" /> Create Request
+          <Button size="sm" onClick={() => setIsCreateOpen(true)} className="bg-[#0a2540] hover:bg-[#16375c] text-white font-bold text-xs h-9 shadow-xs">
+            <Plus className="h-4 w-4 mr-1.5" /> Buat Permintaan
           </Button>
         </div>
       </PageHeader>
@@ -933,28 +933,28 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         {[
           {
-            label: 'On Track',
+            label: 'Sesuai SLA',
             value: slaStats.onTrack,
             icon: CheckCircle2,
-            sub: 'Active, within SLA',
+            sub: 'Aktif, dalam target waktu',
           },
           {
-            label: 'Due Soon',
+            label: 'Mendekati Tenggat',
             value: slaStats.dueSoon + slaStats.dueToday,
             icon: Clock,
-            sub: 'Approaching deadline',
+            sub: 'Mendekati batas waktu SLA',
           },
           {
-            label: 'Overdue',
+            label: 'Lewat Tenggat',
             value: slaStats.overdue,
             icon: AlertTriangle,
-            sub: 'Past SLA deadline',
+            sub: 'Melebihi target batas SLA',
           },
           {
-            label: 'Total Requests',
+            label: 'Total Permintaan',
             value: slaStats.total,
             icon: BarChart2,
-            sub: `${slaStats.onTime} completed on time`,
+            sub: `${slaStats.onTime} selesai tepat waktu`,
           },
         ].map(({ label, value, icon: Icon, sub }) => (
           <div key={label} className="bg-card border border-border/40 p-5 rounded-xl shadow-sm flex flex-col justify-between">
@@ -978,7 +978,7 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
           <div className="relative w-full sm:w-80">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input 
-              placeholder="Search by number, requester, description..." 
+              placeholder="Cari nomor, pemohon, deskripsi..." 
               className="pl-9 h-9 text-sm rounded-md"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -988,12 +988,12 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
           {/* Shadcn Tabs style for status */}
           <div className="inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground w-full sm:w-auto overflow-x-auto hide-scrollbar">
             {[
-              { id: 'ALL', label: 'All' },
-              { id: 'SUBMITTED', label: 'Submitted' },
-              { id: 'PROCESSING', label: 'Processing' },
-              { id: 'REVIEW_USER', label: 'Review User' },
-              { id: 'COMPLETED', label: 'Completed' },
-              { id: 'REJECTED', label: 'Rejected' },
+              { id: 'ALL', label: 'Semua' },
+              { id: 'SUBMITTED', label: 'Diajukan' },
+              { id: 'PROCESSING', label: 'Diproses' },
+              { id: 'REVIEW_USER', label: 'Review Pemohon' },
+              { id: 'COMPLETED', label: 'Selesai' },
+              { id: 'REJECTED', label: 'Ditolak' },
             ].map(cat => (
               <button
                 key={cat.id}
@@ -1014,13 +1014,13 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
       {/* Content Rendering: Table */}
       {isLoading ? (
         <div className="bg-card border border-border/40 rounded-xl p-12 text-center text-muted-foreground flex items-center justify-center gap-2 font-medium text-sm">
-          <Loader2 className="h-5 w-5 animate-spin text-primary" /> Loading requests...
+          <Loader2 className="h-5 w-5 animate-spin text-primary" /> Memuat data permintaan...
         </div>
       ) : filtered.length === 0 ? (
         <div className="bg-card border border-border/40 rounded-xl p-12 text-center text-muted-foreground flex flex-col items-center justify-center gap-2">
           <Ticket size={32} className="opacity-30" />
-          <p className="font-semibold text-sm text-foreground">No requests found</p>
-          <p className="text-xs text-muted-foreground">Try adjusting your search query or filter criteria.</p>
+          <p className="font-semibold text-sm text-foreground">Tidak ada permintaan ditemukan</p>
+          <p className="text-xs text-muted-foreground">Coba sesuaikan kata kunci pencarian atau kriteria filter Anda.</p>
         </div>
       ) : (
         <div className="rounded-xl border border-border/80 bg-card shadow-sm overflow-hidden">
@@ -1032,7 +1032,7 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-mono text-muted-foreground bg-muted/50 border border-border/50 px-2.5 py-1 rounded-md">
-                {filtered.length} Request
+                {filtered.length} Permintaan
               </span>
             </div>
           </div>
@@ -1040,13 +1040,13 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
           <Table className="w-full table-fixed">
             <TableHeader className="sticky top-0 z-10 bg-card">
               <TableRow className="border-border/60 hover:bg-transparent bg-muted/30">
-                <TableHead className="h-10 pl-6 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground w-[38%]">Request</TableHead>
+                <TableHead className="h-10 pl-6 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground w-[38%]">Permintaan</TableHead>
                 {view !== 'mine' && (
-                  <TableHead className="h-10 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground w-[18%]">Requester</TableHead>
+                  <TableHead className="h-10 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground w-[18%]">Pemohon</TableHead>
                 )}
-                <TableHead className="h-10 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground w-[16%]">Owner</TableHead>
-                <TableHead className="h-10 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground w-[22%]">Status &amp; Timeline</TableHead>
-                <TableHead className="h-10 pr-4 text-right text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground w-[6%]">Action</TableHead>
+                <TableHead className="h-10 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground w-[16%]">Penanggung Jawab</TableHead>
+                <TableHead className="h-10 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground w-[22%]">Status &amp; Tenggat</TableHead>
+                <TableHead className="h-10 pr-4 text-right text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground w-[6%]">Aksi</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -1223,83 +1223,101 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
           {/* Table Footer */}
           <div className="px-6 py-3.5 bg-muted/20 border-t border-border/40 flex items-center justify-between">
             <p className="text-xs text-muted-foreground">
-              Showing <span className="font-semibold text-foreground">{filtered.length}</span> of <span className="font-semibold text-foreground">{requests.length}</span> requests
+              Menampilkan <span className="font-semibold text-foreground">{filtered.length}</span> dari <span className="font-semibold text-foreground">{requests.length}</span> permintaan
             </p>
             {useMock && <Badge variant="outline" className="text-xs font-medium text-muted-foreground border-border bg-muted/40">Demo Data</Badge>}
           </div>
         </div>
       )}
 
-      {/* Detail Dialog (Shadcn Monochromatic / Neutral Professional UI) */}
-      <Dialog open={!!selectedRequest} onOpenChange={(open) => !open && closeDetailModal()}>
-        <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col p-0 overflow-hidden rounded-xl border bg-background shadow-2xl">
-          {selectedRequest && (() => {
-            const displaySlaDueDate = selectedRequest.required_date || selectedRequest.sla_due_date;
-            const sla = getSlaStatus(displaySlaDueDate, selectedRequest.status, selectedRequest.completed_at);
-            const slaBadge = SLA_BADGE[sla];
+      {/* Slide-over Detail Panel per design.md §1.4, §6, §13.5 */}
+      {selectedRequest && (() => {
+        const displaySlaDueDate = selectedRequest.required_date || selectedRequest.sla_due_date;
+        const sla = getSlaStatus(displaySlaDueDate, selectedRequest.status, selectedRequest.completed_at);
+        const slaBadge = SLA_BADGE[sla];
 
-            const oldAttachments: string[] = (() => {
-              try { return JSON.parse((selectedRequest as any).attachments || '[]'); } catch { return []; }
-            })();
-            const responseFilesList: any[] = (() => {
-              try { return JSON.parse((selectedRequest as any).csl_response_files || '[]'); } catch { return []; }
-            })();
-            const hasDocuments = oldAttachments.length > 0 || requestDocuments.length > 0 || responseFilesList.length > 0;
-            const totalDocCount = oldAttachments.length + requestDocuments.length + responseFilesList.length;
+        const oldAttachments: string[] = (() => {
+          try { return JSON.parse((selectedRequest as any).attachments || '[]'); } catch { return []; }
+        })();
+        const responseFilesList: any[] = (() => {
+          try { return JSON.parse((selectedRequest as any).csl_response_files || '[]'); } catch { return []; }
+        })();
+        const hasDocuments = oldAttachments.length > 0 || requestDocuments.length > 0 || responseFilesList.length > 0;
+        const totalDocCount = oldAttachments.length + requestDocuments.length + responseFilesList.length;
 
-            const fallbackEvents: { date: string; status: string; actor: string; note?: string; hasFiles?: boolean; attachments?: any[]; isInternal?: boolean }[] =
-              requestLogs.length === 0
-                ? [{ date: selectedRequest.created_at, status: 'SUBMITTED', actor: selectedRequest.requester_name, note: 'Permintaan diajukan oleh pemohon' }]
-                : [];
-            const allEvents = [
-              ...fallbackEvents,
-              ...requestLogs.map((l: any) => ({
-                date: l.created_at,
-                status: l.status,
-                actor: l.actor_name,
-                note: l.note,
-                hasFiles: l.has_files,
-                attachments: Array.isArray(l.attachments) ? l.attachments : [],
-                isInternal: l.is_internal,
-              }))
-            ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-              .filter(evt => isCslTeam || !evt.isInternal);
+        const fallbackEvents: { date: string; status: string; actor: string; note?: string; hasFiles?: boolean; attachments?: any[]; isInternal?: boolean }[] =
+          requestLogs.length === 0
+            ? [{ date: selectedRequest.created_at, status: 'SUBMITTED', actor: selectedRequest.requester_name, note: 'Permintaan diajukan oleh pemohon' }]
+            : [];
+        const allEvents = [
+          ...fallbackEvents,
+          ...requestLogs.map((l: any) => ({
+            date: l.created_at,
+            status: l.status,
+            actor: l.actor_name,
+            note: l.note,
+            hasFiles: l.has_files,
+            attachments: Array.isArray(l.attachments) ? l.attachments : [],
+            isInternal: l.is_internal,
+          }))
+        ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+          .filter(evt => isCslTeam || !evt.isInternal);
 
-            const renderDocIcon = (name: string) => {
-              const ext = (name.split('.').pop() || '').toLowerCase();
-              if (['pdf'].includes(ext)) return <FileText size={15} className="text-red-500 shrink-0" />;
-              if (['doc', 'docx'].includes(ext)) return <FileText size={15} className="text-blue-500 shrink-0" />;
-              if (['xls', 'xlsx', 'csv'].includes(ext)) return <FileText size={15} className="text-emerald-500 shrink-0" />;
-              if (['png', 'jpg', 'jpeg', 'webp', 'gif'].includes(ext)) return <Paperclip size={15} className="text-amber-500 shrink-0" />;
-              return <Paperclip size={15} className="text-muted-foreground shrink-0" />;
-            };
+        const renderDocIcon = (name: string) => {
+          const ext = (name.split('.').pop() || '').toLowerCase();
+          if (['pdf'].includes(ext)) return <FileText size={15} className="text-red-500 shrink-0" />;
+          if (['doc', 'docx'].includes(ext)) return <FileText size={15} className="text-blue-500 shrink-0" />;
+          if (['xls', 'xlsx', 'csv'].includes(ext)) return <FileText size={15} className="text-emerald-500 shrink-0" />;
+          if (['png', 'jpg', 'jpeg', 'webp', 'gif'].includes(ext)) return <Paperclip size={15} className="text-amber-500 shrink-0" />;
+          return <Paperclip size={15} className="text-muted-foreground shrink-0" />;
+        };
 
-            return (
-              <div className="w-full flex flex-col max-h-[90vh] overflow-hidden">
+        return (
+          <>
+            {/* Backdrop Scrim */}
+            <div
+              onClick={closeDetailModal}
+              className="fixed inset-0 bg-[#0a192f]/35 z-50 backdrop-blur-xs transition-opacity duration-200"
+            />
+
+            {/* Slide-over Sheet (580px max width for tabs, responsive) */}
+            <aside
+              className="fixed top-0 right-0 bottom-0 w-[580px] max-w-[94vw] bg-white dark:bg-slate-900 border-l border-[#e6e9f0] dark:border-slate-800 shadow-2xl z-50 overflow-hidden flex flex-col animate-in slide-in-from-right duration-300"
+            >
+              <div className="w-full flex flex-col h-full overflow-hidden">
                 {/* Header */}
-                <DialogHeader className="px-6 py-4 border-b border-border bg-card/40 shrink-0">
-                  <div className="flex flex-col gap-1.5">
-                    <div className="flex flex-wrap items-center gap-2.5">
-                      <DialogTitle className="text-xl font-bold font-mono tracking-tight text-foreground">
-                        {selectedRequest.request_number}
-                      </DialogTitle>
-                      <span className={`inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold ${STATUS_BADGE[selectedRequest.status] || ''}`}>
-                        {formatStatusText(selectedRequest.status)}
-                      </span>
-                      <span className={`inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-medium ${slaBadge.className}`}>
-                        {slaBadge.label}
-                      </span>
-                      {selectedRequest.priority && ['High', 'Critical'].includes(selectedRequest.priority) && (
-                        <span className={`inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-medium ${PRIORITY_BADGE[selectedRequest.priority] || ''}`}>
-                          Prioritas {selectedRequest.priority}
+                <div className="px-6 py-4 border-b border-[#e6e9f0] dark:border-slate-800 bg-[#fafbfc] dark:bg-slate-900/60 shrink-0">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-lg font-bold font-mono tracking-tight text-[#0a2540] dark:text-white">
+                          {selectedRequest.request_number}
                         </span>
-                      )}
+                        <span className={`inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold ${STATUS_BADGE[selectedRequest.status] || ''}`}>
+                          {formatStatusText(selectedRequest.status)}
+                        </span>
+                        <span className={`inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-medium ${slaBadge.className}`}>
+                          {slaBadge.label}
+                        </span>
+                        {selectedRequest.priority && ['High', 'Critical'].includes(selectedRequest.priority) && (
+                          <span className={`inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-medium ${PRIORITY_BADGE[selectedRequest.priority] || ''}`}>
+                            Prioritas {selectedRequest.priority}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-[#758196] truncate">
+                        Diajukan oleh <span className="font-semibold text-[#16233a] dark:text-slate-200">{selectedRequest.requester_name}</span> · {selectedRequest.department} ({selectedRequest.company})
+                      </p>
                     </div>
-                    <DialogDescription className="text-xs text-muted-foreground">
-                      Diajukan oleh <span className="font-semibold text-foreground">{selectedRequest.requester_name}</span> · {selectedRequest.department} ({selectedRequest.company}) · {new Date(selectedRequest.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                    </DialogDescription>
+
+                    <button
+                      onClick={closeDetailModal}
+                      className="p-1.5 rounded-full border border-[#e6e9f0] dark:border-slate-700 hover:bg-[#f6f7f9] dark:hover:bg-slate-800 text-[#758196] hover:text-[#0a2540] dark:hover:text-white transition-colors shrink-0"
+                    >
+                      <X size={16} />
+                    </button>
                   </div>
-                </DialogHeader>
+                </div>
 
                 {/* Tabs Navigation */}
                 <Tabs defaultValue="overview" className="flex-1 flex flex-col min-h-0 overflow-hidden">
@@ -2203,10 +2221,10 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                   )}
                 </Tabs>
               </div>
-            );
-          })()}
-        </DialogContent>
-      </Dialog>
+            </aside>
+          </>
+        );
+      })()}
 
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
         <DialogContent className="sm:max-w-3xl max-h-[90vh] flex flex-col p-0 overflow-hidden rounded-xl border bg-card shadow-xl">

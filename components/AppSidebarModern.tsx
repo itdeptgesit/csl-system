@@ -175,13 +175,13 @@ export function AppSidebarModern({
           allowed.add('csl-requests')
         }
         if (g === 'routine_view' || g === 'routine') {
-          allowed.add('routine'); allowed.add('routine-monitoring'); allowed.add('routine-lkpm')
+          allowed.add('routine'); allowed.add('routine-rups'); allowed.add('routine-lkpm'); allowed.add('routine-tbk'); allowed.add('routine-offshore'); allowed.add('routine-admgt')
         }
         if (g === 'routine_create' || g === 'routine_manage') {
-          allowed.add('routine-task'); allowed.add('routine-timeline'); allowed.add('routine-lkpm')
+          allowed.add('routine'); allowed.add('routine-rups'); allowed.add('routine-lkpm'); allowed.add('routine-tbk'); allowed.add('routine-offshore'); allowed.add('routine-admgt')
         }
         if (g === 'budget' || g === 'budget_view') {
-          allowed.add('budget'); allowed.add('budget-expense'); allowed.add('budget-offshore-invoice')
+          allowed.add('budget'); allowed.add('budget-expense'); allowed.add('budget-report'); allowed.add('budget-offshore-invoice')
         }
         if (g === 'directory' || g === 'directory_view') {
           allowed.add('directory'); allowed.add('directory-all'); allowed.add('directory-lawyer'); allowed.add('directory-vendor'); allowed.add('directory-government'); allowed.add('directory-other')
@@ -190,16 +190,13 @@ export function AppSidebarModern({
           allowed.add('credentials')
         }
         if (g === 'csl_staff' || g === 'staff') {
-          ;['dashboard', 'csl-requests', 'routine', 'routine-task', 'routine-lkpm', 'budget', 'budget-expense', 'budget-offshore-invoice', 'directory', 'directory-all', 'directory-lawyer', 'directory-vendor', 'directory-government', 'directory-other', 'credentials', 'reports', 'reports-request', 'reports-task', 'reports-budget', 'profile'].forEach((id) => allowed.add(id))
+          ;['dashboard', 'csl-requests', 'routine', 'routine-rups', 'routine-lkpm', 'routine-tbk', 'routine-offshore', 'routine-admgt', 'routine-task', 'companies', 'settings-companies', 'budget', 'budget-expense', 'budget-report', 'budget-offshore-invoice', 'directory', 'directory-all', 'directory-lawyer', 'directory-vendor', 'directory-government', 'directory-other', 'credentials', 'profile'].forEach((id) => allowed.add(id))
         }
         if (g === 'admin' || g === 'csl_admin') {
           APP_MENU_STRUCTURE.forEach((m) => {
             if (m.id !== 'settings-users' && m.id !== 'settings-system') allowed.add(m.id)
           })
           allowed.add('credentials')
-        }
-        if (g === 'reports' || g === 'reports_view') {
-          allowed.add('reports'); allowed.add('reports-request'); allowed.add('reports-task'); allowed.add('reports-budget')
         }
         if (g === 'settings' || g === 'settings_manage') {
           allowed.add('settings'); allowed.add('settings-categories'); allowed.add('settings-sla'); allowed.add('settings-notifications'); allowed.add('settings-users'); allowed.add('settings-companies'); allowed.add('settings-departments'); allowed.add('settings-system')
@@ -237,11 +234,11 @@ export function AppSidebarModern({
       ;[
         'dashboard',
         'csl-requests',
-        'routine', 'routine-task', 'routine-lkpm',
-        'budget', 'budget-expense', 'budget-offshore-invoice',
+        'routine', 'routine-rups', 'routine-lkpm', 'routine-tbk', 'routine-offshore', 'routine-admgt', 'routine-task',
+        'companies', 'settings-companies',
+        'budget', 'budget-expense', 'budget-report', 'budget-offshore-invoice',
         'directory', 'directory-all', 'directory-lawyer', 'directory-vendor', 'directory-government', 'directory-other',
         'credentials',
-        'reports', 'reports-request', 'reports-task', 'reports-budget',
         'profile'
       ].forEach((id) => allowed.add(id))
       return allowed

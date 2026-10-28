@@ -315,13 +315,39 @@ export interface PurchasePlan {
   linkedTaskId?: number;
 }
 
+export interface CompanyAssetMetadata {
+  drive_file_id: string;
+  drive_web_view_link: string;
+  file_name: string;
+  file_size: number;
+  mime_type?: string;
+  uploaded_at: string;
+  uploaded_by?: string;
+  preview_url?: string;
+}
+
 export interface Company {
   id: number;
   code: string;
   name: string;
-  address: string;
-  phone: string;
-  website: string;
+  short_name?: string;
+  status?: 'Aktif' | 'Nonaktif';
+  npwp?: string;
+  nib?: string;
+  ahu_number?: string;
+  address?: string;
+  city?: string;
+  postal_code?: string;
+  phone?: string;
+  email?: string;
+  website?: string;
+  departments?: number;
+  employees?: number;
+  assets?: {
+    logo?: CompanyAssetMetadata | null;
+    kop?: CompanyAssetMetadata | null;
+    stempel?: CompanyAssetMetadata | null;
+  };
 }
 export interface NotificationItem {
   id: string;
