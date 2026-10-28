@@ -328,8 +328,9 @@ export interface CompanyAssetMetadata {
 
 export interface Company {
   id: number;
-  code: string;
   name: string;
+  code: string;
+  group_company?: string;
   short_name?: string;
   status?: 'Aktif' | 'Nonaktif';
   npwp?: string;

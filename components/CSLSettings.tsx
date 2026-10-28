@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { supabase, supabaseAdmin, ensureAuthUserWithPassword } from '../lib/supabaseClient';
 
 import { UserAccount } from '../types';
@@ -134,6 +134,7 @@ export interface CompanyItem {
   id: number | string;
   name: string;
   code: string;
+  group_company?: string;
   short_name?: string;
   status?: 'Aktif' | 'Nonaktif';
   npwp?: string;
@@ -145,8 +146,8 @@ export interface CompanyItem {
   phone?: string;
   email?: string;
   website?: string;
-  departments: number;
-  employees: number;
+  departments?: number;
+  employees?: number;
   assets?: {
     logo?: CompanyAssetMetadata | null;
     kop?: CompanyAssetMetadata | null;
@@ -393,11 +394,99 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
   const [userPerms, setUserPerms] = useState<MenuPermissions>(DEFAULT_REQUESTER_PERMISSIONS);
   const [isSavingPerms, setIsSavingPerms] = useState(false);
 
+  // User-specified 9 Company Groups
+  const COMPANY_GROUPS = [
+    'Holding',
+    'GNR',
+    'Property',
+    'Trading',
+    'Manufacture',
+    'Offshore',
+    'Public',
+    'Personal',
+    'Foundation',
+  ] as const;
+
+  // Company Group Lookup
+  const companyGroupLookup = useMemo(() => {
+    const map = new Map<string, string>();
+    const pList = (lkpmData as any)?.['2026']?.perusahaan || [];
+    for (const item of pList) {
+      if (item.nama && item.grup) {
+        map.set(item.nama.toLowerCase().trim(), item.grup);
+      }
+    }
+    return map;
+  }, []);
+
+  const getResolvedGroup = (name: string, explicitGroup?: string): string => {
+    if (explicitGroup && explicitGroup.trim()) {
+      const match = COMPANY_GROUPS.find(g => g.toLowerCase() === explicitGroup.toLowerCase().trim());
+      if (match) return match;
+      const eg = explicitGroup.toLowerCase();
+      if (eg.includes('hold')) return 'Holding';
+      if (eg.includes('gnr') || eg.includes('mining') || eg.includes('mineral') || eg.includes('tambang')) return 'GNR';
+      if (eg.includes('prop') || eg.includes('real') || eg.includes('graha')) return 'Property';
+      if (eg.includes('trade') || eg.includes('dagang') || eg.includes('niaga')) return 'Trading';
+      if (eg.includes('manuf') || eg.includes('pabrik') || eg.includes('industri') || eg.includes('extrusindo')) return 'Manufacture';
+      if (eg.includes('offshore') || eg.includes('limited')) return 'Offshore';
+      if (eg.includes('tbk') || eg.includes('public')) return 'Public';
+      if (eg.includes('yayasan') || eg.includes('found')) return 'Foundation';
+      if (eg.includes('person') || eg.includes('pribadi')) return 'Personal';
+    }
+
+    const n = (name || '').toLowerCase();
+    if (n.includes('tbk') || n.includes('alakasa industrindo')) return 'Public';
+    if (n.includes('limited') || n.includes('investment one') || n.includes('das development')) return 'Offshore';
+    if (n.includes('peduli bangsa') || n.includes('yayasan')) return 'Foundation';
+    if (n.includes('extrusindo') || n.includes('alumas') || n.includes('grafika jaya') || n.includes('industri terpadu')) return 'Manufacture';
+    if (n.includes('intrade') || n.includes('niaga') || n.includes('perdagangan') || n.includes('trading')) return 'Trading';
+    if (n.includes('graha') || n.includes('propert') || n.includes('sudirman perkasa') || n.includes('sudirman mandiri') || n.includes('bahana cipta')) return 'Property';
+    if (n.includes('energi') || n.includes('mineral') || n.includes('alumina') || n.includes('bauksit') || n.includes('batu mulia') || n.includes('sejahtera mandiri') || n.includes('gnr')) return 'GNR';
+    if (n.includes('holding') || n.includes('bumi persada') || n.includes('alakasa alumina refineri') || n.includes('arjuna bumi cahaya')) return 'Holding';
+
+    for (const [k, v] of companyGroupLookup.entries()) {
+      if (n.includes(k) || k.includes(n)) {
+        const uv = v.toUpperCase();
+        if (uv.includes('HOLDING')) return 'Holding';
+        if (uv.includes('OPERATING') || uv.includes('MINING')) return 'GNR';
+        if (uv.includes('BUSINESS')) return 'Trading';
+      }
+    }
+    return 'Holding';
+  };
+
+  const getGroupBadgeClass = (grp: string) => {
+    switch (grp) {
+      case 'Holding':
+        return 'bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border-purple-200 dark:border-purple-800';
+      case 'GNR':
+        return 'bg-amber-50 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border-amber-200 dark:border-amber-800';
+      case 'Property':
+        return 'bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border-blue-200 dark:border-blue-800';
+      case 'Trading':
+        return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800';
+      case 'Manufacture':
+        return 'bg-orange-50 text-orange-700 dark:bg-orange-950/60 dark:text-orange-300 border-orange-200 dark:border-orange-800';
+      case 'Offshore':
+        return 'bg-cyan-50 text-cyan-700 dark:bg-cyan-950/60 dark:text-cyan-300 border-cyan-200 dark:border-cyan-800';
+      case 'Public':
+        return 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800';
+      case 'Personal':
+        return 'bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border-rose-200 dark:border-rose-800';
+      case 'Foundation':
+        return 'bg-teal-50 text-teal-700 dark:bg-teal-950/60 dark:text-teal-300 border-teal-200 dark:border-teal-800';
+      default:
+        return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700';
+    }
+  };
+
   // Company Modal State
   const [companyModalOpen, setCompanyModalOpen] = useState(false);
   const [editingCompany, setEditingCompany] = useState<CompanyItem | null>(null);
-  const [companyForm, setCompanyForm] = useState({ name: '', code: '', npwp: '', city: '', departments: 1, employees: 10 });
+  const [companyForm, setCompanyForm] = useState({ name: '', code: '', group_company: 'Holding', npwp: '', city: '' });
   const [companySearch, setCompanySearch] = useState('');
+  const [selectedGroupFilter, setSelectedGroupFilter] = useState<string>('all');
   const [selectedCompany, setSelectedCompany] = useState<CompanyItem | null>(null);
   const [companyAssets, setCompanyAssets] = useState<Record<string, { logo?: string | null; kop?: string | null; stempel?: string | null }>>(() => {
     try {
@@ -516,12 +605,16 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
         const exists = companies.some(c => c.name.toLowerCase() === name.toLowerCase());
         if (!exists) {
           const code = name.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 6) || 'CO';
-          await supabase.from('companies').insert([{
+          const resolvedGroup = getResolvedGroup(name);
+          const insertPayload: any = {
             name,
             code,
-            departments: 1,
-            employees: 1
-          }]);
+            group_company: resolvedGroup,
+          };
+          let { error: insertErr } = await supabase.from('companies').insert([insertPayload]);
+          if (insertErr && insertErr.message?.includes('group_company')) {
+            await supabase.from('companies').insert([{ name, code }]);
+          }
           added++;
         }
       }
@@ -548,12 +641,16 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
         const normName = item.name.toLowerCase().trim();
         const normCode = item.code.toUpperCase().trim();
         if (!existingNames.has(normName) && !existingCodes.has(normCode)) {
-          await supabase.from('companies').insert([{
+          const resolvedGroup = getResolvedGroup(item.name);
+          const insertPayload: any = {
             name: item.name,
             code: item.code,
-            departments: 1,
-            employees: 1
-          }]);
+            group_company: resolvedGroup,
+          };
+          let { error: insertErr } = await supabase.from('companies').insert([insertPayload]);
+          if (insertErr && insertErr.message?.includes('group_company')) {
+            await supabase.from('companies').insert([{ name: item.name, code: item.code }]);
+          }
           existingNames.add(normName);
           existingCodes.add(normCode);
           added++;
@@ -634,10 +731,13 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
               (u.company && u.company.toLowerCase() === c.name.toLowerCase())
             ).length;
             
+            const group_company = c.group_company || c.group || c.grup || getResolvedGroup(c.name);
+
             return {
               id: c.id,
               name: c.name,
               code: c.code || '',
+              group_company,
               departments: c.departments || 0,
               employees: memberCount,
             };
@@ -931,14 +1031,13 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
       setCompanyForm({
         name: c.name,
         code: c.code,
+        group_company: c.group_company || getResolvedGroup(c.name),
         npwp: (c as any).npwp || '',
         city: (c as any).city || (c as any).address || '',
-        departments: c.departments || 1,
-        employees: c.employees || 10,
       });
     } else {
       setEditingCompany(null);
-      setCompanyForm({ name: '', code: '', npwp: '', city: '', departments: 1, employees: 10 });
+      setCompanyForm({ name: '', code: '', group_company: '', npwp: '', city: '' });
     }
     setCompanyModalOpen(true);
   };
@@ -952,22 +1051,33 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
     try {
       const code = companyForm.code.toUpperCase().trim();
       const name = companyForm.name.trim();
+      const group_company = companyForm.group_company.trim() || getResolvedGroup(name);
       if (editingCompany) {
-        const { error } = await supabase.from('companies').update({
+        let { error } = await supabase.from('companies').update({
           name,
           code,
-          departments: Number(companyForm.departments),
-          employees: Number(companyForm.employees),
+          group_company,
         }).eq('id', editingCompany.id);
+
+        if (error && (error.message?.includes('group_company') || error.code === 'PGRST204')) {
+          const retry = await supabase.from('companies').update({ name, code }).eq('id', editingCompany.id);
+          error = retry.error;
+        }
+
         if (error) throw error;
         toast.success(`Entitas "${name}" (${code}) berhasil diperbarui!`);
       } else {
-        const { error } = await supabase.from('companies').insert([{
+        let { error } = await supabase.from('companies').insert([{
           name,
           code,
-          departments: Number(companyForm.departments),
-          employees: Number(companyForm.employees),
+          group_company,
         }]);
+
+        if (error && (error.message?.includes('group_company') || error.code === 'PGRST204')) {
+          const retry = await supabase.from('companies').insert([{ name, code }]);
+          error = retry.error;
+        }
+
         if (error) throw error;
         toast.success(`Entitas "${name}" (${code}) berhasil didaftarkan!`);
       }
@@ -2107,8 +2217,12 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
 
     const filteredCompanies = companies.filter(c => {
       const q = companySearch.trim().toLowerCase();
+      const grp = c.group_company || getResolvedGroup(c.name);
+      if (selectedGroupFilter !== 'all' && grp.toLowerCase() !== selectedGroupFilter.toLowerCase()) {
+        return false;
+      }
       if (!q) return true;
-      return (c.name + ' ' + c.code).toLowerCase().includes(q);
+      return (c.name + ' ' + c.code + ' ' + grp).toLowerCase().includes(q);
     });
 
     return (
@@ -2225,15 +2339,34 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
         </div>
 
         {/* SEARCH & HINT BAR */}
-        <div className="flex flex-wrap items-center gap-3 pt-1">
-          <div className="relative flex-1 max-w-sm">
-            <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-            <Input
-              placeholder="Cari perusahaan / kode..."
-              value={companySearch}
-              onChange={(e) => setCompanySearch(e.target.value)}
-              className="w-full pl-9 h-9 rounded-full bg-white dark:bg-slate-900 border-[#e6e9f0] dark:border-slate-800 text-xs"
-            />
+        {/* SEARCH & FILTER BAR */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+          <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-[280px]">
+            <div className="relative flex-1 max-w-sm">
+              <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Input
+                placeholder="Cari perusahaan, kode, grup..."
+                value={companySearch}
+                onChange={(e) => setCompanySearch(e.target.value)}
+                className="w-full pl-9 h-9 rounded-full bg-white dark:bg-slate-900 border-[#e6e9f0] dark:border-slate-800 text-xs"
+              />
+            </div>
+            {/* Filter Group Company Dropdown */}
+            <select
+              value={selectedGroupFilter}
+              onChange={(e) => setSelectedGroupFilter(e.target.value)}
+              className="h-9 px-3 rounded-full bg-white dark:bg-slate-900 border border-[#e6e9f0] dark:border-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-[#0a2540]"
+            >
+              <option value="all">Semua Group ({companies.length})</option>
+              {COMPANY_GROUPS.map(grp => {
+                const count = companies.filter(c => (c.group_company || getResolvedGroup(c.name)) === grp).length;
+                return (
+                  <option key={grp} value={grp}>
+                    {grp} ({count})
+                  </option>
+                );
+              })}
+            </select>
           </div>
           <span className="text-[12.5px] text-[#758196] font-semibold">
             Klik baris untuk profil lengkap &amp; unggah berkas ke Google Drive.
@@ -2250,10 +2383,7 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
                     Entitas
                   </TableHead>
                   <TableHead className="py-3 px-3 text-[11px] font-bold uppercase tracking-wider text-[#758196]">
-                    Departemen
-                  </TableHead>
-                  <TableHead className="py-3 px-3 text-[11px] font-bold uppercase tracking-wider text-[#758196]">
-                    Karyawan
+                    Group Company
                   </TableHead>
                   <TableHead className="py-3 px-3 text-[11px] font-bold uppercase tracking-wider text-[#758196]">
                     Logo
@@ -2275,14 +2405,15 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
               <TableBody className="divide-y divide-[#e6e9f0] dark:divide-slate-800">
                 {filteredCompanies.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="h-28 text-center text-xs font-semibold text-[#758196]">
-                      Tidak ada entitas yang cocok dengan pencarian.
+                    <TableCell colSpan={7} className="h-28 text-center text-xs font-semibold text-[#758196]">
+                      Tidak ada entitas yang cocok dengan pencarian atau filter.
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredCompanies.map(c => {
                     const a = companyAssets[c.code] || {};
                     const dc = (a.logo ? 1 : 0) + (a.kop ? 1 : 0) + (a.stempel ? 1 : 0);
+                    const grpName = c.group_company || getResolvedGroup(c.name);
                     return (
                       <TableRow
                         key={c.id}
@@ -2306,14 +2437,11 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
                           </div>
                         </TableCell>
 
-                        {/* Departemen */}
-                        <TableCell className="py-3 px-3 text-xs text-slate-700 dark:text-slate-300 font-medium">
-                          {c.departments || 0}
-                        </TableCell>
-
-                        {/* Karyawan */}
-                        <TableCell className="py-3 px-3 text-xs text-slate-700 dark:text-slate-300 font-medium">
-                          {c.employees || 0}
+                        {/* Group Company */}
+                        <TableCell className="py-3 px-3">
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11.5px] font-semibold border ${getGroupBadgeClass(grpName)}`}>
+                            {grpName}
+                          </span>
                         </TableCell>
 
                         {/* Logo Chip */}
@@ -2488,21 +2616,13 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
                       {(selectedCompany as any).nib || '-'}
                     </b>
                   </div>
-                  <div className="bg-[#fbfbfc] dark:bg-slate-800/60 border border-[#e6e9f0] dark:border-slate-700/80 rounded-xl p-3">
-                    <span className="block text-[10px] tracking-wider text-[#758196] font-bold uppercase mb-0.5">
-                      DEPARTEMEN
+                  <div className="col-span-2 bg-[#fbfbfc] dark:bg-slate-800/60 border border-[#e6e9f0] dark:border-slate-700/80 rounded-xl p-3">
+                    <span className="block text-[10px] tracking-wider text-[#758196] font-bold uppercase mb-1">
+                      GROUP COMPANY
                     </span>
-                    <b className="text-xs text-slate-800 dark:text-slate-200">
-                      {selectedCompany.departments || 0} departemen
-                    </b>
-                  </div>
-                  <div className="bg-[#fbfbfc] dark:bg-slate-800/60 border border-[#e6e9f0] dark:border-slate-700/80 rounded-xl p-3">
-                    <span className="block text-[10px] tracking-wider text-[#758196] font-bold uppercase mb-0.5">
-                      KARYAWAN
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border ${getGroupBadgeClass(selectedCompany.group_company || getResolvedGroup(selectedCompany.name))}`}>
+                      {selectedCompany.group_company || getResolvedGroup(selectedCompany.name)}
                     </span>
-                    <b className="text-xs text-slate-800 dark:text-slate-200">
-                      {selectedCompany.employees || 0} karyawan
-                    </b>
                   </div>
                   <div className="col-span-2 bg-[#fbfbfc] dark:bg-slate-800/60 border border-[#e6e9f0] dark:border-slate-700/80 rounded-xl p-3">
                     <span className="block text-[10px] tracking-wider text-[#758196] font-bold uppercase mb-0.5">
@@ -2780,6 +2900,23 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
                     className="text-xs font-semibold"
                   />
                 </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-[#758196]">
+                  GROUP COMPANY *
+                </label>
+                <select
+                  value={companyForm.group_company || 'Holding'}
+                  onChange={e => setCompanyForm({ ...companyForm, group_company: e.target.value })}
+                  className="w-full h-9 rounded-md border border-[#e6e9f0] dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-1 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0a2540]"
+                >
+                  {COMPANY_GROUPS.map(grp => (
+                    <option key={grp} value={grp}>
+                      {grp}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="grid grid-cols-2 gap-3">

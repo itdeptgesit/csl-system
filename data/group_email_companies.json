@@ -1,0 +1,663 @@
+[
+  {
+    "no": 6,
+    "name": "Alakasa Alumina Refineri",
+    "code": "AAR",
+    "email": "alakasaaluminarefineri@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 7,
+    "name": "Alakasa Andalan Mitrasejati",
+    "code": "AAM",
+    "email": "alakasaandalanmitrasejati@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 8,
+    "name": "Alakasa Extrusindo",
+    "code": "AE",
+    "email": "alakasaextrusindo@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 9,
+    "name": "Alakasa Industrindo",
+    "code": "AI",
+    "email": "alakasaindustrindo@gesit.co.id",
+    "aliases": [],
+    "isExisting": true
+  },
+  {
+    "no": 10,
+    "name": "Alka Niaga Industri",
+    "code": "ANI",
+    "email": "alkaniagaindustri@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 12,
+    "name": "Andalas Inti Mulia",
+    "code": "AIM",
+    "email": "andalasintimulia@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 15,
+    "name": "Aneka Rejeki Cepat",
+    "code": "ARC",
+    "email": "anekarejekicepat@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 16,
+    "name": "Arjuna Bumi Cahaya",
+    "code": "ABC",
+    "email": "arjunabumicahaya@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 17,
+    "name": "Asia Investment One Limited",
+    "code": "AIOL",
+    "email": "asiainvestmentonelimited@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 18,
+    "name": "Bahana Cipta Permai",
+    "code": "BCP",
+    "email": "bahanaciptapermai@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 19,
+    "name": "Baranusa Insan Gemilang",
+    "code": "BIG",
+    "email": "baranusainsangemilang@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 20,
+    "name": "Bara Optima Sejahtera",
+    "code": "BOS",
+    "email": "baraoptimasejahtera@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 22,
+    "name": "Bumi Batu Mulia",
+    "code": "BBM",
+    "email": "bumibatumulia@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 23,
+    "name": "Bumi Grafika Jaya",
+    "code": "BGJ",
+    "email": "bumigrafikajaya@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 24,
+    "name": "Cakrawala Mandiri Sedaya",
+    "code": "CMS",
+    "email": "cakrawalamandirisedaya@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 27,
+    "name": "Citra Mulia Nusa Bangsa",
+    "code": "CMNB",
+    "email": "citramulianusabangsa@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 31,
+    "name": "DA Internasional",
+    "code": "DI",
+    "email": "dainternasional@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 36,
+    "name": "DAS Development Limited",
+    "code": "DDL",
+    "email": "dasdevelopmentlimited@gesit.co.id",
+    "aliases": [
+      "das21@gesit.co.id",
+      "dasdevelopmentlimited1@gesit.co.id",
+      "dasdevelopmentlimited2@gesit.co.id",
+      "dasdevelopmentlimited3@gesit.co.id"
+    ],
+    "isExisting": false
+  },
+  {
+    "no": 37,
+    "name": "Delta Prima Mineral",
+    "code": "DPM",
+    "email": "deltaprimamineral@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 40,
+    "name": "Determinan Indah",
+    "code": "DI2",
+    "email": "determinanindah@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 44,
+    "name": "PT Dharma Alumas Sakti",
+    "code": "DAS",
+    "email": "dharmaalumassakti@gesit.co.id",
+    "aliases": [
+      "dharmaalumassakti1@gesit.co.id",
+      "dharmaalumassakti2@gesit.co.id",
+      "dharmaalumassakti3@gesit.co.id"
+    ],
+    "isExisting": true
+  },
+  {
+    "no": 45,
+    "name": "Dinamika Sejahtera Mandiri",
+    "code": "DSM",
+    "email": "dinamikasejahteramandiri@gesit.co.id",
+    "aliases": [],
+    "isExisting": true
+  },
+  {
+    "no": 50,
+    "name": "Dwi Dinamika Sejahtera",
+    "code": "DDS",
+    "email": "dwidinamikasejahtera@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 62,
+    "name": "Gesit Alumas",
+    "code": "GA",
+    "email": "gesitalumas@gesit.co.id",
+    "aliases": [],
+    "isExisting": true
+  },
+  {
+    "no": 64,
+    "name": "Gesit Bumi Persada",
+    "code": "GBP",
+    "email": "gesitbumipersada@gesit.co.id",
+    "aliases": [
+      "gesitbumipersada1@gesit.co.id"
+    ],
+    "isExisting": false
+  },
+  {
+    "no": 66,
+    "name": "Gesit Graha",
+    "code": "GG",
+    "email": "gesitgraha@gesit.co.id",
+    "aliases": [],
+    "isExisting": true
+  },
+  {
+    "no": 67,
+    "name": "Gesit Graha Pratama",
+    "code": "GGP",
+    "email": "gesitgrahapratama@gesit.co.id",
+    "aliases": [
+      "gesitsgrahapratama@gesit.co.id"
+    ],
+    "isExisting": false
+  },
+  {
+    "no": 69,
+    "name": "Gesit Intrade",
+    "code": "GI",
+    "email": "gesitintrade@gesit.co.id",
+    "aliases": [
+      "gesitintrade1@gesit.co.id"
+    ],
+    "isExisting": true
+  },
+  {
+    "no": 70,
+    "name": "Gesit Maju",
+    "code": "GM",
+    "email": "gesitmaju@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 71,
+    "name": "Gesit Makmur Utama",
+    "code": "GMU",
+    "email": "gesitmakmurutama@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 72,
+    "name": "Gesit Peduli Bangsa",
+    "code": "GPB",
+    "email": "gesitpedulibangsa@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 75,
+    "name": "Gesit Perkasa",
+    "code": "GP",
+    "email": "gesitperkasa@gesit.co.id",
+    "aliases": [
+      "gesitperkasa1@gesit.co.id",
+      "gesitperkasa2@gesit.co.id"
+    ],
+    "isExisting": true
+  },
+  {
+    "no": 76,
+    "name": "Gesit Sarana Perkasa",
+    "code": "GSP",
+    "email": "gesitsaranaperkasa@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 85,
+    "name": "Graha Sejahtera Asri",
+    "code": "GSA",
+    "email": "grahasejahteraasri@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 93,
+    "name": "HTT Management",
+    "code": "HM",
+    "email": "httmanagement@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 94,
+    "name": "HTT Perkasa Indonesia",
+    "code": "HPI",
+    "email": "httperkasaindonesia@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 95,
+    "name": "HTT Sarana Perkasa",
+    "code": "HSP",
+    "email": "httsaranaperkasa@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 96,
+    "name": "Indonesia Alumina",
+    "code": "IA",
+    "email": "indonesiaalumina@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 97,
+    "name": "Indonesia Bauxite Alumina",
+    "code": "IBA",
+    "email": "indonesianbauxitealumina@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 104,
+    "name": "Jaya Mitra Investasi",
+    "code": "JMI",
+    "email": "jayamitrainvestasi@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 105,
+    "name": "Jaya Sejahtera Investasi",
+    "code": "JSI",
+    "email": "jayasejahterainvestasi@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 106,
+    "name": "Jaya Sudirman Mandiri",
+    "code": "JSM",
+    "email": "jayasudirmanmandiri@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 107,
+    "name": "Jaya Sudirman Perkasa",
+    "code": "JSP",
+    "email": "jayasudirmanperkasa@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 108,
+    "name": "JSAlu Investasi Pratama",
+    "code": "JIP",
+    "email": "jsaluinvestasipratama@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 109,
+    "name": "JS Capital",
+    "code": "JSC",
+    "email": "jscapital@gesit.co.id",
+    "aliases": [],
+    "isExisting": true
+  },
+  {
+    "no": 110,
+    "name": "JSGlobal Energi Pratama",
+    "code": "JEP",
+    "email": "jsglobalenergipratama@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 111,
+    "name": "JSGlobal Logistik Energi",
+    "code": "JLE",
+    "email": "jsgloballogistikenergi@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 112,
+    "name": "JSGlobal Mineral Energi",
+    "code": "JME",
+    "email": "jsglobalmineralenergi@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 114,
+    "name": "Kalimantan Alumina Nusantara",
+    "code": "KAN",
+    "email": "kalimantanaluminanusantara@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 115,
+    "name": "Kalimantan Industri Terpadu",
+    "code": "KIT",
+    "email": "kalimantanindustriterpadu@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 119,
+    "name": "Lima Garda Sakti",
+    "code": "LGS",
+    "email": "limagardasakti@gesit.co.id",
+    "aliases": [
+      "das21@gesit.co.id"
+    ],
+    "isExisting": false
+  },
+  {
+    "no": 120,
+    "name": "Lima Sudirman Perkasa",
+    "code": "LSP",
+    "email": "limasudirmanperkasa@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 122,
+    "name": "Mandara Prima Nusantara",
+    "code": "MPN",
+    "email": "mandaraprimanusantara@gesit.co.id",
+    "aliases": [
+      "ptmandara@gesit.co.id"
+    ],
+    "isExisting": false
+  },
+  {
+    "no": 129,
+    "name": "Merdeka Nusantara Makmur",
+    "code": "MNM",
+    "email": "merdekanusantaramakmur@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 131,
+    "name": "Mineral Jaya Perkasa",
+    "code": "MJP",
+    "email": "mineraljayaperkasa@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 132,
+    "name": "Mineral Sejahtera Utama",
+    "code": "MSU",
+    "email": "mineralsejahterautama@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 133,
+    "name": "Mitraharapan Karya Utama",
+    "code": "MKU",
+    "email": "mitraharapankaryautama@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 135,
+    "name": "Mitra Harapan Sakti",
+    "code": "MHS",
+    "email": "mitraharapansakti@gesit.co.id",
+    "aliases": [
+      "mitraharapansakti1@gesit.co.id"
+    ],
+    "isExisting": false
+  },
+  {
+    "no": 136,
+    "name": "Mitra Senayan Sejati",
+    "code": "MSS",
+    "email": "mitrasenayansejati@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 137,
+    "name": "Mitra Sudirman Lestari",
+    "code": "MSL",
+    "email": "mitrasudirmanlestari@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 138,
+    "name": "Mitra Sudirman Mandiri",
+    "code": "MSM",
+    "email": "mitrasudirmanmandiri@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 142,
+    "name": "Permata Teguh Sejahtera",
+    "code": "PTS",
+    "email": "permatateguhsejahtera@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 145,
+    "name": "PT Prodas Perdana",
+    "code": "PRODAS",
+    "email": "prodasperdana@gesit.co.id",
+    "aliases": [
+      "das21@gesit.co.id"
+    ],
+    "isExisting": true
+  },
+  {
+    "no": 147,
+    "name": "Cahaya Kapuas Tayan",
+    "code": "CKT",
+    "email": "ptcahayakapuastayan@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 150,
+    "name": "Rakasa Prima Mineral",
+    "code": "RPM",
+    "email": "rakasaprimamineral@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 152,
+    "name": "Rheem",
+    "code": "RHE",
+    "email": "rheem@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 157,
+    "name": "Sembilan Empat Investama",
+    "code": "SEI",
+    "email": "sembilanempatinvestama@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 158,
+    "name": "Sigma Prima Indotama",
+    "code": "SPI",
+    "email": "sigmaprimaindotama@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 159,
+    "name": "Sinar Bangsa",
+    "code": "SB",
+    "email": "sinarbangsa@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 160,
+    "name": "Sinar Energi Teguh",
+    "code": "SET",
+    "email": "sinarenergiteguh@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 161,
+    "name": "Sinergi Andalan Tama",
+    "code": "SAT",
+    "email": "sinergiandalantama@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 162,
+    "name": "Sircon Development",
+    "code": "SD",
+    "email": "sircondevelopment@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 163,
+    "name": "Sircon Griya Jaya",
+    "code": "SGJ",
+    "email": "sircongriyajaya@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 164,
+    "name": "Sircon Investment",
+    "code": "SI",
+    "email": "sirconinvestment@gesit.co.id",
+    "aliases": [],
+    "isExisting": true
+  },
+  {
+    "no": 170,
+    "name": "Teguh Bumi Perkasa",
+    "code": "TBP",
+    "email": "teguhbumiperkasa@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 171,
+    "name": "Terra Makmur Sarana",
+    "code": "TMS",
+    "email": "terramakmursarana@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 172,
+    "name": "Trinitas Investment",
+    "code": "TI",
+    "email": "trinitasinvestment@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 173,
+    "name": "Vista Primanusa Persada",
+    "code": "VPP",
+    "email": "vistaprimanusapersada@gesit.co.id",
+    "aliases": [],
+    "isExisting": false
+  },
+  {
+    "no": 176,
+    "name": "Windas Development",
+    "code": "WD",
+    "email": "windasdevelopment@gesit.co.id",
+    "aliases": [
+      "das21@gesit.co.id",
+      "windas@gesit.co.id"
+    ],
+    "isExisting": false
+  }
+]

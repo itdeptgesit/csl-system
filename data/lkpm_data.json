@@ -1,0 +1,3358 @@
+{
+  "2026": {
+    "perusahaan": [
+      {
+        "nama": "Alakasa Alumina Refineri",
+        "grup": "MINING HOLDING",
+        "kegiatan": "Holding"
+      },
+      {
+        "nama": "Arjuna Bumi Cahaya",
+        "grup": "MINING HOLDING",
+        "kegiatan": "Holding/Perdagangan"
+      },
+      {
+        "nama": "Gesit Bumi Persada",
+        "grup": "MINING HOLDING",
+        "kegiatan": "Holding"
+      },
+      {
+        "nama": "Mitra Harapan Sakti",
+        "grup": "MINING HOLDING",
+        "kegiatan": "Holding/Perdagangan"
+      },
+      {
+        "nama": "Sinergi Andalan Tama",
+        "grup": "MINING HOLDING",
+        "kegiatan": "Holding"
+      },
+      {
+        "nama": "Sinar Energi Teguh",
+        "grup": "MINING HOLDING",
+        "kegiatan": "Holding"
+      },
+      {
+        "nama": "Alpha Investama Globalindo",
+        "grup": "MINING HOLDING",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Selaras Investama Globalindo",
+        "grup": "MINING HOLDING",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Bersinar Abadi Energi",
+        "grup": "MINING HOLDING",
+        "kegiatan": "Laterit"
+      },
+      {
+        "nama": "Terang Abadi Energi",
+        "grup": "MINING HOLDING",
+        "kegiatan": "Laterit"
+      },
+      {
+        "nama": "Andalas Inti Mulia",
+        "grup": "MINING OPERATING COMPANIES",
+        "kegiatan": "Iron"
+      },
+      {
+        "nama": "Baranusa Insan Gemilang",
+        "grup": "MINING OPERATING COMPANIES",
+        "kegiatan": "Laterit"
+      },
+      {
+        "nama": "Bara Optima Sejahtera",
+        "grup": "MINING OPERATING COMPANIES",
+        "kegiatan": "Laterit"
+      },
+      {
+        "nama": "Bumi Batu Mulia",
+        "grup": "MINING OPERATING COMPANIES",
+        "kegiatan": "Laterit"
+      },
+      {
+        "nama": "Cahaya Kapuas Tayan",
+        "grup": "MINING OPERATING COMPANIES",
+        "kegiatan": "Bauksit"
+      },
+      {
+        "nama": "Cakrawala Mandiri Sedaya",
+        "grup": "MINING OPERATING COMPANIES",
+        "kegiatan": "Bauksit"
+      },
+      {
+        "nama": "Delta Prima Mineral",
+        "grup": "MINING OPERATING COMPANIES",
+        "kegiatan": "Silika/Laterit"
+      },
+      {
+        "nama": "Dinamika Sejahtera Mandiri",
+        "grup": "MINING OPERATING COMPANIES",
+        "kegiatan": "Bauksit"
+      },
+      {
+        "nama": "Dwi Dinamika Sejahtera",
+        "grup": "MINING OPERATING COMPANIES",
+        "kegiatan": "Laterit"
+      },
+      {
+        "nama": "Grahasejahtera Asri",
+        "grup": "MINING OPERATING COMPANIES",
+        "kegiatan": "Bauksit"
+      },
+      {
+        "nama": "Indonesia Alumina",
+        "grup": "MINING OPERATING COMPANIES",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Kalimantan Alumina Nusantara",
+        "grup": "MINING OPERATING COMPANIES",
+        "kegiatan": "Refineri"
+      },
+      {
+        "nama": "Kalimantan Industri Terpadu",
+        "grup": "MINING OPERATING COMPANIES",
+        "kegiatan": "Kawasan"
+      },
+      {
+        "nama": "Mandara Prima Nusantara",
+        "grup": "MINING OPERATING COMPANIES",
+        "kegiatan": "Bauksit"
+      },
+      {
+        "nama": "Merdeka Nusantara Makmur",
+        "grup": "MINING OPERATING COMPANIES",
+        "kegiatan": "Laterit"
+      },
+      {
+        "nama": "Mineral Jaya Perkasa",
+        "grup": "MINING OPERATING COMPANIES",
+        "kegiatan": "Laterit"
+      },
+      {
+        "nama": "Mineral Sejahtera Utama",
+        "grup": "MINING OPERATING COMPANIES",
+        "kegiatan": "Bauksit"
+      },
+      {
+        "nama": "Permata Teguh Sejahtera",
+        "grup": "MINING OPERATING COMPANIES",
+        "kegiatan": "Laterit"
+      },
+      {
+        "nama": "Rakasa Prima Mineral",
+        "grup": "MINING OPERATING COMPANIES",
+        "kegiatan": "Silika"
+      },
+      {
+        "nama": "Sigma Prima Indotama",
+        "grup": "MINING OPERATING COMPANIES",
+        "kegiatan": "Silika"
+      },
+      {
+        "nama": "Teguh Bumi Perkasa",
+        "grup": "MINING OPERATING COMPANIES",
+        "kegiatan": "Laterit"
+      },
+      {
+        "nama": "Vista Primanusa Persada",
+        "grup": "MINING OPERATING COMPANIES",
+        "kegiatan": "Silika"
+      },
+      {
+        "nama": "Alakasa Andalan Mitra Sejati",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Alakasa Mitra Cbox",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Alakasa Extrusindo",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Alka Niaga Industri",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Bahana Cipta Permai",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Bumi Grafika Jaya",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Catur Boga Pratama",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "DA International",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Determinan Indah",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Dharma Alumas Sakti",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Gesit Alumas",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Gesit Graha",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Gesit Intrade",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Gesit Makmur Utama",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Gesit Maju",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Gesit Perkasa",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Gesit Sarana Perkasa",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "HTT Sarana Perkasa",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "JSAlu Investasi Pratama",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "JSCapital Investasi Gesit",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "JSGlobal Energi Pratama",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "JSGlobal Logistik Energi",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "JSGlobal Mineral Energi",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Jaya Mitra Investasi",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Jaya Sejahtera Investasi",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Jaya Sudirman Mandiri",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Jaya Sudirman Perkasa",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Lima Garda Sakti",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Lima Sudirman Perkasa",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Mitra Harapan Karya Utama",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Mitra Senayan Sejati",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Mitra Sudirman Lestari",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Mitra Sudirman Mandiri",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Prodas Perdana",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Rheem Indonesia",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Sembilan Empat Investama",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Sinar Bangsa",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Sircon Development",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Sircon Griya Jaya",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Sircon Investment",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Terra Makmur Sarana",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Trinitas Investment",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Windas Development",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Yayasan Citra Mulia Nusa Bangsa",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Yayasan Gesit Peduli Bangsa",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Perusahaan yang mendapatkan Sanksi Peringatan",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "LKPM telah disubmit dan disetujui",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "LKPM telah disubmit namun butuh perbaikan",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Skala usaha mikro tidak wajib lapor LKPM (Pasal 286 ayat 2 Perka BPKM)",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      }
+    ],
+    "unit": [
+      {
+        "id": "unit-2026-7",
+        "tahun": 2026,
+        "perusahaan": "Alakasa Alumina Refineri",
+        "grup": "MINING HOLDING",
+        "kegiatan": "Holding",
+        "kbli": "24202",
+        "nku": "202205-1715-5238-7045-899",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "Stephanie",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "disubmit oleh legal HO",
+        "document": "SNK-202610010037359633388 tgl 1 Okt'26",
+        "status": {
+          "tw1": "Lapor",
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-8",
+        "tahun": 2026,
+        "perusahaan": "Alakasa Alumina Refineri",
+        "grup": "MINING HOLDING",
+        "kegiatan": "Holding",
+        "kbli": "46620",
+        "nku": "202205-1714-4803-8222-274",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "disubmit oleh legal HO",
+        "document": "SNK-202610010037361793299 tgl 1 Okt'26",
+        "status": {
+          "tw1": "Lapor",
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-9",
+        "tahun": 2026,
+        "perusahaan": "Alakasa Alumina Refineri",
+        "grup": "MINING HOLDING",
+        "kegiatan": "Holding",
+        "kbli": "64200",
+        "nku": "202205-1713-4258-6347-510",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "disubmit oleh legal HO",
+        "document": "",
+        "status": {
+          "tw1": "Lapor",
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-10",
+        "tahun": 2026,
+        "perusahaan": "Arjuna Bumi Cahaya",
+        "grup": "MINING HOLDING",
+        "kegiatan": "Holding/Perdagangan",
+        "kbli": "64200",
+        "nku": "",
+        "kategori_khusus": "Tidak Wajib (Mikro)",
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "skala usaha mikro tidak wajib lapor LKPM (Pasal 286 ayat 2 Perka BPKM No. 5/2025)",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": null,
+          "tw3": null,
+          "tw4": null
+        }
+      },
+      {
+        "id": "unit-2026-11",
+        "tahun": 2026,
+        "perusahaan": "Gesit Bumi Persada",
+        "grup": "MINING HOLDING",
+        "kegiatan": "Holding",
+        "kbli": "64200",
+        "nku": "",
+        "kategori_khusus": "Tidak Wajib (Mikro)",
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "skala usaha mikro tidak wajib lapor LKPM (Pasal 286 ayat 2 Perka BPKM No. 5/2025)",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": null,
+          "tw3": null,
+          "tw4": null
+        }
+      },
+      {
+        "id": "unit-2026-12",
+        "tahun": 2026,
+        "perusahaan": "Mitra Harapan Sakti",
+        "grup": "MINING HOLDING",
+        "kegiatan": "Holding/Perdagangan",
+        "kbli": "64200",
+        "nku": "",
+        "kategori_khusus": "Tidak Wajib (Mikro)",
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "skala usaha mikro tidak wajib lapor LKPM (Pasal 286 ayat 2 Perka BPKM No. 5/2025)",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": null,
+          "tw3": null,
+          "tw4": null
+        }
+      },
+      {
+        "id": "unit-2026-13",
+        "tahun": 2026,
+        "perusahaan": "Sinergi Andalan Tama",
+        "grup": "MINING HOLDING",
+        "kegiatan": "Holding",
+        "kbli": "64200",
+        "nku": "",
+        "kategori_khusus": "Handover",
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "sudah handover ke PM per Q2 2026",
+        "document": "",
+        "status": {
+          "tw1": "Lapor",
+          "tw2": null,
+          "tw3": null,
+          "tw4": null
+        }
+      },
+      {
+        "id": "unit-2026-14",
+        "tahun": 2026,
+        "perusahaan": "Sinar Energi Teguh",
+        "grup": "MINING HOLDING",
+        "kegiatan": "Holding",
+        "kbli": "64200",
+        "nku": "",
+        "kategori_khusus": "Handover",
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "sudah handover ke PM per 25 Mei 2026",
+        "document": "",
+        "status": {
+          "tw1": "Lapor",
+          "tw2": null,
+          "tw3": null,
+          "tw4": null
+        }
+      },
+      {
+        "id": "unit-2026-17",
+        "tahun": 2026,
+        "perusahaan": "Bersinar Abadi Energi",
+        "grup": "MINING HOLDING",
+        "kegiatan": "Laterit",
+        "kbli": "08105",
+        "nku": "202503-2016-0058-3705-675",
+        "kategori_khusus": null,
+        "sanksi": true,
+        "pic_fa": "",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "menerima sanksi",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": null,
+          "tw3": "Lapor",
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-18",
+        "tahun": 2026,
+        "perusahaan": "Bersinar Abadi Energi",
+        "grup": "MINING HOLDING",
+        "kegiatan": "Laterit",
+        "kbli": "",
+        "nku": "202503-1514-5758-4434-643",
+        "kategori_khusus": null,
+        "sanksi": true,
+        "pic_fa": "Petrus",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "disubmit oleh legal HO",
+        "document": "",
+        "status": {
+          "tw1": "Lapor",
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-19",
+        "tahun": 2026,
+        "perusahaan": "Bersinar Abadi Energi",
+        "grup": "MINING HOLDING",
+        "kegiatan": "Laterit",
+        "kbli": "",
+        "nku": "202503-1213-3059-1697-933",
+        "kategori_khusus": null,
+        "sanksi": true,
+        "pic_fa": "",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "menerima sanksi",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": null,
+          "tw3": "Lapor",
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-20",
+        "tahun": 2026,
+        "perusahaan": "Terang Abadi Energi",
+        "grup": "MINING HOLDING",
+        "kegiatan": "Laterit",
+        "kbli": "08105",
+        "nku": "202503-1420-1735-4011-989",
+        "kategori_khusus": null,
+        "sanksi": true,
+        "pic_fa": "",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "menerima sanksi",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": null,
+          "tw3": "Lapor",
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-21",
+        "tahun": 2026,
+        "perusahaan": "Terang Abadi Energi",
+        "grup": "MINING HOLDING",
+        "kegiatan": "Laterit",
+        "kbli": "",
+        "nku": "202503-1421-5814-2857-532",
+        "kategori_khusus": null,
+        "sanksi": true,
+        "pic_fa": "Petrus",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "Mulai dilaporkan Q3-2025",
+        "document": "",
+        "status": {
+          "tw1": "Lapor",
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-30",
+        "tahun": 2026,
+        "perusahaan": "Dinamika Sejahtera Mandiri",
+        "grup": "MINING OPERATING COMPANIES",
+        "kegiatan": "Bauksit",
+        "kbli": "07293",
+        "nku": "202408-1210-0510-8914-748",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "Hansdi",
+        "pic_csl": "",
+        "karyawan": "HR GNR",
+        "notes": "disubmit oleh legal GNR",
+        "document": "emailed to Ko Hansdi 02/01/2026",
+        "status": {
+          "tw1": "Belum",
+          "tw2": "Belum",
+          "tw3": "Belum",
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-31",
+        "tahun": 2026,
+        "perusahaan": "Dinamika Sejahtera Mandiri",
+        "grup": "MINING OPERATING COMPANIES",
+        "kegiatan": "Bauksit",
+        "kbli": "24202",
+        "nku": "202305-1613-3423-7532-562",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "disubmit oleh legal GNR",
+        "document": "",
+        "status": {
+          "tw1": "Belum",
+          "tw2": "Belum",
+          "tw3": "Belum",
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-32",
+        "tahun": 2026,
+        "perusahaan": "Dinamika Sejahtera Mandiri",
+        "grup": "MINING OPERATING COMPANIES",
+        "kegiatan": "Bauksit",
+        "kbli": "68130",
+        "nku": "202505-1418-3736-4806-842",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "disubmit oleh legal GNR",
+        "document": "",
+        "status": {
+          "tw1": "Belum",
+          "tw2": "Belum",
+          "tw3": "Belum",
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-34",
+        "tahun": 2026,
+        "perusahaan": "Grahasejahtera Asri",
+        "grup": "MINING OPERATING COMPANIES",
+        "kegiatan": "Bauksit",
+        "kbli": "07293",
+        "nku": "201912-3104-4726-7527-332",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "Hansdi",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "disubmit oleh legal GNR",
+        "document": "emailed to Ko Hansdi 02/01/2026",
+        "status": {
+          "tw1": "Belum",
+          "tw2": "Belum",
+          "tw3": "Belum",
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-36",
+        "tahun": 2026,
+        "perusahaan": "Kalimantan Alumina Nusantara",
+        "grup": "MINING OPERATING COMPANIES",
+        "kegiatan": "Refineri",
+        "kbli": "46620",
+        "nku": "202301-0210-0653-2497-702",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "disubmit oleh legal KAN",
+        "document": "",
+        "status": {
+          "tw1": "Belum",
+          "tw2": "Belum",
+          "tw3": "Belum",
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-37",
+        "tahun": 2026,
+        "perusahaan": "Kalimantan Alumina Nusantara",
+        "grup": "MINING OPERATING COMPANIES",
+        "kegiatan": "Refineri",
+        "kbli": "24202",
+        "nku": "202311-0817-2443-5178-764",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": "Belum",
+          "tw2": "Belum",
+          "tw3": "Belum",
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-39",
+        "tahun": 2026,
+        "perusahaan": "Mandara Prima Nusantara",
+        "grup": "MINING OPERATING COMPANIES",
+        "kegiatan": "Bauksit",
+        "kbli": "07293",
+        "nku": "202309-2520-4557-4224-660",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "Hansdi",
+        "pic_csl": "",
+        "karyawan": "HR GNR",
+        "notes": "disubmit oleh legal GNR",
+        "document": "emailed to Ko Hansdi 02/01/2026",
+        "status": {
+          "tw1": "Belum",
+          "tw2": "Belum",
+          "tw3": "Belum",
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-40",
+        "tahun": 2026,
+        "perusahaan": "Merdeka Nusantara Makmur",
+        "grup": "MINING OPERATING COMPANIES",
+        "kegiatan": "Laterit",
+        "kbli": "08105",
+        "nku": "202411-1122-2338-7727-714",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "Stephanie",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "disubmit oleh legal GNR",
+        "document": "Status Terkirim 8/1/26",
+        "status": {
+          "tw1": "Belum",
+          "tw2": "Belum",
+          "tw3": "Belum",
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-41",
+        "tahun": 2026,
+        "perusahaan": "Merdeka Nusantara Makmur",
+        "grup": "MINING OPERATING COMPANIES",
+        "kegiatan": "Laterit",
+        "kbli": "08109",
+        "nku": "202312-1410-0236-9719-277",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "disubmit oleh legal GNR",
+        "document": "Status Terkirim 8/1/26",
+        "status": {
+          "tw1": "Belum",
+          "tw2": "Belum",
+          "tw3": "Belum",
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-42",
+        "tahun": 2026,
+        "perusahaan": "Merdeka Nusantara Makmur",
+        "grup": "MINING OPERATING COMPANIES",
+        "kegiatan": "Laterit",
+        "kbli": "08105",
+        "nku": "202312-1409-4101-3912-402",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "disubmit oleh legal GNR",
+        "document": "Status Disetujui",
+        "status": {
+          "tw1": "Belum",
+          "tw2": "Belum",
+          "tw3": "Belum",
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-43",
+        "tahun": 2026,
+        "perusahaan": "Mineral Jaya Perkasa",
+        "grup": "MINING OPERATING COMPANIES",
+        "kegiatan": "Laterit",
+        "kbli": "08105",
+        "nku": "202411-1122-0936-9863-586",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "Stephanie",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "disubmit oleh legal GNR",
+        "document": "Terkirim 8/1/26",
+        "status": {
+          "tw1": "Belum",
+          "tw2": "Belum",
+          "tw3": "Belum",
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-44",
+        "tahun": 2026,
+        "perusahaan": "Mineral Jaya Perkasa",
+        "grup": "MINING OPERATING COMPANIES",
+        "kegiatan": "Laterit",
+        "kbli": "08109",
+        "nku": "202312-1409-3014-8482-148",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "disubmit oleh legal GNR",
+        "document": "Terkirim 8/1/26",
+        "status": {
+          "tw1": "Belum",
+          "tw2": "Belum",
+          "tw3": "Belum",
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-45",
+        "tahun": 2026,
+        "perusahaan": "Mineral Jaya Perkasa",
+        "grup": "MINING OPERATING COMPANIES",
+        "kegiatan": "Laterit",
+        "kbli": "08105",
+        "nku": "202312-1408-5432-3371-132",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "disubmit oleh legal GNR",
+        "document": "done",
+        "status": {
+          "tw1": "Belum",
+          "tw2": "Belum",
+          "tw3": "Belum",
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-47",
+        "tahun": 2026,
+        "perusahaan": "Permata Teguh Sejahtera",
+        "grup": "MINING OPERATING COMPANIES",
+        "kegiatan": "Laterit",
+        "kbli": "08105",
+        "nku": "202411-1122-4025-8551-517",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "Stephanie",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "disubmit oleh legal GNR",
+        "document": "Terkirim 8/1/26",
+        "status": {
+          "tw1": "Belum",
+          "tw2": "Belum",
+          "tw3": "Belum",
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-48",
+        "tahun": 2026,
+        "perusahaan": "Permata Teguh Sejahtera",
+        "grup": "MINING OPERATING COMPANIES",
+        "kegiatan": "Laterit",
+        "kbli": "08109",
+        "nku": "202312-1315-2816-1839-567",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "disubmit oleh legal GNR",
+        "document": "Terkirim 8/1/26",
+        "status": {
+          "tw1": "Belum",
+          "tw2": "Belum",
+          "tw3": "Belum",
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-49",
+        "tahun": 2026,
+        "perusahaan": "Permata Teguh Sejahtera",
+        "grup": "MINING OPERATING COMPANIES",
+        "kegiatan": "Laterit",
+        "kbli": "08105",
+        "nku": "202312-1315-1801-1219-966",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "disubmit oleh legal GNR",
+        "document": "done",
+        "status": {
+          "tw1": "Belum",
+          "tw2": "Belum",
+          "tw3": "Belum",
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-50",
+        "tahun": 2026,
+        "perusahaan": "Rakasa Prima Mineral",
+        "grup": "MINING OPERATING COMPANIES",
+        "kegiatan": "Silika",
+        "kbli": "08995",
+        "nku": "202405-3107-2252-9818-941",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "Stephanie",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "disubmit oleh legal GNR",
+        "document": "scheduled send to Ci Stephanie 5/01/2026",
+        "status": {
+          "tw1": "Belum",
+          "tw2": "Belum",
+          "tw3": "Belum",
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-51",
+        "tahun": 2026,
+        "perusahaan": "Sigma Prima Indotama",
+        "grup": "MINING OPERATING COMPANIES",
+        "kegiatan": "Silika",
+        "kbli": "08995",
+        "nku": "202307-2800-3918-2605-823",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "Hansdi",
+        "pic_csl": "",
+        "karyawan": "HR GNR",
+        "notes": "disubmit oleh legal GNR",
+        "document": "emailed to Ko Hansdi 02/01/2026",
+        "status": {
+          "tw1": "Belum",
+          "tw2": "Belum",
+          "tw3": "Belum",
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-52",
+        "tahun": 2026,
+        "perusahaan": "Sigma Prima Indotama",
+        "grup": "MINING OPERATING COMPANIES",
+        "kegiatan": "Silika",
+        "kbli": "46641",
+        "nku": "202111-2416-2353-0793-101",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "disubmit oleh legal GNR",
+        "document": "SNK-202609261627299882656 tgl 26 Sept'26 utk KBLI 46641",
+        "status": {
+          "tw1": "Belum",
+          "tw2": "Belum",
+          "tw3": "Lapor",
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-53",
+        "tahun": 2026,
+        "perusahaan": "Sigma Prima Indotama",
+        "grup": "MINING OPERATING COMPANIES",
+        "kegiatan": "Silika",
+        "kbli": "46634",
+        "nku": "",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "disubmit oleh legal GNR",
+        "document": "2nd SNK-202609281400041365888 tgl 28 Sept'26 utk KBLI 46634",
+        "status": {
+          "tw1": "Belum",
+          "tw2": "Belum",
+          "tw3": "Lapor",
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-54",
+        "tahun": 2026,
+        "perusahaan": "Teguh Bumi Perkasa",
+        "grup": "MINING OPERATING COMPANIES",
+        "kegiatan": "Laterit",
+        "kbli": "08105",
+        "nku": "202411-1122-5326-7723-826",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "Stephanie",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "disubmit oleh legal GNR",
+        "document": "Terkirim 8/1/26",
+        "status": {
+          "tw1": "Belum",
+          "tw2": "Belum",
+          "tw3": "Belum",
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-55",
+        "tahun": 2026,
+        "perusahaan": "Vista Primanusa Persada",
+        "grup": "MINING OPERATING COMPANIES",
+        "kegiatan": "Silika",
+        "kbli": "08995",
+        "nku": "202309-2223-1359-7036-234",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "Hansdi",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "disubmit oleh legal GNR",
+        "document": "emailed to Ko Hansdi 02/01/2026",
+        "status": {
+          "tw1": "Belum",
+          "tw2": "Belum",
+          "tw3": "Belum",
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-56",
+        "tahun": 2026,
+        "perusahaan": "Vista Primanusa Persada",
+        "grup": "MINING OPERATING COMPANIES",
+        "kegiatan": "Silika",
+        "kbli": "08995",
+        "nku": "202407-2913-4932-1592-728",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "disubmit oleh legal GNR",
+        "document": "",
+        "status": {
+          "tw1": "Belum",
+          "tw2": "Belum",
+          "tw3": "Belum",
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-57",
+        "tahun": 2026,
+        "perusahaan": "Vista Primanusa Persada",
+        "grup": "MINING OPERATING COMPANIES",
+        "kegiatan": "Silika",
+        "kbli": "08995",
+        "nku": "202407-3020-2010-4473-263",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "disubmit oleh legal GNR",
+        "document": "",
+        "status": {
+          "tw1": "Belum",
+          "tw2": "Belum",
+          "tw3": "Belum",
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-58",
+        "tahun": 2026,
+        "perusahaan": "Vista Primanusa Persada",
+        "grup": "MINING OPERATING COMPANIES",
+        "kegiatan": "Silika",
+        "kbli": "08995",
+        "nku": "202407-3023-2237-5862-741",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "disubmit oleh legal GNR",
+        "document": "",
+        "status": {
+          "tw1": "Belum",
+          "tw2": "Belum",
+          "tw3": "Belum",
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-63",
+        "tahun": 2026,
+        "perusahaan": "Alakasa Mitra Cbox",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": "",
+        "kbli": "46900",
+        "nku": "202503-2710-5756-1158-855",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "Dilaporkan oleh pak Guntur - AMC",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": null,
+          "tw3": null,
+          "tw4": null
+        }
+      },
+      {
+        "id": "unit-2026-64",
+        "tahun": 2026,
+        "perusahaan": "Alakasa Extrusindo",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": "",
+        "kbli": "68111",
+        "nku": "202009-1612-3340-2485-953",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "Petrus",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "Dilaporkan oleh Pak Petrus",
+        "document": "",
+        "status": {
+          "tw1": "Lapor",
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-65",
+        "tahun": 2026,
+        "perusahaan": "Alakasa Extrusindo",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": "",
+        "kbli": "68200",
+        "nku": "202308-1110-1531-1048-920",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": "Lapor",
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-66",
+        "tahun": 2026,
+        "perusahaan": "Alka Niaga Industri",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": "",
+        "kbli": "46620",
+        "nku": "201912-3111-3449-4866-202",
+        "kategori_khusus": "Tidak Wajib (Mikro)",
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "Sylvia",
+        "karyawan": "",
+        "notes": "skala usaha mikro tidak wajib lapor LKPM (Pasal 286 ayat 2 Perka BPKM)",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": null,
+          "tw3": null,
+          "tw4": null
+        }
+      },
+      {
+        "id": "unit-2026-68",
+        "tahun": 2026,
+        "perusahaan": "Bumi Grafika Jaya",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": "",
+        "kbli": "68111",
+        "nku": "201912-3111-3505-1885-207",
+        "kategori_khusus": "Per-Semester",
+        "sanksi": false,
+        "pic_fa": "Veve",
+        "pic_csl": "Sylvia",
+        "karyawan": "",
+        "notes": "Pelaporan per-semester",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": "Lapor",
+          "tw3": null,
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-69",
+        "tahun": 2026,
+        "perusahaan": "Catur Boga Pratama",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": "",
+        "kbli": "56101",
+        "nku": "202312-1214-2919-0493-329",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "Sylvia",
+        "karyawan": "",
+        "notes": "Sudah tidak beroperasi",
+        "document": "",
+        "status": {
+          "tw1": "Lapor",
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-70",
+        "tahun": 2026,
+        "perusahaan": "Catur Boga Pratama",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": "",
+        "kbli": "56301",
+        "nku": "202312-1214-5028-3749-583",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": "Lapor",
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-73",
+        "tahun": 2026,
+        "perusahaan": "Dharma Alumas Sakti",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": "",
+        "kbli": "68111",
+        "nku": "201912-3111-3419-7508-234",
+        "kategori_khusus": "Per-Semester",
+        "sanksi": false,
+        "pic_fa": "Ci Step",
+        "pic_csl": "Sylvia",
+        "karyawan": "",
+        "notes": "Pelaporan per-semester",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": "Lapor",
+          "tw3": null,
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-74",
+        "tahun": 2026,
+        "perusahaan": "Gesit Alumas",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": "",
+        "kbli": "64200",
+        "nku": "201912-3113-0832-1522-177",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "Ci Step",
+        "pic_csl": "Sylvia",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": "Lapor",
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-75",
+        "tahun": 2026,
+        "perusahaan": "Gesit Graha",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": "",
+        "kbli": "68200",
+        "nku": "202002-1113-1812-1136-018",
+        "kategori_khusus": "Per-Semester",
+        "sanksi": false,
+        "pic_fa": "Merly",
+        "pic_csl": "Sylvia",
+        "karyawan": "",
+        "notes": "Pelaporan per-semester",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": "Lapor",
+          "tw3": null,
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-76",
+        "tahun": 2026,
+        "perusahaan": "Gesit Graha",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": "",
+        "kbli": "68111",
+        "nku": "202002-1113-1812-1131-880",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": "Lapor",
+          "tw3": null,
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-77",
+        "tahun": 2026,
+        "perusahaan": "Gesit Intrade",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": "",
+        "kbli": "46422",
+        "nku": "202406-1814-1520-2972-444",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "Pak Afif",
+        "pic_csl": "Desi",
+        "karyawan": "",
+        "notes": "mulai dilaporkan pada Q2 2026",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-78",
+        "tahun": 2026,
+        "perusahaan": "Gesit Intrade",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": "",
+        "kbli": "46511",
+        "nku": "202406-1814-5622-7065-308",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "Desi",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-79",
+        "tahun": 2026,
+        "perusahaan": "Gesit Intrade",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": "",
+        "kbli": "46512",
+        "nku": "202406-1815-0034-2065-690",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "Desi",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-80",
+        "tahun": 2026,
+        "perusahaan": "Gesit Intrade",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": "",
+        "kbli": "46591",
+        "nku": "202406-1815-0420-1441-758",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "Desi",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-82",
+        "tahun": 2026,
+        "perusahaan": "Gesit Maju",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": "",
+        "kbli": "64200",
+        "nku": "202004-2314-1613-1481-175",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "Ci Step",
+        "pic_csl": "Sylvia",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-83",
+        "tahun": 2026,
+        "perusahaan": "Gesit Perkasa",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": "",
+        "kbli": "64200",
+        "nku": "202002-0715-4754-1169-616",
+        "kategori_khusus": "Per-Semester",
+        "sanksi": false,
+        "pic_fa": "Ci Step",
+        "pic_csl": "Sylvia",
+        "karyawan": "",
+        "notes": "Pelaporan per-semester",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": "Lapor",
+          "tw3": null,
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-84",
+        "tahun": 2026,
+        "perusahaan": "Gesit Sarana Perkasa",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": "",
+        "kbli": "55110",
+        "nku": "201912-3116-4548-2993-881",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "Dilaporkan oleh JSLuwansa",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": null,
+          "tw3": null,
+          "tw4": null
+        }
+      },
+      {
+        "id": "unit-2026-85",
+        "tahun": 2026,
+        "perusahaan": "HTT Sarana Perkasa",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": "",
+        "kbli": "55110",
+        "nku": "202405-3110-5919-4616-989",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "Veve",
+        "pic_csl": "Sylvia",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": "Lapor",
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-87",
+        "tahun": 2026,
+        "perusahaan": "JSCapital Investasi Gesit",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": "",
+        "kbli": "64200",
+        "nku": "202103-2511-1811-0213-729",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "Ita",
+        "pic_csl": "Sylvia",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": "Lapor",
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-88",
+        "tahun": 2026,
+        "perusahaan": "JSCapital Investasi Gesit",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": "",
+        "kbli": "70203",
+        "nku": "202103-2511-1811-0218-051",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": "Lapor",
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-89",
+        "tahun": 2026,
+        "perusahaan": "JSCapital Investasi Gesit",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": "",
+        "kbli": "70209",
+        "nku": "202103-2511-1811-0218-657",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "",
+        "document": "SNK-202609260106093255515 tgl 26 Sept'26",
+        "status": {
+          "tw1": null,
+          "tw2": null,
+          "tw3": "Lapor",
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-90",
+        "tahun": 2026,
+        "perusahaan": "JSCapital Investasi Gesit",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": "",
+        "kbli": "66124",
+        "nku": "202103-2511-1811-0211-036",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-96",
+        "tahun": 2026,
+        "perusahaan": "Jaya Sudirman Mandiri",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": "",
+        "kbli": "68111",
+        "nku": "202203-1713-5226-4135-629",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "Ci Lisi",
+        "pic_csl": "Sylvia",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": "Lapor",
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-97",
+        "tahun": 2026,
+        "perusahaan": "Jaya Sudirman Mandiri",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": "",
+        "kbli": "68200",
+        "nku": "202203-1715-4406-4225-134",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": "Lapor",
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-98",
+        "tahun": 2026,
+        "perusahaan": "Jaya Sudirman Perkasa",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": "",
+        "kbli": "68111",
+        "nku": "202203-1815-1702-3553-777",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "Ci Lisi",
+        "pic_csl": "Sylvia",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": "Lapor",
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-99",
+        "tahun": 2026,
+        "perusahaan": "Jaya Sudirman Perkasa",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": "",
+        "kbli": "68200",
+        "nku": "202203-1815-0755-8857-979",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": "Lapor",
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-101",
+        "tahun": 2026,
+        "perusahaan": "Lima Sudirman Perkasa",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": "",
+        "kbli": "68200",
+        "nku": "202203-1614-4112-9095-323",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "Merly",
+        "pic_csl": "Sylvia",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": "Lapor",
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-102",
+        "tahun": 2026,
+        "perusahaan": "Lima Sudirman Perkasa",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": "",
+        "kbli": "68111",
+        "nku": "202203-1613-5330-6583-888",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": "Lapor",
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-109",
+        "tahun": 2026,
+        "perusahaan": "Sembilan Empat Investama",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": "",
+        "kbli": "64200",
+        "nku": "202411-2610-2630-7436-286",
+        "kategori_khusus": "Per-Semester",
+        "sanksi": false,
+        "pic_fa": "Ci Lisi",
+        "pic_csl": "Sylvia",
+        "karyawan": "",
+        "notes": "Pelaporan per-semester",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": "Lapor",
+          "tw3": null,
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-110",
+        "tahun": 2026,
+        "perusahaan": "Sinar Bangsa",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": "",
+        "kbli": "68200",
+        "nku": "202011-2409-3945-1588-838",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "Merly",
+        "pic_csl": "Sylvia",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": "Lapor",
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Belum"
+        }
+      },
+      {
+        "id": "unit-2026-111",
+        "tahun": 2026,
+        "perusahaan": "Sinar Bangsa",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": "",
+        "kbli": "68111",
+        "nku": "202011-2409-3945-1581-846",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": "Lapor",
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Belum"
+        }
+      }
+    ]
+  },
+  "2025": {
+    "perusahaan": [
+      {
+        "nama": "Alakasa Alumina Refineri",
+        "grup": "Mining Company",
+        "kegiatan": "Holding"
+      },
+      {
+        "nama": "Andalas Inti Mulia",
+        "grup": "Mining Company",
+        "kegiatan": "Iron"
+      },
+      {
+        "nama": "Arjuna Bumi Cahaya",
+        "grup": "Mining Company",
+        "kegiatan": "Holding/Perdagangan"
+      },
+      {
+        "nama": "Baranusa Insan Gemilang",
+        "grup": "Mining Company",
+        "kegiatan": "Batubara"
+      },
+      {
+        "nama": "Bara Optima Sejahtera",
+        "grup": "Mining Company",
+        "kegiatan": "Batubara"
+      },
+      {
+        "nama": "Bersinar Abadi Energi",
+        "grup": "Mining Company",
+        "kegiatan": "Laterit"
+      },
+      {
+        "nama": "Bumi Batu Mulia",
+        "grup": "Mining Company",
+        "kegiatan": "Laterit"
+      },
+      {
+        "nama": "Cahaya Kapuas Tayan",
+        "grup": "Mining Company",
+        "kegiatan": "Bauksit"
+      },
+      {
+        "nama": "Cakrawala Mandiri Sedaya",
+        "grup": "Mining Company",
+        "kegiatan": "Bauksit"
+      },
+      {
+        "nama": "Delta Prima Mineral",
+        "grup": "Mining Company",
+        "kegiatan": "Silika/Laterit"
+      },
+      {
+        "nama": "Dinamika Sejahtera Mandiri",
+        "grup": "Mining Company",
+        "kegiatan": "Bauksit"
+      },
+      {
+        "nama": "Dwi Dinamika Sejahtera",
+        "grup": "Mining Company",
+        "kegiatan": "Laterit"
+      },
+      {
+        "nama": "Gesit Bumi Persada",
+        "grup": "Mining Company",
+        "kegiatan": "Holding"
+      },
+      {
+        "nama": "Grahasejahtera Asri",
+        "grup": "Mining Company",
+        "kegiatan": "Bauksit"
+      },
+      {
+        "nama": "JSGlobal Mineral Energi",
+        "grup": "Mining Company",
+        "kegiatan": "Holding"
+      },
+      {
+        "nama": "Kalimantan Alumina Nusantara",
+        "grup": "Mining Company",
+        "kegiatan": "Refineri"
+      },
+      {
+        "nama": "Kalimantan Industri Terpadu",
+        "grup": "Mining Company",
+        "kegiatan": "Kawasan"
+      },
+      {
+        "nama": "Mandara Prima Nusantara",
+        "grup": "Mining Company",
+        "kegiatan": "Bauksit"
+      },
+      {
+        "nama": "Merdeka Nusantara Makmur",
+        "grup": "Mining Company",
+        "kegiatan": "Laterit"
+      },
+      {
+        "nama": "Mineral Jaya Perkasa",
+        "grup": "Mining Company",
+        "kegiatan": "Laterit"
+      },
+      {
+        "nama": "Mineral Sejahtera Utama",
+        "grup": "Mining Company",
+        "kegiatan": "Bauksit"
+      },
+      {
+        "nama": "Mitra Harapan Sakti",
+        "grup": "Mining Company",
+        "kegiatan": "Holding/Perdagangan"
+      },
+      {
+        "nama": "Permata Teguh Sejahtera",
+        "grup": "Mining Company",
+        "kegiatan": "Laterit"
+      },
+      {
+        "nama": "Rakasa Prima Mineral",
+        "grup": "Mining Company",
+        "kegiatan": "Silika"
+      },
+      {
+        "nama": "Sembilan Empat Investama",
+        "grup": "Mining Company",
+        "kegiatan": "Holding"
+      },
+      {
+        "nama": "Sigma Prima Indotama",
+        "grup": "Mining Company",
+        "kegiatan": "Silika"
+      },
+      {
+        "nama": "Sinergi Andalan Tama",
+        "grup": "Mining Company",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Sinar Energi Teguh",
+        "grup": "Mining Company",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Teguh Bumi Perkasa",
+        "grup": "Mining Company",
+        "kegiatan": "Laterit"
+      },
+      {
+        "nama": "Terang Abadi Energi",
+        "grup": "Mining Company",
+        "kegiatan": "Laterit"
+      },
+      {
+        "nama": "Vista Primanusa Persada",
+        "grup": "Mining Company",
+        "kegiatan": "Silika"
+      },
+      {
+        "nama": "Alakasa Mitra Cbox",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Catur Boga Pratama",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Dharma Alumas Sakti",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "JSCapital Investasi Gesit",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Lima Sudirman Perkasa",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Jaya Sudirman Mandiri",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Jaya Sudirman Perkasa",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Alka Niaga Industri",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Gesit Alumas",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Bumi Grafika Jaya",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "HTT Sarana Perkasa",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Esa Nusantara Adiboga",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "PT Alakasa Extrusindo",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "PT Gesit Sarana Perkasa",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "PT Sinar Bangsa",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Perusahaan yang melaporkan LKPM",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Perusahaan yang mendapatkan Sanksi Peringatan",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "Perusahaan yang mendapatkan Reminder",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "LKPM telah disubmit dan disetujui",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      },
+      {
+        "nama": "LKPM telah disubmit namun butuh perbaikan",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": ""
+      }
+    ],
+    "unit": [
+      {
+        "id": "unit-2025-6",
+        "tahun": 2025,
+        "perusahaan": "Alakasa Alumina Refineri",
+        "grup": "Mining Company",
+        "kegiatan": "Holding",
+        "kbli": "24202",
+        "nku": "202205-1715-5238-7045-899",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "Stephanie",
+        "pic_csl": "emailed to Ci Stephanie 02/01/2026",
+        "karyawan": "tidak ada",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": "Lapor",
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Lapor"
+        }
+      },
+      {
+        "id": "unit-2025-7",
+        "tahun": 2025,
+        "perusahaan": "Alakasa Alumina Refineri",
+        "grup": "Mining Company",
+        "kegiatan": "Holding",
+        "kbli": "46620",
+        "nku": "202205-1714-4803-8222-274",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "",
+        "karyawan": "tidak ada",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": "Lapor",
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Lapor"
+        }
+      },
+      {
+        "id": "unit-2025-8",
+        "tahun": 2025,
+        "perusahaan": "Alakasa Alumina Refineri",
+        "grup": "Mining Company",
+        "kegiatan": "Holding",
+        "kbli": "64200",
+        "nku": "202205-1713-4258-6347-510",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "",
+        "karyawan": "tidak ada",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": "Lapor",
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Lapor"
+        }
+      },
+      {
+        "id": "unit-2025-13",
+        "tahun": 2025,
+        "perusahaan": "Bersinar Abadi Energi",
+        "grup": "Mining Company",
+        "kegiatan": "Laterit",
+        "kbli": "08105",
+        "nku": "202503-1514-5758-4434-643",
+        "kategori_khusus": null,
+        "sanksi": true,
+        "pic_fa": "Petrus",
+        "pic_csl": "sent (status LKPM: Terkirim) 07/01/2026",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": null,
+          "tw3": "Lapor",
+          "tw4": "Lapor"
+        }
+      },
+      {
+        "id": "unit-2025-18",
+        "tahun": 2025,
+        "perusahaan": "Dinamika Sejahtera Mandiri",
+        "grup": "Mining Company",
+        "kegiatan": "Bauksit",
+        "kbli": "07293",
+        "nku": "202408-1210-0510-8914-748",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "Hansdi",
+        "pic_csl": "emailed to Ko Hansdi 02/01/2026",
+        "karyawan": "DSM",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": "Lapor",
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Lapor"
+        }
+      },
+      {
+        "id": "unit-2025-19",
+        "tahun": 2025,
+        "perusahaan": "Dinamika Sejahtera Mandiri",
+        "grup": "Mining Company",
+        "kegiatan": "Bauksit",
+        "kbli": "24202",
+        "nku": "202305-1613-3423-7532-562",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "",
+        "karyawan": "DSM",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": "Lapor",
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Lapor"
+        }
+      },
+      {
+        "id": "unit-2025-20",
+        "tahun": 2025,
+        "perusahaan": "Dinamika Sejahtera Mandiri",
+        "grup": "Mining Company",
+        "kegiatan": "Bauksit",
+        "kbli": "68130",
+        "nku": "202505-1418-3736-4806-842",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "Menerima Peringatan Tertulis Pertama tgl 18 Desember 2025",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": null,
+          "tw3": null,
+          "tw4": "Lapor"
+        }
+      },
+      {
+        "id": "unit-2025-23",
+        "tahun": 2025,
+        "perusahaan": "Grahasejahtera Asri",
+        "grup": "Mining Company",
+        "kegiatan": "Bauksit",
+        "kbli": "07293",
+        "nku": "201912-3104-4726-7527-332",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "Hansdi",
+        "pic_csl": "emailed to Ko Hansdi 02/01/2026",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": "Lapor",
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Lapor"
+        }
+      },
+      {
+        "id": "unit-2025-25",
+        "tahun": 2025,
+        "perusahaan": "Kalimantan Alumina Nusantara",
+        "grup": "Mining Company",
+        "kegiatan": "Refineri",
+        "kbli": "46620",
+        "nku": "202301-0210-0653-2497-702",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": "Lapor",
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Lapor"
+        }
+      },
+      {
+        "id": "unit-2025-26",
+        "tahun": 2025,
+        "perusahaan": "Kalimantan Alumina Nusantara",
+        "grup": "Mining Company",
+        "kegiatan": "Refineri",
+        "kbli": "24202",
+        "nku": "202311-0817-2443-5178-764",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": "Lapor",
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Lapor"
+        }
+      },
+      {
+        "id": "unit-2025-28",
+        "tahun": 2025,
+        "perusahaan": "Mandara Prima Nusantara",
+        "grup": "Mining Company",
+        "kegiatan": "Bauksit",
+        "kbli": "07293",
+        "nku": "202309-2520-4557-4224-660",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "Hansdi",
+        "pic_csl": "emailed to Ko Hansdi 02/01/2026",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": "Lapor",
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Lapor"
+        }
+      },
+      {
+        "id": "unit-2025-29",
+        "tahun": 2025,
+        "perusahaan": "Merdeka Nusantara Makmur",
+        "grup": "Mining Company",
+        "kegiatan": "Laterit",
+        "kbli": "08105",
+        "nku": "202411-1122-2338-7727-714",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "Stephanie",
+        "pic_csl": "Status Terkirim 8/1/26",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Lapor"
+        }
+      },
+      {
+        "id": "unit-2025-30",
+        "tahun": 2025,
+        "perusahaan": "Merdeka Nusantara Makmur",
+        "grup": "Mining Company",
+        "kegiatan": "Laterit",
+        "kbli": "08109",
+        "nku": "202312-1410-0236-9719-277",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "Status Terkirim 8/1/26",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": "Lapor",
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Lapor"
+        }
+      },
+      {
+        "id": "unit-2025-31",
+        "tahun": 2025,
+        "perusahaan": "Merdeka Nusantara Makmur",
+        "grup": "Mining Company",
+        "kegiatan": "Laterit",
+        "kbli": "08105",
+        "nku": "202312-1409-4101-3912-402",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "Status Disetujui",
+        "karyawan": "",
+        "notes": "Menerima Peringatan Tertulis Pertama tgl 18 Desember 2025",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": null,
+          "tw3": null,
+          "tw4": "Lapor"
+        }
+      },
+      {
+        "id": "unit-2025-32",
+        "tahun": 2025,
+        "perusahaan": "Mineral Jaya Perkasa",
+        "grup": "Mining Company",
+        "kegiatan": "Laterit",
+        "kbli": "08105",
+        "nku": "202411-1122-0936-9863-586",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "Stephanie",
+        "pic_csl": "Terkirim 8/1/26",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Lapor"
+        }
+      },
+      {
+        "id": "unit-2025-33",
+        "tahun": 2025,
+        "perusahaan": "Mineral Jaya Perkasa",
+        "grup": "Mining Company",
+        "kegiatan": "Laterit",
+        "kbli": "08109",
+        "nku": "202312-1409-3014-8482-148",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "Terkirim 8/1/26",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": "Lapor",
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Lapor"
+        }
+      },
+      {
+        "id": "unit-2025-34",
+        "tahun": 2025,
+        "perusahaan": "Mineral Jaya Perkasa",
+        "grup": "Mining Company",
+        "kegiatan": "Laterit",
+        "kbli": "08105",
+        "nku": "202312-1408-5432-3371-132",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "done",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": "Lapor",
+          "tw2": null,
+          "tw3": null,
+          "tw4": "Lapor"
+        }
+      },
+      {
+        "id": "unit-2025-37",
+        "tahun": 2025,
+        "perusahaan": "Permata Teguh Sejahtera",
+        "grup": "Mining Company",
+        "kegiatan": "Laterit",
+        "kbli": "08105",
+        "nku": "202411-1122-4025-8551-517",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "Stephanie",
+        "pic_csl": "Terkirim 8/1/26",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Lapor"
+        }
+      },
+      {
+        "id": "unit-2025-38",
+        "tahun": 2025,
+        "perusahaan": "Permata Teguh Sejahtera",
+        "grup": "Mining Company",
+        "kegiatan": "Laterit",
+        "kbli": "08109",
+        "nku": "202312-1315-2816-1839-567",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "Terkirim 8/1/26",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": "Lapor",
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Lapor"
+        }
+      },
+      {
+        "id": "unit-2025-39",
+        "tahun": 2025,
+        "perusahaan": "Permata Teguh Sejahtera",
+        "grup": "Mining Company",
+        "kegiatan": "Laterit",
+        "kbli": "08105",
+        "nku": "202312-1315-1801-1219-966",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "done",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": "Lapor",
+          "tw2": null,
+          "tw3": null,
+          "tw4": "Lapor"
+        }
+      },
+      {
+        "id": "unit-2025-40",
+        "tahun": 2025,
+        "perusahaan": "Rakasa Prima Mineral",
+        "grup": "Mining Company",
+        "kegiatan": "Silika",
+        "kbli": "08995",
+        "nku": "202405-3107-2252-9818-941",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "Stephanie",
+        "pic_csl": "scheduled send to Ci Stephanie 5/01/2026",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Lapor"
+        }
+      },
+      {
+        "id": "unit-2025-42",
+        "tahun": 2025,
+        "perusahaan": "Sigma Prima Indotama",
+        "grup": "Mining Company",
+        "kegiatan": "Silika",
+        "kbli": "08995",
+        "nku": "202307-2800-3918-2605-823",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "Hansdi",
+        "pic_csl": "emailed to Ko Hansdi 02/01/2026",
+        "karyawan": "DSM",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Lapor"
+        }
+      },
+      {
+        "id": "unit-2025-43",
+        "tahun": 2025,
+        "perusahaan": "Sigma Prima Indotama",
+        "grup": "Mining Company",
+        "kegiatan": "Silika",
+        "kbli": "",
+        "nku": "202111-2416-2353-0793-101",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": "Lapor",
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Lapor"
+        }
+      },
+      {
+        "id": "unit-2025-46",
+        "tahun": 2025,
+        "perusahaan": "Teguh Bumi Perkasa",
+        "grup": "Mining Company",
+        "kegiatan": "Laterit",
+        "kbli": "08105",
+        "nku": "202411-1122-5326-7723-826",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "Stephanie",
+        "pic_csl": "Terkirim 8/1/26",
+        "karyawan": "DSM",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": "Lapor",
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Lapor"
+        }
+      },
+      {
+        "id": "unit-2025-47",
+        "tahun": 2025,
+        "perusahaan": "Terang Abadi Energi",
+        "grup": "Mining Company",
+        "kegiatan": "Laterit",
+        "kbli": "08105",
+        "nku": "202503-1421-5814-2857-532",
+        "kategori_khusus": null,
+        "sanksi": true,
+        "pic_fa": "Petrus",
+        "pic_csl": "emailed to Pak Petrus 02/01/2026",
+        "karyawan": "",
+        "notes": "Mulai dilaporkan Q3-2025",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": null,
+          "tw3": "Lapor",
+          "tw4": "Lapor"
+        }
+      },
+      {
+        "id": "unit-2025-48",
+        "tahun": 2025,
+        "perusahaan": "Vista Primanusa Persada",
+        "grup": "Mining Company",
+        "kegiatan": "Silika",
+        "kbli": "08995",
+        "nku": "202309-2223-1359-7036-234",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "Hansdi",
+        "pic_csl": "emailed to Ko Hansdi 02/01/2026",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Lapor"
+        }
+      },
+      {
+        "id": "unit-2025-49",
+        "tahun": 2025,
+        "perusahaan": "Vista Primanusa Persada",
+        "grup": "Mining Company",
+        "kegiatan": "Silika",
+        "kbli": "08995",
+        "nku": "202407-2913-4932-1592-728",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Lapor"
+        }
+      },
+      {
+        "id": "unit-2025-50",
+        "tahun": 2025,
+        "perusahaan": "Vista Primanusa Persada",
+        "grup": "Mining Company",
+        "kegiatan": "Silika",
+        "kbli": "08995",
+        "nku": "202407-3020-2010-4473-263",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Lapor"
+        }
+      },
+      {
+        "id": "unit-2025-51",
+        "tahun": 2025,
+        "perusahaan": "Vista Primanusa Persada",
+        "grup": "Mining Company",
+        "kegiatan": "Silika",
+        "kbli": "08995",
+        "nku": "202407-3023-2237-5862-741",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Lapor"
+        }
+      },
+      {
+        "id": "unit-2025-54",
+        "tahun": 2025,
+        "perusahaan": "Alakasa Mitra Cbox",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": "",
+        "kbli": "46900",
+        "nku": "202503-2710-5756-1158-855",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "sudah remind Pak Johanes 07/01",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": null,
+          "tw3": null,
+          "tw4": "Lapor"
+        }
+      },
+      {
+        "id": "unit-2025-55",
+        "tahun": 2025,
+        "perusahaan": "Catur Boga Pratama",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": "",
+        "kbli": "56101",
+        "nku": "202312-1214-2919-0493-329",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "done",
+        "karyawan": "",
+        "notes": "Sudah tidak beroperasi",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": null,
+          "tw3": null,
+          "tw4": "Lapor"
+        }
+      },
+      {
+        "id": "unit-2025-56",
+        "tahun": 2025,
+        "perusahaan": "Catur Boga Pratama",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": "",
+        "kbli": "56301",
+        "nku": "202312-1214-5028-3749-583",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": null,
+          "tw3": null,
+          "tw4": "Lapor"
+        }
+      },
+      {
+        "id": "unit-2025-57",
+        "tahun": 2025,
+        "perusahaan": "Dharma Alumas Sakti",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": "",
+        "kbli": "68111",
+        "nku": "201912-3111-3419-7508-234",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "Stephanie",
+        "pic_csl": "received fr Pak Rama 02/01",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": "Lapor",
+          "tw3": null,
+          "tw4": "Lapor"
+        }
+      },
+      {
+        "id": "unit-2025-58",
+        "tahun": 2025,
+        "perusahaan": "JSCapital Investasi Gesit",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": "",
+        "kbli": "64200",
+        "nku": "202103-2511-1811-0213-729",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "Ita",
+        "pic_csl": "done",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Lapor"
+        }
+      },
+      {
+        "id": "unit-2025-59",
+        "tahun": 2025,
+        "perusahaan": "JSCapital Investasi Gesit",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": "",
+        "kbli": "70209",
+        "nku": "202103-2511-1811-0218-051",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Lapor"
+        }
+      },
+      {
+        "id": "unit-2025-60",
+        "tahun": 2025,
+        "perusahaan": "Lima Sudirman Perkasa",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": "",
+        "kbli": "68200",
+        "nku": "202203-1614-4112-9095-323",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "Merly",
+        "pic_csl": "done",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Lapor"
+        }
+      },
+      {
+        "id": "unit-2025-61",
+        "tahun": 2025,
+        "perusahaan": "Lima Sudirman Perkasa",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": "",
+        "kbli": "68111",
+        "nku": "202203-1613-5330-6583-888",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Lapor"
+        }
+      },
+      {
+        "id": "unit-2025-62",
+        "tahun": 2025,
+        "perusahaan": "Jaya Sudirman Mandiri",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": "",
+        "kbli": "68111",
+        "nku": "202203-1713-5226-4135-629",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "Merly",
+        "pic_csl": "done",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Lapor"
+        }
+      },
+      {
+        "id": "unit-2025-63",
+        "tahun": 2025,
+        "perusahaan": "Jaya Sudirman Mandiri",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": "",
+        "kbli": "68200",
+        "nku": "202203-1715-4406-4225-134",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Lapor"
+        }
+      },
+      {
+        "id": "unit-2025-64",
+        "tahun": 2025,
+        "perusahaan": "Jaya Sudirman Perkasa",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": "",
+        "kbli": "68111",
+        "nku": "202203-1815-1702-3553-777",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "Merly",
+        "pic_csl": "done",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Lapor"
+        }
+      },
+      {
+        "id": "unit-2025-65",
+        "tahun": 2025,
+        "perusahaan": "Jaya Sudirman Perkasa",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": "",
+        "kbli": "68200",
+        "nku": "202203-1815-0755-8857-979",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Lapor"
+        }
+      },
+      {
+        "id": "unit-2025-66",
+        "tahun": 2025,
+        "perusahaan": "Alka Niaga Industri",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": "",
+        "kbli": "46620",
+        "nku": "201912-3111-3449-4866-202",
+        "kategori_khusus": "Per-Semester",
+        "sanksi": false,
+        "pic_fa": "Stephanie",
+        "pic_csl": "received fr Pak Rama 02/01",
+        "karyawan": "",
+        "notes": "Per semester - Cek Status secara berkala",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": "Lapor",
+          "tw3": null,
+          "tw4": "Lapor"
+        }
+      },
+      {
+        "id": "unit-2025-67",
+        "tahun": 2025,
+        "perusahaan": "Gesit Alumas",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": "",
+        "kbli": "64200",
+        "nku": "201912-3113-0832-1522-177",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "Stephanie",
+        "pic_csl": "done",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Lapor"
+        }
+      },
+      {
+        "id": "unit-2025-68",
+        "tahun": 2025,
+        "perusahaan": "Bumi Grafika Jaya",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": "",
+        "kbli": "68111",
+        "nku": "201912-3111-3505-1885-207",
+        "kategori_khusus": "Per-Semester",
+        "sanksi": false,
+        "pic_fa": "Stephanie",
+        "pic_csl": "emailed to Veve 02/01",
+        "karyawan": "",
+        "notes": "Per semester - Cek Status secara berkala",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": "Lapor",
+          "tw3": null,
+          "tw4": "Lapor"
+        }
+      },
+      {
+        "id": "unit-2025-69",
+        "tahun": 2025,
+        "perusahaan": "HTT Sarana Perkasa",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": "",
+        "kbli": "55110",
+        "nku": "202405-3110-5919-4616-989",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "Stephanie",
+        "pic_csl": "done",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Lapor"
+        }
+      },
+      {
+        "id": "unit-2025-70",
+        "tahun": 2025,
+        "perusahaan": "Esa Nusantara Adiboga",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": "",
+        "kbli": "56101",
+        "nku": "202305-2910-5627-7012-266",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "Rahan",
+        "pic_csl": "done",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Lapor"
+        }
+      },
+      {
+        "id": "unit-2025-71",
+        "tahun": 2025,
+        "perusahaan": "Esa Nusantara Adiboga",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": "",
+        "kbli": "56301",
+        "nku": "202305-3116-0311-7926-789",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Lapor"
+        }
+      },
+      {
+        "id": "unit-2025-72",
+        "tahun": 2025,
+        "perusahaan": "PT Alakasa Extrusindo",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": "",
+        "kbli": "68111",
+        "nku": "202009-1612-3340-2485-953",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "done",
+        "karyawan": "",
+        "notes": "dilaporkan oleh Pak Petrus (reminder only)",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Lapor"
+        }
+      },
+      {
+        "id": "unit-2025-73",
+        "tahun": 2025,
+        "perusahaan": "PT Alakasa Extrusindo",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": "",
+        "kbli": "68200",
+        "nku": "202308-1110-1531-1048-920",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Lapor"
+        }
+      },
+      {
+        "id": "unit-2025-74",
+        "tahun": 2025,
+        "perusahaan": "PT Gesit Sarana Perkasa",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": "",
+        "kbli": "55110",
+        "nku": "201912-3116-4548-2993-881",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "done",
+        "karyawan": "",
+        "notes": "dilaporkan oleh JSLuwansa",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": "Lapor",
+          "tw3": "Lapor",
+          "tw4": "Lapor"
+        }
+      },
+      {
+        "id": "unit-2025-75",
+        "tahun": 2025,
+        "perusahaan": "PT Sinar Bangsa",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": "",
+        "kbli": "68200",
+        "nku": "202306-2011-1745-0867-558",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "Awi",
+        "pic_csl": "done",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": null,
+          "tw3": null,
+          "tw4": "Lapor"
+        }
+      },
+      {
+        "id": "unit-2025-76",
+        "tahun": 2025,
+        "perusahaan": "PT Sinar Bangsa",
+        "grup": "BUSINESS COMPANY",
+        "kegiatan": "",
+        "kbli": "68111",
+        "nku": "202306-2011-1745-0867-558",
+        "kategori_khusus": null,
+        "sanksi": false,
+        "pic_fa": "",
+        "pic_csl": "",
+        "karyawan": "",
+        "notes": "",
+        "document": "",
+        "status": {
+          "tw1": null,
+          "tw2": null,
+          "tw3": null,
+          "tw4": "Lapor"
+        }
+      }
+    ]
+  }
+}
