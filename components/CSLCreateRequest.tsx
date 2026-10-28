@@ -164,6 +164,7 @@ export const CSLCreateRequest: React.FC<CSLCreateRequestProps> = ({ currentUser,
         department: form.department === 'Other' ? form.otherDepartment : form.department,
         company: currentUser?.company || 'PT GESIT',
         category_name: (form.department === 'Other' ? form.otherDepartment : form.department) || 'Permintaan Legal',
+        description: form.description,
         status: 'SUBMITTED'
       }, 'SUBMITTED');
     }

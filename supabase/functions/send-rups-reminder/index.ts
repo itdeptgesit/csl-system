@@ -23,12 +23,11 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Find RUPS-AR tasks where due_date is within the next 7 days and not completed
+    // Find RUPS-AR tasks where due_date is approaching or overdue, and not completed
     const today = new Date()
     const sevenDaysLater = new Date(today)
     sevenDaysLater.setDate(today.getDate() + 7)
 
-    const todayStr = today.toISOString().split('T')[0]
     const sevenDaysStr = sevenDaysLater.toISOString().split('T')[0]
 
     const { data: tasks, error: fetchError } = await supabase
@@ -36,8 +35,7 @@ serve(async (req) => {
       .select('id, company, status, owner, due_date, reminder_emails')
       .not('due_date', 'is', null)
       .lte('due_date', sevenDaysStr)
-      .gte('due_date', todayStr)
-      .neq('status', 'Completed')
+      .not('status', 'in', '("Completed","Selesai")')
       .neq('reminder_emails', '')
 
     if (fetchError) {
@@ -62,8 +60,12 @@ serve(async (req) => {
       if (emails.length === 0) continue
 
       const dueDate = new Date(task.due_date)
-      const daysUntilDue = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-      const urgencyLabel = daysUntilDue <= 1 ? 'HARI INI' : `${daysUntilDue} hari lagi`
+      const diffDays = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+      const urgencyLabel = diffDays < 0 
+        ? `TERLAMBAT ${Math.abs(diffDays)} HARI`
+        : diffDays === 0 || diffDays === 1 
+          ? 'HARI INI / BESOK' 
+          : `${diffDays} hari lagi`
 
       for (const email of emails) {
         const res = await fetch('https://api.resend.com/emails', {

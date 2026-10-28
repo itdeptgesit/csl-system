@@ -489,20 +489,47 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
 
       const gdriveUrl = uploadData.gdriveUrl;
       const docName = file.name;
+      const todayStr = new Date().toISOString().split('T')[0];
+      const finishDateVal = selectedRupsDetail.finishDate || todayStr;
+      const updaterName = currentUser?.fullName || currentUser?.email || 'User';
+      const nowIso = new Date().toISOString();
 
-      // Update state
-      setSelectedRupsDetail(prev => prev ? { ...prev, documentUrl: gdriveUrl, documentName: docName } : null);
+      // Update state in one pass
+      setSelectedRupsDetail(prev => prev ? { 
+        ...prev, 
+        documentUrl: gdriveUrl, 
+        documentName: docName,
+        status: 'Completed',
+        stage: 'Selesai',
+        finishDate: finishDateVal,
+        updatedBy: updaterName,
+        updatedAt: nowIso
+      } : null);
+
+      setRupsData(prev => prev.map(item => item.id === selectedRupsDetail.id ? {
+        ...item,
+        documentUrl: gdriveUrl,
+        documentName: docName,
+        status: 'Completed',
+        stage: 'Selesai',
+        finishDate: finishDateVal,
+        updatedBy: updaterName,
+        updatedAt: nowIso
+      } : item));
       
-      // Save directly to db
-      handleUpdateRups(selectedRupsDetail.id, 'documentUrl', gdriveUrl);
-      handleUpdateRups(selectedRupsDetail.id, 'documentName', docName);
-
-      // Auto-set status Completed & stage Selesai when document is uploaded
-      handleUpdateRups(selectedRupsDetail.id, 'status', 'Completed');
-      handleUpdateRups(selectedRupsDetail.id, 'stage', 'Selesai');
-      if (!selectedRupsDetail.finishDate) {
-        const todayStr = new Date().toISOString().split('T')[0];
-        handleUpdateRups(selectedRupsDetail.id, 'finishDate', todayStr);
+      // Save directly to db in a single atomic update
+      try {
+        await supabase.from('csl_rups_ar').update({
+          document_url: gdriveUrl,
+          document_name: docName,
+          status: 'Completed',
+          stage: 'Selesai',
+          finish_date: toISO(finishDateVal) || null,
+          updated_by: updaterName,
+          updated_at: nowIso
+        }).eq('id', selectedRupsDetail.id);
+      } catch (err) {
+        console.warn('Atomic RUPS doc update error:', err);
       }
 
       // Auto-rollover: Pastikan record tahun depan otomatis dibuat untuk company ini

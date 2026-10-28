@@ -153,15 +153,31 @@ export function AppSidebarModern({
     const allowed = new Set<string>()
     const roleRaw = (currentUser?.role || '').trim()
     const roleLower = roleRaw.toLowerCase()
+    const userGroups = currentUser?.groups || []
 
-    // 1. Super Admin: full access
-    if (roleLower === 'super admin' || roleLower === 'super_admin' || roleLower === 'owner') {
+    // 1. Super Admin & Admin: full access
+    if (
+      roleLower === 'super admin' ||
+      roleLower === 'super_admin' ||
+      roleLower === 'owner' ||
+      roleLower === 'admin' ||
+      roleLower.includes('admin') ||
+      userGroups.includes('super_admin') ||
+      userGroups.includes('admin') ||
+      userGroups.includes('csl_admin')
+    ) {
       APP_MENU_STRUCTURE.forEach((m) => allowed.add(m.id))
+      allowed.add('credentials')
+      allowed.add('companies')
+      allowed.add('settings')
+      allowed.add('settings-users')
+      allowed.add('settings-departments')
+      allowed.add('settings-system')
+      allowed.add('profile')
       return allowed
     }
 
     // 2. Custom groups explicitly defined for user
-    const userGroups = currentUser?.groups || []
     if (userGroups.length > 0) {
       userGroups.forEach((g) => {
         if (g === 'dashboard') allowed.add('dashboard')
@@ -180,6 +196,9 @@ export function AppSidebarModern({
         if (g === 'routine_create' || g === 'routine_manage') {
           allowed.add('routine'); allowed.add('routine-rups'); allowed.add('routine-lkpm'); allowed.add('routine-tbk'); allowed.add('routine-offshore'); allowed.add('routine-admgt')
         }
+        if (g === 'companies' || g === 'companies_view' || g === 'settings-companies') {
+          allowed.add('companies')
+        }
         if (g === 'budget' || g === 'budget_view') {
           allowed.add('budget'); allowed.add('budget-expense'); allowed.add('budget-report'); allowed.add('budget-offshore-invoice')
         }
@@ -192,14 +211,8 @@ export function AppSidebarModern({
         if (g === 'csl_staff' || g === 'staff') {
           ;['dashboard', 'csl-requests', 'routine', 'routine-rups', 'routine-lkpm', 'routine-tbk', 'routine-offshore', 'routine-admgt', 'routine-task', 'companies', 'settings-companies', 'budget', 'budget-expense', 'budget-report', 'budget-offshore-invoice', 'directory', 'directory-all', 'directory-lawyer', 'directory-vendor', 'directory-government', 'directory-other', 'credentials', 'profile'].forEach((id) => allowed.add(id))
         }
-        if (g === 'admin' || g === 'csl_admin') {
-          APP_MENU_STRUCTURE.forEach((m) => {
-            if (m.id !== 'settings-users' && m.id !== 'settings-system') allowed.add(m.id)
-          })
-          allowed.add('credentials')
-        }
         if (g === 'settings' || g === 'settings_manage') {
-          allowed.add('settings'); allowed.add('settings-categories'); allowed.add('settings-sla'); allowed.add('settings-notifications'); allowed.add('settings-users'); allowed.add('settings-companies'); allowed.add('settings-departments'); allowed.add('settings-system')
+          allowed.add('settings'); allowed.add('settings-categories'); allowed.add('settings-sla'); allowed.add('settings-notifications'); allowed.add('settings-users'); allowed.add('settings-companies'); allowed.add('companies'); allowed.add('settings-departments'); allowed.add('settings-system')
         }
       })
 

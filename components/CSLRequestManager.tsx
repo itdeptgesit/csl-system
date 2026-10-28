@@ -893,10 +893,14 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
 
     try {
       if (!useMock) {
-        await supabase.from('csl_requests').update(payload).eq('id', selectedRequest.id);
+        const { error } = await supabase.from('csl_requests').update(payload).eq('id', selectedRequest.id);
+        if (error) throw error;
       }
+      toast.success('Terima kasih atas penilaian dan feedback Anda!');
       await fetchData();
       setSelectedRequest(null);
+    } catch (err: any) {
+      toast.error('Gagal mengirim feedback: ' + (err.message || 'Terjadi kesalahan'));
     } finally {
       setIsSubmitting(false);
     }
