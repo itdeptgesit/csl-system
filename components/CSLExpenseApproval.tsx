@@ -1286,22 +1286,31 @@ export const CSLExpenseApproval: React.FC<CSLExpenseApprovalProps> = ({ currentU
                   <Globe size={15} />
                 </div>
               </div>
-              <div className="mt-3 space-y-1">
+              <div className="mt-3 space-y-1.5">
                 <div className="flex justify-between items-center text-xs font-mono">
-                  <span className="font-semibold text-muted-foreground">HKD:</span>
+                  <span className="font-semibold text-muted-foreground flex items-center gap-1.5">
+                    <img src={getCurrencyFlag('HKD')} alt="HKD" className="w-3.5 h-3.5 rounded-full object-cover shrink-0 shadow-2xs border border-border/40" />
+                    HKD:
+                  </span>
                   <span className="font-bold text-foreground">
                     {formatCslCurrency(currencyExposure['HKD'] || 0, 'HKD')}
                   </span>
                 </div>
                 <div className="flex justify-between items-center text-xs font-mono">
-                  <span className="font-semibold text-muted-foreground">IDR:</span>
+                  <span className="font-semibold text-muted-foreground flex items-center gap-1.5">
+                    <img src={getCurrencyFlag('IDR')} alt="IDR" className="w-3.5 h-3.5 rounded-full object-cover shrink-0 shadow-2xs border border-border/40" />
+                    IDR:
+                  </span>
                   <span className="font-bold text-foreground">
                     {formatCslCurrency(currencyExposure['IDR'] || 0, 'IDR')}
                   </span>
                 </div>
                 {Object.entries(currencyExposure).filter(([c]) => c !== 'HKD' && c !== 'IDR').map(([cur, val]) => (
                   <div key={cur} className="flex justify-between items-center text-xs font-mono">
-                    <span className="font-semibold text-muted-foreground">{cur}:</span>
+                    <span className="font-semibold text-muted-foreground flex items-center gap-1.5">
+                      <img src={getCurrencyFlag(cur)} alt={cur} className="w-3.5 h-3.5 rounded-full object-cover shrink-0 shadow-2xs border border-border/40" />
+                      {cur}:
+                    </span>
                     <span className="font-bold text-foreground">{formatCslCurrency(val, cur)}</span>
                   </div>
                 ))}
@@ -1467,16 +1476,12 @@ export const CSLExpenseApproval: React.FC<CSLExpenseApprovalProps> = ({ currentU
                   </TableCell>
 
                   <TableCell>
-                    <div className="flex items-center gap-1.5 whitespace-nowrap">
-                      {exp.currency && exp.currency !== 'IDR' ? (
-                        <span className="size-4 rounded-full bg-rose-500/20 text-rose-600 dark:text-rose-400 flex items-center justify-center text-[10px] font-bold shrink-0">
-                          ★
-                        </span>
-                      ) : (
-                        <span className="size-4 rounded-full bg-rose-500/20 text-rose-600 dark:text-rose-400 flex items-center justify-center text-[10px] font-bold shrink-0">
-                          ●
-                        </span>
-                      )}
+                    <div className="flex items-center gap-2 whitespace-nowrap">
+                      <img 
+                        src={getCurrencyFlag(exp.currency)} 
+                        alt={exp.currency || 'Currency'} 
+                        className="w-4 h-4 rounded-full object-cover shrink-0 shadow-2xs border border-border/40" 
+                      />
                       <div>
                         <p className="font-mono text-xs font-bold text-foreground">
                           {formatCurrencyAmount(exp.currency, exp.amount)}

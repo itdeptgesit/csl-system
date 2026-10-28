@@ -298,8 +298,11 @@ export const getCurrencySymbol = (curr: string): string => {
 
 // Returns the path to the flag image in public/image/flag/
 export const getCurrencyFlag = (curr: string): string => {
-  switch ((curr || '').toUpperCase().trim()) {
+  const c = (curr || '').toUpperCase().trim();
+  switch (c) {
     case 'IDR':
+    case 'RP':
+    case 'RUPIAH':
       return '/image/flag/indo.png';
     case 'USD':
       return '/image/flag/united-states.png';
@@ -317,6 +320,7 @@ export const getCurrencyFlag = (curr: string): string => {
     case 'SGD':
       return '/image/flag/singapore.png';
     default:
+      if (c.startsWith('RP') || c.includes('IDR')) return '/image/flag/indo.png';
       return '/image/flag/earth.png';
   }
 };

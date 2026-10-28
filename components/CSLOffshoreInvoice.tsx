@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { sendEmailNotification } from '../utils/cslNotificationUtils';
 import { generateOffshoreInvoicePdf, OffshoreInvoiceData } from '../utils/cslOffshoreInvoicePdf';
+import { getCurrencyFlag } from '@/services/cslBudgetReportService';
 
 const EMPTY_FORM: Partial<OffshoreInvoiceData> = {
   company: 'PT Bumi Grafika Jaya',
@@ -487,9 +488,16 @@ export const CSLOffshoreInvoice: React.FC<{ currentUser: UserAccount | null }> =
                       <p className="text-xs text-foreground max-w-[200px] truncate">{inv.payment_description}</p>
                     </TableCell>
                     <TableCell>
-                      <span className="font-mono text-sm font-semibold text-foreground whitespace-nowrap">
-                        {flag} {formatForeign(inv.foreign_currency, inv.foreign_amount)}
-                      </span>
+                      <div className="flex items-center gap-1.5 whitespace-nowrap">
+                        <img 
+                          src={getCurrencyFlag(inv.foreign_currency)} 
+                          alt={inv.foreign_currency || 'Currency'} 
+                          className="w-4 h-4 rounded-full object-cover shrink-0 shadow-2xs border border-border/40" 
+                        />
+                        <span className="font-mono text-sm font-semibold text-foreground">
+                          {formatForeign(inv.foreign_currency, inv.foreign_amount)}
+                        </span>
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className={`text-[11px] px-2 py-0.5 rounded-md border ${STATUS_STYLE[inv.status || 'DRAFT']}`}>

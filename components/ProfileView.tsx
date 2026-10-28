@@ -33,6 +33,7 @@ import {
 } from "./ui/tabs";
 import { Switch } from "./ui/switch";
 import { Separator } from "./ui/separator";
+import { toast } from 'sonner';
 import {
     Table,
     TableBody,
@@ -47,6 +48,16 @@ interface ProfileViewProps {
     onLogout: () => void;
     user: UserAccount | null;
     onUpdateSuccess?: () => void;
+}
+
+interface ActiveSession {
+    sessionToken?: string;
+    isCurrent?: boolean;
+    device?: string;
+    browser?: string;
+    ip?: string;
+    location?: string;
+    lastUpdated?: string;
 }
 
 export const ProfileView: React.FC<ProfileViewProps> = ({ onLogout, user, onUpdateSuccess }) => {
@@ -72,7 +83,10 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onLogout, user, onUpda
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
     const [saveMessage, setSaveMessage] = useState<{ text: string, type: 'success' | 'error' } | null>(null);
 
-    const [activeSessions, setActiveSessions] = useState<any[]>([]);
+    const [activeSessions, setActiveSessions] = useState<ActiveSession[]>([]);
+    const [notifEmailTickets, setNotifEmailTickets] = useState(() => localStorage.getItem('csl_pref_email_tickets') !== 'false');
+    const [notifRupsReminders, setNotifRupsReminders] = useState(() => localStorage.getItem('csl_pref_rups_reminders') !== 'false');
+    const [notifSystemBroadcasts, setNotifSystemBroadcasts] = useState(() => localStorage.getItem('csl_pref_broadcasts') !== 'false');
 
     // Fetch and poll active sessions
     useEffect(() => {
@@ -211,6 +225,36 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onLogout, user, onUpda
             }
         }
         onLogout();
+    };
+
+    const handleExportData = () => {
+        if (!user) return;
+        const exportObj = {
+            profile: {
+                id: user.id,
+                email: user.email,
+                fullName: formData.fullName,
+                role: user.role,
+                department: formData.department,
+                company: formData.company,
+                phone: formData.phone,
+                address: formData.address,
+                jobTitle: formData.jobTitle,
+                exportedAt: new Date().toISOString()
+            }
+        };
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportObj, null, 2));
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", `profile_${user.email || 'export'}.json`);
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+        toast.success("Data profil berhasil di-export");
+    };
+
+    const handleDeleteAccount = () => {
+        toast.error("Akun dinas perusahaan dikelola terpusat. Hubungi Administrator IT atau Corporate Secretary untuk penonaktifan akun.");
     };
 
     const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -462,7 +506,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onLogout, user, onUpda
                                         <p className="text-sm font-bold text-slate-900 dark:text-white">Data Export</p>
                                         <p className="text-xs text-slate-400 mt-0.5">Download a copy of your personal data</p>
                                     </div>
-                                    <Button variant="outline" className="w-full sm:w-auto font-bold rounded-xl">Export Data</Button>
+                                    <Button onClick={handleExportData} variant="outline" className="w-full sm:w-auto font-bold rounded-xl">Export Data</Button>
                                 </div>
                             </div>
                         </Card>
@@ -484,7 +528,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onLogout, user, onUpda
                                         <p className="text-sm font-bold text-slate-900 dark:text-white">Delete Account</p>
                                         <p className="text-xs text-slate-400 mt-0.5">Permanently delete your account and all data</p>
                                     </div>
-                                    <Button variant="destructive" className="w-full sm:w-auto font-bold rounded-xl gap-2">
+                                    <Button onClick={handleDeleteAccount} variant="destructive" className="w-full sm:w-auto font-bold rounded-xl gap-2">
                                         <Trash2 size={14} /> Delete Account
                                     </Button>
                                 </div>
@@ -606,22 +650,64 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onLogout, user, onUpda
                     </Card>
                 </TabsContent>
 
-                {/* â”€â”€ NOTIFICATIONS TAB â”€â”€ */}
+                {/* ── NOTIFICATIONS TAB ── */}
                 <TabsContent value="notifications">
                     <Card className="rounded-2xl border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900 shadow-sm overflow-hidden">
-                        <div className="p-12 flex flex-col items-center justify-center text-center gap-4">
-                            <div className="w-16 h-16 bg-gradient-to-br from-indigo-50 to-violet-50 dark:from-indigo-500/10 dark:to-violet-500/10 rounded-2xl flex items-center justify-center border border-indigo-100 dark:border-indigo-500/20">
-                                <Bell size={28} className="text-indigo-400" />
-                            </div>
+                        <div className="p-6 sm:p-8 space-y-6">
                             <div>
                                 <h3 className="text-base font-black text-slate-900 dark:text-white">Notification Preferences</h3>
-                                <p className="text-slate-400 dark:text-zinc-500 text-sm max-w-xs mx-auto mt-1">
-                                    Alert synchronization preferences will be available shortly.
-                                </p>
+                                <p className="text-slate-400 dark:text-zinc-500 text-xs mt-0.5">Atur kanal pengingat dan pemberitahuan aktivitas akun Anda.</p>
                             </div>
-                            <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest bg-indigo-50 dark:bg-indigo-500/10 px-3 py-1.5 rounded-full border border-indigo-100 dark:border-indigo-500/20">
-                                Coming Soon
-                            </span>
+                            <Separator className="bg-slate-100 dark:bg-white/5" />
+
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm font-bold text-slate-900 dark:text-white">Notifikasi Email Tiket Request</p>
+                                    <p className="text-xs text-slate-400 mt-0.5">Terima update status pengajuan & tiket permohonan via email</p>
+                                </div>
+                                <Switch
+                                    checked={notifEmailTickets}
+                                    onCheckedChange={(val) => {
+                                        setNotifEmailTickets(val);
+                                        localStorage.setItem('csl_pref_email_tickets', String(val));
+                                        toast.success('Preferensi notifikasi email diperbarui');
+                                    }}
+                                />
+                            </div>
+
+                            <Separator className="bg-slate-100 dark:bg-white/5" />
+
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm font-bold text-slate-900 dark:text-white">Pengingat RUPS & Dokumen Legal</p>
+                                    <p className="text-xs text-slate-400 mt-0.5">Peringatan otomatis jatuh tempo RUPS-AR dan akta AHU</p>
+                                </div>
+                                <Switch
+                                    checked={notifRupsReminders}
+                                    onCheckedChange={(val) => {
+                                        setNotifRupsReminders(val);
+                                        localStorage.setItem('csl_pref_rups_reminders', String(val));
+                                        toast.success('Preferensi pengingat RUPS diperbarui');
+                                    }}
+                                />
+                            </div>
+
+                            <Separator className="bg-slate-100 dark:bg-white/5" />
+
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm font-bold text-slate-900 dark:text-white">Broadcast Sistem & Pembaruan Fitur</p>
+                                    <p className="text-xs text-slate-400 mt-0.5">Pengumuman pemeliharaan sistem dan fitur baru aplikasi</p>
+                                </div>
+                                <Switch
+                                    checked={notifSystemBroadcasts}
+                                    onCheckedChange={(val) => {
+                                        setNotifSystemBroadcasts(val);
+                                        localStorage.setItem('csl_pref_broadcasts', String(val));
+                                        toast.success('Preferensi broadcast sistem diperbarui');
+                                    }}
+                                />
+                            </div>
                         </div>
                     </Card>
                 </TabsContent>
