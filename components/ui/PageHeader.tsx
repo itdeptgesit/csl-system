@@ -9,18 +9,24 @@ interface PageHeaderProps {
 
 export const PageHeader = ({ title, description, subtitle, children }: PageHeaderProps) => {
     return (
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-7 animate-in fade-in slide-in-from-left-4 duration-500">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 animate-in fade-in slide-in-from-left-4 duration-500">
             <div className="flex flex-col">
-                <h1 className="text-3xl font-black tracking-tight mb-1 text-[#0B1A35] dark:text-slate-100">{title}</h1>
+                <h1 className="text-[30px] font-bold tracking-tight text-[#0a2540] dark:text-zinc-100 font-sans leading-tight">
+                    {title}
+                </h1>
                 {subtitle && (
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: '#C9A84C' }}>{subtitle}</p>
+                    <div className="text-[11px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 mt-1">
+                        {subtitle}
+                    </div>
                 )}
-                {description && !subtitle && (
-                    <p className="text-[14px] font-medium text-slate-500 dark:text-slate-400">{description}</p>
+                {description && (
+                    <p className="text-[13px] font-normal text-[#758196] dark:text-zinc-400 mt-0.5 leading-relaxed">
+                        {description}
+                    </p>
                 )}
             </div>
             {children && (
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 shrink-0">
                     {children}
                 </div>
             )}

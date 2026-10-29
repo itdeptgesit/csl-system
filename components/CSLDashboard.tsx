@@ -215,7 +215,7 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
               <ShieldCheck className="h-3.5 w-3.5 text-[#0a2540]" />
               <span>Corporate Secretary & Legal Platform</span>
             </div>
-            <h1 className="text-2xl md:text-[29px] font-bold tracking-tight text-[#0a2540]">
+            <h1 className="text-[30px] font-bold tracking-tight text-[#0a2540] dark:text-zinc-100 font-sans leading-tight">
               Selamat datang kembali, {firstName}!
             </h1>
             <p className="text-xs md:text-sm text-[#758196] leading-relaxed">
@@ -585,7 +585,7 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
                     <div 
                       key={idx} 
                       onClick={() => onNavigate('csl-requests')}
-                      className="p-4 hover:bg-[#fafbfc] transition-colors flex items-center justify-between gap-4 cursor-pointer"
+                      className="p-4 hover:bg-[#fafbfc] dark:hover:bg-slate-800/50 transition-colors flex items-center justify-between gap-4 cursor-pointer"
                     >
                       <div className="space-y-1 min-w-0">
                         <div className="flex items-center gap-2">
@@ -646,7 +646,7 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
                   <div 
                     key={idx} 
                     onClick={() => onNavigate('csl-requests')} 
-                    className="p-3 rounded-xl bg-[#fafbfc] hover:bg-[#f6f7f9] transition-colors border border-[#e6e9f0] cursor-pointer space-y-1"
+                    className="p-3 rounded-xl bg-[#fafbfc] dark:bg-slate-900/60 hover:bg-[#f6f7f9] dark:hover:bg-slate-800/60 transition-colors border border-[#e6e9f0] dark:border-slate-800 cursor-pointer space-y-1"
                   >
                     <div className="flex justify-between items-center">
                       <span className="text-xs font-mono font-bold text-[#0a2540]">{req.request_number}</span>
@@ -695,8 +695,8 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
                       onClick={() => onNavigate('routine-rups')}
                       className={`p-3 rounded-xl border space-y-1.5 cursor-pointer transition-colors ${
                         isTaskOverdue 
-                          ? 'bg-rose-50/50 border-rose-200 hover:bg-rose-50' 
-                          : 'bg-[#fafbfc] border-[#e6e9f0] hover:bg-[#f6f7f9]'
+                          ? 'bg-rose-50/50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-900/40 hover:bg-rose-50 dark:hover:bg-rose-950/50' 
+                          : 'bg-[#fafbfc] dark:bg-slate-900/60 border-[#e6e9f0] dark:border-slate-800 hover:bg-[#f6f7f9] dark:hover:bg-slate-800/60'
                       }`}
                     >
                       <div className="flex items-center justify-between gap-2">

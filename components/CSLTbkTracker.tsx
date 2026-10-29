@@ -747,7 +747,8 @@ export const CSLTbkTracker: React.FC<{ currentUser?: UserAccount | null }> = () 
       {/* 1. Header Bar with Year Switcher & Primary Action */}
       <PageHeader
         title="Tracking TBK"
-        description="ROUTINE ACTIVITY · KEWAJIBAN EMITEN · PT ALAKASA INDUSTRINDO TBK"
+        subtitle="ROUTINE ACTIVITY · KEWAJIBAN EMITEN"
+        description="Monitoring kepatuhan dan pelaporan keterbukaan informasi PT Alakasa Industrindo Tbk"
       >
         <div className="flex items-center gap-2.5">
           {/* Year Switcher */}

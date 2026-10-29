@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { AlertCircle, CheckCircle2, Loader2, Mail, Lock, Eye, EyeOff, User, UserPlus, LogIn, Shield, Globe, MailCheck, ArrowRight, RefreshCw } from 'lucide-react';
+import { useTheme } from 'next-themes';
+import { AlertCircle, CheckCircle2, Loader2, Mail, Lock, Eye, EyeOff, User, UserPlus, LogIn, Shield, Globe, MailCheck, ArrowRight, RefreshCw, Sun, Moon } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { sendPasswordResetNotificationEmail } from '../utils/EmailSystemUtils';
 import { isAllowedEmailDomain, ALLOWED_EMAIL_DOMAINS } from '../constants';
@@ -24,6 +25,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({
     appName = 'CSL System',
     logoUrl = '/image/logo.png',
 }) => {
+    const { theme, resolvedTheme, setTheme } = useTheme();
+    const [mounted, setMounted] = useState(false);
     const [mode, setMode] = useState<Mode>('login');
     const [registeredEmail, setRegisteredEmail] = useState('');
     const [identifier, setIdentifier] = useState('');
@@ -35,6 +38,25 @@ export const LoginPage: React.FC<LoginPageProps> = ({
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [successMsg, setSuccessMsg] = useState('');
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    const isDark = mounted && (resolvedTheme === 'dark' || theme === 'dark');
+
+    const toggleTheme = (e: React.MouseEvent) => {
+        const nextTheme = isDark ? 'light' : 'dark';
+        if (!document.startViewTransition) {
+            setTheme(nextTheme);
+            return;
+        }
+        document.documentElement.style.setProperty('--click-x', `${e.clientX}px`);
+        document.documentElement.style.setProperty('--click-y', `${e.clientY}px`);
+        document.startViewTransition(() => {
+            setTheme(nextTheme);
+        });
+    };
 
     const switchMode = (m: Mode) => { setMode(m); setError(''); setSuccessMsg(''); };
 
@@ -108,18 +130,35 @@ export const LoginPage: React.FC<LoginPageProps> = ({
     };
 
     return (
-        <div className="min-h-screen w-full flex flex-col items-center justify-center p-4 sm:p-7 lg:p-10 font-sans selection:bg-blue-100 selection:text-blue-900"
+        <div className="relative min-h-screen w-full flex flex-col items-center justify-center p-4 sm:p-7 lg:p-10 font-sans selection:bg-blue-100 selection:text-blue-900 bg-[#f8fafc] dark:bg-[#09090b] transition-colors duration-300"
             style={{
-                fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif",
-                background: `
-                    radial-gradient(680px 420px at 8% -8%, rgba(47, 107, 255, 0.16), transparent 64%),
-                    radial-gradient(760px 520px at 96% 110%, rgba(201, 162, 39, 0.12), transparent 62%),
-                    linear-gradient(145deg, #eef5ff 0%, #f7f9fc 52%, #eaf2fb 100%)
-                `
+                fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif"
             }}
         >
+            {/* ══════════ FLOATING THEME TOGGLE ══════════ */}
+            <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-50">
+                <button
+                    type="button"
+                    onClick={toggleTheme}
+                    aria-label="Ubah mode tampilan"
+                    className="flex items-center gap-2 px-3.5 py-2 rounded-full border border-slate-200/80 dark:border-zinc-800 bg-white/90 dark:bg-zinc-900/90 text-slate-700 dark:text-zinc-200 backdrop-blur-md shadow-sm hover:shadow-md hover:bg-slate-50 dark:hover:bg-zinc-800 transition-all text-xs font-semibold cursor-pointer"
+                >
+                    {isDark ? (
+                        <>
+                            <Sun size={15} className="text-amber-400" />
+                            <span className="hidden sm:inline">Mode Terang</span>
+                        </>
+                    ) : (
+                        <>
+                            <Moon size={15} className="text-slate-600 dark:text-zinc-300" />
+                            <span className="hidden sm:inline">Mode Gelap</span>
+                        </>
+                    )}
+                </button>
+            </div>
+
             {/* ══════════ MAIN FLOATING CARD ══════════ */}
-            <main className="w-full max-w-[1160px] min-h-[720px] grid grid-cols-1 lg:grid-cols-12 p-3 sm:p-3.5 rounded-[32px] bg-white/95 backdrop-blur-xl shadow-[0_24px_70px_rgba(16,24,40,0.14),0_4px_18px_rgba(16,24,40,0.08)] border border-white/80 overflow-hidden">
+            <main className="w-full max-w-[1160px] min-h-[720px] grid grid-cols-1 lg:grid-cols-12 p-3 sm:p-3.5 rounded-[32px] bg-white/95 dark:bg-[#121214] backdrop-blur-xl shadow-[0_24px_70px_rgba(16,24,40,0.14),0_4px_18px_rgba(16,24,40,0.08)] dark:shadow-[0_24px_70px_rgba(0,0,0,0.8)] border border-white/80 dark:border-zinc-800 overflow-hidden">
                 
                 {/* ══════════ LEFT BRAND PANEL (7 cols) ══════════ */}
                 <section className="lg:col-span-7 relative overflow-hidden rounded-[24px] p-8 sm:p-11 xl:p-12 text-white flex flex-col justify-between"
@@ -202,20 +241,20 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                 </section>
 
                 {/* ══════════ RIGHT FORM PANEL (5 cols) ══════════ */}
-                <section className="lg:col-span-5 flex flex-col justify-center px-6 sm:px-10 lg:px-12 py-8 bg-white">
+                <section className="lg:col-span-5 flex flex-col justify-center px-6 sm:px-10 lg:px-12 py-8 bg-white dark:bg-[#111827] transition-colors">
                     <div className="w-full max-w-sm mx-auto">
                         
                         {/* Access Pill Badge */}
-                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 text-blue-600 border border-blue-100 text-[10px] font-extrabold uppercase tracking-[0.12em] mb-4">
+                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-900/40 text-[10px] font-extrabold uppercase tracking-[0.12em] mb-4">
                             <Lock size={12} className="shrink-0" />
                             <span>Akses Internal</span>
                         </div>
 
                         {/* Title Header */}
-                        <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight leading-tight">
+                        <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight">
                             {mode === 'login' ? 'Selamat datang' : mode === 'register' ? 'Buat Akun CSL' : 'Lupa Kata Sandi'}
                         </h2>
-                        <p className="text-xs sm:text-sm text-slate-500 mt-2 leading-relaxed">
+                        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
                             {mode === 'login'
                                 ? 'Masuk dengan akun kantor untuk membuka sistem CSL.'
                                 : mode === 'register'
@@ -225,13 +264,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({
 
                         {/* Alerts Banner */}
                         {error && (
-                            <div className="flex items-start gap-2.5 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs mt-4">
+                            <div className="flex items-start gap-2.5 p-3 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 text-rose-800 dark:text-rose-300 text-xs mt-4">
                                 <AlertCircle size={15} className="text-rose-600 shrink-0 mt-0.5" />
                                 <span className="font-medium">{error}</span>
                             </div>
                         )}
                         {successMsg && (
-                            <div className="flex items-start gap-2.5 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs mt-4">
+                            <div className="flex items-start gap-2.5 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/50 text-emerald-800 dark:text-emerald-300 text-xs mt-4">
                                 <CheckCircle2 size={15} className="text-emerald-600 shrink-0 mt-0.5" />
                                 <span className="font-medium">{successMsg}</span>
                             </div>
@@ -242,7 +281,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                             
                             {mode === 'register' && (
                                 <div className="space-y-1.5">
-                                    <label className="block text-xs font-bold text-slate-800">Nama Lengkap</label>
+                                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">Nama Lengkap</label>
                                     <div className="relative">
                                         <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                                         <input
@@ -251,14 +290,14 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                                             value={fullName}
                                             onChange={e => setFullName(e.target.value)}
                                             placeholder="Nama lengkap"
-                                            className="w-full h-12 pl-12 pr-4 rounded-xl border border-slate-200 bg-slate-50/70 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-500/10 transition-all font-medium"
+                                            className="w-full h-12 pl-12 pr-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/80 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-500/10 transition-all font-medium"
                                         />
                                     </div>
                                 </div>
                             )}
 
                             <div className="space-y-1.5">
-                                <label className="block text-xs font-bold text-slate-800">
+                                <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
                                     {mode === 'login' ? 'Email Kantor atau Username' : 'Email Kantor'}
                                 </label>
                                 <div className="relative">
@@ -269,14 +308,14 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                                         value={identifier}
                                         onChange={e => setIdentifier(e.target.value)}
                                         placeholder="nama@gesit.co.id"
-                                        className="w-full h-12 pl-12 pr-4 rounded-xl border border-slate-200 bg-slate-50/70 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-500/10 transition-all font-medium"
+                                        className="w-full h-12 pl-12 pr-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/80 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-500/10 transition-all font-medium"
                                     />
                                 </div>
                             </div>
 
                             {mode !== 'reset' && (
                                 <div className="space-y-1.5">
-                                    <label className="block text-xs font-bold text-slate-800">Kata Sandi</label>
+                                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">Kata Sandi</label>
                                     <div className="relative">
                                         <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                                         <input
@@ -285,7 +324,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                                             value={password}
                                             onChange={e => setPassword(e.target.value)}
                                             placeholder="Masukkan kata sandi"
-                                            className="w-full h-12 pl-12 pr-12 rounded-xl border border-slate-200 bg-slate-50/70 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-500/10 transition-all font-medium"
+                                            className="w-full h-12 pl-12 pr-12 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/80 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-500/10 transition-all font-medium"
                                         />
                                         <button
                                             type="button"
@@ -300,7 +339,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
 
                             {mode === 'register' && (
                                 <div className="space-y-1.5">
-                                    <label className="block text-xs font-bold text-slate-800">Ulangi Kata Sandi</label>
+                                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">Ulangi Kata Sandi</label>
                                     <div className="relative">
                                         <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                                         <input
@@ -309,7 +348,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                                             value={confirmPassword}
                                             onChange={e => setConfirmPassword(e.target.value)}
                                             placeholder="Ulangi kata sandi"
-                                            className="w-full h-12 pl-12 pr-12 rounded-xl border border-slate-200 bg-slate-50/70 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-500/10 transition-all font-medium"
+                                            className="w-full h-12 pl-12 pr-12 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/80 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-500/10 transition-all font-medium"
                                         />
                                     </div>
                                 </div>
@@ -322,14 +361,14 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                                             type="checkbox"
                                             checked={rememberMe}
                                             onChange={e => setRememberMe(e.target.checked)}
-                                            className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                                            className="w-4 h-4 rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500 bg-transparent"
                                         />
-                                        <span className="text-xs text-slate-600 font-semibold">Ingat saya</span>
+                                        <span className="text-xs text-slate-600 dark:text-slate-400 font-semibold">Ingat saya</span>
                                     </label>
                                     <button
                                         type="button"
                                         onClick={() => switchMode('reset')}
-                                        className="text-xs font-bold text-blue-600 hover:text-blue-700 hover:underline"
+                                        className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 hover:underline"
                                     >
                                         Lupa kata sandi?
                                     </button>
@@ -339,7 +378,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                             <button
                                 type="submit"
                                 disabled={isLoading}
-                                className="w-full h-12 rounded-xl bg-blue-600 text-white font-extrabold text-sm hover:bg-blue-700 active:bg-blue-800 transition-all shadow-[0_12px_24px_rgba(47,107,255,0.22)] hover:shadow-[0_16px_30px_rgba(47,107,255,0.28)] flex items-center justify-center gap-2 disabled:opacity-50 mt-3"
+                                className="w-full h-12 rounded-xl bg-blue-600 text-white font-extrabold text-sm hover:bg-blue-700 active:bg-blue-800 transition-all shadow-[0_12px_24px_rgba(47,107,255,0.22)] hover:shadow-[0_16px_30px_rgba(47,107,255,0.28)] flex items-center justify-center gap-2 disabled:opacity-50 mt-3 cursor-pointer"
                             >
                                 {isLoading ? (
                                     <Loader2 size={18} className="animate-spin text-white" />
@@ -363,7 +402,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                                     type="button"
                                     onClick={handleGoogleLogin}
                                     disabled={isLoading}
-                                    className="w-full h-11 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-colors flex items-center justify-center gap-2.5 text-xs font-bold text-slate-700 shadow-sm"
+                                    className="w-full h-11 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center justify-center gap-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 shadow-sm cursor-pointer"
                                 >
                                     <svg className="w-4 h-4" viewBox="0 0 24 24">
                                         <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
@@ -377,17 +416,17 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                         )}
 
                         {/* Security Notice Box */}
-                        <div className="flex items-start gap-2.5 p-3 rounded-xl bg-slate-50 border border-slate-200/80 text-slate-500 text-[11px] leading-relaxed mt-5">
-                            <Shield size={16} className="text-blue-600 shrink-0 mt-0.5" />
+                        <div className="flex items-start gap-2.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 text-slate-500 dark:text-slate-400 text-[11px] leading-relaxed mt-5">
+                            <Shield size={16} className="text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
                             <span>Halaman ini hanya untuk pengguna internal yang terdaftar. Jaga kerahasiaan akun dan kata sandi Anda.</span>
                         </div>
 
                         {/* Mode Switchers */}
-                        <div className="mt-5 text-center text-xs font-semibold text-slate-500">
+                        <div className="mt-5 text-center text-xs font-semibold text-slate-500 dark:text-slate-400">
                             {mode !== 'login' ? (
-                                <p>Sudah punya akun? <button onClick={() => switchMode('login')} className="text-blue-600 font-bold hover:underline">Masuk</button></p>
+                                <p>Sudah punya akun? <button onClick={() => switchMode('login')} className="text-blue-600 dark:text-blue-400 font-bold hover:underline">Masuk</button></p>
                             ) : (
-                                <p>Belum memiliki akses? <button onClick={() => switchMode('register')} className="text-blue-600 font-bold hover:underline">Daftar Akun</button></p>
+                                <p>Belum memiliki akses? <button onClick={() => switchMode('register')} className="text-blue-600 dark:text-blue-400 font-bold hover:underline">Daftar Akun</button></p>
                             )}
                         </div>
 
@@ -396,9 +435,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({
             </main>
 
             {/* ══════════ PAGE FOOTER ══════════ */}
-            <footer className="mt-6 flex items-center gap-2.5 text-xs font-bold text-slate-500">
+            <footer className="mt-6 flex items-center gap-2.5 text-xs font-bold text-slate-500 dark:text-slate-400">
                 <span>CSL &mdash; Corporate Secretary Legal</span>
-                <span className="w-1 h-1 rounded-full bg-slate-400" />
+                <span className="w-1 h-1 rounded-full bg-slate-400 dark:bg-slate-600" />
                 <span>&copy; 2026 The Gesit Companies</span>
             </footer>
         </div>

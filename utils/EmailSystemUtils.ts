@@ -1,3 +1,4 @@
+import { buildCslEmailTemplate } from './cslNotificationUtils';
 
 export interface TicketEmailData {
     ticketId: string;
@@ -19,6 +20,27 @@ export const sendTicketNotificationEmail = async (data: TicketEmailData) => {
     }
 
     try {
+        const html = buildCslEmailTemplate({
+            badge: data.priority ? data.priority.toUpperCase() : 'TIKET',
+            badgeColor: data.priority === 'High' ? '#dc2626' : '#0a2540',
+            title: `Permintaan Tiket: ${data.subject}`,
+            recipientName: 'Tim Support',
+            introParagraph: 'Terdapat pengajuan tiket baru yang membutuhkan perhatian Anda:',
+            detailsTable: [
+                { label: 'No. Tiket', value: `<span style="font-family: monospace; font-weight: 700;">${data.ticketId}</span>`, isHighlight: true },
+                { label: 'Pengirim', value: `${data.requesterName} (${data.requesterEmail})` },
+                { label: 'Departemen', value: data.department || '-' },
+                { label: 'Kategori', value: data.category || '-' },
+                { label: 'Prioritas', value: data.priority || 'Normal' }
+            ],
+            calloutBox: {
+                title: 'Deskripsi / Masalah',
+                content: data.description,
+                borderAccent: data.priority === 'High' ? '#dc2626' : '#0a2540'
+            },
+            closingParagraph: 'Silakan masuk ke platform CSL-LINK untuk menindaklanjuti tiket ini.'
+        });
+
         const response = await fetch('https://api.resend.com/emails', {
             method: 'POST',
             headers: {
@@ -26,57 +48,10 @@ export const sendTicketNotificationEmail = async (data: TicketEmailData) => {
                 'Authorization': `Bearer ${RESEND_API_KEY}`,
             },
             body: JSON.stringify({
-                from: 'GESIT ERP Ticketing <it-support@gesit.co.id>',
+                from: 'CSL-LINK <no-reply@send.gesit.co.id>',
                 to: ['it.operation@gesit.co.id'],
-                subject: `[NEW TICKET] ${data.priority.toUpperCase()} - ${data.subject}`,
-                html: `
-                    <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; border: 1px solid #eee; border-radius: 12px; overflow: hidden;">
-                        <div style="background-color: #2563eb; padding: 20px; color: white;">
-                            <h2 style="margin: 0; font-size: 20px;">Support Request Received</h2>
-                            <p style="margin: 5px 0 0; opacity: 0.9; font-size: 14px;">Ticket ID: ${data.ticketId}</p>
-                        </div>
-                        <div style="padding: 24px;">
-                            <p>Halo Tim IT Operation,</p>
-                            <p>Ada request ticketing baru yang butuh perhatian kamu:</p>
-                            
-                            <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
-                                <tr>
-                                    <td style="padding: 8px 0; font-weight: bold; width: 120px;">Pengirim</td>
-                                    <td style="padding: 8px 0;">: ${data.requesterName}</td>
-                                </tr>
-                                <tr>
-                                    <td style="padding: 8px 0; font-weight: bold;">Departemen</td>
-                                    <td style="padding: 8px 0;">: ${data.department}</td>
-                                </tr>
-                                <tr>
-                                    <td style="padding: 8px 0; font-weight: bold;">Kategori</td>
-                                    <td style="padding: 8px 0;">: ${data.category}</td>
-                                </tr>
-                                <tr>
-                                    <td style="padding: 8px 0; font-weight: bold;">Prioritas</td>
-                                    <td style="padding: 8px 0;">: <span style="color: ${data.priority === 'High' ? '#e11d48' : '#2563eb'}; font-weight: bold;">${data.priority}</span></td>
-                                </tr>
-                                <tr>
-                                    <td style="padding: 16px 0 8px; font-weight: bold;" colspan="2">Pesan/Masalah:</td>
-                                </tr>
-                                <tr>
-                                    <td style="padding: 12px; background-color: #f8fafc; border-radius: 8px; border: 1px solid #f1f5f9;" colspan="2">
-                                        <em>"${data.description}"</em>
-                                    </td>
-                                </tr>
-                            </table>
-                            
-                            <div style="margin-top: 30px;">
-                                <a href="https://gesit-erp.vercel.app/helpdesk" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
-                                    Buka Helpdesk Center
-                                </a>
-                            </div>
-                        </div>
-                        <div style="background-color: #f8fafc; padding: 16px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #eee;">
-                            Ini adalah notifikasi otomatis dari Sistem GESIT PORTAL.
-                        </div>
-                    </div>
-                `
+                subject: `[CSL-LINK] ${data.priority.toUpperCase()} - ${data.subject}`,
+                html
             })
         });
 
@@ -100,6 +75,20 @@ export const sendPasswordResetNotificationEmail = async (email: string) => {
     }
 
     try {
+        const html = buildCslEmailTemplate({
+            badge: 'KEAMANAN AKUN',
+            badgeColor: '#0a2540',
+            title: 'Permintaan Reset Kata Sandi Akun',
+            recipientName: email,
+            introParagraph: `Kami menerima permintaan untuk mengatur ulang kata sandi akun <strong>${email}</strong> pada platform <strong>CSL-LINK</strong> (Corporate Secretary & Legal).`,
+            calloutBox: {
+                title: 'Informasi Keamanan',
+                content: 'Tautan reset kata sandi resmi sedang diproses dan dikirim melalui sistem autentikasi kami. Silakan periksa kotak masuk (inbox) atau folder Spam untuk instruksi lebih lanjut.<br/><br/><strong>Peringatan Keamanan:</strong> Jika Anda tidak merasa mengajukan permintaan ini, segera laporkan ke administrator keamanan TI.',
+                borderAccent: '#0a2540'
+            },
+            closingParagraph: 'Pesan otomatis ini dikeluarkan untuk melindungi keamanan akses akun Anda di The Gesit Companies.'
+        });
+
         const response = await fetch('https://api.resend.com/emails', {
             method: 'POST',
             headers: {
@@ -107,29 +96,10 @@ export const sendPasswordResetNotificationEmail = async (email: string) => {
                 'Authorization': `Bearer ${RESEND_API_KEY}`,
             },
             body: JSON.stringify({
-                from: 'GESIT ERP Security <it-support@gesit.co.id>',
+                from: 'CSL-LINK <no-reply@send.gesit.co.id>',
                 to: [email, 'it.operation@gesit.co.id'],
-                subject: `🔒 [SECURITY] Password Reset Requested for ${email}`,
-                html: `
-                    <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; border: 1px solid #eee; border-radius: 12px; overflow: hidden;">
-                        <div style="background-color: #0f172a; padding: 20px; color: white;">
-                            <h2 style="margin: 0; font-size: 20px;">Password Reset Request Logged</h2>
-                            <p style="margin: 5px 0 0; opacity: 0.9; font-size: 14px;">Security Event</p>
-                        </div>
-                        <div style="padding: 24px;">
-                            <p>Halo,</p>
-                            <p>Kami mendeteksi permintaan reset password untuk akun <strong>${email}</strong> melalui halaman login.</p>
-                            <p>Tautan reset password resmi sedang diproses dan dikirim melalui sistem Auth kami. <strong>Mohon periksa kotak masuk (inbox) atau folder Spam Anda untuk email dari "Supabase" / "Gesit" yang berisi link reset.</strong></p>
-                            
-                            <div style="margin-top: 30px; padding: 16px; background-color: #fff1f2; border: 1px solid #ffe4e6; border-radius: 8px; color: #be123c;">
-                                <strong>PENTING:</strong> Jika Anda tidak melakukan permintaan reset ini, segera hubungi Tim IT kami karena mungkin ada percobaan akses ilegal ke akun Anda.
-                            </div>
-                        </div>
-                        <div style="background-color: #f8fafc; padding: 16px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #eee;">
-                            Ini adalah notifikasi otomatis dari Sistem Security GESIT PORTAL (Powered by Resend).
-                        </div>
-                    </div>
-                `
+                subject: `[CSL-LINK] Permintaan Reset Password: ${email}`,
+                html
             })
         });
 

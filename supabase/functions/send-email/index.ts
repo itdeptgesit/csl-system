@@ -30,10 +30,10 @@ serve(async (req) => {
         'Authorization': `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: 'CSL-System <no-reply@send.gesit.co.id>',
+        from: 'CSL-LINK <no-reply@send.gesit.co.id>',
         to: [to],
         subject: subject,
-        html: body, // body from frontend is currently a simple string, but we can treat it as html
+        html: body, // body from frontend is treated as html
       }),
     })
 

@@ -1061,7 +1061,11 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-12">
-      <PageHeader title="Tracking RUPS - AR" description="Monitoring kepatuhan RUPS Tahunan & Akta Perusahaan Grup Gesit">
+      <PageHeader 
+        title="Tracking RUPS - AR" 
+        subtitle="ROUTINE ACTIVITY · AKTA & KEPATUHAN RUPS"
+        description="Monitoring kepatuhan RUPS Tahunan &amp; Akta Perusahaan Grup Gesit"
+      >
         <div className="flex gap-2">
           <Button 
             variant="outline" 

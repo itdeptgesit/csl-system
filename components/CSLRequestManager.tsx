@@ -934,7 +934,11 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-10">
-      <PageHeader title={pageTitle} description={pageDesc}>
+      <PageHeader 
+        title={pageTitle} 
+        subtitle="SERVICE DESK · CORPORATE SECRETARY & LEGAL"
+        description={pageDesc}
+      >
         <div className="flex items-center gap-2">
           {useMock && (
             <span className="text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1 uppercase tracking-wider">

@@ -426,7 +426,8 @@ export const CSLAdMgtTracker: React.FC<{ currentUser?: UserAccount | null }> = (
       {/* 1. Header Bar */}
       <PageHeader
         title="AD - Management Changes"
-        description="Monitoring dan pencatatan perubahan Anggaran Dasar (Management Changes) entitas Grup Gesit"
+        subtitle="ROUTINE ACTIVITY · MANAGEMENT & ARTIKEL PERUBAHAN"
+        description="Monitoring dan pencatatan perubahan Anggaran Dasar dan susunan manajemen entitas Grup Gesit"
       >
         <div className="flex items-center gap-2">
           <Button

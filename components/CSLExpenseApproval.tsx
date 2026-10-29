@@ -30,7 +30,7 @@ import {
 } from 'lucide-react';
 import { getCurrencyFlag } from '@/services/cslBudgetReportService';
 import { CSLBudgetExpensesReport } from './CSLBudgetExpensesReport';
-import { sendEmailNotification } from '../utils/cslNotificationUtils';
+import { sendEmailNotification, buildCslEmailTemplate } from '../utils/cslNotificationUtils';
 import { generateExpenseApprovalPdf } from '../utils/cslExpensePdf';
 import { generateOffshoreInvoicePdf } from '../utils/cslOffshoreInvoicePdf';
 import { fetchLiveExchangeRate } from '../utils/cslExchangeRateUtils';
@@ -787,10 +787,29 @@ export const CSLExpenseApproval: React.FC<CSLExpenseApprovalProps> = ({ currentU
         setStep(stepIdx, 'active', hasFile ? 92 : 80);
         const approverEmail = designatedApproverEmail || 'natalia@gesit.co.id';
         if (approverEmail) {
+          const expenseHtml = buildCslEmailTemplate({
+            badge: 'PERLU APPROVAL',
+            badgeColor: '#d97706',
+            title: `Pengajuan Biaya Baru Perlu Review: ${payload.expense_number}`,
+            recipientName: 'Approver',
+            introParagraph: `Pengajuan biaya baru (<strong>${payload.payee_type}</strong>) telah dibuat dan memerlukan peninjauan serta persetujuan Anda:`,
+            detailsTable: [
+              { label: 'No. Pengajuan', value: `<span style="font-family: monospace; font-weight: 700;">${payload.expense_number}</span>`, isHighlight: true },
+              { label: 'Project', value: payload.project_name || '-' },
+              { label: 'Dibayarkan Kepada', value: payload.paid_to || '-' },
+              { label: 'Jumlah Nominal', value: formatCurrencyAmount(payload.currency, payload.amount), isHighlight: true },
+              { label: 'Konversi Pelaporan', value: formatRp(payload.reporting_amount) },
+              { label: 'Diajukan Oleh', value: payload.prepared_by_name || '-' }
+            ],
+            closingParagraph: 'Silakan masuk ke platform CSL-LINK untuk meninjau detail dan memberikan persetujuan.'
+          });
+
           await sendEmailNotification(
             approverEmail,
-            `[CSL] New Expense Request: ${payload.expense_number}`,
-            `Hello,\n\nA new Expense Request (${payload.payee_type}) requires your review.\n\nRequest No : ${payload.expense_number}\nProject    : ${payload.project_name}\nPaid to    : ${payload.paid_to}\nAmount     : ${formatCurrencyAmount(payload.currency, payload.amount)}\nReporting  : ${formatRp(payload.reporting_amount)}\nPrepared by: ${payload.prepared_by_name}\n\nPlease log in to CSL System to review.\n\nThank you.`
+            `[CSL-LINK] Pengajuan Biaya Baru: ${payload.expense_number} - ${payload.project_name}`,
+            expenseHtml,
+            true,
+            'APPROVAL'
           );
         }
         setStep(stepIdx, 'done', 100);
@@ -1084,17 +1103,12 @@ export const CSLExpenseApproval: React.FC<CSLExpenseApprovalProps> = ({ currentU
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-12 font-sans">
 
-      {/* ── Page Title & Actions Bar (design.md §13.1) ── */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-1">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#0a2540] dark:text-white">
-            Budget &amp; Expenses
-          </h1>
-          <div className="text-[11px] font-bold tracking-widest text-[#c9a227] dark:text-amber-400 uppercase mt-1">
-            Anggaran Operasional &amp; Pengeluaran Legal
-          </div>
-        </div>
-
+      {/* ── Page Title & Actions Bar using PageHeader ── */}
+      <PageHeader
+        title="Budget & Expenses"
+        subtitle="ANGGARAN OPERASIONAL & PENGELUARAN LEGAL"
+        description="Monitoring dan persetujuan pengeluaran operasional serta tagihan legal corporate"
+      >
         <div className="flex flex-wrap items-center gap-2">
           {selectedIds.length > 0 && (
             <Button
@@ -1175,7 +1189,7 @@ export const CSLExpenseApproval: React.FC<CSLExpenseApprovalProps> = ({ currentU
             <span>Tambah Pengeluaran</span>
           </Button>
         </div>
-      </div>
+      </PageHeader>
 
       {/* ── View Switcher: Transaksi vs Analisis (design.md §13.2) ── */}
       <div className="inline-flex bg-slate-200/80 dark:bg-slate-800 p-1 rounded-xl shadow-inner border border-slate-300/80 dark:border-slate-700">

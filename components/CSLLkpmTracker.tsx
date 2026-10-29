@@ -517,15 +517,11 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
   return (
     <div className="w-full space-y-6">
       {/* Title & Actions Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-1">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
-            Tracking Pelaporan LKPM
-          </h1>
-          <div className="text-[11px] font-bold tracking-widest text-amber-700 dark:text-amber-400 uppercase mt-1">
-            Routine Activity &amp; Regulatory Compliance
-          </div>
-        </div>
+      <PageHeader
+        title="Tracking Pelaporan LKPM"
+        subtitle="ROUTINE ACTIVITY · REGULATORY COMPLIANCE"
+        description="Monitoring jadwal dan status kepatuhan pelaporan LKPM seluruh entitas usaha"
+      >
 
         <div className="flex flex-wrap items-center gap-2">
           {/* Year Switcher */}
@@ -602,7 +598,7 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
             <RefreshCw className="size-3.5" />
           </Button>
         </div>
-      </div>
+      </PageHeader>
 
       {/* View Switcher: Analisis vs Perusahaan */}
       <div className="inline-flex bg-slate-200/80 dark:bg-slate-800 p-1 rounded-xl shadow-inner border border-slate-300/80 dark:border-slate-700">

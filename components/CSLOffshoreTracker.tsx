@@ -310,7 +310,8 @@ export const CSLOffshoreTracker: React.FC<{ currentUser?: UserAccount | null }> 
       {/* 1. Baris Judul */}
       <PageHeader
         title="Tracking Offshore Co"
-        description="Monitoring Perpanjangan, Registered Agent, & Kepatuhan Entitas Luar Negeri"
+        subtitle="ROUTINE ACTIVITY · OFFSHORE ENTITIES"
+        description="Monitoring perpanjangan, registered agent, dan kepatuhan entitas luar negeri"
       >
         <div className="flex items-center gap-2">
           <Button

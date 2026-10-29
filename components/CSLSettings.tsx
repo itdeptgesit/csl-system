@@ -70,9 +70,15 @@ import {
   Globe,
   Layers,
   Shield,
-  Sparkles
+  Sparkles,
+  Send
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { 
+  getCSLNotificationSettings, 
+  saveCSLNotificationSettings, 
+  sendEmailNotification 
+} from '../utils/cslNotificationUtils';
 import lkpmData from '../data/lkpm_data.json';
 import groupEmailCompanies from '../data/group_email_companies.json';
 
@@ -589,8 +595,202 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
     } catch (e) {
       console.warn('System settings table may not exist yet, using localStorage only.', e);
     }
-    
-    showFeedback('Pengaturan sistem, approver utama & cadangan berhasil disimpan!');
+
+    try {
+      await saveCSLNotificationSettings({
+        emailMasterEnabled: notifMaster,
+        emailNewRequestEnabled: notifNewRequest,
+        emailStatusChangeEnabled: notifStatusChange,
+        emailAssignMentionEnabled: notifAssignMention,
+        emailApprovalsEnabled: notifApprovals,
+        cslInboxEmail: notifCslEmail.trim()
+      });
+    } catch (e) {
+      console.warn('Failed to save notification settings with approvers:', e);
+    }
+
+    showFeedback('Pengaturan sistem, notifikasi email, dan approver berhasil disimpan!');
+    toast.success('Pengaturan sistem dan notifikasi email berhasil disimpan!');
+  };
+
+  // ── Notification Settings State ─────────────────────────────────────────────
+  const [notifMaster, setNotifMaster] = useState<boolean>(true);
+  const [notifNewRequest, setNotifNewRequest] = useState<boolean>(true);
+  const [notifStatusChange, setNotifStatusChange] = useState<boolean>(true);
+  const [notifAssignMention, setNotifAssignMention] = useState<boolean>(true);
+  const [notifApprovals, setNotifApprovals] = useState<boolean>(true);
+  const [notifCslEmail, setNotifCslEmail] = useState<string>('corporatesecretary@gesit.co.id');
+  const [testEmailRecipient, setTestEmailRecipient] = useState<string>('');
+  const [isSendingTest, setIsSendingTest] = useState<boolean>(false);
+  const [isSavingNotifs, setIsSavingNotifs] = useState<boolean>(false);
+
+  useEffect(() => {
+    getCSLNotificationSettings().then(cfg => {
+      setNotifMaster(cfg.emailMasterEnabled);
+      setNotifNewRequest(cfg.emailNewRequestEnabled);
+      setNotifStatusChange(cfg.emailStatusChangeEnabled);
+      setNotifAssignMention(cfg.emailAssignMentionEnabled);
+      setNotifApprovals(cfg.emailApprovalsEnabled);
+      setNotifCslEmail(cfg.cslInboxEmail);
+    });
+  }, []);
+
+  const handleSaveNotificationSettings = async () => {
+    setIsSavingNotifs(true);
+    try {
+      await saveCSLNotificationSettings({
+        emailMasterEnabled: notifMaster,
+        emailNewRequestEnabled: notifNewRequest,
+        emailStatusChangeEnabled: notifStatusChange,
+        emailAssignMentionEnabled: notifAssignMention,
+        emailApprovalsEnabled: notifApprovals,
+        cslInboxEmail: notifCslEmail.trim()
+      });
+      toast.success('Pengaturan notifikasi email berhasil disimpan!');
+      showFeedback('Pengaturan notifikasi email berhasil diperbarui!');
+    } catch (err: any) {
+      toast.error('Gagal menyimpan notifikasi: ' + (err?.message || 'Error'));
+    } finally {
+      setIsSavingNotifs(false);
+    }
+  };
+
+  const handleSendTestEmail = async () => {
+    const target = (testEmailRecipient || currentUser?.email || notifCslEmail || '').trim();
+    if (!target) {
+      toast.error('Masukkan alamat email penerima uji coba.');
+      return;
+    }
+    setIsSendingTest(true);
+    try {
+      const testHtml = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>CSL-LINK Notification Test</title>
+        </head>
+        <body style="margin: 0; padding: 32px 16px; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 580px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);">
+            <!-- Header Brand Banner -->
+            <tr>
+              <td style="padding: 32px 32px 24px 32px; background-color: #0a2540; border-bottom: 2px solid #14375e;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                  <tr>
+                    <td style="vertical-align: middle;">
+                      <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                        <tr>
+                          <td style="vertical-align: middle; padding-right: 12px;">
+                            <img src="https://yihjfrxdrhkqfnjofvua.supabase.co/storage/v1/object/public/public-assets/logo.png" alt="CSL Logo" width="38" height="38" style="display: block; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2);" onerror="this.style.display='none'" />
+                          </td>
+                          <td style="vertical-align: middle;">
+                            <div style="font-size: 19px; font-weight: 800; color: #ffffff; letter-spacing: 0.08em; line-height: 1;">CSL-LINK</div>
+                            <div style="font-size: 10px; font-weight: 700; color: #94a3b8; letter-spacing: 0.14em; text-transform: uppercase; margin-top: 4px;">Corporate Secretary &amp; Legal</div>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                    <td style="text-align: right; vertical-align: middle;">
+                      <span style="display: inline-block; padding: 4px 10px; background-color: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 999px; font-size: 11px; font-weight: 700; color: #e2e8f0; letter-spacing: 0.04em; text-transform: uppercase;">
+                        System Verification
+                      </span>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- Main Content Area -->
+            <tr>
+              <td style="padding: 32px;">
+                <h1 style="margin: 0 0 12px 0; font-size: 18px; font-weight: 700; color: #0f172a; line-height: 1.3;">
+                  Uji Coba Pengiriman Notifikasi Email
+                </h1>
+                <p style="margin: 0 0 24px 0; font-size: 13px; line-height: 1.6; color: #475569;">
+                  Email ini mengonfirmasi bahwa integrasi API email pada platform <strong>CSL-LINK</strong> (Corporate Secretary &amp; Legal) aktif dan dapat mengirimkan pemberitahuan secara langsung.
+                </p>
+
+                <!-- Status Summary Card -->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 24px;">
+                  <tr>
+                    <td style="padding: 16px 20px;">
+                      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size: 13px;">
+                        <tr>
+                          <td style="padding: 6px 0; color: #64748b; font-weight: 600; width: 45%;">Master Notifikasi Email</td>
+                          <td style="padding: 6px 0; text-align: right; font-weight: 700; color: ${notifMaster ? '#059669' : '#dc2626'};">
+                            ${notifMaster ? '● AKTIF (ON)' : '○ NONAKTIF'}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 6px 0; color: #64748b; font-weight: 500; border-top: 1px solid #f1f5f9;">Permohonan Tiket Baru</td>
+                          <td style="padding: 6px 0; text-align: right; font-weight: 600; color: #0f172a; border-top: 1px solid #f1f5f9;">
+                            ${notifNewRequest ? 'Aktif' : 'Nonaktif'}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 6px 0; color: #64748b; font-weight: 500; border-top: 1px solid #f1f5f9;">Update Status &amp; Selesai</td>
+                          <td style="padding: 6px 0; text-align: right; font-weight: 600; color: #0f172a; border-top: 1px solid #f1f5f9;">
+                            ${notifStatusChange ? 'Aktif' : 'Nonaktif'}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 6px 0; color: #64748b; font-weight: 500; border-top: 1px solid #f1f5f9;">Approval Biaya &amp; Offshore</td>
+                          <td style="padding: 6px 0; text-align: right; font-weight: 600; color: #0f172a; border-top: 1px solid #f1f5f9;">
+                            ${notifApprovals ? 'Aktif' : 'Nonaktif'}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 6px 0; color: #64748b; font-weight: 500; border-top: 1px solid #f1f5f9;">Waktu Pengujian</td>
+                          <td style="padding: 6px 0; text-align: right; font-weight: 600; color: #0f172a; border-top: 1px solid #f1f5f9;">
+                            ${new Date().toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })} WIB
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+
+                <p style="margin: 0; font-size: 12px; line-height: 1.5; color: #64748b;">
+                  Pemberitahuan resmi tiket hukum, SLA, kepatuhan RUPS, dan persetujuan biaya akan dikirimkan dengan identitas <strong>CSL-LINK</strong>.
+                </p>
+              </td>
+            </tr>
+
+            <!-- Footer -->
+            <tr>
+              <td style="padding: 20px 32px; background-color: #fafbfc; border-top: 1px solid #e2e8f0; text-align: center;">
+                <p style="margin: 0 0 4px 0; font-size: 11px; font-weight: 700; color: #475569; letter-spacing: 0.05em; text-transform: uppercase;">
+                  CSL-LINK &bull; Corporate Secretary &amp; Legal
+                </p>
+                <p style="margin: 0; font-size: 11px; color: #94a3b8;">
+                  Pesan otomatis resmi sistem internal The Gesit Companies. Mohon tidak membalas langsung ke email ini.
+                </p>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>
+      `;
+      const res = await sendEmailNotification(
+        target,
+        '[CSL Test] Uji Coba Pengiriman Notifikasi Email Sistem',
+        testHtml,
+        true,
+        'GENERAL'
+      );
+      if (res.skipped) {
+        toast.warning('Pengiriman email dilewati: ' + res.reason);
+      } else if (res.success) {
+        toast.success(`Email uji coba berhasil dikirim ke ${target}!`);
+      } else {
+        toast.error(`Pengiriman gagal: ${res.reason || 'Periksa API key / batas pengiriman'}`);
+      }
+    } catch (err: any) {
+      toast.error('Gagal mengirim email tes: ' + err.message);
+    } finally {
+      setIsSendingTest(false);
+    }
   };
 
   // Sync Master Companies from LKPM 81 entities per Rekomendasi #5
@@ -2232,7 +2432,7 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
         {/* TITLE & ACTIONS */}
         <div className="flex items-end justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-[28px] font-bold text-[#0a2540] dark:text-white tracking-tight leading-tight">
+            <h1 className="text-[30px] font-bold text-[#0a2540] dark:text-zinc-100 font-sans tracking-tight leading-tight">
               Companies &amp; Entities
             </h1>
             <div className="text-[#c9a227] text-[11px] font-bold tracking-[1.8px] mt-1.5 uppercase">
@@ -3094,7 +3294,236 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
     );
   }
 
-  // ── System Settings View (includes Notifications) ────────────────────────
+  // ── Notification Settings View ─────────────────────────────────────────────
+  if (view === 'notifications') {
+    return (
+      <div className="space-y-6 animate-in fade-in duration-500 pb-12 font-sans">
+        {feedbackBanner}
+        <PageHeader 
+          title="Pengaturan Notifikasi Email & Tiket" 
+          description="Atur fleksibilitas pengiriman email notifikasi tiket CSL, approval biaya, dan preferensi penerima."
+        >
+          <Button 
+            onClick={handleSaveNotificationSettings} 
+            disabled={isSavingNotifs} 
+            size="sm" 
+            className="bg-[#0a2540] hover:bg-[#16375c] text-white text-xs font-bold rounded-xl h-9 px-5 shadow-xs flex items-center gap-2"
+          >
+            {isSavingNotifs ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+            Simpan Pengaturan
+          </Button>
+        </PageHeader>
+
+        {/* Master Switch Card */}
+        <div className={`border rounded-2xl p-6 transition-all shadow-xs ${notifMaster ? 'bg-card border-emerald-200 dark:border-emerald-900/50' : 'bg-amber-50/40 border-amber-200 dark:bg-amber-950/20 dark:border-amber-900/40'}`}>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2.5">
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${notifMaster ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
+                  <Bell size={18} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-[#0a2540] dark:text-white">Master Sakelar Email Notifikasi</h3>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${notifMaster ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-100 text-amber-800 border border-amber-300'}`}>
+                      {notifMaster ? '● Notifikasi Email Aktif' : '○ Seluruh Email Dinonaktifkan'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <p className="text-xs text-[#758196] max-w-2xl pt-1">
+                Sakelar utama untuk menghidupkan atau mematikan seluruh pengiriman email dari sistem CSL secara instan. Notifikasi di dalam aplikasi (in-app feed / bell) tetap akan tercatat meskipun email dinonaktifkan.
+              </p>
+            </div>
+
+            <label className="relative inline-flex items-center cursor-pointer shrink-0">
+              <input 
+                type="checkbox" 
+                checked={notifMaster} 
+                onChange={(e) => setNotifMaster(e.target.checked)} 
+                className="sr-only peer" 
+              />
+              <div className="w-12 h-6 bg-[#eef0f4] peer-focus:outline-none rounded-full peer peer-checked:bg-[#0a2540] transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-6 peer-checked:after:border-white" />
+            </label>
+          </div>
+        </div>
+
+        {/* Granular Notification Categories */}
+        <div className={`bg-card border border-[#e6e9f0] rounded-2xl p-6 shadow-xs space-y-5 transition-opacity ${!notifMaster ? 'opacity-60 pointer-events-none' : ''}`}>
+          <div>
+            <h3 className="text-sm font-bold text-[#0a2540] flex items-center gap-2">
+              <Mail size={18} className="text-[#0a2540]" /> Jenis Notifikasi Email CSL
+            </h3>
+            <p className="text-xs text-[#758196] mt-0.5">Pilih aktivitas apa saja yang akan memicu pengiriman email pemberitahuan.</p>
+          </div>
+
+          <div className="space-y-3 divide-y divide-[#e6e9f0]/70">
+            {/* 1. New Request */}
+            <div className="flex items-start justify-between pt-3 first:pt-0 gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-[#16233a]">Notifikasi Permohonan CSL Baru</span>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${notifNewRequest ? 'bg-blue-50 text-blue-700' : 'bg-gray-100 text-gray-500'}`}>
+                    {notifNewRequest ? 'Aktif' : 'Nonaktif'}
+                  </span>
+                </div>
+                <p className="text-xs text-[#758196]">
+                  Kirim email otomatis ke Tim Corporate Secretary &amp; Legal saat ada user yang mengajukan permohonan / tiket baru.
+                </p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer shrink-0 mt-1">
+                <input 
+                  type="checkbox" 
+                  checked={notifNewRequest} 
+                  onChange={(e) => setNotifNewRequest(e.target.checked)} 
+                  className="sr-only peer" 
+                />
+                <div className="w-10 h-5 bg-[#eef0f4] rounded-full peer peer-checked:bg-[#0a2540] transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5" />
+              </label>
+            </div>
+
+            {/* 2. Status Changed / Completed */}
+            <div className="flex items-start justify-between pt-3 gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-[#16233a]">Pembaruan Status &amp; Tiket Selesai</span>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${notifStatusChange ? 'bg-blue-50 text-blue-700' : 'bg-gray-100 text-gray-500'}`}>
+                    {notifStatusChange ? 'Aktif' : 'Nonaktif'}
+                  </span>
+                </div>
+                <p className="text-xs text-[#758196]">
+                  Kirim email update kepada pemohon saat status tiket berubah (In Review, Processing, Completed) atau ada tanggapan resmi dari staf CSL.
+                </p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer shrink-0 mt-1">
+                <input 
+                  type="checkbox" 
+                  checked={notifStatusChange} 
+                  onChange={(e) => setNotifStatusChange(e.target.checked)} 
+                  className="sr-only peer" 
+                />
+                <div className="w-10 h-5 bg-[#eef0f4] rounded-full peer peer-checked:bg-[#0a2540] transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5" />
+              </label>
+            </div>
+
+            {/* 3. Assign & Mention */}
+            <div className="flex items-start justify-between pt-3 gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-[#16233a]">Penugasan PIC &amp; Mention (@mention)</span>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${notifAssignMention ? 'bg-blue-50 text-blue-700' : 'bg-gray-100 text-gray-500'}`}>
+                    {notifAssignMention ? 'Aktif' : 'Nonaktif'}
+                  </span>
+                </div>
+                <p className="text-xs text-[#758196]">
+                  Kirim email kepada staf saat ditugaskan menangani tiket permohonan atau saat disebut dalam catatan internal tiket.
+                </p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer shrink-0 mt-1">
+                <input 
+                  type="checkbox" 
+                  checked={notifAssignMention} 
+                  onChange={(e) => setNotifAssignMention(e.target.checked)} 
+                  className="sr-only peer" 
+                />
+                <div className="w-10 h-5 bg-[#eef0f4] rounded-full peer peer-checked:bg-[#0a2540] transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5" />
+              </label>
+            </div>
+
+            {/* 4. Approvals */}
+            <div className="flex items-start justify-between pt-3 gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-[#16233a]">Persetujuan Pengeluaran &amp; Invoice (Expenses &amp; Offshore)</span>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${notifApprovals ? 'bg-blue-50 text-blue-700' : 'bg-gray-100 text-gray-500'}`}>
+                    {notifApprovals ? 'Aktif' : 'Nonaktif'}
+                  </span>
+                </div>
+                <p className="text-xs text-[#758196]">
+                  Kirim email kepada Approver saat ada permohonan pengeluaran biaya operasional (Expenses) atau tagihan valas (Offshore Invoices) yang memerlukan persetujuan.
+                </p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer shrink-0 mt-1">
+                <input 
+                  type="checkbox" 
+                  checked={notifApprovals} 
+                  onChange={(e) => setNotifApprovals(e.target.checked)} 
+                  className="sr-only peer" 
+                />
+                <div className="w-10 h-5 bg-[#eef0f4] rounded-full peer peer-checked:bg-[#0a2540] transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5" />
+              </label>
+            </div>
+          </div>
+        </div>
+
+        {/* Corporate Secretary Target Email Address */}
+        <div className="bg-card border border-[#e6e9f0] rounded-2xl p-6 shadow-xs space-y-4">
+          <div>
+            <h3 className="text-sm font-bold text-[#0a2540] flex items-center gap-2">
+              <Mail size={18} className="text-[#0a2540]" /> Email Penerima Notifikasi Tiket CSL
+            </h3>
+            <p className="text-xs text-[#758196] mt-0.5">Alamat email resmi atau mailing list tim yang menerima notifikasi setiap ada tiket request baru dari pemohon.</p>
+          </div>
+          <div className="max-w-md space-y-1.5">
+            <label className="text-[11px] font-bold text-[#758196] uppercase tracking-wider block">Alamat Email Tim CSL</label>
+            <Input 
+              type="email" 
+              value={notifCslEmail} 
+              onChange={(e) => setNotifCslEmail(e.target.value)} 
+              placeholder="corporatesecretary@gesit.co.id" 
+              className="h-10 text-sm font-semibold bg-[#fafbfc] border-[#e6e9f0] text-[#0a2540]" 
+            />
+            <p className="text-[11px] text-[#758196]">Default: <span className="font-mono text-[#0a2540]">corporatesecretary@gesit.co.id</span></p>
+          </div>
+        </div>
+
+        {/* Live Test Email Sender */}
+        <div className="bg-card border border-[#e6e9f0] rounded-2xl p-6 shadow-xs space-y-4">
+          <div>
+            <h3 className="text-sm font-bold text-[#0a2540] flex items-center gap-2">
+              <Send size={18} className="text-[#0a2540]" /> Uji Coba Pengiriman Email (Live Test)
+            </h3>
+            <p className="text-xs text-[#758196] mt-0.5">Tes langsung pengiriman email melalui integrasi Resend API untuk memastikan email tidak masuk spam dan pengaturan aktif.</p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3 max-w-lg">
+            <Input 
+              type="email" 
+              value={testEmailRecipient} 
+              onChange={(e) => setTestEmailRecipient(e.target.value)} 
+              placeholder={currentUser?.email || 'Masukkan email tujuan test...'} 
+              className="h-10 text-sm bg-[#fafbfc] border-[#e6e9f0]" 
+            />
+            <Button 
+              type="button" 
+              onClick={handleSendTestEmail} 
+              disabled={isSendingTest} 
+              variant="outline" 
+              className="h-10 px-5 text-xs font-bold border-[#0a2540] text-[#0a2540] hover:bg-[#0a2540]/5 rounded-xl shrink-0 flex items-center gap-2"
+            >
+              {isSendingTest ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+              {isSendingTest ? 'Mengirim...' : 'Kirim Email Test'}
+            </Button>
+          </div>
+        </div>
+
+        {/* Save Bar */}
+        <div className="flex justify-end pt-2">
+          <Button 
+            onClick={handleSaveNotificationSettings} 
+            disabled={isSavingNotifs} 
+            size="sm" 
+            className="bg-[#0a2540] hover:bg-[#16375c] text-white text-xs font-bold rounded-xl h-10 px-7 shadow-xs flex items-center gap-2"
+          >
+            {isSavingNotifs ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+            Simpan Pengaturan Notifikasi
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── System Settings View (includes Notifications & Approvers) ──────────────
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-12 font-sans">
       {feedbackBanner}
@@ -3120,29 +3549,102 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
         </div>
 
         {/* Notification Settings */}
-        <div className="bg-card border border-[#e6e9f0] rounded-2xl p-6 shadow-xs space-y-4">
-          <h3 className="text-sm font-bold text-[#0a2540] flex items-center gap-2"><Bell size={18} className="text-[#0a2540]" /> Pengaturan Notifikasi Global</h3>
-          <p className="text-xs text-[#758196]">Konfigurasi preferensi pengiriman email pemberitahuan sistem kepada seluruh pengguna.</p>
-          <div className="space-y-1">
-            {[
-              { label: 'Email notifikasi saat request baru masuk', defaultOn: true },
-              { label: 'Email alert saat request ditugaskan ke staff legal', defaultOn: true },
-              { label: 'Email update saat status request berubah', defaultOn: true },
-              { label: 'Peringatan SLA breach (1 hari kerja sebelum deadline)', defaultOn: true },
-              { label: 'Notifikasi in-app untuk tugas urgent', defaultOn: false },
-              { label: 'Laporan ringkasan aktivitas mingguan', defaultOn: false },
-            ].map((item, idx) => (
-              <div key={idx} className="flex items-center justify-between py-3 border-b border-[#e6e9f0]/60 last:border-0">
-                <div className="flex items-center gap-3">
-                  <Bell size={14} className="text-[#0a2540] shrink-0" />
-                  <span className="text-sm font-semibold text-[#16233a]">{item.label}</span>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" defaultChecked={item.defaultOn} className="sr-only peer" />
-                  <div className="w-9 h-5 bg-[#eef0f4] rounded-full peer peer-checked:bg-[#0a2540] transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full" />
-                </label>
+        <div className="bg-card border border-[#e6e9f0] rounded-2xl p-6 shadow-xs space-y-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-bold text-[#0a2540] flex items-center gap-2">
+                <Bell size={18} className="text-[#0a2540]" /> Pengaturan Notifikasi Email Sistem
+              </h3>
+              <p className="text-xs text-[#758196] mt-0.5">Konfigurasi preferensi pengiriman email pemberitahuan otomatis sistem CSL.</p>
+            </div>
+            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${notifMaster ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-100 text-amber-800 border border-amber-300'}`}>
+              {notifMaster ? '● Master Email Aktif' : '○ Master Email Nonaktif'}
+            </span>
+          </div>
+
+          <div className="space-y-3 divide-y divide-[#e6e9f0]/60">
+            {/* Master Toggle */}
+            <div className="flex items-center justify-between py-2">
+              <div>
+                <span className="text-sm font-bold text-[#16233a]">Master Sakelar Email Notifikasi</span>
+                <p className="text-xs text-[#758196]">Aktifkan atau matikan seluruh notifikasi email dari aplikasi sekaligus.</p>
               </div>
-            ))}
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" checked={notifMaster} onChange={e => setNotifMaster(e.target.checked)} className="sr-only peer" />
+                <div className="w-10 h-5 bg-[#eef0f4] rounded-full peer peer-checked:bg-[#0a2540] transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5" />
+              </label>
+            </div>
+
+            {/* New Request */}
+            <div className={`flex items-center justify-between py-2.5 ${!notifMaster ? 'opacity-50 pointer-events-none' : ''}`}>
+              <div>
+                <span className="text-sm font-semibold text-[#16233a]">Email notifikasi saat request baru masuk</span>
+                <p className="text-xs text-[#758196]">Kirim email ke Tim Corporate Secretary saat user membuat tiket baru.</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" checked={notifNewRequest} onChange={e => setNotifNewRequest(e.target.checked)} className="sr-only peer" />
+                <div className="w-9 h-5 bg-[#eef0f4] rounded-full peer peer-checked:bg-[#0a2540] transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full" />
+              </label>
+            </div>
+
+            {/* Status Change */}
+            <div className={`flex items-center justify-between py-2.5 ${!notifMaster ? 'opacity-50 pointer-events-none' : ''}`}>
+              <div>
+                <span className="text-sm font-semibold text-[#16233a]">Email update saat status request berubah</span>
+                <p className="text-xs text-[#758196]">Kirim email ke pemohon saat status tiket diperbarui atau selesai.</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" checked={notifStatusChange} onChange={e => setNotifStatusChange(e.target.checked)} className="sr-only peer" />
+                <div className="w-9 h-5 bg-[#eef0f4] rounded-full peer peer-checked:bg-[#0a2540] transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full" />
+              </label>
+            </div>
+
+            {/* Assign & Mention */}
+            <div className={`flex items-center justify-between py-2.5 ${!notifMaster ? 'opacity-50 pointer-events-none' : ''}`}>
+              <div>
+                <span className="text-sm font-semibold text-[#16233a]">Email penugasan PIC &amp; mention catatan</span>
+                <p className="text-xs text-[#758196]">Kirim email saat staf ditugaskan atau di-mention pada tiket.</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" checked={notifAssignMention} onChange={e => setNotifAssignMention(e.target.checked)} className="sr-only peer" />
+                <div className="w-9 h-5 bg-[#eef0f4] rounded-full peer peer-checked:bg-[#0a2540] transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full" />
+              </label>
+            </div>
+
+            {/* Approvals */}
+            <div className={`flex items-center justify-between py-2.5 ${!notifMaster ? 'opacity-50 pointer-events-none' : ''}`}>
+              <div>
+                <span className="text-sm font-semibold text-[#16233a]">Email approval pengeluaran &amp; invoice luar negeri</span>
+                <p className="text-xs text-[#758196]">Kirim email ke Approver untuk permohonan biaya dan invoice offshore.</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" checked={notifApprovals} onChange={e => setNotifApprovals(e.target.checked)} className="sr-only peer" />
+                <div className="w-9 h-5 bg-[#eef0f4] rounded-full peer peer-checked:bg-[#0a2540] transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full" />
+              </label>
+            </div>
+          </div>
+
+          <div className="pt-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-t border-[#e6e9f0]/60">
+            <div className="max-w-xs">
+              <label className="text-[10px] font-bold text-[#758196] uppercase tracking-wider block mb-1">Email Penerima Tiket CSL</label>
+              <Input 
+                type="email" 
+                value={notifCslEmail} 
+                onChange={e => setNotifCslEmail(e.target.value)} 
+                className="h-8 text-xs font-semibold bg-[#fafbfc] border-[#e6e9f0]" 
+              />
+            </div>
+            <Button 
+              type="button" 
+              onClick={handleSendTestEmail} 
+              disabled={isSendingTest} 
+              variant="outline" 
+              size="sm" 
+              className="text-xs font-bold rounded-xl h-8 mt-auto flex items-center gap-1.5"
+            >
+              {isSendingTest ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
+              {isSendingTest ? 'Mengirim Test...' : 'Kirim Email Uji Coba'}
+            </Button>
           </div>
         </div>
 

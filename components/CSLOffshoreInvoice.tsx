@@ -16,7 +16,7 @@ import {
   Search, Trash2, Globe, DollarSign, MoreVertical, Eye,
   Building2, Landmark, FileText, Loader2, ArrowUpRight,
 } from 'lucide-react';
-import { sendEmailNotification } from '../utils/cslNotificationUtils';
+import { sendEmailNotification, buildCslEmailTemplate } from '../utils/cslNotificationUtils';
 import { generateOffshoreInvoicePdf, OffshoreInvoiceData } from '../utils/cslOffshoreInvoicePdf';
 import { getCurrencyFlag } from '@/services/cslBudgetReportService';
 
@@ -250,10 +250,29 @@ export const CSLOffshoreInvoice: React.FC<{ currentUser: UserAccount | null }> =
         }
       } catch {}
       if (approverEmail) {
+        const invoiceHtml = buildCslEmailTemplate({
+          badge: 'PERLU APPROVAL',
+          badgeColor: '#d97706',
+          title: `Offshore Invoice Baru Perlu Review: ${payload.invoice_number}`,
+          recipientName: 'Approver',
+          introParagraph: `Offshore invoice baru telah dibuat dan memerlukan persetujuan Anda sebelum diproses pembayarannya:`,
+          detailsTable: [
+            { label: 'No. Invoice', value: `<span style="font-family: monospace; font-weight: 700;">${payload.invoice_number}</span>`, isHighlight: true },
+            { label: 'Perusahaan', value: payload.company || '-' },
+            { label: 'Dibayarkan Ke', value: payload.paid_to || '-' },
+            { label: 'Jumlah Nominal', value: formatForeign(payload.foreign_currency, payload.foreign_amount || 0), isHighlight: true },
+            { label: 'Keterangan', value: payload.payment_description || '-' },
+            { label: 'Diajukan Oleh', value: payload.prepared_by_name || '-' }
+          ],
+          closingParagraph: 'Silakan masuk ke platform CSL-LINK untuk menyetujui atau menolak invoice ini.'
+        });
+
         await sendEmailNotification(
           approverEmail,
-          `[CSL] Offshore Invoice Baru – Perlu Approval: ${payload.invoice_number}`,
-          `Halo,\n\nAda Offshore Invoice baru yang memerlukan persetujuan Anda sebelum diproses pembayarannya.\n\nNo Invoice : ${payload.invoice_number}\nDibayarkan ke : ${payload.paid_to}\nJumlah : ${formatForeign(payload.foreign_currency, payload.foreign_amount || 0)}\nKeterangan : ${payload.payment_description}\nDiajukan oleh : ${payload.prepared_by_name}\n\nSilakan login ke CSL System untuk menyetujui atau menolak invoice ini.\n\nTerima kasih.`
+          `[CSL-LINK] Offshore Invoice Baru: ${payload.invoice_number} - ${payload.paid_to}`,
+          invoiceHtml,
+          true,
+          'APPROVAL'
         );
       }
     } catch (err: any) {
@@ -276,11 +295,36 @@ export const CSLOffshoreInvoice: React.FC<{ currentUser: UserAccount | null }> =
     toast.success(successMsg);
     // Notify submitter when rejected
     if (actionStatus === 'REJECTED' && selected.prepared_by_id) {
-      await sendEmailNotification(
-        selected.prepared_by_name || '',
-        `[CSL] Offshore Invoice Ditolak: ${selected.invoice_number}`,
-        `Invoice ${selected.invoice_number} kepada ${selected.paid_to} senilai ${formatForeign(selected.foreign_currency, selected.foreign_amount)} telah DITOLAK oleh Admin.\n\nSilakan login ke CSL System untuk meninjau dan revisi.`
-      );
+      let submitterEmail = '';
+      try {
+        const { data: uData } = await supabase.from('user_accounts').select('email').eq('id', selected.prepared_by_id).maybeSingle();
+        submitterEmail = uData?.email || '';
+      } catch {}
+
+      if (submitterEmail) {
+        const rejectHtml = buildCslEmailTemplate({
+          badge: 'DITOLAK',
+          badgeColor: '#dc2626',
+          title: `Offshore Invoice Ditolak: ${selected.invoice_number}`,
+          recipientName: selected.prepared_by_name || 'User',
+          introParagraph: `Pengajuan offshore invoice Anda telah ditolak oleh Admin. Silakan tinjau dan lakukan perbaikan jika diperlukan:`,
+          detailsTable: [
+            { label: 'No. Invoice', value: `<span style="font-family: monospace; font-weight: 700;">${selected.invoice_number}</span>`, isHighlight: true },
+            { label: 'Dibayarkan Ke', value: selected.paid_to || '-' },
+            { label: 'Jumlah Nominal', value: formatForeign(selected.foreign_currency, selected.foreign_amount), isHighlight: true },
+            { label: 'Status', value: `<span style="color: #dc2626; font-weight: 700;">DITOLAK</span>` }
+          ],
+          closingParagraph: 'Silakan login ke platform CSL-LINK untuk meninjau detail dan mengajukan revisi.'
+        });
+
+        await sendEmailNotification(
+          submitterEmail,
+          `[CSL-LINK] Offshore Invoice Ditolak: ${selected.invoice_number}`,
+          rejectHtml,
+          true,
+          'APPROVAL'
+        );
+      }
     }
     setSelected(null);
     setConfirmAction(null);

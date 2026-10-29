@@ -1,41 +1,41 @@
 @import "tailwindcss";
 
-@custom-variant dark (&:is(.dark *));
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *, .dark, .dark *));
 
 :root {
-    /* ChatGPT / Threads Light Mode style */
+    /* CSL Gesit Design System: Light Theme */
     --background: #ffffff;
     --foreground: #09090b;
     --card: #ffffff;
     --card-foreground: #09090b;
     --popover: #ffffff;
     --popover-foreground: #09090b;
-    --primary: #18181b;
+    --primary: #0a2540;
     --primary-foreground: #ffffff;
     --secondary: #f4f4f5;
     --secondary-foreground: #09090b;
     --muted: #f4f4f5;
     --muted-foreground: #71717a;
-    --accent: #f4f4f5;
-    --accent-foreground: #18181b;
+    --accent: #081e33;
+    --accent-foreground: #ffffff;
     --destructive: #ef4444;
     --destructive-foreground: #ffffff;
     --border: #e4e4e7;
     --input: #e4e4e7;
-    --ring: #18181b;
+    --ring: #0a2540;
 
     /* Sidebar - Light Mode Defaults */
     --sidebar: #ffffff;
     --sidebar-foreground: #09090b;
-    --sidebar-primary: #18181b;
+    --sidebar-primary: #0a2540;
     --sidebar-primary-foreground: #ffffff;
     --sidebar-accent: #f4f4f5;
-    --sidebar-accent-foreground: #18181b;
+    --sidebar-accent-foreground: #0a2540;
     --sidebar-border: #e4e4e7;
-    --sidebar-ring: #18181b;
+    --sidebar-ring: #0a2540;
 
     /* Font & Layout Tokens */
-    --font-sans: Poppins, sans-serif;
+    --font-sans: Poppins, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     --font-serif: Lora, serif;
     --font-mono: IBM Plex Mono, monospace;
     --radius: 0.5rem;
@@ -43,82 +43,82 @@
     --letter-spacing: -0.025em;
     --tracking-normal: 0em;
 
-    /* Shadow System */
+    /* Shadow System: Clean Flat with subtle elevation (CSL Gesit style) */
     --shadow-x: 0px;
-    --shadow-y: 2px;
-    --shadow-blur: 3px;
+    --shadow-y: 1px;
+    --shadow-blur: 2px;
     --shadow-spread: 0px;
-    --shadow-opacity: 0.08;
-    --shadow-color: hsl(0 0% 0%);
-    --shadow-2xs: 0px 2px 3px 0px hsl(0 0% 0% / 0.05);
-    --shadow-xs: 0px 2px 3px 0px hsl(0 0% 0% / 0.05);
-    --shadow-sm: 0px 2px 3px 0px hsl(0 0% 0% / 0.12), 0px 1px 2px -1px hsl(0 0% 0% / 0.12);
-    --shadow: 0px 2px 3px 0px hsl(0 0% 0% / 0.12), 0px 1px 2px -1px hsl(0 0% 0% / 0.12);
-    --shadow-md: 0px 2px 3px 0px hsl(0 0% 0% / 0.12), 0px 2px 4px -1px hsl(0 0% 0% / 0.12);
-    --shadow-lg: 0px 2px 3px 0px hsl(0 0% 0% / 0.12), 0px 4px 6px -1px hsl(0 0% 0% / 0.12);
-    --shadow-xl: 0px 2px 3px 0px hsl(0 0% 0% / 0.12), 0px 8px 10px -1px hsl(0 0% 0% / 0.12);
-    --shadow-2xl: 0px 2px 3px 0px hsl(0 0% 0% / 0.25);
+    --shadow-opacity: 0.04;
+    --shadow-color: hsl(220 20% 10%);
+    --shadow-2xs: 0 1px 2px 0 rgb(0 0 0 / 0.03);
+    --shadow-xs: 0 1px 3px 0 rgb(0 0 0 / 0.05);
+    --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06);
+    --shadow: 0 2px 4px -1px rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.07);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.08);
+    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.09), 0 8px 10px -6px rgb(0 0 0 / 0.09);
+    --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
     --shadow-offset-x: 0px;
-    --shadow-offset-y: 2px;
+    --shadow-offset-y: 1px;
 }
 
 .dark {
-    /* ChatGPT / Threads Dark Mode style */
-    --background: #0a0a0a;
-    --foreground: #f3f4f6;
-    --card: #121212;
-    --card-foreground: #f3f4f6;
-    --popover: #121212;
-    --popover-foreground: #f3f4f6;
-    --primary: #ffffff;
-    --primary-foreground: #0a0a0a;
-    --secondary: #1f1f1f;
-    --secondary-foreground: #f3f4f6;
-    --muted: #1f1f1f;
-    --muted-foreground: #a8b2c2;
-    --accent: #1f1f1f;
-    --accent-foreground: #ffffff;
+    /* Pure Neutral Charcoal & Deep Black Dark Theme (No Blue Tint) */
+    --background: #09090b;
+    --foreground: #fafafa;
+    --card: #121214;
+    --card-foreground: #fafafa;
+    --popover: #121214;
+    --popover-foreground: #fafafa;
+    --primary: #fafafa;
+    --primary-foreground: #09090b;
+    --secondary: #18181b;
+    --secondary-foreground: #fafafa;
+    --muted: #18181b;
+    --muted-foreground: #a1a1aa;
+    --accent: #27272a;
+    --accent-foreground: #fafafa;
     --destructive: #ef4444;
     --destructive-foreground: #ffffff;
-    --border: #1f1f1f;
-    --input: #1f1f1f;
-    --ring: #ffffff;
+    --border: #27272a;
+    --input: #27272a;
+    --ring: #d4d4d8;
 
     /* Charts */
-    --chart-1: #10a37f;
-    --chart-2: #ffffff;
-    --chart-3: #ef4444;
-    --chart-4: #3b82f6;
-    --chart-5: #9ca3af;
+    --chart-1: #3b82f6;
+    --chart-2: #10b981;
+    --chart-3: #f59e0b;
+    --chart-4: #ef4444;
+    --chart-5: #8b5cf6;
 
-    /* Sidebar - Dark Mode */
-    --sidebar: #0a0a0a;
-    --sidebar-foreground: #f3f4f6;
-    --sidebar-primary: #ffffff;
-    --sidebar-primary-foreground: #0a0a0a;
-    --sidebar-accent: #121212;
-    --sidebar-accent-foreground: #ffffff;
-    --sidebar-border: #1f1f1f;
-    --sidebar-ring: #ffffff;
+    /* Sidebar - Dark Mode (Neutral Black) */
+    --sidebar: #09090b;
+    --sidebar-foreground: #fafafa;
+    --sidebar-primary: #fafafa;
+    --sidebar-primary-foreground: #09090b;
+    --sidebar-accent: #18181b;
+    --sidebar-accent-foreground: #fafafa;
+    --sidebar-border: #27272a;
+    --sidebar-ring: #d4d4d8;
 
-    --font-sans: Poppins, sans-serif;
+    --font-sans: Poppins, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     --font-serif: Lora, serif;
     --font-mono: IBM Plex Mono, monospace;
     --radius: 0.5rem;
     --shadow-x: 0px;
     --shadow-y: 2px;
-    --shadow-blur: 3px;
+    --shadow-blur: 4px;
     --shadow-spread: 0px;
-    --shadow-opacity: 0.16;
+    --shadow-opacity: 0.5;
     --shadow-color: hsl(0 0% 0%);
-    --shadow-2xs: 0px 2px 3px 0px hsl(0 0% 0% / 0.08);
-    --shadow-xs: 0px 2px 3px 0px hsl(0 0% 0% / 0.08);
-    --shadow-sm: 0px 2px 3px 0px hsl(0 0% 0% / 0.16), 0px 1px 2px -1px hsl(0 0% 0% / 0.16);
-    --shadow: 0px 2px 3px 0px hsl(0 0% 0% / 0.16), 0px 1px 2px -1px hsl(0 0% 0% / 0.16);
-    --shadow-md: 0px 2px 3px 0px hsl(0 0% 0% / 0.16), 0px 2px 4px -1px hsl(0 0% 0% / 0.16);
-    --shadow-lg: 0px 2px 3px 0px hsl(0 0% 0% / 0.16), 0px 4px 6px -1px hsl(0 0% 0% / 0.16);
-    --shadow-xl: 0px 2px 3px 0px hsl(0 0% 0% / 0.16), 0px 8px 10px -1px hsl(0 0% 0% / 0.16);
-    --shadow-2xl: 0px 2px 3px 0px hsl(0 0% 0% / 0.40);
+    --shadow-2xs: 0 1px 2px 0 rgb(0 0 0 / 0.6);
+    --shadow-xs: 0 1px 3px 0 rgb(0 0 0 / 0.7);
+    --shadow-sm: 0 2px 4px 0 rgb(0 0 0 / 0.7);
+    --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.8);
+    --shadow-md: 0 6px 10px -2px rgb(0 0 0 / 0.8);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.9);
+    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.95);
+    --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 1);
     --shadow-offset-x: 0px;
     --shadow-offset-y: 2px;
     --letter-spacing: -0.025em;
@@ -206,14 +206,49 @@
 
     * {
         @apply border-border outline-ring/50;
-        font-family: var(--font-sans);
+        font-family: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
     }
 
     body {
         @apply bg-background text-foreground;
-        letter-spacing: var(--tracking-normal);
+        letter-spacing: var(--letter-spacing);
         font-feature-settings: "rlig" 1, "calt" 1;
-        font-family: var(--font-sans);
+        font-family: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+        font-size: 13px;
+        line-height: 1.45;
+    }
+
+    /* Standardized Title Hierarchy: Poppins 700 / 30px (H1), 20px (H2), 14px (H3) */
+    h1, .page-title {
+        font-family: 'Poppins', sans-serif !important;
+        font-size: 30px !important;
+        font-weight: 700 !important;
+        line-height: 1.25 !important;
+        letter-spacing: -0.025em !important;
+    }
+
+    h2 {
+        font-family: 'Poppins', sans-serif !important;
+        font-size: 20px !important;
+        font-weight: 700 !important;
+        line-height: 1.3 !important;
+        letter-spacing: -0.02em !important;
+    }
+
+    h3 {
+        font-family: 'Poppins', sans-serif !important;
+        font-size: 14px !important;
+        font-weight: 700 !important;
+        line-height: 1.43 !important;
+        letter-spacing: -0.015em !important;
+    }
+
+    h4 {
+        font-family: 'Poppins', sans-serif !important;
+        font-size: 12px !important;
+        font-weight: 700 !important;
+        line-height: 1.4 !important;
+        letter-spacing: 0em !important;
     }
 }
 
@@ -311,3 +346,135 @@
   0% { transform: translateX(-100%); }
   100% { transform: translateX(100%); }
 }
+
+/* ==========================================================================
+   ANTISLOP THEME HARMONY ENGINE (WCAG AA Light & Dark System Coherence)
+   Ensures hardcoded legacy hex utilities seamlessly adapt when dark theme is active
+   ========================================================================== */
+
+/* Dark Mode automatic color mappings for hardcoded dark blues & grays */
+.dark .text-\[\#0a2540\],
+.dark [data-theme=dark] .text-\[\#0a2540\] {
+    color: #f8fafc !important;
+}
+
+.dark .text-\[\#16233a\],
+.dark [data-theme=dark] .text-\[\#16233a\] {
+    color: #f1f5f9 !important;
+}
+
+.dark .text-\[\#758196\],
+.dark [data-theme=dark] .text-\[\#758196\] {
+    color: #94a3b8 !important;
+}
+
+.dark .text-\[\#222222\],
+.dark [data-theme=dark] .text-\[\#222222\] {
+    color: #f8fafc !important;
+}
+
+.dark .text-\[\#18181b\],
+.dark [data-theme=dark] .text-\[\#18181b\] {
+    color: #f8fafc !important;
+}
+
+/* Background mappings */
+.dark .bg-\[\#fafbfc\],
+.dark .bg-\[\#f8fafc\],
+.dark .bg-\[\#f6f7f9\],
+.dark [data-theme=dark] .bg-\[\#fafbfc\],
+.dark [data-theme=dark] .bg-\[\#f8fafc\],
+.dark [data-theme=dark] .bg-\[\#f6f7f9\] {
+    background-color: #121214 !important;
+}
+
+/* Hover mappings in dark mode to prevent bright white flash on hover */
+.dark .hover\:bg-\[\#fafbfc\]:hover,
+.dark .hover\:bg-\[\#f6f7f9\]:hover,
+.dark [data-theme=dark] .hover\:bg-\[\#fafbfc\]:hover,
+.dark [data-theme=dark] .hover\:bg-\[\#f6f7f9\]:hover {
+    background-color: #1f1f23 !important;
+}
+
+.dark .bg-\[\#eef0f4\],
+.dark [data-theme=dark] .bg-\[\#eef0f4\] {
+    background-color: #18181b !important;
+}
+
+.dark .bg-\[\#e8effe\],
+.dark [data-theme=dark] .bg-\[\#e8effe\] {
+    background-color: rgba(255, 255, 255, 0.06) !important;
+    color: #e4e4e7 !important;
+}
+
+.dark .bg-\[\#fdf2dc\],
+.dark [data-theme=dark] .bg-\[\#fdf2dc\] {
+    background-color: rgba(245, 158, 11, 0.15) !important;
+    color: #fbbf24 !important;
+}
+
+.dark .bg-\[\#e4f6ec\],
+.dark [data-theme=dark] .bg-\[\#e4f6ec\] {
+    background-color: rgba(16, 185, 129, 0.15) !important;
+    color: #34d399 !important;
+}
+
+/* Border mappings */
+.dark .border-\[\#e6e9f0\],
+.dark .border-\[\#e4e4e7\],
+.dark [data-theme=dark] .border-\[\#e6e9f0\],
+.dark [data-theme=dark] .border-\[\#e4e4e7\] {
+    border-color: #27272a !important;
+}
+
+/* Primary buttons retaining contrast */
+.dark .bg-\[\#0a2540\],
+.dark [data-theme=dark] .bg-\[\#0a2540\] {
+    background-color: #27272a !important;
+    color: #fafafa !important;
+    border: 1px solid #3f3f46 !important;
+}
+
+.dark .hover\:bg-\[\#16375c\]:hover,
+.dark [data-theme=dark] .hover\:bg-\[\#16375c\]:hover {
+    background-color: #3f3f46 !important;
+}
+
+.dark .border-\[\#0a2540\],
+.dark [data-theme=dark] .border-\[\#0a2540\] {
+    border-color: #52525b !important;
+}
+
+/* Modals & Dialog backgrounds */
+.dark dialog,
+.dark [role="dialog"],
+.dark [data-slot="dialog-content"] {
+    background-color: #121214 !important;
+    color: #fafafa !important;
+    border-color: #27272a !important;
+}
+
+/* Dropdown menus & Popovers */
+.dark [role="menu"],
+.dark [data-slot="dropdown-menu-content"] {
+    background-color: #121214 !important;
+    border-color: #27272a !important;
+    color: #fafafa !important;
+}
+
+/* Form inputs & Selects */
+.dark select,
+.dark input[type="text"],
+.dark input[type="email"],
+.dark input[type="password"],
+.dark input[type="number"],
+.dark textarea {
+    background-color: #141416 !important;
+    border-color: #27272a !important;
+    color: #fafafa !important;
+}
+
+.dark select option {
+    background-color: #121214;
+    color: #fafafa;
+}

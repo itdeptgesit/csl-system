@@ -99,5 +99,6 @@ export const APP_MENU_STRUCTURE = [
     { id: 'settings', label: 'Settings', iconName: 'Settings' },
     { id: 'settings-users',         label: 'User & Roles',         parentId: 'settings', iconName: 'Users' },
     { id: 'settings-departments',   label: 'Departments',          parentId: 'settings', iconName: 'Network' },
+    { id: 'settings-notifications', label: 'Notifikasi',           parentId: 'settings', iconName: 'Bell' },
     { id: 'settings-system',        label: 'System Settings',      parentId: 'settings', iconName: 'Cpu' },
 ];
