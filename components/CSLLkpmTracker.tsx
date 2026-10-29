@@ -1253,19 +1253,17 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
         </div>
       )}
 
-      {/* SLIDE-OVER DETAIL PANEL */}
+      {/* CENTER DETAIL MODAL */}
       {selectedUnit && (
-        <>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200 font-sans">
           {/* Backdrop */}
           <div
             onClick={() => setSelectedUnit(null)}
-            className="fixed inset-0 bg-slate-950/40 z-50 backdrop-blur-xs transition-opacity duration-200"
+            className="fixed inset-0"
           />
 
-          {/* Panel Sheet */}
-          <aside
-            className="fixed top-0 right-0 bottom-0 w-[430px] max-w-[92vw] bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl z-50 p-6 overflow-y-auto flex flex-col justify-between"
-          >
+          {/* Centered Modal Card */}
+          <div className="relative w-full max-w-xl max-h-[90vh] bg-card text-foreground border border-border shadow-2xl rounded-2xl z-10 p-6 overflow-y-auto flex flex-col justify-between animate-in zoom-in-95 duration-200">
             <div>
               {/* Header with Edit & Close */}
               <div className="flex items-start justify-between gap-4 mb-4">
@@ -1475,24 +1473,24 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
               )}
             </div>
 
-            <div className="pt-4 border-t border-slate-100 dark:border-slate-800 mt-6 flex items-center gap-2">
+            <div className="pt-4 border-t border-border mt-6 flex items-center justify-end gap-2.5">
               <Button
                 variant="outline"
-                className="flex-1 text-xs font-bold"
+                className="px-4 text-xs font-bold border-border"
                 onClick={() => setSelectedUnit(null)}
               >
                 Tutup
               </Button>
               <Button
-                className="flex-1 text-xs font-bold bg-[#0a2540] hover:bg-[#16375c] text-white gap-1.5"
+                className="px-4 text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90 gap-1.5"
                 onClick={() => openEditModal(selectedUnit)}
               >
                 <Pencil className="size-3.5" />
                 Ubah Data
               </Button>
             </div>
-          </aside>
-        </>
+          </div>
+        </div>
       )}
 
       {/* MODAL TAMBAH DATA */}

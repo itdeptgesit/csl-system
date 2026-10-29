@@ -569,10 +569,11 @@ export const CSLOffshoreTracker: React.FC<{ currentUser?: UserAccount | null }> 
         </div>
       </div>
 
-      {/* 4. Slide-over Detail Panel */}
+      {/* 4. Centered Detail Modal */}
       {selectedItem && (
-        <div className="fixed inset-0 z-50 overflow-hidden bg-black/60 backdrop-blur-xs flex justify-end animate-in fade-in duration-200">
-          <div className="w-full max-w-[430px] bg-card text-foreground h-full shadow-2xl border-l border-border flex flex-col font-sans">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="fixed inset-0" onClick={() => setSelectedItem(null)} />
+          <div className="relative w-full max-w-lg max-h-[90vh] bg-card text-foreground rounded-2xl shadow-2xl border border-border flex flex-col overflow-hidden z-10 animate-in zoom-in-95 duration-200 font-sans">
             <div className="p-5 border-b border-border flex items-center justify-between shrink-0 bg-muted/20">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">

@@ -1354,18 +1354,18 @@ export const CSLTbkTracker: React.FC<{ currentUser?: UserAccount | null }> = () 
         </div>
       )}
 
-      {/* ── 3. PANEL DETAIL GESER DARI KANAN (430px §6, BUKAN DIALOG) ── */}
+      {/* ── 3. DETAIL MODAL CENTER ── */}
       {selectedItem && (
-        <div className="fixed inset-0 z-50 overflow-hidden font-sans">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200 font-sans">
           {/* Backdrop Scrim */}
           <div
             onClick={() => setSelectedItem(null)}
-            className="fixed inset-0 bg-[#0a192f]/40 backdrop-blur-xs transition-opacity duration-200"
+            className="fixed inset-0"
           />
 
-          {/* 430px Slide-Over Drawer */}
-          <aside className="fixed top-0 right-0 bottom-0 w-[430px] max-w-[95vw] bg-card border-l border-border shadow-2xl z-50 flex flex-col animate-in slide-in-from-right duration-300">
-            {/* Drawer Header */}
+          {/* Centered Modal Card */}
+          <div className="relative w-full max-w-xl max-h-[90vh] bg-card border border-border shadow-2xl rounded-2xl z-10 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+            {/* Modal Header */}
             <div className="p-5 border-b border-border bg-muted/20 flex items-start justify-between gap-3 shrink-0">
               <div className="space-y-1 flex-1 min-w-0">
                 <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10.5px] font-bold uppercase tracking-wider bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
@@ -1513,7 +1513,7 @@ export const CSLTbkTracker: React.FC<{ currentUser?: UserAccount | null }> = () 
                 </Button>
               </div>
             </div>
-          </aside>
+          </div>
         </div>
       )}
 

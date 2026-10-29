@@ -2755,304 +2755,310 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
           Keadaan berkas per 27 Okt 2026: belum ada logo, kop surat, dan stempel yang terunggah — form lama hanya berisi Kode &amp; Nama. Berkas tersimpan di Google Drive (folder CSL-LINK/Companies/{'{KODE}'}/).
         </p>
 
-        {/* DETAIL SLIDE-OVER PANEL */}
+        {/* DETAIL MODAL CENTER */}
         {selectedCompany && (
-          <>
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
             {/* Scrim Backdrop */}
             <div
-              className="fixed inset-0 bg-[#0a192f]/40 z-50 backdrop-blur-xs transition-opacity duration-200"
+              className="fixed inset-0"
               onClick={() => setSelectedCompany(null)}
             />
 
-            {/* Panel Sheet */}
-            <aside className="fixed top-0 right-0 bottom-0 w-[470px] max-w-[92vw] z-50 bg-white dark:bg-slate-900 border-l border-[#e6e9f0] dark:border-slate-800 shadow-2xl p-6 overflow-y-auto flex flex-col justify-between animate-in slide-in-from-right duration-200">
-              <div>
-                {/* Header with Close */}
-                <div className="flex items-start justify-between gap-4 mb-4">
-                  <div>
-                    <h2 className="text-xl font-bold text-[#0a2540] dark:text-white leading-tight">
-                      {selectedCompany.name}
-                    </h2>
-                    <p className="text-xs text-[#758196] font-semibold mt-1">
-                      Profil Entitas · Kode {selectedCompany.code}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setSelectedCompany(null)}
-                    className="w-8 h-8 rounded-full border border-[#e6e9f0] dark:border-slate-700 bg-white dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-50"
-                  >
-                    <X size={15} />
-                  </button>
+            {/* Centered Modal Card */}
+            <div className="relative w-full max-w-2xl max-h-[90vh] bg-card text-foreground border border-border shadow-2xl rounded-2xl flex flex-col overflow-hidden z-10 animate-in zoom-in-95 duration-200">
+              {/* Header with Close */}
+              <div className="p-5 px-6 border-b border-border bg-muted/20 flex items-start justify-between gap-4 shrink-0">
+                <div>
+                  <h2 className="text-xl font-bold text-foreground leading-tight">
+                    {selectedCompany.name}
+                  </h2>
+                  <p className="text-xs text-muted-foreground font-semibold mt-1">
+                    Profil Entitas · Kode {selectedCompany.code}
+                  </p>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedCompany(null)}
+                  className="w-8 h-8 rounded-full border border-border bg-card flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                >
+                  <X size={15} />
+                </button>
+              </div>
 
+              {/* Scrollable Body */}
+              <div className="p-6 overflow-y-auto space-y-6 text-xs font-sans">
                 {/* IDENTITAS */}
-                <h3 className="text-[12px] font-bold tracking-[0.8px] text-[#758196] uppercase mb-2.5">
-                  IDENTITAS
-                </h3>
-                <div className="grid grid-cols-2 gap-2.5 mb-6">
-                  <div className="bg-[#fbfbfc] dark:bg-slate-800/60 border border-[#e6e9f0] dark:border-slate-700/80 rounded-xl p-3">
-                    <span className="block text-[10px] tracking-wider text-[#758196] font-bold uppercase mb-0.5">
-                      KODE ENTITAS
-                    </span>
-                    <b className="font-mono text-sm text-[#0a2540] dark:text-white">{selectedCompany.code}</b>
-                  </div>
-                  <div className="bg-[#fbfbfc] dark:bg-slate-800/60 border border-[#e6e9f0] dark:border-slate-700/80 rounded-xl p-3">
-                    <span className="block text-[10px] tracking-wider text-[#758196] font-bold uppercase mb-0.5">
-                      STATUS
-                    </span>
-                    <b className="text-sm text-[#12995c]">Aktif</b>
-                  </div>
-                  <div className="bg-[#fbfbfc] dark:bg-slate-800/60 border border-[#e6e9f0] dark:border-slate-700/80 rounded-xl p-3">
-                    <span className="block text-[10px] tracking-wider text-[#758196] font-bold uppercase mb-0.5">
-                      NPWP
-                    </span>
-                    <b className="text-xs font-mono text-slate-800 dark:text-slate-200">
-                      {(selectedCompany as any).npwp || '-'}
-                    </b>
-                  </div>
-                  <div className="bg-[#fbfbfc] dark:bg-slate-800/60 border border-[#e6e9f0] dark:border-slate-700/80 rounded-xl p-3">
-                    <span className="block text-[10px] tracking-wider text-[#758196] font-bold uppercase mb-0.5">
-                      NIB
-                    </span>
-                    <b className="text-xs font-mono text-slate-800 dark:text-slate-200">
-                      {(selectedCompany as any).nib || '-'}
-                    </b>
-                  </div>
-                  <div className="col-span-2 bg-[#fbfbfc] dark:bg-slate-800/60 border border-[#e6e9f0] dark:border-slate-700/80 rounded-xl p-3">
-                    <span className="block text-[10px] tracking-wider text-[#758196] font-bold uppercase mb-1">
-                      GROUP COMPANY
-                    </span>
-                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border ${getGroupBadgeClass(selectedCompany.group_company || getResolvedGroup(selectedCompany.name))}`}>
-                      {selectedCompany.group_company || getResolvedGroup(selectedCompany.name)}
-                    </span>
-                  </div>
-                  <div className="col-span-2 bg-[#fbfbfc] dark:bg-slate-800/60 border border-[#e6e9f0] dark:border-slate-700/80 rounded-xl p-3">
-                    <span className="block text-[10px] tracking-wider text-[#758196] font-bold uppercase mb-0.5">
-                      ALAMAT
-                    </span>
-                    <b className="text-xs font-normal text-slate-700 dark:text-slate-300">
-                      {(selectedCompany as any).address || 'Jakarta, Indonesia'}
-                    </b>
-                  </div>
-                  <div className="bg-[#fbfbfc] dark:bg-slate-800/60 border border-[#e6e9f0] dark:border-slate-700/80 rounded-xl p-3">
-                    <span className="block text-[10px] tracking-wider text-[#758196] font-bold uppercase mb-0.5">
-                      TELEPON
-                    </span>
-                    <b className="text-xs text-slate-800 dark:text-slate-200">
-                      {(selectedCompany as any).phone || '-'}
-                    </b>
-                  </div>
-                  <div className="bg-[#fbfbfc] dark:bg-slate-800/60 border border-[#e6e9f0] dark:border-slate-700/80 rounded-xl p-3">
-                    <span className="block text-[10px] tracking-wider text-[#758196] font-bold uppercase mb-0.5">
-                      EMAIL
-                    </span>
-                    <b className="text-xs font-mono text-slate-800 dark:text-slate-200 truncate block">
-                      {(() => {
-                        const em = groupEmailCompanies.find(ge =>
-                          ge.name.toLowerCase().trim() === selectedCompany.name.toLowerCase().trim() ||
-                          ge.code.toUpperCase().trim() === selectedCompany.code.toUpperCase().trim()
-                        );
-                        return em?.email || '-';
-                      })()}
-                    </b>
+                <div>
+                  <h3 className="text-[11px] font-bold tracking-[0.8px] text-muted-foreground uppercase mb-2.5">
+                    IDENTITAS
+                  </h3>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div className="bg-muted/30 border border-border/80 rounded-xl p-3">
+                      <span className="block text-[10px] tracking-wider text-muted-foreground font-bold uppercase mb-0.5">
+                        KODE ENTITAS
+                      </span>
+                      <b className="font-mono text-sm text-foreground">{selectedCompany.code}</b>
+                    </div>
+                    <div className="bg-muted/30 border border-border/80 rounded-xl p-3">
+                      <span className="block text-[10px] tracking-wider text-muted-foreground font-bold uppercase mb-0.5">
+                        STATUS
+                      </span>
+                      <b className="text-sm text-emerald-600 dark:text-emerald-400">Aktif</b>
+                    </div>
+                    <div className="bg-muted/30 border border-border/80 rounded-xl p-3">
+                      <span className="block text-[10px] tracking-wider text-muted-foreground font-bold uppercase mb-0.5">
+                        NPWP
+                      </span>
+                      <b className="text-xs font-mono text-foreground">
+                        {(selectedCompany as any).npwp || '-'}
+                      </b>
+                    </div>
+                    <div className="bg-muted/30 border border-border/80 rounded-xl p-3">
+                      <span className="block text-[10px] tracking-wider text-muted-foreground font-bold uppercase mb-0.5">
+                        NIB
+                      </span>
+                      <b className="text-xs font-mono text-foreground">
+                        {(selectedCompany as any).nib || '-'}
+                      </b>
+                    </div>
+                    <div className="col-span-2 bg-muted/30 border border-border/80 rounded-xl p-3">
+                      <span className="block text-[10px] tracking-wider text-muted-foreground font-bold uppercase mb-1">
+                        GROUP COMPANY
+                      </span>
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border ${getGroupBadgeClass(selectedCompany.group_company || getResolvedGroup(selectedCompany.name))}`}>
+                        {selectedCompany.group_company || getResolvedGroup(selectedCompany.name)}
+                      </span>
+                    </div>
+                    <div className="col-span-2 bg-muted/30 border border-border/80 rounded-xl p-3">
+                      <span className="block text-[10px] tracking-wider text-muted-foreground font-bold uppercase mb-0.5">
+                        ALAMAT
+                      </span>
+                      <b className="text-xs font-normal text-foreground">
+                        {(selectedCompany as any).address || 'Jakarta, Indonesia'}
+                      </b>
+                    </div>
+                    <div className="bg-muted/30 border border-border/80 rounded-xl p-3">
+                      <span className="block text-[10px] tracking-wider text-muted-foreground font-bold uppercase mb-0.5">
+                        TELEPON
+                      </span>
+                      <b className="text-xs text-foreground">
+                        {(selectedCompany as any).phone || '-'}
+                      </b>
+                    </div>
+                    <div className="bg-muted/30 border border-border/80 rounded-xl p-3">
+                      <span className="block text-[10px] tracking-wider text-muted-foreground font-bold uppercase mb-0.5">
+                        EMAIL
+                      </span>
+                      <b className="text-xs font-mono text-foreground truncate block">
+                        {(() => {
+                          const em = groupEmailCompanies.find(ge =>
+                            ge.name.toLowerCase().trim() === selectedCompany.name.toLowerCase().trim() ||
+                            ge.code.toUpperCase().trim() === selectedCompany.code.toUpperCase().trim()
+                          );
+                          return em?.email || '-';
+                        })()}
+                      </b>
+                    </div>
                   </div>
                 </div>
 
                 {/* BRANDING & DOKUMEN · GOOGLE DRIVE */}
-                <h3 className="text-[12px] font-bold tracking-[0.8px] text-[#758196] uppercase mb-2.5">
-                  BRANDING &amp; DOKUMEN · GOOGLE DRIVE
-                </h3>
-                <div className="space-y-2.5 mb-4">
-                  {/* Logo Zone */}
-                  {(() => {
-                    const f = companyAssets[selectedCompany.code]?.logo;
-                    if (f) {
+                <div>
+                  <h3 className="text-[11px] font-bold tracking-[0.8px] text-muted-foreground uppercase mb-2.5">
+                    BRANDING &amp; DOKUMEN · GOOGLE DRIVE
+                  </h3>
+                  <div className="space-y-2.5 mb-4">
+                    {/* Logo Zone */}
+                    {(() => {
+                      const f = companyAssets[selectedCompany.code]?.logo;
+                      if (f) {
+                        return (
+                          <div className="flex items-center gap-3 border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 rounded-xl p-3.5">
+                            <div className="w-10 h-10 rounded-xl bg-card border border-emerald-300 dark:border-emerald-800 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
+                              <Image size={19} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <b className="text-sm text-foreground block leading-tight">Logo Perusahaan</b>
+                              <span className="font-mono text-[11.5px] text-muted-foreground block truncate">{f}</span>
+                              <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium block">Tersimpan di Google Drive</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => toast.info(`Membuka berkas ${f} di Google Drive...`)}
+                                className="px-2.5 py-1 text-xs font-semibold bg-card rounded-lg border border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-muted inline-flex items-center gap-1"
+                              >
+                                <ExternalLink size={12} /> Drive
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteAsset(selectedCompany.code, 'logo')}
+                                className="px-2.5 py-1 text-xs font-semibold bg-card rounded-lg border border-rose-200 dark:border-rose-900 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50"
+                              >
+                                Hapus
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      }
                       return (
-                        <div className="flex items-center gap-3 border border-[#bfe8d2] bg-[#e4f6ec] rounded-xl p-3.5">
-                          <div className="w-10 h-10 rounded-xl bg-white border border-[#bfe8d2] flex items-center justify-center text-[#12995c] shrink-0">
-                            <Image size={19} />
+                        <div className="flex items-center justify-between gap-3 border-2 border-dashed border-border rounded-xl p-3.5 bg-muted/20">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-card border border-border flex items-center justify-center text-primary shrink-0">
+                              <Image size={19} />
+                            </div>
+                            <div>
+                              <b className="text-sm text-foreground block leading-tight">Logo Perusahaan</b>
+                              <span className="text-[11.5px] text-muted-foreground font-medium">PNG / SVG · latar transparan · maks 2 MB</span>
+                            </div>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <b className="text-sm text-slate-900 block leading-tight">Logo Perusahaan</b>
-                            <span className="font-mono text-[11.5px] text-slate-700 block truncate">{f}</span>
-                            <span className="text-[11px] text-[#12995c] font-medium block">Tersimpan di Google Drive</span>
-                          </div>
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            <button
-                              type="button"
-                              onClick={() => toast.info(`Membuka berkas ${f} di Google Drive...`)}
-                              className="px-2.5 py-1 text-xs font-semibold bg-white rounded-lg border border-[#bfe8d2] text-[#12995c] hover:bg-white/80 inline-flex items-center gap-1"
-                            >
-                              <ExternalLink size={12} /> Drive
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteAsset(selectedCompany.code, 'logo')}
-                              className="px-2.5 py-1 text-xs font-semibold bg-white rounded-lg border border-rose-200 text-rose-600 hover:bg-rose-50"
-                            >
-                              Hapus
-                            </button>
-                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleUploadAsset(selectedCompany.code, 'logo')}
+                            className="text-xs font-semibold gap-1.5 border-border h-8"
+                          >
+                            <Upload size={13} /> Unggah ke Drive
+                          </Button>
                         </div>
                       );
-                    }
-                    return (
-                      <div className="flex items-center justify-between gap-3 border-2 border-dashed border-[#e6e9f0] rounded-xl p-3.5 bg-[#fbfbfc]">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-white border border-[#e6e9f0] flex items-center justify-center text-[#2f6bff] shrink-0">
-                            <Image size={19} />
-                          </div>
-                          <div>
-                            <b className="text-sm text-slate-900 block leading-tight">Logo Perusahaan</b>
-                            <span className="text-[11.5px] text-[#758196] font-medium">PNG / SVG · latar transparan · maks 2 MB</span>
-                          </div>
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleUploadAsset(selectedCompany.code, 'logo')}
-                          className="text-xs font-semibold gap-1.5 border-[#e6e9f0] h-8"
-                        >
-                          <Upload size={13} /> Unggah ke Drive
-                        </Button>
-                      </div>
-                    );
-                  })()}
+                    })()}
 
-                  {/* Kop Surat Zone */}
-                  {(() => {
-                    const f = companyAssets[selectedCompany.code]?.kop;
-                    if (f) {
+                    {/* Kop Surat Zone */}
+                    {(() => {
+                      const f = companyAssets[selectedCompany.code]?.kop;
+                      if (f) {
+                        return (
+                          <div className="flex items-center gap-3 border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 rounded-xl p-3.5">
+                            <div className="w-10 h-10 rounded-xl bg-card border border-emerald-300 dark:border-emerald-800 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
+                              <FileText size={19} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <b className="text-sm text-foreground block leading-tight">Kop Surat</b>
+                              <span className="font-mono text-[11.5px] text-muted-foreground block truncate">{f}</span>
+                              <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium block">Tersimpan di Google Drive</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => toast.info(`Membuka berkas ${f} di Google Drive...`)}
+                                className="px-2.5 py-1 text-xs font-semibold bg-card rounded-lg border border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-muted inline-flex items-center gap-1"
+                              >
+                                <ExternalLink size={12} /> Drive
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteAsset(selectedCompany.code, 'kop')}
+                                className="px-2.5 py-1 text-xs font-semibold bg-card rounded-lg border border-rose-200 dark:border-rose-900 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50"
+                              >
+                                Hapus
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      }
                       return (
-                        <div className="flex items-center gap-3 border border-[#bfe8d2] bg-[#e4f6ec] rounded-xl p-3.5">
-                          <div className="w-10 h-10 rounded-xl bg-white border border-[#bfe8d2] flex items-center justify-center text-[#12995c] shrink-0">
-                            <FileText size={19} />
+                        <div className="flex items-center justify-between gap-3 border-2 border-dashed border-border rounded-xl p-3.5 bg-muted/20">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-card border border-border flex items-center justify-center text-amber-500 shrink-0">
+                              <FileText size={19} />
+                            </div>
+                            <div>
+                              <b className="text-sm text-foreground block leading-tight">Kop Surat</b>
+                              <span className="text-[11.5px] text-muted-foreground font-medium">PNG / PDF · ukuran A4 · maks 5 MB</span>
+                            </div>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <b className="text-sm text-slate-900 block leading-tight">Kop Surat</b>
-                            <span className="font-mono text-[11.5px] text-slate-700 block truncate">{f}</span>
-                            <span className="text-[11px] text-[#12995c] font-medium block">Tersimpan di Google Drive</span>
-                          </div>
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            <button
-                              type="button"
-                              onClick={() => toast.info(`Membuka berkas ${f} di Google Drive...`)}
-                              className="px-2.5 py-1 text-xs font-semibold bg-white rounded-lg border border-[#bfe8d2] text-[#12995c] hover:bg-white/80 inline-flex items-center gap-1"
-                            >
-                              <ExternalLink size={12} /> Drive
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteAsset(selectedCompany.code, 'kop')}
-                              className="px-2.5 py-1 text-xs font-semibold bg-white rounded-lg border border-rose-200 text-rose-600 hover:bg-rose-50"
-                            >
-                              Hapus
-                            </button>
-                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleUploadAsset(selectedCompany.code, 'kop')}
+                            className="text-xs font-semibold gap-1.5 border-border h-8"
+                          >
+                            <Upload size={13} /> Unggah ke Drive
+                          </Button>
                         </div>
                       );
-                    }
-                    return (
-                      <div className="flex items-center justify-between gap-3 border-2 border-dashed border-[#e6e9f0] rounded-xl p-3.5 bg-[#fbfbfc]">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-white border border-[#e6e9f0] flex items-center justify-center text-[#d99a26] shrink-0">
-                            <FileText size={19} />
-                          </div>
-                          <div>
-                            <b className="text-sm text-slate-900 block leading-tight">Kop Surat</b>
-                            <span className="text-[11.5px] text-[#758196] font-medium">PNG / PDF · ukuran A4 · maks 5 MB</span>
-                          </div>
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleUploadAsset(selectedCompany.code, 'kop')}
-                          className="text-xs font-semibold gap-1.5 border-[#e6e9f0] h-8"
-                        >
-                          <Upload size={13} /> Unggah ke Drive
-                        </Button>
-                      </div>
-                    );
-                  })()}
+                    })()}
 
-                  {/* Stempel Zone */}
-                  {(() => {
-                    const f = companyAssets[selectedCompany.code]?.stempel;
-                    if (f) {
+                    {/* Stempel Zone */}
+                    {(() => {
+                      const f = companyAssets[selectedCompany.code]?.stempel;
+                      if (f) {
+                        return (
+                          <div className="flex items-center gap-3 border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 rounded-xl p-3.5">
+                            <div className="w-10 h-10 rounded-xl bg-card border border-emerald-300 dark:border-emerald-800 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
+                              <Stamp size={19} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <b className="text-sm text-foreground block leading-tight">Stempel Perusahaan</b>
+                              <span className="font-mono text-[11.5px] text-muted-foreground block truncate">{f}</span>
+                              <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium block">Tersimpan di Google Drive</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => toast.info(`Membuka berkas ${f} di Google Drive...`)}
+                                className="px-2.5 py-1 text-xs font-semibold bg-card rounded-lg border border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-muted inline-flex items-center gap-1"
+                              >
+                                <ExternalLink size={12} /> Drive
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteAsset(selectedCompany.code, 'stempel')}
+                                className="px-2.5 py-1 text-xs font-semibold bg-card rounded-lg border border-rose-200 dark:border-rose-900 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50"
+                              >
+                                Hapus
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      }
                       return (
-                        <div className="flex items-center gap-3 border border-[#bfe8d2] bg-[#e4f6ec] rounded-xl p-3.5">
-                          <div className="w-10 h-10 rounded-xl bg-white border border-[#bfe8d2] flex items-center justify-center text-[#12995c] shrink-0">
-                            <Stamp size={19} />
+                        <div className="flex items-center justify-between gap-3 border-2 border-dashed border-border rounded-xl p-3.5 bg-muted/20">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-card border border-border flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
+                              <Stamp size={19} />
+                            </div>
+                            <div>
+                              <b className="text-sm text-foreground block leading-tight">Stempel</b>
+                              <span className="text-[11.5px] text-muted-foreground font-medium">PNG · latar transparan · maks 2 MB</span>
+                            </div>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <b className="text-sm text-slate-900 block leading-tight">Stempel Perusahaan</b>
-                            <span className="font-mono text-[11.5px] text-slate-700 block truncate">{f}</span>
-                            <span className="text-[11px] text-[#12995c] font-medium block">Tersimpan di Google Drive</span>
-                          </div>
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            <button
-                              type="button"
-                              onClick={() => toast.info(`Membuka berkas ${f} di Google Drive...`)}
-                              className="px-2.5 py-1 text-xs font-semibold bg-white rounded-lg border border-[#bfe8d2] text-[#12995c] hover:bg-white/80 inline-flex items-center gap-1"
-                            >
-                              <ExternalLink size={12} /> Drive
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteAsset(selectedCompany.code, 'stempel')}
-                              className="px-2.5 py-1 text-xs font-semibold bg-white rounded-lg border border-rose-200 text-rose-600 hover:bg-rose-50"
-                            >
-                              Hapus
-                            </button>
-                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleUploadAsset(selectedCompany.code, 'stempel')}
+                            className="text-xs font-semibold gap-1.5 border-border h-8"
+                          >
+                            <Upload size={13} /> Unggah ke Drive
+                          </Button>
                         </div>
                       );
-                    }
-                    return (
-                      <div className="flex items-center justify-between gap-3 border-2 border-dashed border-[#e6e9f0] rounded-xl p-3.5 bg-[#fbfbfc]">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-white border border-[#e6e9f0] flex items-center justify-center text-[#12995c] shrink-0">
-                            <Stamp size={19} />
-                          </div>
-                          <div>
-                            <b className="text-sm text-slate-900 block leading-tight">Stempel</b>
-                            <span className="text-[11.5px] text-[#758196] font-medium">PNG · latar transparan · maks 2 MB</span>
-                          </div>
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleUploadAsset(selectedCompany.code, 'stempel')}
-                          className="text-xs font-semibold gap-1.5 border-[#e6e9f0] h-8"
-                        >
-                          <Upload size={13} /> Unggah ke Drive
-                        </Button>
-                      </div>
-                    );
-                  })()}
-                </div>
+                    })()}
+                  </div>
 
-                {/* Note Box */}
-                <div className="bg-[#eef0f4] dark:bg-slate-800/70 border border-[#e6e9f0] dark:border-slate-700 rounded-xl p-3.5 text-xs text-[#667085] dark:text-slate-300 font-medium leading-relaxed">
-                  Berkas tersimpan di Google Drive pada folder{' '}
-                  <span className="font-mono font-bold text-slate-800 dark:text-white">
-                    CSL-LINK/Companies/{selectedCompany.code}/
-                  </span>{' '}
-                  — aplikasi hanya menyimpan tautan berkasnya. Kop surat &amp; stempel otomatis terpasang pada surat resmi yang dibuat sistem untuk entitas ini.
+                  {/* Note Box */}
+                  <div className="bg-muted/30 border border-border/80 rounded-xl p-3.5 text-xs text-muted-foreground font-medium leading-relaxed">
+                    Berkas tersimpan di Google Drive pada folder{' '}
+                    <span className="font-mono font-bold text-foreground">
+                      CSL-LINK/Companies/{selectedCompany.code}/
+                    </span>{' '}
+                    — aplikasi hanya menyimpan tautan berkasnya. Kop surat &amp; stempel otomatis terpasang pada surat resmi yang dibuat sistem untuk entitas ini.
+                  </div>
                 </div>
               </div>
 
-              {/* Panel Footer */}
-              <div className="pt-4 border-t border-[#e6e9f0] dark:border-slate-800 mt-6 flex items-center gap-2">
+              {/* Centered Modal Footer */}
+              <div className="p-4 px-6 border-t border-border bg-muted/10 flex items-center justify-end gap-2.5 shrink-0">
                 <Button
                   variant="outline"
-                  className="flex-1 text-xs font-bold"
+                  className="px-4 text-xs font-bold border-border"
                   onClick={() => setSelectedCompany(null)}
                 >
                   Tutup
                 </Button>
                 <Button
-                  className="flex-1 text-xs font-bold bg-[#0a2540] hover:bg-[#16375c] text-white gap-1.5"
+                  className="px-4 text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90 gap-1.5"
                   onClick={() => {
                     openCompanyModal(selectedCompany);
                   }}
@@ -3060,8 +3066,8 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
                   <Pencil size={13} /> Edit Profil
                 </Button>
               </div>
-            </aside>
-          </>
+            </div>
+          </div>
         )}
 
         {/* MODAL TAMBAH / EDIT PERUSAHAAN */}
