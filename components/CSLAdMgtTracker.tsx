@@ -388,28 +388,28 @@ export const CSLAdMgtTracker: React.FC<{ currentUser?: UserAccount | null }> = (
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800">
             <span className="size-1.5 rounded-full bg-emerald-600 dark:bg-emerald-400" />
-            Completed
+            Selesai
           </span>
         );
       case 'In progress':
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-blue-50 text-blue-800 border border-blue-200 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800">
             <span className="size-1.5 rounded-full bg-blue-600 dark:bg-blue-400" />
-            In progress
+            Dalam Proses
           </span>
         );
       case 'Not started':
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-amber-50 text-amber-900 border border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800">
             <span className="size-1.5 rounded-full bg-amber-600 dark:bg-amber-400" />
-            Not started
+            Belum Dimulai
           </span>
         );
       case 'Blocked':
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-800 border border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800">
             <span className="size-1.5 rounded-full bg-rose-600 dark:bg-rose-400" />
-            Blocked
+            Terkendala
           </span>
         );
       default:
@@ -626,10 +626,10 @@ export const CSLAdMgtTracker: React.FC<{ currentUser?: UserAccount | null }> = (
           <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto">
             {[
               { id: 'all', label: 'Semua Status' },
-              { id: 'Completed', label: 'Completed' },
-              { id: 'In progress', label: 'In progress' },
-              { id: 'Not started', label: 'Not started' },
-              { id: 'Blocked', label: 'Blocked' },
+              { id: 'Completed', label: 'Selesai' },
+              { id: 'In progress', label: 'Dalam Proses' },
+              { id: 'Not started', label: 'Belum Dimulai' },
+              { id: 'Blocked', label: 'Terkendala' },
             ].map((chip) => (
               <button
                 key={chip.id}
@@ -663,13 +663,13 @@ export const CSLAdMgtTracker: React.FC<{ currentUser?: UserAccount | null }> = (
             <thead>
               <tr className="border-b border-border/70 bg-muted/40 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
                 <th className="py-3 px-4 w-12 text-center">#</th>
-                <th className="py-3 px-4 min-w-[200px]">Company Name</th>
-                <th className="py-3 px-4 min-w-[240px]">Agenda</th>
-                <th className="py-3 px-4 w-[130px]">Status</th>
-                <th className="py-3 px-4 w-[130px]">Start Date</th>
-                <th className="py-3 px-4 w-[130px]">Complete Date</th>
-                <th className="py-3 px-4 min-w-[200px]">Notes</th>
-                <th className="py-3 px-3 w-20 text-center">Aksi</th>
+                <th className="py-3 px-4 min-w-[200px]">NAMA PERUSAHAAN</th>
+                <th className="py-3 px-4 min-w-[240px]">AGENDA</th>
+                <th className="py-3 px-4 w-[130px]">STATUS</th>
+                <th className="py-3 px-4 w-[130px]">TANGGAL MULAI</th>
+                <th className="py-3 px-4 w-[130px]">TANGGAL SELESAI</th>
+                <th className="py-3 px-4 min-w-[200px]">CATATAN</th>
+                <th className="py-3 px-3 w-20 text-center">AKSI</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/60 text-xs">

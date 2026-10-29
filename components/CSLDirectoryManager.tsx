@@ -80,6 +80,16 @@ const MOCK_CONTACTS: ContactItem[] = [
   { id: 6, name: 'BPN Jakarta Pusat', category: 'Government', organization: 'Badan Pertanahan Nasional', phone: '+62 21-3844-098', email: 'kantah.jakpus@atrbpn.go.id', city: 'Jakarta Pusat', notes: 'HGB and Land title verification' },
 ];
 
+const formatContactCategory = (cat: string) => {
+  switch ((cat || '').toLowerCase()) {
+    case 'lawyer': return 'Konsultan Hukum';
+    case 'vendor': return 'Vendor';
+    case 'government': return 'Instansi Pemerintah';
+    case 'other': return 'Lainnya';
+    default: return cat;
+  }
+};
+
 export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ currentUser, category = 'all' }) => {
   const [activeCategory, setActiveCategory] = useState<'all'|'lawyer'|'vendor'|'government'|'other'>(category);
   const [searchTerm, setSearchTerm] = useState('');
@@ -505,34 +515,43 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
 
       {/* KPI Cards when in All View */}
       {activeCategory === 'all' && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-card border border-border/40 p-5 rounded-xl shadow-sm flex flex-col justify-between hover:border-border/80 transition-colors">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+          <div className="bg-card border border-border/40 p-4 rounded-xl shadow-sm flex flex-col justify-between hover:border-border/80 transition-colors">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">Total Kontak</span>
-              <Phone size={16} className="text-muted-foreground" />
+              <span className="text-xs font-medium text-muted-foreground">Total Kontak</span>
+              <Phone size={15} className="text-muted-foreground" />
             </div>
             <p className="text-2xl font-bold font-mono text-foreground mt-2">{contacts.length}</p>
           </div>
-          <div className="bg-card border border-border/40 p-5 rounded-xl shadow-sm flex flex-col justify-between hover:border-border/80 transition-colors">
+          <div className="bg-card border border-border/40 p-4 rounded-xl shadow-sm flex flex-col justify-between hover:border-border/80 transition-colors">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">Pengacara &amp; Notaris</span>
-              <Scale size={16} className="text-muted-foreground" />
+              <span className="text-xs font-medium text-muted-foreground">Konsultan Hukum</span>
+              <Scale size={15} className="text-muted-foreground" />
             </div>
             <p className="text-2xl font-bold font-mono text-foreground mt-2">{contacts.filter(c => c.category === 'Lawyer').length}</p>
           </div>
-          <div className="bg-card border border-border/40 p-5 rounded-xl shadow-sm flex flex-col justify-between hover:border-border/80 transition-colors">
+          <div className="bg-card border border-border/40 p-4 rounded-xl shadow-sm flex flex-col justify-between hover:border-border/80 transition-colors">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">Instansi Pemerintah</span>
-              <Landmark size={16} className="text-muted-foreground" />
+              <span className="text-xs font-medium text-muted-foreground">Instansi Pemerintah</span>
+              <Landmark size={15} className="text-muted-foreground" />
             </div>
             <p className="text-2xl font-bold font-mono text-foreground mt-2">{contacts.filter(c => c.category === 'Government').length}</p>
           </div>
-          <div className="bg-card border border-border/40 p-5 rounded-xl shadow-sm flex flex-col justify-between hover:border-border/80 transition-colors">
+          <div className="bg-card border border-border/40 p-4 rounded-xl shadow-sm flex flex-col justify-between hover:border-border/80 transition-colors">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">Vendor Legal</span>
-              <Store size={16} className="text-muted-foreground" />
+              <span className="text-xs font-medium text-muted-foreground">Vendor Legal</span>
+              <Store size={15} className="text-muted-foreground" />
             </div>
             <p className="text-2xl font-bold font-mono text-foreground mt-2">{contacts.filter(c => c.category === 'Vendor').length}</p>
+          </div>
+          <div className="bg-card border border-border/40 p-4 rounded-xl shadow-sm flex flex-col justify-between hover:border-border/80 transition-colors">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-muted-foreground">Lainnya</span>
+              <ContactRound size={15} className="text-muted-foreground" />
+            </div>
+            <p className="text-2xl font-bold font-mono text-foreground mt-2">
+              {contacts.filter(c => c.category === 'Other' || (c.category !== 'Lawyer' && c.category !== 'Government' && c.category !== 'Vendor')).length}
+            </p>
           </div>
         </div>
       )}
@@ -546,7 +565,7 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
           <div className="relative w-full sm:w-80">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input 
-              placeholder="Search contacts..." 
+              placeholder="Cari kontak..." 
               className="pl-9 h-9 text-sm rounded-md"
               value={searchTerm}
               onChange={(e) => handleSearchChange(e.target.value)}
@@ -556,11 +575,11 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
           {/* Shadcn Tabs style for categories */}
           <div className="inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground w-full sm:w-auto overflow-x-auto hide-scrollbar">
             {[
-              { id: 'all', label: 'All' },
-              { id: 'lawyer', label: 'Lawyers' },
-              { id: 'vendor', label: 'Vendors' },
-              { id: 'government', label: 'Government' },
-              { id: 'other', label: 'Others' }
+              { id: 'all', label: 'Semua' },
+              { id: 'lawyer', label: 'Konsultan Hukum' },
+              { id: 'vendor', label: 'Vendor' },
+              { id: 'government', label: 'Instansi Pemerintah' },
+              { id: 'other', label: 'Lainnya' }
             ].map(cat => (
               <button
                 key={cat.id}
@@ -622,7 +641,7 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
                       <h3 className="font-semibold text-sm text-foreground leading-tight truncate">{contact.name}</h3>
-                      <span className="inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium text-muted-foreground whitespace-nowrap shrink-0">{contact.category}</span>
+                      <span className="inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium text-muted-foreground whitespace-nowrap shrink-0">{formatContactCategory(contact.category)}</span>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1 truncate"><Building2 size={11} className="shrink-0" /> {contact.organization}</p>
                   </div>
@@ -691,7 +710,7 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
                     </div>
                   </TableCell>
                   <TableCell className="py-4">
-                    <span className="inline-flex items-center rounded-md border border-border/70 px-2 py-0.5 text-xs font-medium bg-muted/60 text-foreground">{contact.category}</span>
+                    <span className="inline-flex items-center rounded-md border border-border/70 px-2 py-0.5 text-xs font-medium bg-muted/60 text-foreground">{formatContactCategory(contact.category)}</span>
                   </TableCell>
                   <TableCell className="py-4">
                     <button onClick={() => copyToClipboard(contact.phone, `${contact.id}-phone`)} className="flex items-center gap-1.5 font-mono text-xs text-foreground hover:text-foreground/80 transition-colors group/cp">
@@ -728,7 +747,7 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
       {!loading && totalPages > 1 && (
         <div className="flex items-center justify-between bg-card border border-border/40 rounded-2xl px-5 py-3 shadow-sm">
           <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">
-            Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, filteredContacts.length)} of {filteredContacts.length} contacts
+            MENAMPILKAN {((currentPage - 1) * ITEMS_PER_PAGE) + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, filteredContacts.length)} DARI {filteredContacts.length} KONTAK
           </p>
           <div className="flex items-center gap-1">
             <button
@@ -804,10 +823,10 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   {[
-                    { value: 'Lawyer',     label: 'Lawyer / Notary',         icon: Scale,    color: 'blue' },
-                    { value: 'Government', label: 'Government Agency',        icon: Landmark, color: 'amber' },
-                    { value: 'Vendor',     label: 'Vendor / Translator',      icon: Store,    color: 'violet' },
-                    { value: 'Other',      label: 'Other Contact',            icon: User,     color: 'slate' },
+                    { value: 'Lawyer',     label: 'Konsultan Hukum / Notaris', icon: Scale,    color: 'blue' },
+                    { value: 'Government', label: 'Instansi Pemerintah',        icon: Landmark, color: 'amber' },
+                    { value: 'Vendor',     label: 'Vendor / Penerjemah',        icon: Store,    color: 'violet' },
+                    { value: 'Other',      label: 'Kontak Lainnya',             icon: User,     color: 'slate' },
                   ].map(({ value, label, icon: Icon, color }) => {
                     const isSelected = formData.category === value;
                     const colorMap: Record<string, string> = {

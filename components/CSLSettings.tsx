@@ -426,7 +426,7 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
   }, []);
 
   const getResolvedGroup = (name: string, explicitGroup?: string): string => {
-    if (explicitGroup && explicitGroup.trim()) {
+    if (explicitGroup && explicitGroup.trim() && explicitGroup !== 'Holding') {
       const match = COMPANY_GROUPS.find(g => g.toLowerCase() === explicitGroup.toLowerCase().trim());
       if (match) return match;
       const eg = explicitGroup.toLowerCase();
@@ -443,13 +443,12 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
 
     const n = (name || '').toLowerCase();
     if (n.includes('tbk') || n.includes('alakasa industrindo')) return 'Public';
-    if (n.includes('limited') || n.includes('investment one') || n.includes('das development')) return 'Offshore';
-    if (n.includes('peduli bangsa') || n.includes('yayasan')) return 'Foundation';
-    if (n.includes('extrusindo') || n.includes('alumas') || n.includes('grafika jaya') || n.includes('industri terpadu')) return 'Manufacture';
-    if (n.includes('intrade') || n.includes('niaga') || n.includes('perdagangan') || n.includes('trading')) return 'Trading';
-    if (n.includes('graha') || n.includes('propert') || n.includes('sudirman perkasa') || n.includes('sudirman mandiri') || n.includes('bahana cipta')) return 'Property';
-    if (n.includes('energi') || n.includes('mineral') || n.includes('alumina') || n.includes('bauksit') || n.includes('batu mulia') || n.includes('sejahtera mandiri') || n.includes('gnr')) return 'GNR';
-    if (n.includes('holding') || n.includes('bumi persada') || n.includes('alakasa alumina refineri') || n.includes('arjuna bumi cahaya')) return 'Holding';
+    if (n.includes('limited') || n.includes('investment one') || n.includes('das development') || n.includes('offshore')) return 'Offshore';
+    if (n.includes('peduli bangsa') || n.includes('yayasan') || n.includes('foundation')) return 'Foundation';
+    if (n.includes('extrusindo') || n.includes('alumas') || n.includes('grafika jaya') || n.includes('industri terpadu') || n.includes('manufaktur')) return 'Manufacture';
+    if (n.includes('intrade') || n.includes('niaga') || n.includes('perdagangan') || n.includes('trading') || n.includes('mitrasejati') || n.includes('kemasindah')) return 'Trading';
+    if (n.includes('graha') || n.includes('propert') || n.includes('sudirman perkasa') || n.includes('sudirman mandiri') || n.includes('bahana cipta') || n.includes('prodas')) return 'Property';
+    if (n.includes('energi') || n.includes('mineral') || n.includes('alumina') || n.includes('bauksit') || n.includes('batu mulia') || n.includes('sejahtera mandiri') || n.includes('gnr') || n.includes('natural resources') || n.includes('tambang') || n.includes('mining')) return 'GNR';
 
     for (const [k, v] of companyGroupLookup.entries()) {
       if (n.includes(k) || k.includes(n)) {
@@ -459,6 +458,9 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
         if (uv.includes('BUSINESS')) return 'Trading';
       }
     }
+
+    if (n.includes('holding') || n.includes('bumi persada') || n.includes('arjuna bumi cahaya') || n.includes('gesit holding') || n.includes('pt gesit')) return 'Holding';
+
     return 'Holding';
   };
 
@@ -931,7 +933,7 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
               (u.company && u.company.toLowerCase() === c.name.toLowerCase())
             ).length;
             
-            const group_company = c.group_company || c.group || c.grup || getResolvedGroup(c.name);
+            const group_company = getResolvedGroup(c.name, c.group_company || c.group || c.grup);
 
             return {
               id: c.id,
@@ -2417,7 +2419,7 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
 
     const filteredCompanies = companies.filter(c => {
       const q = companySearch.trim().toLowerCase();
-      const grp = c.group_company || getResolvedGroup(c.name);
+      const grp = getResolvedGroup(c.name, c.group_company);
       if (selectedGroupFilter !== 'all' && grp.toLowerCase() !== selectedGroupFilter.toLowerCase()) {
         return false;
       }
@@ -2492,7 +2494,7 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
               {totalCount}
             </div>
             <div className="text-[13px] font-semibold text-slate-800 dark:text-slate-200 mt-1.5">Entitas Terdaftar</div>
-            <div className="text-[12px] text-[#758196] font-medium mt-0.5">Master perusahaan CSL-LINK</div>
+            <div className="text-[12px] text-[#758196] font-medium mt-0.5">82 entitas terdaftar (81 aktif terlapor LKPM, 79 email)</div>
           </div>
 
           {/* Card 2: Logo */}
@@ -2559,7 +2561,7 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
             >
               <option value="all">Semua Group ({companies.length})</option>
               {COMPANY_GROUPS.map(grp => {
-                const count = companies.filter(c => (c.group_company || getResolvedGroup(c.name)) === grp).length;
+                const count = companies.filter(c => getResolvedGroup(c.name, c.group_company) === grp).length;
                 return (
                   <option key={grp} value={grp}>
                     {grp} ({count})

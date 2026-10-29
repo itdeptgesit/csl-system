@@ -421,7 +421,7 @@ export const CSLCreateRequest: React.FC<CSLCreateRequestProps> = ({ currentUser,
           <div className="p-5 space-y-3">
             <div>
               <label className="text-xs font-medium text-foreground">
-                Upload List Permintaan{' '}
+                Unggah Daftar Permintaan{' '}
                 <span className="font-normal text-muted-foreground">(Opsional)</span>
               </label>
               <p className="text-[11px] text-muted-foreground mt-0.5">

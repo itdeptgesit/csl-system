@@ -497,7 +497,7 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
           {[
             { id: 'csl-requests', label: 'Permintaan & Tiket', icon: Kanban, route: 'csl-requests', desc: 'Permintaan legal & pemenuhan SLA' },
             { id: 'routine-rups', label: 'RUPS - AR', icon: Calendar, route: 'routine-rups', desc: 'Jadwal rutin, RUPS & kepatuhan' },
-            { id: 'routine-lkpm', label: 'Tracking LKPM', icon: FileCheck2, route: 'routine-lkpm', desc: 'Pantauan LKPM 81 perusahaan' },
+            { id: 'routine-lkpm', label: 'Tracking LKPM', icon: FileCheck2, route: 'routine-lkpm', desc: 'Pantauan LKPM 81 entitas aktif terlapor' },
             { id: 'budget', label: 'Anggaran & Biaya', icon: Wallet, route: 'budget', desc: 'Pengeluaran CSL lokal & valas' },
           ].map((item) => {
             const Icon = item.icon;

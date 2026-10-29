@@ -1091,13 +1091,13 @@ export const CSLExpenseApproval: React.FC<CSLExpenseApprovalProps> = ({ currentU
   }, [expenses]);
 
   const tabOptions = [
-    { key: 'ALL', label: 'All' },
-    { key: 'Company', label: 'Company' },
-    { key: 'Individual', label: 'Individual' },
-    { key: 'PENDING_APPROVAL', label: 'Pending' },
-    { key: 'APPROVED', label: 'Approved' },
-    { key: 'PAID', label: 'Paid / Disbursed' },
-    { key: 'REJECTED', label: 'Rejected' },
+    { key: 'ALL', label: 'Semua' },
+    { key: 'Company', label: 'Perusahaan' },
+    { key: 'Individual', label: 'Perorangan' },
+    { key: 'PENDING_APPROVAL', label: 'Menunggu Persetujuan' },
+    { key: 'APPROVED', label: 'Disetujui' },
+    { key: 'PAID', label: 'Dicairkan' },
+    { key: 'REJECTED', label: 'Ditolak' },
   ];
 
   return (
@@ -1229,73 +1229,73 @@ export const CSLExpenseApproval: React.FC<CSLExpenseApprovalProps> = ({ currentU
         <div className="space-y-6 pt-1">
           {/* 1. KPI Stat Cards (Matching Image 1) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Card 1: Total Requests */}
+            {/* Card 1: Total Pengajuan */}
             <div className="bg-card border border-border/80 p-5 rounded-2xl shadow-xs flex flex-col justify-between hover:border-border transition-colors">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-muted-foreground">Total Requests</span>
+                <span className="text-xs font-semibold text-muted-foreground">Total Pengajuan</span>
                 <div className="size-8 rounded-lg border border-border/60 text-muted-foreground flex items-center justify-center">
                   <DollarSign size={15} />
                 </div>
               </div>
               <div className="mt-3">
                 <p className="text-2xl font-bold font-mono text-foreground">
-                  {totalRequestsCount} <span className="text-sm font-medium text-muted-foreground font-sans">Requests</span>
+                  {totalRequestsCount} <span className="text-sm font-medium text-muted-foreground font-sans">Pengajuan</span>
                 </p>
                 <p className="text-sm font-bold font-mono text-foreground mt-1">
                   {formatCslCurrency(totalReportingAmount)}
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Consolidated total (IDR)
+                  Total terkonsolidasi (IDR)
                 </p>
               </div>
             </div>
 
-            {/* Card 2: Pending Approval */}
+            {/* Card 2: Menunggu Persetujuan */}
             <div className="bg-card border border-border/80 p-5 rounded-2xl shadow-xs flex flex-col justify-between hover:border-border transition-colors">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-muted-foreground">Pending Approval</span>
+                <span className="text-xs font-semibold text-muted-foreground">Menunggu Persetujuan</span>
                 <div className="size-8 rounded-lg border border-amber-300 dark:border-amber-800 text-amber-500 flex items-center justify-center">
                   <Clock size={15} />
                 </div>
               </div>
               <div className="mt-3">
                 <p className="text-2xl font-bold font-mono text-amber-600 dark:text-amber-400">
-                  {pendingCount} <span className="text-sm font-medium text-amber-600/70 font-sans">Requests</span>
+                  {pendingCount} <span className="text-sm font-medium text-amber-600/70 font-sans">Pengajuan</span>
                 </p>
                 <p className="text-sm font-bold font-mono text-amber-600 dark:text-amber-400 mt-1">
                   {formatCslCurrency(pendingReportingAmount)}
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Awaiting review
+                  Menunggu review
                 </p>
               </div>
             </div>
 
-            {/* Card 3: Approved / Disbursed */}
+            {/* Card 3: Disetujui / Dicairkan */}
             <div className="bg-card border border-border/80 p-5 rounded-2xl shadow-xs flex flex-col justify-between hover:border-border transition-colors">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-muted-foreground">Approved / Disbursed</span>
+                <span className="text-xs font-semibold text-muted-foreground">Disetujui / Dicairkan</span>
                 <div className="size-8 rounded-lg border border-emerald-300 dark:border-emerald-800 text-emerald-500 flex items-center justify-center">
                   <CheckCircle2 size={15} />
                 </div>
               </div>
               <div className="mt-3">
                 <p className="text-2xl font-bold font-mono text-emerald-600 dark:text-emerald-400">
-                  {approvedCount} <span className="text-sm font-medium text-emerald-600/70 font-sans">Requests</span>
+                  {approvedCount} <span className="text-sm font-medium text-emerald-600/70 font-sans">Pengajuan</span>
                 </p>
                 <p className="text-sm font-bold font-mono text-emerald-600 dark:text-emerald-400 mt-1">
                   {formatCslCurrency(approvedReportingAmount)}
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Ready or paid out
+                  Siap atau sudah dicairkan
                 </p>
               </div>
             </div>
 
-            {/* Card 4: Currency Exposure */}
+            {/* Card 4: Eksposur Mata Uang */}
             <div className="bg-card border border-border/80 p-5 rounded-2xl shadow-xs flex flex-col justify-between hover:border-border transition-colors">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-muted-foreground">Currency Exposure</span>
+                <span className="text-xs font-semibold text-muted-foreground">Eksposur Mata Uang</span>
                 <div className="size-8 rounded-lg border border-indigo-300 dark:border-indigo-800 text-indigo-500 flex items-center justify-center">
                   <Globe size={15} />
                 </div>
@@ -1338,7 +1338,7 @@ export const CSLExpenseApproval: React.FC<CSLExpenseApprovalProps> = ({ currentU
           <div className="relative w-full sm:w-80">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search all data: ID, vendor, project, amount, status..."
+              placeholder="Cari semua data: ID, penerima, proyek, nominal, status..."
               className="pl-9 h-9 text-sm rounded-md"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -1367,24 +1367,24 @@ export const CSLExpenseApproval: React.FC<CSLExpenseApprovalProps> = ({ currentU
       <div className="rounded-xl border border-border/80 bg-card shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-border/60 flex flex-wrap items-center justify-between gap-3 bg-card">
           <div>
-            <h3 className="font-bold text-sm text-foreground">Expense Requests &amp; Invoices</h3>
-            <p className="text-xs text-muted-foreground mt-0.5">Manage operational costs, payee classifications, and payment vouchers</p>
+            <h3 className="font-bold text-sm text-foreground">Pengajuan Biaya &amp; Tagihan</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">Kelola biaya operasional, klasifikasi penerima, dan voucher pembayaran</p>
           </div>
           <span className="text-xs font-mono text-muted-foreground bg-muted/50 border border-border/50 px-2.5 py-1 rounded-md">
-            {filteredExpenses.length} Records
+            {filteredExpenses.length} Data
           </span>
         </div>
 
         {isLoading ? (
           <div className="py-20 flex items-center justify-center gap-2 text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
-            <span className="text-sm">Loading expense requests…</span>
+            <span className="text-sm">Memuat data pengajuan biaya…</span>
           </div>
         ) : filteredExpenses.length === 0 ? (
           <div className="py-20 text-center">
             <Receipt className="h-8 w-8 mx-auto mb-3 text-muted-foreground/40" />
-            <p className="text-sm text-muted-foreground">No expense requests found.</p>
-            <p className="text-xs text-muted-foreground/60 mt-1">Try adjusting your search or tab filter.</p>
+            <p className="text-sm text-muted-foreground">Tidak ada pengajuan biaya ditemukan.</p>
+            <p className="text-xs text-muted-foreground/60 mt-1">Coba sesuaikan pencarian atau filter tab Anda.</p>
           </div>
         ) : (
           <>
@@ -1399,15 +1399,15 @@ export const CSLExpenseApproval: React.FC<CSLExpenseApprovalProps> = ({ currentU
                     onChange={(e) => setSelectedIds(e.target.checked ? pagedExpenses.map(x => x.id) : [])}
                   />
                 </TableHead>
-                <TableHead className="text-xs font-semibold text-foreground/80">Expense / Date</TableHead>
-                <TableHead className="text-xs font-semibold text-foreground/80">Payee Type</TableHead>
-                <TableHead className="text-xs font-semibold text-foreground/80">Paid To</TableHead>
+                <TableHead className="text-xs font-semibold text-foreground/80">Pengajuan / Tanggal</TableHead>
+                <TableHead className="text-xs font-semibold text-foreground/80">Tipe Penerima</TableHead>
+                <TableHead className="text-xs font-semibold text-foreground/80">Dibayarkan Kepada</TableHead>
                 <TableHead className="text-xs font-semibold text-foreground/80">Kategori Biaya</TableHead>
-                <TableHead className="text-xs font-semibold text-foreground/80">Project / Description</TableHead>
-                <TableHead className="text-xs font-semibold text-foreground/80">Currency &amp; Amount</TableHead>
-                <TableHead className="text-xs font-semibold text-foreground/80">Prepared By</TableHead>
+                <TableHead className="text-xs font-semibold text-foreground/80">Proyek / Deskripsi</TableHead>
+                <TableHead className="text-xs font-semibold text-foreground/80">Mata Uang &amp; Jumlah</TableHead>
+                <TableHead className="text-xs font-semibold text-foreground/80">Diajukan Oleh</TableHead>
                 <TableHead className="text-xs font-semibold text-foreground/80">Status</TableHead>
-                <TableHead className="text-xs font-semibold text-foreground/80 text-right pr-5">Action</TableHead>
+                <TableHead className="text-xs font-semibold text-foreground/80 text-right pr-5">Aksi</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -1631,7 +1631,7 @@ export const CSLExpenseApproval: React.FC<CSLExpenseApprovalProps> = ({ currentU
                     onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                     disabled={currentPage === 1}
                     className="h-7 w-7 rounded-md border border-border/60 flex items-center justify-center text-muted-foreground hover:bg-muted/50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                    aria-label="Previous page"
+                    aria-label="Halaman sebelumnya"
                   >
                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M7.5 2L4 6l3.5 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
                   </button>
@@ -1652,7 +1652,7 @@ export const CSLExpenseApproval: React.FC<CSLExpenseApprovalProps> = ({ currentU
                     onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                     disabled={currentPage === totalPages}
                     className="h-7 w-7 rounded-md border border-border/60 flex items-center justify-center text-muted-foreground hover:bg-muted/50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                    aria-label="Next page"
+                    aria-label="Halaman berikutnya"
                   >
                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 2L8 6l-3.5 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
                   </button>

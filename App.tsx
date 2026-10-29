@@ -1002,7 +1002,15 @@ const DashboardLayout: React.FC<any & { children?: React.ReactNode }> = ({
                   <ChevronRight size={13} />
                 </BreadcrumbSeparator>
                 <BreadcrumbItem>
-                  <BreadcrumbPage className="text-[13px] font-medium capitalize text-foreground/80">{currentView.replace(/-/g, ' ')}</BreadcrumbPage>
+                  <BreadcrumbPage className="text-[13px] font-medium text-foreground/80">
+                    {(() => {
+                      if (!currentView || currentView === 'dashboard') return 'Dashboard';
+                      const match = APP_MENU_STRUCTURE.find(m => m.id === currentView);
+                      if (match) return match.label;
+                      if (currentView === 'profile') return 'Profil Pengguna';
+                      return currentView.replace(/-/g, ' ');
+                    })()}
+                  </BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>

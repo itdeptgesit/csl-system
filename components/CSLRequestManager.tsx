@@ -79,13 +79,27 @@ const CHAT_ATTACHMENT_ACCEPT = '.pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png';
 const CHAT_ATTACHMENT_EXTENSIONS = new Set(['pdf', 'doc', 'docx', 'xls', 'xlsx', 'jpg', 'jpeg', 'png']);
 
 // ── SLA & Status Styling (Modern Informative Badge Style) ───────────────
+export function computeRequestProgress(req: { progress?: number | null; status?: string }): number {
+  const status = (req.status || '').toUpperCase();
+  if (status === 'COMPLETED' || status === 'CLOSED') return 100;
+  if (typeof req.progress === 'number' && req.progress > 0) {
+    return Math.min(100, Math.max(0, req.progress));
+  }
+  // Standard lifecycle progress defaults
+  if (status === 'REVIEW_USER' || status === 'IN_REVIEW') return 75;
+  if (status === 'PROCESSING') return 50;
+  if (status === 'SUBMITTED') return 15;
+  if (status === 'REJECTED') return 100;
+  return 15;
+}
+
 const SLA_BADGE: Record<SLAStatus, { label: string; className: string }> = {
-  ON_TRACK: { label: 'On Track', className: 'border-emerald-500/20 text-emerald-700 dark:text-emerald-300 bg-emerald-500/10' },
-  DUE_SOON: { label: 'Due Soon', className: 'border-amber-500/20 text-amber-700 dark:text-amber-300 bg-amber-500/10 font-medium' },
-  DUE_TODAY: { label: 'Due Today', className: 'border-orange-500/30 text-orange-700 dark:text-orange-300 bg-orange-500/15 font-semibold' },
-  OVERDUE: { label: 'Overdue', className: 'border-rose-500/30 bg-rose-500/15 text-rose-700 dark:text-rose-300 font-semibold' },
-  COMPLETED_ON_TIME: { label: 'Completed ✓', className: 'border-emerald-500/20 text-emerald-700 dark:text-emerald-300 bg-emerald-500/10' },
-  COMPLETED_LATE: { label: 'Completed Late', className: 'border-zinc-500/20 text-zinc-600 dark:text-zinc-400 bg-zinc-500/10' },
+  ON_TRACK: { label: 'Sesuai Jadwal', className: 'border-emerald-500/20 text-emerald-700 dark:text-emerald-300 bg-emerald-500/10' },
+  DUE_SOON: { label: 'Mendekati Tenggat', className: 'border-amber-500/20 text-amber-700 dark:text-amber-300 bg-amber-500/10 font-medium' },
+  DUE_TODAY: { label: 'Jatuh Tempo Hari Ini', className: 'border-orange-500/30 text-orange-700 dark:text-orange-300 bg-orange-500/15 font-semibold' },
+  OVERDUE: { label: 'Lewat Tenggat', className: 'border-rose-500/30 bg-rose-500/15 text-rose-700 dark:text-rose-300 font-semibold' },
+  COMPLETED_ON_TIME: { label: 'Selesai ✓', className: 'border-emerald-500/20 text-emerald-700 dark:text-emerald-300 bg-emerald-500/10' },
+  COMPLETED_LATE: { label: 'Selesai Terlambat', className: 'border-zinc-500/20 text-zinc-600 dark:text-zinc-400 bg-zinc-500/10' },
 };
 
 const STATUS_BADGE: Record<string, string> = {
@@ -105,8 +119,21 @@ const PRIORITY_BADGE: Record<string, string> = {
   Critical: 'border-rose-500/30 text-rose-700 dark:text-rose-300 bg-rose-500/15 font-semibold',
 };
 
+const STATUS_LABELS_ID: Record<string, string> = {
+  SUBMITTED: 'Diajukan',
+  PROCESSING: 'Diproses',
+  REVIEW_USER: 'Review Pemohon',
+  IN_REVIEW: 'Dalam Review',
+  COMPLETED: 'Selesai',
+  CLOSED: 'Ditutup',
+  REJECTED: 'Ditolak',
+  DRAFT: 'Draf',
+};
+
 const formatStatusText = (status: string) => {
   if (!status) return '';
+  const upper = status.toUpperCase();
+  if (STATUS_LABELS_ID[upper]) return STATUS_LABELS_ID[upper];
   return status
     .split('_')
     .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
@@ -1085,7 +1112,7 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                 const requestDate = new Date(req.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
                 const catName = categories.find(c => c.id === req.category_id)?.name || req.category_name || 'Permintaan';
                 const getInitials = (name: string) => name.replace(/(Adv\.|S\.H\.|M\.H\.|Dra\.|PT)/gi, '').trim().substring(0, 2).toUpperCase();
-                const progressValue = Math.min(100, Math.max(0, req.progress ?? (req.status === 'COMPLETED' ? 100 : req.status === 'REVIEW_USER' ? 80 : req.status === 'PROCESSING' ? 50 : 15)));
+                const progressValue = computeRequestProgress(req);
 
                 return (
                   <TableRow
@@ -1129,7 +1156,7 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                     <TableCell className="py-3.5">
                       <div className="min-w-0">
                         <p className="text-xs font-medium text-foreground truncate">
-                          {req.assigned_pic_name || <span className="text-muted-foreground italic">Belum di-assign</span>}
+                          {req.assigned_pic_name || <span className="text-muted-foreground italic">Belum Ditugaskan</span>}
                         </p>
                         <p className="text-[11px] text-muted-foreground truncate">
                           {req.assigned_pic_name ? 'Legal Officer' : '-'}
@@ -1153,7 +1180,7 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                           />
                         </div>
                         <div className="flex items-center justify-between gap-2 text-[10px]">
-                          <span className="text-muted-foreground truncate">Due {dueDate}</span>
+                          <span className="text-muted-foreground truncate">Tenggat: {dueDate}</span>
                           <span className={`font-medium whitespace-nowrap ${slaStatus === 'OVERDUE' ? 'text-destructive' : 'text-muted-foreground'}`}>
                             {slaBadge.label}
                           </span>
@@ -1385,7 +1412,7 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                           <span className="text-xs font-semibold text-foreground">Tahapan Pengerjaan Permintaan</span>
                         </div>
                         <span className="text-xs font-mono font-medium text-foreground bg-muted px-2.5 py-0.5 rounded border border-border/50">
-                          Progress: {selectedRequest.progress || (selectedRequest.status === 'COMPLETED' ? 100 : selectedRequest.status === 'PROCESSING' ? 60 : selectedRequest.status === 'IN_REVIEW' ? 40 : 15)}%
+                          Progress: {computeRequestProgress(selectedRequest)}%
                         </span>
                       </div>
 
@@ -1431,10 +1458,10 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                         </div>
                       </div>
 
-                      {/* PIC Legal Assigned */}
+                      {/* PIC Legal */}
                       <div className="p-3.5 rounded-xl border border-border bg-card space-y-2">
                         <div className="flex items-center justify-between text-muted-foreground">
-                          <span className="text-[11px] font-medium">PIC Legal Assigned</span>
+                          <span className="text-[11px] font-medium">PIC Legal</span>
                           <Shield size={14} />
                         </div>
                         <div>

@@ -81,29 +81,41 @@ interface CredentialItem {
 const LS_CREDENTIALS = 'csl_vault_offline_data';
 
 const CATEGORIES = [
-  'Government',
-  'Utilities',
-  'Consultant (Corporate Agent)',
-  'Other',
+  'Pemerintahan',
+  'Perbankan',
+  'Internal CSL',
+  'Konsultan & Notaris',
+  'Utilitas & Lainnya',
 ];
+
+function formatVaultCategory(cat: string) {
+  if (!cat) return 'Utilitas & Lainnya';
+  const c = cat.toLowerCase();
+  if (c.includes('pemerintah') || c.includes('government')) return 'Pemerintahan';
+  if (c.includes('perbankan') || c.includes('bank') || c.includes('finansial')) return 'Perbankan';
+  if (c.includes('internal')) return 'Internal CSL';
+  if (c.includes('konsultan') || c.includes('notaris') || c.includes('consultant')) return 'Konsultan & Notaris';
+  if (c.includes('utilit') || c.includes('other')) return 'Utilitas & Lainnya';
+  return cat;
+}
 
 // ─── Category badge styling ───────────────────────────────────────────────────
 
 function getCategoryBadgeClass(cat: string) {
-  switch (cat) {
-    case 'Pemerintahan & Regulasi':
-      return 'border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300';
-    case 'Perbankan & Finansial':
-      return 'border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300';
-    case 'Internal CSL & Grup':
-      return 'border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300';
-    case 'Notaris & Konsultan':
-      return 'border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300';
-    case 'Vendor & Utilities':
-      return 'border-cyan-200 dark:border-cyan-800 bg-cyan-50 dark:bg-cyan-950/40 text-cyan-700 dark:text-cyan-300';
-    default:
-      return 'border-border bg-muted/60 text-foreground';
+  const c = (cat || '').toLowerCase();
+  if (c.includes('pemerintah') || c.includes('government')) {
+    return 'border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300';
   }
+  if (c.includes('perbankan') || c.includes('bank') || c.includes('finansial')) {
+    return 'border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300';
+  }
+  if (c.includes('internal')) {
+    return 'border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300';
+  }
+  if (c.includes('konsultan') || c.includes('notaris') || c.includes('consultant')) {
+    return 'border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300';
+  }
+  return 'border-cyan-200 dark:border-cyan-800 bg-cyan-50 dark:bg-cyan-950/40 text-cyan-700 dark:text-cyan-300';
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -456,12 +468,14 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
 
   // — Filtered list
   const filtered = useMemo(() => credentials.filter(item => {
-    const catOk = activeCat === 'Semua' || item.category === activeCat;
+    const formattedCat = formatVaultCategory(item.category);
+    const catOk = activeCat === 'Semua' || formattedCat === activeCat;
     const q = searchTerm.toLowerCase();
     const searchOk = !q ||
       item.title.toLowerCase().includes(q) ||
       (item.website_url || '').toLowerCase().includes(q) ||
       (item.category || '').toLowerCase().includes(q) ||
+      formattedCat.toLowerCase().includes(q) ||
       (item.decrypted?.nama_pt || '').toLowerCase().includes(q) ||
       (item.decrypted?.username || '').toLowerCase().includes(q) ||
       (item.decrypted?.notes || '').toLowerCase().includes(q);
@@ -474,13 +488,13 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
     return (
       <div className="space-y-6 animate-in fade-in duration-500 pb-12">
         <PageHeader
-          title="Credential Vault"
+          title="Credentials Vault"
           description="Penyimpanan akun & password bersama untuk seluruh Staff CSL dan Admin dengan enkripsi AES-256-GCM"
         />
         <div className="flex items-center justify-center min-h-[300px]">
           <div className="flex flex-col items-center gap-3 text-muted-foreground">
             <Loader2 className="h-8 w-8 animate-spin" />
-            <p className="text-sm font-medium">Memuat Credential Vault...</p>
+            <p className="text-sm font-medium">Memuat Credentials Vault...</p>
           </div>
         </div>
       </div>
@@ -492,7 +506,7 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-12">
       <PageHeader
-        title="Credential Vault"
+        title="Credentials Vault"
         description="Kelola akun & password bersama tim CSL secara terenkripsi AES-256-GCM. Akses & input bersama untuk seluruh Staff CSL dan Admin."
       >
         <div className="flex flex-wrap items-center gap-2">
@@ -533,9 +547,9 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
           { label: 'Total Akun', value: credentials.length, icon: Key },
-          { label: 'Pemerintahan', value: credentials.filter(c => c.category === 'Pemerintahan & Regulasi').length, icon: Globe },
-          { label: 'Perbankan', value: credentials.filter(c => c.category === 'Perbankan & Finansial').length, icon: ShieldCheck },
-          { label: 'Internal CSL', value: credentials.filter(c => c.category === 'Internal CSL & Grup').length, icon: KeyRound },
+          { label: 'Pemerintahan', value: credentials.filter(c => formatVaultCategory(c.category) === 'Pemerintahan').length, icon: Globe },
+          { label: 'Perbankan', value: credentials.filter(c => formatVaultCategory(c.category) === 'Perbankan').length, icon: ShieldCheck },
+          { label: 'Internal CSL', value: credentials.filter(c => formatVaultCategory(c.category) === 'Internal CSL').length, icon: KeyRound },
         ].map(({ label, value, icon: Icon }) => (
           <div key={label} className="bg-card border border-border/40 p-5 rounded-lg shadow-sm flex flex-col justify-between hover:border-border/80 transition-colors">
             <div className="flex items-center justify-between">
@@ -568,7 +582,7 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
                 className={`inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-xs font-medium transition-all ${activeCat === cat ? 'bg-background text-foreground shadow-sm' : 'hover:text-foreground'
                   }`}
               >
-                {cat === 'Semua' ? `Semua (${credentials.length})` : cat.split(' ')[0]}
+                {cat === 'Semua' ? `Semua (${credentials.length})` : cat}
               </button>
             ))}
           </div>
@@ -698,7 +712,7 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
                     <div className="flex items-start justify-between gap-2">
                       <h3 className="font-semibold text-sm text-foreground leading-tight truncate">{item.title}</h3>
                       <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium whitespace-nowrap shrink-0 ${getCategoryBadgeClass(item.category)}`}>
-                        {item.category.split(' ')[0]}
+                        {formatVaultCategory(item.category)}
                       </span>
                     </div>
                     {item.website_url ? (
@@ -851,7 +865,7 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
                         </span>
                       ) : (
                         <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium ${getCategoryBadgeClass(item.category)}`}>
-                          {item.category.split(' ')[0]}
+                          {formatVaultCategory(item.category)}
                         </span>
                       )}
                     </TableCell>

@@ -39,11 +39,29 @@ export interface OffshoreEntity {
   registeredAgent: string;
   renewalDueDate: string; // e.g. '2026-05-31'
   licenseFeeUsd: number;
-  status: 'Aktif' | 'Segera Jatuh Tempo' | 'Proses Renewal' | 'Nonaktif';
+  status: 'Aktif' | 'Segera Jatuh Tempo' | 'Lewat Jatuh Tempo' | 'Proses Renewal' | 'Nonaktif';
   goodStandingExpiry?: string;
   economicSubstanceStatus: 'Compliant' | 'Exempt' | 'Pending Filing';
   pic: string;
   notes?: string;
+}
+
+export type OffshoreStatus = 'Aktif' | 'Segera Jatuh Tempo' | 'Lewat Jatuh Tempo' | 'Proses Renewal' | 'Nonaktif';
+
+export function getDerivedOffshoreStatus(item: OffshoreEntity): OffshoreStatus {
+  if (item.status === 'Nonaktif') return 'Nonaktif';
+  if (item.status === 'Proses Renewal') return 'Proses Renewal';
+  if (!item.renewalDueDate) return (item.status as OffshoreStatus) || 'Aktif';
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const due = new Date(item.renewalDueDate);
+  due.setHours(0, 0, 0, 0);
+
+  const diffDays = Math.ceil((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  if (diffDays < 0) return 'Lewat Jatuh Tempo';
+  if (diffDays <= 60) return 'Segera Jatuh Tempo';
+  return 'Aktif';
 }
 
 const INITIAL_OFFSHORE_DATA: OffshoreEntity[] = [
@@ -191,8 +209,9 @@ export const CSLOffshoreTracker: React.FC<{ currentUser?: UserAccount | null }> 
   // Filtered List
   const filteredData = useMemo(() => {
     return data.filter((item) => {
+      const derivedStatus = getDerivedOffshoreStatus(item);
       const matchesJurisdiction = selectedJurisdiction === 'all' || item.jurisdiction === selectedJurisdiction;
-      const matchesStatus = selectedStatus === 'all' || item.status === selectedStatus;
+      const matchesStatus = selectedStatus === 'all' || derivedStatus === selectedStatus;
       const query = searchQuery.toLowerCase().trim();
       const matchesSearch =
         !query ||
@@ -208,12 +227,13 @@ export const CSLOffshoreTracker: React.FC<{ currentUser?: UserAccount | null }> 
   // KPIs
   const kpis = useMemo(() => {
     const total = data.length;
-    const aktif = data.filter((i) => i.status === 'Aktif').length;
-    const segera = data.filter((i) => i.status === 'Segera Jatuh Tempo').length;
-    const proses = data.filter((i) => i.status === 'Proses Renewal').length;
-    const nonaktif = data.filter((i) => i.status === 'Nonaktif').length;
-    const totalFee = data.filter((i) => i.status !== 'Nonaktif').reduce((sum, i) => sum + (i.licenseFeeUsd || 0), 0);
-    return { total, aktif, segera, proses, nonaktif, totalFee };
+    const aktif = data.filter((i) => getDerivedOffshoreStatus(i) === 'Aktif').length;
+    const segera = data.filter((i) => getDerivedOffshoreStatus(i) === 'Segera Jatuh Tempo').length;
+    const lewat = data.filter((i) => getDerivedOffshoreStatus(i) === 'Lewat Jatuh Tempo').length;
+    const proses = data.filter((i) => getDerivedOffshoreStatus(i) === 'Proses Renewal').length;
+    const nonaktif = data.filter((i) => getDerivedOffshoreStatus(i) === 'Nonaktif').length;
+    const totalFee = data.filter((i) => getDerivedOffshoreStatus(i) !== 'Nonaktif').reduce((sum, i) => sum + (i.licenseFeeUsd || 0), 0);
+    return { total, aktif, segera, lewat, proses, nonaktif, totalFee };
   }, [data]);
 
   // Export
@@ -226,7 +246,7 @@ export const CSLOffshoreTracker: React.FC<{ currentUser?: UserAccount | null }> 
       'Registered Agent': d.registeredAgent,
       'Jatuh Tempo Perpanjangan': d.renewalDueDate,
       'Biaya Tahunan (USD)': d.licenseFeeUsd,
-      Status: d.status,
+      Status: getDerivedOffshoreStatus(d),
       'Economic Substance': d.economicSubstanceStatus,
       'Good Standing Valid': d.goodStandingExpiry || '-',
       PIC: d.pic,
@@ -286,6 +306,13 @@ export const CSLOffshoreTracker: React.FC<{ currentUser?: UserAccount | null }> 
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[#fdf2dc] border border-[#f0dcab] text-[#a86e12]">
             <span className="size-1.5 rounded-full bg-[#a86e12]" />
             Segera Jatuh Tempo
+          </span>
+        );
+      case 'Lewat Jatuh Tempo':
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[#fdecea] border border-[#f6cfc9] text-[#cf3527]">
+            <span className="size-1.5 rounded-full bg-[#cf3527]" />
+            Lewat Tenggat
           </span>
         );
       case 'Proses Renewal':
@@ -379,15 +406,15 @@ export const CSLOffshoreTracker: React.FC<{ currentUser?: UserAccount | null }> 
 
         <div className="p-4 rounded-2xl bg-white border border-[#e6e9f0] shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between text-[#758196] mb-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider">Segera Jatuh Tempo</span>
-            <AlertTriangle className={`size-4 ${kpis.segera > 0 ? 'text-[#a86e12]' : 'text-[#758196]'}`} />
+            <span className="text-[11px] font-bold uppercase tracking-wider">Perlu Perhatian</span>
+            <AlertTriangle className={`size-4 ${(kpis.segera + kpis.lewat) > 0 ? 'text-[#cf3527]' : 'text-[#758196]'}`} />
           </div>
           <div>
-            <div className={`text-2xl font-bold font-mono ${kpis.segera > 0 ? 'text-[#a86e12]' : 'text-[#0a2540]'}`}>
-              {kpis.segera} Entitas
+            <div className={`text-2xl font-bold font-mono ${(kpis.segera + kpis.lewat) > 0 ? 'text-[#cf3527]' : 'text-[#0a2540]'}`}>
+              {kpis.segera + kpis.lewat} Entitas
             </div>
             <div className="text-[11px] text-[#758196] font-medium mt-0.5">
-              Perlu pembayaran licence fee
+              {kpis.lewat > 0 ? `${kpis.lewat} lewat tenggat, ${kpis.segera} segera` : `${kpis.segera} segera jatuh tempo`}
             </div>
           </div>
         </div>
@@ -417,6 +444,7 @@ export const CSLOffshoreTracker: React.FC<{ currentUser?: UserAccount | null }> 
               { id: 'all', label: 'Semua Status' },
               { id: 'Aktif', label: 'Aktif' },
               { id: 'Segera Jatuh Tempo', label: 'Segera Jatuh Tempo' },
+              { id: 'Lewat Jatuh Tempo', label: 'Lewat Tenggat' },
               { id: 'Proses Renewal', label: 'Proses Renewal' },
               { id: 'Nonaktif', label: 'Nonaktif' },
             ].map((chip) => (
@@ -496,7 +524,7 @@ export const CSLOffshoreTracker: React.FC<{ currentUser?: UserAccount | null }> 
                     <td className="py-3.5 px-4 font-mono font-bold text-[#16233a]">
                       ${item.licenseFeeUsd.toLocaleString()}
                     </td>
-                    <td className="py-3.5 px-4">{getStatusBadge(item.status)}</td>
+                    <td className="py-3.5 px-4">{getStatusBadge(getDerivedOffshoreStatus(item))}</td>
                     <td className="py-3.5 px-4 font-medium text-[#16233a]">{item.pic}</td>
                     <td className="py-3.5 px-4 text-right">
                       <span className="inline-flex items-center text-xs font-bold text-[#2f6bff] group-hover:underline">
@@ -538,7 +566,7 @@ export const CSLOffshoreTracker: React.FC<{ currentUser?: UserAccount | null }> 
               <div className="grid grid-cols-2 gap-3 p-3.5 rounded-xl bg-[#f8f9fc] border border-[#e6e9f0]">
                 <div>
                   <span className="text-[10px] font-bold uppercase text-[#758196]">Status Legalitas</span>
-                  <div className="mt-1">{getStatusBadge(selectedItem.status)}</div>
+                  <div className="mt-1">{getStatusBadge(getDerivedOffshoreStatus(selectedItem))}</div>
                 </div>
                 <div>
                   <span className="text-[10px] font-bold uppercase text-[#758196]">Tenggat Perpanjangan</span>

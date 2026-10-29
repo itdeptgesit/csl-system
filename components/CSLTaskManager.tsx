@@ -121,49 +121,49 @@ interface RupsItem {
 }
 
 const DUMMY_RUPS_AR: RupsItem[] = [
-  { id: 1, company: 'Alakasa Alumina Refineri', status: 'Completed', owner: 'Desi Rahmuni', startDate: '', finishDate: '', notes: 'Akta No..... tgl ....' },
-  { id: 2, company: 'Alakasa Extrusindo', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/10/2026', notes: 'Akta No..... tgl ....' },
-  { id: 3, company: 'Alakasa Industrindo Tbk', status: 'Completed', owner: 'Desi Rahmuni', startDate: '', finishDate: '', notes: 'Akta No..... tgl ....' },
-  { id: 4, company: 'Alka Niaga Industri', status: 'Completed', owner: 'Desi Rahmuni', startDate: '', finishDate: '', notes: 'Akta No..... tgl ....' },
-  { id: 5, company: 'Arjuna Bumi Cahaya', status: 'Completed', owner: 'Desi Rahmuni', startDate: '', finishDate: '', notes: 'Akta No..... tgl ....' },
-  { id: 6, company: 'Bahana Cipta Permai', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/23/2026', notes: 'Akta No..... tgl ....' },
-  { id: 7, company: 'Bumi Grafika Jaya', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/24/2026', notes: 'Akta No..... tgl ....' },
-  { id: 8, company: 'Catur Boga Pratama', status: 'Not started', owner: 'Sylvia', startDate: '', finishDate: '', notes: 'non-active' },
-  { id: 9, company: 'DA International', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/22/2026', notes: 'Akta No..... tgl ....' },
-  { id: 10, company: 'Dharma Alumas Sakti', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/10/2026', notes: 'Akta No..... tgl ....' },
-  { id: 11, company: 'Gesit Alumas', status: 'Blocked', owner: 'Sylvia', startDate: '', finishDate: '', notes: 'Case AHU terblokir sejak 2023, proses mencari solusinya by YA & CA' },
-  { id: 12, company: 'Gesit Bumi Persada', status: 'Completed', owner: 'Desi Rahmuni', startDate: '', finishDate: '', notes: 'Akta No..... tgl ....' },
-  { id: 13, company: 'Gesit Graha', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/23/2026', notes: 'Akta No..... tgl ....' },
-  { id: 14, company: 'Gesit Intrade', status: 'Completed', owner: 'Desi Rahmuni', startDate: '', finishDate: '7/28/2026', notes: 'Akta No..... tgl ....' },
-  { id: 15, company: 'Gesit Makmur Utama', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '8/3/2026', notes: 'Akta No..... tgl ....' },
-  { id: 16, company: 'Gesit Maju', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/23/2026', notes: 'Akta No..... tgl ....' },
-  { id: 17, company: 'Gesit Perkasa', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/23/2026', notes: 'Akta No..... tgl ....' },
-  { id: 18, company: 'HTT Sarana Perkasa', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/10/2026', notes: 'Akta No..... tgl ....' },
-  { id: 19, company: 'Jaya Mitra Investasi', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/10/2026', notes: 'Akta No..... tgl ....' },
-  { id: 20, company: 'Jaya Sejahtera Investasi', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/10/2026', notes: 'Akta No..... tgl ....' },
-  { id: 21, company: 'Jaya Sudirman Mandiri', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/23/2026', notes: 'Akta No..... tgl ....' },
-  { id: 22, company: 'Jaya Sudirman Perkasa', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/23/2026', notes: 'Akta No..... tgl ....' },
-  { id: 23, company: 'JSAlu Investasi Pratama', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/22/2026', notes: 'Akta No..... tgl ....' },
-  { id: 24, company: 'JSGlobal Mineral Energi', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/22/2026', notes: 'Akta No..... tgl ....' },
-  { id: 25, company: 'JSCapital Investasi Gesit', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/17/2026', notes: 'Akta No..... tgl ....' },
-  { id: 26, company: 'JSGlobal Energi Pratama', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/22/2026', notes: 'Akta No..... tgl ....' },
-  { id: 27, company: 'JSGlobal Logistik Energi', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/22/2026', notes: 'Akta No..... tgl ....' },
-  { id: 28, company: 'Kalimantan Industri Terpadu', status: 'Completed', owner: 'Desi Rahmuni', startDate: '', finishDate: '', notes: 'diproses oleh legal GNR' },
-  { id: 29, company: 'Lima Garda Sakti', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/23/2026', notes: 'Akta No..... tgl ....' },
-  { id: 30, company: 'Lima Sudirman Perkasa', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/23/2026', notes: 'Akta No..... tgl ....' },
-  { id: 31, company: 'Mitra Harapan Karya Utama', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/10/2026', notes: 'Akta No..... tgl ....' },
-  { id: 32, company: 'Mitra Harapan Sakti', status: 'Completed', owner: 'Desi Rahmuni', startDate: '', finishDate: '', notes: 'Akta No..... tgl ....' },
-  { id: 33, company: 'Mitra Senayan Sejati', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/22/2026', notes: 'Akta No..... tgl ....' },
-  { id: 34, company: 'Mitra Sudirman Lestari', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/10/2026', notes: 'Akta No..... tgl ....' },
-  { id: 35, company: 'Mitra Sudirman Mandiri', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/10/2026', notes: 'Akta No..... tgl ....' },
-  { id: 36, company: 'Prodas Perdana', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/10/2026', notes: 'Akta No..... tgl ....' },
-  { id: 37, company: 'Sembilan Empat Investama', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/10/2026', notes: 'Akta No..... tgl ....' },
-  { id: 38, company: 'Sinar Bangsa', status: 'Not started', owner: 'Sylvia', startDate: '', finishDate: '', notes: 'Belum ada keputusan dari owner (sudah 3rd Reminder)' },
-  { id: 39, company: 'Sircon Development', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/23/2026', notes: '' },
-  { id: 40, company: 'Sircon Griya Jaya', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/17/2026', notes: '' },
-  { id: 41, company: 'Sircon Investment', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/17/2026', notes: '' },
-  { id: 42, company: 'Terra Makmur Sarana', status: 'Completed', owner: 'Sylvia', startDate: '', finishDate: '7/10/2026', notes: '' },
-  { id: 43, company: 'Trinitas Investment', status: 'Not started', owner: 'Sylvia', startDate: '', finishDate: '', notes: 'Belum ada keputusan dari Management (sudah 3rd Reminder)' },
+  { id: 1, company: 'Alakasa Alumina Refineri', status: 'Completed', stage: 'Selesai', owner: 'Desi Rahmuni', startDate: '', finishDate: '', notes: '' },
+  { id: 2, company: 'Alakasa Extrusindo', status: 'Completed', stage: 'Selesai', owner: 'Sylvia', startDate: '', finishDate: '7/10/2026', notes: '' },
+  { id: 3, company: 'Alakasa Industrindo Tbk', status: 'Completed', stage: 'Selesai', owner: 'Desi Rahmuni', startDate: '', finishDate: '', notes: '' },
+  { id: 4, company: 'Alka Niaga Industri', status: 'Completed', stage: 'Selesai', owner: 'Desi Rahmuni', startDate: '', finishDate: '', notes: '' },
+  { id: 5, company: 'Arjuna Bumi Cahaya', status: 'Completed', stage: 'Selesai', owner: 'Desi Rahmuni', startDate: '', finishDate: '', notes: '' },
+  { id: 6, company: 'Bahana Cipta Permai', status: 'Completed', stage: 'Selesai', owner: 'Sylvia', startDate: '', finishDate: '7/23/2026', notes: '' },
+  { id: 7, company: 'Bumi Grafika Jaya', status: 'Completed', stage: 'Selesai', owner: 'Sylvia', startDate: '', finishDate: '7/24/2026', notes: '' },
+  { id: 8, company: 'Catur Boga Pratama', status: 'Not started', stage: 'Drafting', owner: 'Sylvia', startDate: '', finishDate: '', notes: '' },
+  { id: 9, company: 'DA International', status: 'Completed', stage: 'Selesai', owner: 'Sylvia', startDate: '', finishDate: '7/22/2026', notes: '' },
+  { id: 10, company: 'Dharma Alumas Sakti', status: 'Completed', stage: 'Selesai', owner: 'Sylvia', startDate: '', finishDate: '7/10/2026', notes: '' },
+  { id: 11, company: 'Gesit Alumas', status: 'Blocked', stage: 'Drafting', owner: 'Sylvia', startDate: '', finishDate: '', notes: 'Case AHU terblokir sejak 2023, proses mencari solusinya by YA & CA' },
+  { id: 12, company: 'Gesit Bumi Persada', status: 'Completed', stage: 'Selesai', owner: 'Desi Rahmuni', startDate: '', finishDate: '', notes: '' },
+  { id: 13, company: 'Gesit Graha', status: 'Completed', stage: 'Selesai', owner: 'Sylvia', startDate: '', finishDate: '7/23/2026', notes: '' },
+  { id: 14, company: 'Gesit Intrade', status: 'Completed', stage: 'Selesai', owner: 'Desi Rahmuni', startDate: '', finishDate: '7/28/2026', notes: '' },
+  { id: 15, company: 'Gesit Makmur Utama', status: 'Completed', stage: 'Selesai', owner: 'Sylvia', startDate: '', finishDate: '8/3/2026', notes: '' },
+  { id: 16, company: 'Gesit Maju', status: 'Completed', stage: 'Selesai', owner: 'Sylvia', startDate: '', finishDate: '7/23/2026', notes: '' },
+  { id: 17, company: 'Gesit Perkasa', status: 'Completed', stage: 'Selesai', owner: 'Sylvia', startDate: '', finishDate: '7/23/2026', notes: '' },
+  { id: 18, company: 'HTT Sarana Perkasa', status: 'Completed', stage: 'Selesai', owner: 'Sylvia', startDate: '', finishDate: '7/10/2026', notes: '' },
+  { id: 19, company: 'Jaya Mitra Investasi', status: 'Completed', stage: 'Selesai', owner: 'Sylvia', startDate: '', finishDate: '7/10/2026', notes: '' },
+  { id: 20, company: 'Jaya Sejahtera Investasi', status: 'Completed', stage: 'Selesai', owner: 'Sylvia', startDate: '', finishDate: '7/10/2026', notes: '' },
+  { id: 21, company: 'Jaya Sudirman Mandiri', status: 'Completed', stage: 'Selesai', owner: 'Sylvia', startDate: '', finishDate: '7/23/2026', notes: '' },
+  { id: 22, company: 'Jaya Sudirman Perkasa', status: 'Completed', stage: 'Selesai', owner: 'Sylvia', startDate: '', finishDate: '7/23/2026', notes: '' },
+  { id: 23, company: 'JSAlu Investasi Pratama', status: 'Completed', stage: 'Selesai', owner: 'Sylvia', startDate: '', finishDate: '7/22/2026', notes: '' },
+  { id: 24, company: 'JSGlobal Mineral Energi', status: 'Completed', stage: 'Selesai', owner: 'Sylvia', startDate: '', finishDate: '7/22/2026', notes: '' },
+  { id: 25, company: 'JSCapital Investasi Gesit', status: 'Completed', stage: 'Selesai', owner: 'Sylvia', startDate: '', finishDate: '7/17/2026', notes: '' },
+  { id: 26, company: 'JSGlobal Energi Pratama', status: 'Completed', stage: 'Selesai', owner: 'Sylvia', startDate: '', finishDate: '7/22/2026', notes: '' },
+  { id: 27, company: 'JSGlobal Logistik Energi', status: 'Completed', stage: 'Selesai', owner: 'Sylvia', startDate: '', finishDate: '7/22/2026', notes: '' },
+  { id: 28, company: 'Kalimantan Industri Terpadu', status: 'Completed', stage: 'Selesai', owner: 'Desi Rahmuni', startDate: '', finishDate: '', notes: 'diproses oleh legal GNR' },
+  { id: 29, company: 'Lima Garda Sakti', status: 'Completed', stage: 'Selesai', owner: 'Sylvia', startDate: '', finishDate: '7/23/2026', notes: '' },
+  { id: 30, company: 'Lima Sudirman Perkasa', status: 'Completed', stage: 'Selesai', owner: 'Sylvia', startDate: '', finishDate: '7/23/2026', notes: '' },
+  { id: 31, company: 'Mitra Harapan Karya Utama', status: 'Completed', stage: 'Selesai', owner: 'Sylvia', startDate: '', finishDate: '7/10/2026', notes: '' },
+  { id: 32, company: 'Mitra Harapan Sakti', status: 'Completed', stage: 'Selesai', owner: 'Desi Rahmuni', startDate: '', finishDate: '', notes: '' },
+  { id: 33, company: 'Mitra Senayan Sejati', status: 'Completed', stage: 'Selesai', owner: 'Sylvia', startDate: '', finishDate: '7/22/2026', notes: '' },
+  { id: 34, company: 'Mitra Sudirman Lestari', status: 'Completed', stage: 'Selesai', owner: 'Sylvia', startDate: '', finishDate: '7/10/2026', notes: '' },
+  { id: 35, company: 'Mitra Sudirman Mandiri', status: 'Completed', stage: 'Selesai', owner: 'Sylvia', startDate: '', finishDate: '7/10/2026', notes: '' },
+  { id: 36, company: 'Prodas Perdana', status: 'Completed', stage: 'Selesai', owner: 'Sylvia', startDate: '', finishDate: '7/10/2026', notes: '' },
+  { id: 37, company: 'Sembilan Empat Investama', status: 'Completed', stage: 'Selesai', owner: 'Sylvia', startDate: '', finishDate: '7/10/2026', notes: '' },
+  { id: 38, company: 'Sinar Bangsa', status: 'Not started', stage: 'Drafting', owner: 'Sylvia', startDate: '', finishDate: '', notes: 'Belum ada keputusan dari owner (sudah 3rd Reminder)' },
+  { id: 39, company: 'Sircon Development', status: 'Completed', stage: 'Selesai', owner: 'Sylvia', startDate: '', finishDate: '7/23/2026', notes: '' },
+  { id: 40, company: 'Sircon Griya Jaya', status: 'Completed', stage: 'Selesai', owner: 'Sylvia', startDate: '', finishDate: '7/17/2026', notes: '' },
+  { id: 41, company: 'Sircon Investment', status: 'Completed', stage: 'Selesai', owner: 'Sylvia', startDate: '', finishDate: '7/17/2026', notes: '' },
+  { id: 42, company: 'Terra Makmur Sarana', status: 'Completed', stage: 'Selesai', owner: 'Sylvia', startDate: '', finishDate: '7/10/2026', notes: '' },
+  { id: 43, company: 'Trinitas Investment', status: 'Not started', stage: 'Drafting', owner: 'Sylvia', startDate: '', finishDate: '', notes: 'Belum ada keputusan dari Management (sudah 3rd Reminder)' },
   { id: 44, company: 'Andalas Inti Mulia', status: '', owner: 'Desi Rahmuni', startDate: '', finishDate: '', notes: '' },
   { id: 45, company: 'Baranusa Insan Gemilang', status: '', owner: 'Desi Rahmuni', startDate: '', finishDate: '', notes: '' },
   { id: 46, company: 'Bara Optima Sejahtera', status: '', owner: 'Desi Rahmuni', startDate: '', finishDate: '', notes: '' },
@@ -713,17 +713,33 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
     }
   };
 
+  const isPlaceholderText = (val?: string | null): boolean => {
+    if (!val) return true;
+    const s = val.trim().toLowerCase();
+    if (!s || s === '-' || s === '—' || s === 'none' || s === 'non-active' || s === 'n/a' || s === 'null') return true;
+    if (s.includes('akta no.....') || s.includes('.....') || s.includes('tgl ....') || s.includes('no.....')) return true;
+    return false;
+  };
+
   const handleUpdateRups = (id: number, field: string, value: string) => {
     const updaterName = currentUser?.fullName || currentUser?.email || 'User';
-    setRupsData(prev => prev.map(item => 
-      item.id === id ? { 
+    setRupsData(prev => prev.map(item => {
+      if (item.id !== id) return item;
+      const updated = { 
         ...item, 
         [field]: value, 
         updatedBy: updaterName, 
         updatedAt: new Date().toISOString() 
-      } : item
-    ));
+      };
+      if (field === 'status' && value === 'Completed' && (!item.stage || item.stage === 'Drafting')) {
+        updated.stage = 'Selesai';
+      }
+      return updated;
+    }));
     updateRupsInDb(id, field, value);
+    if (field === 'status' && value === 'Completed') {
+      updateRupsInDb(id, 'stage', 'Selesai');
+    }
   };
 
   const updateAsetInDb = (id: number, field: string, value: string) => {
@@ -1406,7 +1422,7 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
                   </TableCell>
                   <TableCell className="px-3 py-2.5">
                     <select
-                      value={item.stage || 'Drafting'}
+                      value={item.stage || (item.status === 'Completed' ? 'Selesai' : 'Drafting')}
                       onChange={(e) => handleUpdateRups(item.id, 'stage', e.target.value)}
                       className="h-7 w-full cursor-pointer appearance-none rounded-md border border-border/60 bg-transparent px-2 text-left text-[11px] font-semibold outline-none transition-colors hover:bg-muted focus:ring-2 focus:ring-ring/30"
                     >
@@ -1421,7 +1437,7 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
                     <select
                       value={item.method || 'Sirkuler'}
                       onChange={(e) => handleUpdateRups(item.id, 'method', e.target.value)}
-                      className="h-7 w-full cursor-pointer appearance-none rounded-md border border-border/60 bg-transparent px-2 text-left text-[11px] font-medium outline-none transition-colors hover:bg-muted focus:ring-2 focus:ring-ring/30"
+                      className="h-7 w-full cursor-pointer appearance-none rounded-md border border-border/60 bg-transparent px-2 text-left text-[11px] font-semibold outline-none transition-colors hover:bg-muted focus:ring-2 focus:ring-ring/30"
                     >
                       <option value="Sirkuler" className="bg-card">Sirkuler</option>
                       <option value="RUPS Fisik" className="bg-card">RUPS Fisik</option>
@@ -1461,26 +1477,26 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
                       }}
                       className="w-full text-left rounded-md px-2 py-1 hover:bg-muted/60 transition-colors border border-transparent hover:border-border/60 group flex flex-col"
                     >
-                      {item.deedNumber ? (
+                      {!isPlaceholderText(item.deedNumber) ? (
                         <span className="text-[11px] font-semibold text-foreground truncate block">
                           Akta: {item.deedNumber}
                         </span>
+                      ) : !isPlaceholderText(item.notes) ? (
+                        <span className="text-[10px] text-muted-foreground/80 truncate block max-w-[160px]">
+                          {item.notes}
+                        </span>
                       ) : (
-                        <span className="text-[11px] text-muted-foreground italic group-hover:text-foreground">
-                          + Input Akta / AHU
+                        <span className="text-[11px] text-muted-foreground/60 font-mono">
+                          —
                         </span>
                       )}
-                      {item.ahuStatus && item.ahuStatus !== 'Pending' ? (
+                      {item.ahuStatus && item.ahuStatus !== 'Pending' && !isPlaceholderText(item.ahuStatus) ? (
                         <span className={`text-[9px] font-bold uppercase mt-0.5 px-1 rounded w-fit ${
                           item.ahuStatus === 'Terbit SK' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40' :
                           item.ahuStatus === 'Blocked' ? 'bg-red-100 text-red-700 dark:bg-red-950/40' :
                           'bg-amber-100 text-amber-700 dark:bg-amber-950/40'
                         }`}>
                           AHU: {item.ahuStatus}
-                        </span>
-                      ) : item.notes ? (
-                        <span className="text-[10px] text-muted-foreground/70 truncate block max-w-[160px]">
-                          {item.notes}
                         </span>
                       ) : null}
                     </button>
