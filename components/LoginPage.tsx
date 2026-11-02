@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useTheme } from 'next-themes';
-import { AlertCircle, CheckCircle2, Loader2, Mail, Lock, Eye, EyeOff, User, UserPlus, LogIn, Shield, Globe, MailCheck, ArrowRight, RefreshCw, Sun, Moon } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Loader2, Mail, Lock, Eye, EyeOff, User, UserPlus, LogIn, Shield, Globe, MailCheck, ArrowRight, RefreshCw, Sun, Moon, KeyRound } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { sendPasswordResetNotificationEmail } from '../utils/EmailSystemUtils';
 import { isAllowedEmailDomain, ALLOWED_EMAIL_DOMAINS } from '../constants';
@@ -18,7 +18,7 @@ interface LoginPageProps {
 const ALLOWED_DOMAINS = ALLOWED_EMAIL_DOMAINS;
 const isAllowedDomain = isAllowedEmailDomain;
 
-type Mode = 'login' | 'register' | 'reset' | 'email-sent';
+type Mode = 'login' | 'register' | 'reset' | 'verify-otp';
 
 export const LoginPage: React.FC<LoginPageProps> = ({
     onLogin,
@@ -29,6 +29,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({
     const [mounted, setMounted] = useState(false);
     const [mode, setMode] = useState<Mode>('login');
     const [registeredEmail, setRegisteredEmail] = useState('');
+    const [otpCode, setOtpCode] = useState('');
+    const [resendCountdown, setResendCountdown] = useState(0);
     const [identifier, setIdentifier] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -42,6 +44,14 @@ export const LoginPage: React.FC<LoginPageProps> = ({
     useEffect(() => {
         setMounted(true);
     }, []);
+
+    useEffect(() => {
+        if (resendCountdown <= 0) return;
+        const timer = setInterval(() => {
+            setResendCountdown(prev => prev - 1);
+        }, 1000);
+        return () => clearInterval(timer);
+    }, [resendCountdown]);
 
     const isDark = mounted && (resolvedTheme === 'dark' || theme === 'dark');
 
@@ -99,10 +109,70 @@ export const LoginPage: React.FC<LoginPageProps> = ({
             });
             if (signUpErr) throw signUpErr;
             setRegisteredEmail(email);
-            setMode('email-sent');
-            setPassword(''); setFullName(''); setConfirmPassword('');
+            setOtpCode('');
+            setResendCountdown(60);
+            setSuccessMsg('Kode verifikasi telah dikirimkan ke email Anda.');
+            setMode('verify-otp');
+            setPassword(''); setConfirmPassword('');
         } catch (err: any) { setError(err.message || 'Pendaftaran gagal.'); }
         finally { setIsLoading(false); }
+    };
+
+    const handleVerifyOtp = async (e: React.FormEvent) => {
+        e.preventDefault();
+        const cleanCode = otpCode.trim();
+        if (!cleanCode || cleanCode.length < 6) {
+            setError('Masukkan 6 digit kode verifikasi yang dikirim ke email Anda.');
+            return;
+        }
+        setIsLoading(true);
+        setError('');
+        try {
+            const { data, error: verifyErr } = await supabase.auth.verifyOtp({
+                email: registeredEmail,
+                token: cleanCode,
+                type: 'signup'
+            });
+            if (verifyErr) throw verifyErr;
+
+            if (data.session?.user?.email) {
+                onLogin(data.session.user.email);
+            } else {
+                const { data: sessionData } = await supabase.auth.getSession();
+                if (sessionData.session?.user?.email) {
+                    onLogin(sessionData.session.user.email);
+                } else {
+                    setSuccessMsg('Verifikasi berhasil! Mengalihkan ke dashboard...');
+                    setTimeout(() => onLogin(registeredEmail), 1000);
+                }
+            }
+        } catch (err: any) {
+            console.error('OTP Verification Error:', err);
+            setError(err.message || 'Kode verifikasi salah atau sudah kedaluwarsa. Silakan periksa kembali.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleResendOtp = async () => {
+        if (resendCountdown > 0 || isLoading) return;
+        setIsLoading(true);
+        setError('');
+        setSuccessMsg('');
+        try {
+            const { error: resendErr } = await supabase.auth.resend({
+                type: 'signup',
+                email: registeredEmail
+            });
+            if (resendErr) throw resendErr;
+            setSuccessMsg('Kode verifikasi baru berhasil dikirim ke email Anda.');
+            setResendCountdown(60);
+        } catch (err: any) {
+            console.error('Resend OTP Error:', err);
+            setError(err.message || 'Gagal mengirim ulang kode verifikasi.');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const handleReset = async (e: React.FormEvent) => {
@@ -247,19 +317,21 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                         {/* Access Pill Badge */}
                         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-900/40 text-[10px] font-extrabold uppercase tracking-[0.12em] mb-4">
                             <Lock size={12} className="shrink-0" />
-                            <span>Akses Internal</span>
+                            <span>{mode === 'verify-otp' ? 'Verifikasi Keamanan' : 'Akses Internal'}</span>
                         </div>
 
                         {/* Title Header */}
                         <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight">
-                            {mode === 'login' ? 'Selamat datang' : mode === 'register' ? 'Buat Akun CSL' : 'Lupa Kata Sandi'}
+                            {mode === 'login' ? 'Selamat datang' : mode === 'register' ? 'Buat Akun CSL' : mode === 'verify-otp' ? 'Verifikasi Kode' : 'Lupa Kata Sandi'}
                         </h2>
                         <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
                             {mode === 'login'
                                 ? 'Masuk dengan akun kantor untuk membuka sistem CSL.'
                                 : mode === 'register'
                                     ? `Pendaftaran terbatas untuk domain: ${ALLOWED_DOMAINS.map(d => '@' + d).join(', ')}.`
-                                    : 'Masukkan email akun Anda untuk mendapatkan tautan verifikasi.'}
+                                    : mode === 'verify-otp'
+                                        ? 'Masukkan 6 digit kode keamanan yang dikirim ke email kantor Anda.'
+                                        : 'Masukkan email akun Anda untuk mendapatkan tautan verifikasi.'}
                         </p>
 
                         {/* Alerts Banner */}
@@ -276,7 +348,85 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                             </div>
                         )}
 
-                        {/* Login Form */}
+                        {mode === 'verify-otp' ? (
+                            <form onSubmit={handleVerifyOtp} className="space-y-4 mt-6">
+                                <div className="p-3.5 rounded-2xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/50 flex items-start gap-3">
+                                    <div className="w-8 h-8 rounded-xl bg-blue-600/10 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 mt-0.5">
+                                        <MailCheck size={18} />
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Kode verifikasi dikirim ke:</p>
+                                        <p className="text-xs font-bold text-slate-900 dark:text-white truncate mt-0.5">{registeredEmail}</p>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
+                                        Kode Verifikasi (6 Digit)
+                                    </label>
+                                    <div className="relative">
+                                        <KeyRound size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                                        <input
+                                            type="text"
+                                            required
+                                            maxLength={6}
+                                            inputMode="numeric"
+                                            autoComplete="one-time-code"
+                                            autoFocus
+                                            value={otpCode}
+                                            onChange={e => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                            placeholder="123456"
+                                            className="w-full h-12 pl-12 pr-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/80 text-base tracking-[0.35em] font-mono font-extrabold text-slate-900 dark:text-white placeholder:text-slate-300 dark:placeholder:text-zinc-600 placeholder:tracking-normal focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-500/10 transition-all text-center"
+                                        />
+                                    </div>
+                                    <p className="text-[11px] text-slate-400 dark:text-slate-500">
+                                        Buka email Anda dan salin kode verifikasi 6 digit yang diterima.
+                                    </p>
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    disabled={isLoading || otpCode.trim().length < 6}
+                                    className="w-full h-12 rounded-xl bg-blue-600 text-white font-extrabold text-sm hover:bg-blue-700 active:bg-blue-800 transition-all shadow-[0_12px_24px_rgba(47,107,255,0.22)] hover:shadow-[0_16px_30px_rgba(47,107,255,0.28)] flex items-center justify-center gap-2 disabled:opacity-50 mt-3 cursor-pointer"
+                                >
+                                    {isLoading ? (
+                                        <Loader2 size={18} className="animate-spin text-white" />
+                                    ) : (
+                                        <>
+                                            <span>Verifikasi & Masuk Dashboard</span>
+                                            <ArrowRight size={16} />
+                                        </>
+                                    )}
+                                </button>
+
+                                <div className="flex items-center justify-between pt-2 text-xs">
+                                    <button
+                                        type="button"
+                                        onClick={handleResendOtp}
+                                        disabled={resendCountdown > 0 || isLoading}
+                                        className="font-bold text-blue-600 dark:text-blue-400 hover:underline disabled:text-slate-400 disabled:no-underline disabled:cursor-not-allowed flex items-center gap-1.5 cursor-pointer"
+                                    >
+                                        <RefreshCw size={13} className={isLoading ? "animate-spin" : ""} />
+                                        <span>
+                                            {resendCountdown > 0
+                                                ? `Kirim ulang (${resendCountdown}s)`
+                                                : 'Kirim Ulang Kode'}
+                                        </span>
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setIdentifier(registeredEmail);
+                                            switchMode('register');
+                                        }}
+                                        className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 font-semibold cursor-pointer"
+                                    >
+                                        Ubah Email
+                                    </button>
+                                </div>
+                            </form>
+                        ) : (
                         <form onSubmit={mode === 'login' ? handleLogin : mode === 'register' ? handleRegister : handleReset} className="space-y-4 mt-6">
                             
                             {mode === 'register' && (
@@ -394,6 +544,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                                 )}
                             </button>
                         </form>
+                        )}
 
                         {/* Google Workspace OAuth Button (Login only) */}
                         {mode === 'login' && (
@@ -423,10 +574,17 @@ export const LoginPage: React.FC<LoginPageProps> = ({
 
                         {/* Mode Switchers */}
                         <div className="mt-5 text-center text-xs font-semibold text-slate-500 dark:text-slate-400">
-                            {mode !== 'login' ? (
-                                <p>Sudah punya akun? <button onClick={() => switchMode('login')} className="text-blue-600 dark:text-blue-400 font-bold hover:underline">Masuk</button></p>
+                            {mode === 'verify-otp' ? (
+                                <p>
+                                    Sudah punya akun?{' '}
+                                    <button type="button" onClick={() => switchMode('login')} className="text-blue-600 dark:text-blue-400 font-bold hover:underline cursor-pointer">
+                                        Masuk
+                                    </button>
+                                </p>
+                            ) : mode !== 'login' ? (
+                                <p>Sudah punya akun? <button type="button" onClick={() => switchMode('login')} className="text-blue-600 dark:text-blue-400 font-bold hover:underline cursor-pointer">Masuk</button></p>
                             ) : (
-                                <p>Belum memiliki akses? <button onClick={() => switchMode('register')} className="text-blue-600 dark:text-blue-400 font-bold hover:underline">Daftar Akun</button></p>
+                                <p>Belum memiliki akses? <button type="button" onClick={() => switchMode('register')} className="text-blue-600 dark:text-blue-400 font-bold hover:underline cursor-pointer">Daftar Akun</button></p>
                             )}
                         </div>
 
