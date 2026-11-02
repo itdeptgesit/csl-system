@@ -219,7 +219,7 @@ export interface CslEmailTemplateOptions {
  * Avoids generic AI aesthetic, cheesy emojis, and tacky gradient banners.
  */
 export function buildCslEmailTemplate(options: CslEmailTemplateOptions): string {
-    const logoUrl = 'https://yihjfrxdrhkqfnjofvua.supabase.co/storage/v1/object/public/public-assets/logo.png';
+    const logoUrl = 'https://csl.gesit.co.id/image/logo.png';
     const badgeText = options.badge || 'NOTIFIKASI';
     const badgeBg = options.badgeColor ? `${options.badgeColor}22` : 'rgba(255, 255, 255, 0.12)';
     const badgeBorder = options.badgeColor ? `${options.badgeColor}55` : 'rgba(255, 255, 255, 0.22)';

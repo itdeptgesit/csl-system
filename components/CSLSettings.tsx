@@ -684,7 +684,7 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
                       <table role="presentation" cellpadding="0" cellspacing="0" border="0">
                         <tr>
                           <td style="vertical-align: middle; padding-right: 12px;">
-                            <img src="https://yihjfrxdrhkqfnjofvua.supabase.co/storage/v1/object/public/public-assets/logo.png" alt="CSL Logo" width="38" height="38" style="display: block; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2);" onerror="this.style.display='none'" />
+                            <img src="https://csl.gesit.co.id/image/logo.png" alt="CSL Logo" width="38" height="38" style="display: block; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2);" onerror="this.style.display='none'" />
                           </td>
                           <td style="vertical-align: middle;">
                             <div style="font-size: 19px; font-weight: 800; color: #ffffff; letter-spacing: 0.08em; line-height: 1;">CSL-LINK</div>
