@@ -95,7 +95,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
         setError(''); setSuccessMsg('');
         const email = identifier.trim().toLowerCase();
         if (!isAllowedDomain(email)) {
-            setError(`Pendaftaran hanya untuk domain: ${ALLOWED_DOMAINS.map(d => '@' + d).join(' & ')}`);
+            setError('Pendaftaran hanya untuk domain resmi: @gesit.co.id dan @gnr.co.id');
             return;
         }
         if (!fullName.trim()) { setError('Nama lengkap wajib diisi.'); return; }
@@ -328,7 +328,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                             {mode === 'login'
                                 ? 'Masuk dengan akun kantor untuk membuka sistem CSL.'
                                 : mode === 'register'
-                                    ? `Pendaftaran terbatas untuk domain: ${ALLOWED_DOMAINS.map(d => '@' + d).join(', ')}.`
+                                    ? 'Pendaftaran terbatas untuk domain resmi: @gesit.co.id dan @gnr.co.id.'
                                     : mode === 'verify-otp'
                                         ? 'Masukkan 6 digit kode keamanan yang dikirim ke email kantor Anda.'
                                         : 'Masukkan email akun Anda untuk mendapatkan tautan verifikasi.'}
@@ -457,7 +457,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                                         required
                                         value={identifier}
                                         onChange={e => setIdentifier(e.target.value)}
-                                        placeholder="nama@gesit.co.id"
+                                        placeholder={mode === 'register' ? 'nama@gesit.co.id / nama@gnr.co.id' : 'nama@gesit.co.id'}
                                         className="w-full h-12 pl-12 pr-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/80 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-500/10 transition-all font-medium"
                                     />
                                 </div>
