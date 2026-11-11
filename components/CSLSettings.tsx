@@ -426,7 +426,7 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
   }, []);
 
   const getResolvedGroup = (name: string, explicitGroup?: string): string => {
-    if (explicitGroup && explicitGroup.trim() && explicitGroup !== 'Holding') {
+    if (explicitGroup && explicitGroup.trim()) {
       const match = COMPANY_GROUPS.find(g => g.toLowerCase() === explicitGroup.toLowerCase().trim());
       if (match) return match;
       const eg = explicitGroup.toLowerCase();
@@ -439,6 +439,7 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
       if (eg.includes('tbk') || eg.includes('public')) return 'Public';
       if (eg.includes('yayasan') || eg.includes('found')) return 'Foundation';
       if (eg.includes('person') || eg.includes('pribadi')) return 'Personal';
+      return explicitGroup;
     }
 
     const n = (name || '').toLowerCase();
@@ -936,6 +937,7 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
             const group_company = getResolvedGroup(c.name, c.group_company || c.group || c.grup);
 
             return {
+              ...c,
               id: c.id,
               name: c.name,
               code: c.code || '',
@@ -1253,31 +1255,65 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
     try {
       const code = companyForm.code.toUpperCase().trim();
       const name = companyForm.name.trim();
-      const group_company = companyForm.group_company.trim() || getResolvedGroup(name);
-      if (editingCompany) {
-        let { error } = await supabase.from('companies').update({
-          name,
-          code,
-          group_company,
-        }).eq('id', editingCompany.id);
+      const group_company = companyForm.group_company.trim() || 'Holding';
+      const npwp = ((companyForm as any).npwp || '').trim() || null;
+      const city = ((companyForm as any).city || '').trim() || null;
 
-        if (error && (error.message?.includes('group_company') || error.code === 'PGRST204')) {
-          const retry = await supabase.from('companies').update({ name, code }).eq('id', editingCompany.id);
+      const payload: any = {
+        name,
+        code,
+        group_company,
+        npwp,
+        city,
+        address: city,
+        updated_at: new Date().toISOString(),
+      };
+
+      if (editingCompany) {
+        let { data, error } = await supabase
+          .from('companies')
+          .update(payload)
+          .eq('id', editingCompany.id)
+          .select();
+
+        if (error && (error.message?.includes('npwp') || error.message?.includes('city') || error.code === 'PGRST204')) {
+          const retry = await supabase
+            .from('companies')
+            .update({
+              name,
+              code,
+              group_company,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', editingCompany.id)
+            .select();
           error = retry.error;
+          data = retry.data;
         }
 
         if (error) throw error;
+        if (!data || data.length === 0) {
+          throw new Error('Database menolak perubahan (0 baris ter-update). Kebijakan RLS tabel companies di Supabase perlu di-refresh.');
+        }
+
         toast.success(`Entitas "${name}" (${code}) berhasil diperbarui!`);
       } else {
-        let { error } = await supabase.from('companies').insert([{
-          name,
-          code,
-          group_company,
-        }]);
+        let { data, error } = await supabase
+          .from('companies')
+          .insert([payload])
+          .select();
 
-        if (error && (error.message?.includes('group_company') || error.code === 'PGRST204')) {
-          const retry = await supabase.from('companies').insert([{ name, code }]);
+        if (error && (error.message?.includes('npwp') || error.message?.includes('city') || error.code === 'PGRST204')) {
+          const retry = await supabase
+            .from('companies')
+            .insert([{
+              name,
+              code,
+              group_company,
+            }])
+            .select();
           error = retry.error;
+          data = retry.data;
         }
 
         if (error) throw error;
