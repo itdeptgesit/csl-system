@@ -12,7 +12,7 @@ import { tv } from "tailwind-variants"
 import { twMerge } from "tailwind-merge"
 
 const popoverVariants = tv({
-  base: "z-50 min-w-80 rounded-xl bg-popover text-popover-foreground shadow-2xl ring-1 ring-foreground/5 dark:ring-white/10 outline-none",
+  base: "z-50 min-w-80 overflow-hidden flex flex-col rounded-xl bg-popover text-popover-foreground shadow-2xl ring-1 ring-foreground/5 dark:ring-white/10 outline-none",
   variants: {
     isEntering: {
       true: "animate-in fade-in zoom-in-95 duration-200 ease-out",
@@ -73,7 +73,7 @@ export function Popover({
           </svg>
         </OverlayArrow>
       )}
-      <Dialog className="outline-none">
+      <Dialog className="outline-none flex flex-col overflow-hidden max-h-full">
         {children}
       </Dialog>
     </RACPopover>

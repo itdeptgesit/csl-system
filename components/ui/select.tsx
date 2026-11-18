@@ -124,8 +124,8 @@ function SelectTrigger({ className, children, ...props }: any) {
 
 function SelectContent({ className, children, ...props }: any) {
   return (
-    <Popover {...props} className={cn("min-w-[--trigger-width]", className)}>
-        <RACListBox className="outline-none p-1">
+    <Popover {...props} className={cn("min-w-[var(--trigger-width)]", className)}>
+        <RACListBox className="outline-none p-1 max-h-60 overflow-y-auto">
           {children}
         </RACListBox>
     </Popover>
@@ -140,13 +140,19 @@ interface SelectValueProps {
 }
 
 function SelectValue({ placeholder, className, ...props }: SelectValueProps & Omit<React.ComponentProps<typeof RACSelectValue>, 'placeholder'>) {
-  const RACSelectValueAny = RACSelectValue as any;
   return (
-    <RACSelectValueAny
+    <RACSelectValue
       {...props}
-      placeholder={placeholder || "Select an option"}
-      className={cn("text-sm text-muted-foreground", className)}
-    />
+      className={({ isPlaceholder }) => cn(
+        "text-sm truncate",
+        isPlaceholder ? "text-muted-foreground" : "text-foreground",
+        className
+      )}
+    >
+      {({ defaultChildren, isPlaceholder }) =>
+        isPlaceholder ? (placeholder || "Select an option") : defaultChildren
+      }
+    </RACSelectValue>
   )
 }
 

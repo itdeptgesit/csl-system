@@ -71,7 +71,7 @@ export const CompleteProfileModal: React.FC<CompleteProfileModalProps> = ({ user
         setIsOpen(false);
       }
     }}>
-      <DialogContent className="p-0 overflow-hidden border-0 shadow-2xl rounded-2xl max-w-[440px]"
+      <DialogContent showCloseButton={false} className="p-0 overflow-hidden border-0 shadow-2xl rounded-2xl max-w-[440px]"
         style={{ fontFamily: "'Inter', sans-serif" }}>
 
         {/* Gold top accent bar */}
