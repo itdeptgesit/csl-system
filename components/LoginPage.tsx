@@ -201,6 +201,17 @@ export const LoginPage: React.FC<LoginPageProps> = ({
         } catch (err: any) { setError(err.message || 'Google login gagal.'); setIsLoading(false); }
     };
 
+    const handleGesitIdLogin = async () => {
+        setIsLoading(true); setError('');
+        try {
+            const { error: oauthErr } = await supabase.auth.signInWithOAuth({
+                provider: 'custom:gesit-id' as any,
+                options: { redirectTo: window.location.origin + '/login' }
+            });
+            if (oauthErr) throw oauthErr;
+        } catch (err: any) { setError(err.message || 'GESIT ID login gagal.'); setIsLoading(false); }
+    };
+
     return (
         <div className="relative min-h-screen w-full flex flex-col items-center justify-center p-4 sm:p-7 lg:p-10 font-sans selection:bg-blue-100 selection:text-blue-900 bg-[#f8fafc] dark:bg-[#09090b] transition-colors duration-300"
             style={{
@@ -596,6 +607,21 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                                         <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 6.18l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
                                     </svg>
                                     <span>{language === 'en' ? 'Sign in with Google' : 'Login via Google'}</span>
+                                </button>
+                            </div>
+                        )}
+
+                        {/* GESIT ID (Clerk) OAuth Button (Login only) */}
+                        {mode === 'login' && (
+                            <div className="mt-3">
+                                <button
+                                    type="button"
+                                    onClick={handleGesitIdLogin}
+                                    disabled={isLoading}
+                                    className="w-full h-11 rounded-xl border border-slate-900 dark:border-slate-100 bg-slate-900 dark:bg-slate-100 hover:bg-slate-800 dark:hover:bg-slate-200 transition-colors flex items-center justify-center gap-2.5 text-xs font-bold text-white dark:text-slate-900 shadow-sm cursor-pointer"
+                                >
+                                    <KeyRound className="w-4 h-4" />
+                                    <span>{language === 'en' ? 'Sign in with GESIT ID' : 'Login via GESIT ID'}</span>
                                 </button>
                             </div>
                         )}
