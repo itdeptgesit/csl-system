@@ -6,6 +6,7 @@ import { AlertCircle, CheckCircle2, Loader2, Mail, Lock, Eye, EyeOff, User, User
 import { supabase } from '../lib/supabaseClient';
 import { sendPasswordResetNotificationEmail } from '../utils/EmailSystemUtils';
 import { isAllowedEmailDomain, ALLOWED_EMAIL_DOMAINS } from '../constants';
+import { useLanguage } from '../translations';
 
 interface LoginPageProps {
     onLogin: (email: string) => void;
@@ -26,6 +27,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
     logoUrl = '/image/logo.png',
 }) => {
     const { theme, resolvedTheme, setTheme } = useTheme();
+    const { t, language, setLanguage } = useLanguage();
     const [mounted, setMounted] = useState(false);
     const [mode, setMode] = useState<Mode>('login');
     const [registeredEmail, setRegisteredEmail] = useState('');
@@ -205,8 +207,18 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                 fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif"
             }}
         >
-            {/* ══════════ FLOATING THEME TOGGLE ══════════ */}
-            <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-50">
+            {/* ══════════ FLOATING ACTIONS (LANGUAGE + THEME) ══════════ */}
+            <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-50 flex items-center gap-2">
+                <button
+                    type="button"
+                    onClick={() => setLanguage(language === 'en' ? 'id' : 'en')}
+                    aria-label="Toggle Language"
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-full border border-slate-200/80 dark:border-zinc-800 bg-white/90 dark:bg-zinc-900/90 text-slate-700 dark:text-zinc-200 backdrop-blur-md shadow-sm hover:shadow-md hover:bg-slate-50 dark:hover:bg-zinc-800 transition-all text-xs font-bold cursor-pointer"
+                >
+                    <Globe size={14} className="text-blue-600 dark:text-blue-400" />
+                    <span>{language === 'en' ? 'EN' : 'ID'}</span>
+                </button>
+
                 <button
                     type="button"
                     onClick={toggleTheme}
@@ -216,12 +228,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                     {isDark ? (
                         <>
                             <Sun size={15} className="text-amber-400" />
-                            <span className="hidden sm:inline">Mode Terang</span>
+                            <span className="hidden sm:inline">{language === 'en' ? 'Light' : 'Mode Terang'}</span>
                         </>
                     ) : (
                         <>
                             <Moon size={15} className="text-slate-600 dark:text-zinc-300" />
-                            <span className="hidden sm:inline">Mode Gelap</span>
+                            <span className="hidden sm:inline">{language === 'en' ? 'Dark' : 'Mode Gelap'}</span>
                         </>
                     )}
                 </button>
@@ -262,16 +274,18 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                     <div className="relative z-10 my-auto py-6">
                         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/15 text-[10px] font-extrabold uppercase tracking-[0.14em] text-white/90 mb-5">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_0_3px_rgba(52,211,153,0.25)] animate-pulse" />
-                            Sistem Internal
+                            {language === 'en' ? 'Internal System' : 'Sistem Internal'}
                         </div>
 
                         <h1 className="text-3xl sm:text-4xl xl:text-5xl font-extrabold text-white leading-[1.12] tracking-tight max-w-lg mb-4">
-                            Urusan perusahaan &amp; legal,{' '}
-                            <span className="text-blue-200">dalam satu akses.</span>
+                            {language === 'en' ? 'Corporate & legal affairs, ' : 'Urusan perusahaan & legal, '}
+                            <span className="text-blue-200">{language === 'en' ? 'in one single access.' : 'dalam satu akses.'}</span>
                         </h1>
 
                         <p className="text-xs sm:text-sm text-white/80 leading-relaxed max-w-md mb-6">
-                            Ruang kerja digital terintegrasi untuk tim Corporate Secretary &amp; Legal: tracking tiket, arsip dokumen, kepatuhan, dan transparansi persetujuan.
+                            {language === 'en'
+                                ? 'Integrated digital workspace for Corporate Secretary & Legal team: ticket tracking, document archives, compliance, and approval transparency.'
+                                : 'Ruang kerja digital terintegrasi untuk tim Corporate Secretary & Legal: tracking tiket, arsip dokumen, kepatuhan, dan transparansi persetujuan.'}
                         </p>
 
                         {/* Visual Mock Illustration */}
@@ -317,21 +331,31 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                         {/* Access Pill Badge */}
                         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-900/40 text-[10px] font-extrabold uppercase tracking-[0.12em] mb-4">
                             <Lock size={12} className="shrink-0" />
-                            <span>{mode === 'verify-otp' ? 'Verifikasi Keamanan' : 'Akses Internal'}</span>
+                            <span>
+                                {mode === 'verify-otp'
+                                    ? (language === 'en' ? 'Security Verification' : 'Verifikasi Keamanan')
+                                    : (language === 'en' ? 'Internal Access' : 'Akses Internal')}
+                            </span>
                         </div>
 
                         {/* Title Header */}
                         <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight">
-                            {mode === 'login' ? 'Selamat datang' : mode === 'register' ? 'Buat Akun CSL' : mode === 'verify-otp' ? 'Verifikasi Kode' : 'Lupa Kata Sandi'}
+                            {mode === 'login'
+                                ? (language === 'en' ? 'Welcome back' : 'Selamat datang')
+                                : mode === 'register'
+                                    ? (language === 'en' ? 'Create CSL Account' : 'Buat Akun CSL')
+                                    : mode === 'verify-otp'
+                                        ? (language === 'en' ? 'Verify Code' : 'Verifikasi Kode')
+                                        : (language === 'en' ? 'Forgot Password' : 'Lupa Kata Sandi')}
                         </h2>
                         <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
                             {mode === 'login'
-                                ? 'Masuk dengan akun kantor untuk membuka sistem CSL.'
+                                ? (language === 'en' ? 'Sign in with your corporate account to access CSL system.' : 'Masuk dengan akun kantor untuk membuka sistem CSL.')
                                 : mode === 'register'
-                                    ? 'Pendaftaran terbatas untuk domain resmi: @gesit.co.id dan @gnr.co.id.'
+                                    ? (language === 'en' ? 'Registration restricted to official domains: @gesit.co.id and @gnr.co.id.' : 'Pendaftaran terbatas untuk domain resmi: @gesit.co.id dan @gnr.co.id.')
                                     : mode === 'verify-otp'
-                                        ? 'Masukkan 6 digit kode keamanan yang dikirim ke email kantor Anda.'
-                                        : 'Masukkan email akun Anda untuk mendapatkan tautan verifikasi.'}
+                                        ? (language === 'en' ? 'Enter the 6-digit security code sent to your work email.' : 'Masukkan 6 digit kode keamanan yang dikirim ke email kantor Anda.')
+                                        : (language === 'en' ? 'Enter your account email to receive a password reset link.' : 'Masukkan email akun Anda untuk mendapatkan tautan verifikasi.')}
                         </p>
 
                         {/* Alerts Banner */}
@@ -431,7 +455,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                             
                             {mode === 'register' && (
                                 <div className="space-y-1.5">
-                                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">Nama Lengkap</label>
+                                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
+                                        {language === 'en' ? 'Full Name' : 'Nama Lengkap'}
+                                    </label>
                                     <div className="relative">
                                         <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                                         <input
@@ -439,7 +465,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                                             required
                                             value={fullName}
                                             onChange={e => setFullName(e.target.value)}
-                                            placeholder="Nama lengkap"
+                                            placeholder={language === 'en' ? 'Full name' : 'Nama lengkap'}
                                             className="w-full h-12 pl-12 pr-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/80 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-500/10 transition-all font-medium"
                                         />
                                     </div>
@@ -448,7 +474,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({
 
                             <div className="space-y-1.5">
                                 <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
-                                    {mode === 'login' ? 'Email Kantor atau Username' : 'Email Kantor'}
+                                    {mode === 'login'
+                                        ? (language === 'en' ? 'Corporate Email or Username' : 'Email Kantor atau Username')
+                                        : (language === 'en' ? 'Corporate Email' : 'Email Kantor')}
                                 </label>
                                 <div className="relative">
                                     <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -465,7 +493,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({
 
                             {mode !== 'reset' && (
                                 <div className="space-y-1.5">
-                                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">Kata Sandi</label>
+                                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
+                                        {language === 'en' ? 'Password' : 'Kata Sandi'}
+                                    </label>
                                     <div className="relative">
                                         <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                                         <input
@@ -473,7 +503,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                                             required
                                             value={password}
                                             onChange={e => setPassword(e.target.value)}
-                                            placeholder="Masukkan kata sandi"
+                                            placeholder={language === 'en' ? 'Enter password' : 'Masukkan kata sandi'}
                                             className="w-full h-12 pl-12 pr-12 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/80 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-500/10 transition-all font-medium"
                                         />
                                         <button
@@ -489,7 +519,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({
 
                             {mode === 'register' && (
                                 <div className="space-y-1.5">
-                                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">Ulangi Kata Sandi</label>
+                                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
+                                        {language === 'en' ? 'Confirm Password' : 'Ulangi Kata Sandi'}
+                                    </label>
                                     <div className="relative">
                                         <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                                         <input
@@ -497,7 +529,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                                             required
                                             value={confirmPassword}
                                             onChange={e => setConfirmPassword(e.target.value)}
-                                            placeholder="Ulangi kata sandi"
+                                            placeholder={language === 'en' ? 'Repeat password' : 'Ulangi kata sandi'}
                                             className="w-full h-12 pl-12 pr-12 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/80 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-500/10 transition-all font-medium"
                                         />
                                     </div>
@@ -513,14 +545,16 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                                             onChange={e => setRememberMe(e.target.checked)}
                                             className="w-4 h-4 rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500 bg-transparent"
                                         />
-                                        <span className="text-xs text-slate-600 dark:text-slate-400 font-semibold">Ingat saya</span>
+                                        <span className="text-xs text-slate-600 dark:text-slate-400 font-semibold">
+                                            {language === 'en' ? 'Remember me' : 'Ingat saya'}
+                                        </span>
                                     </label>
                                     <button
                                         type="button"
                                         onClick={() => switchMode('reset')}
                                         className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 hover:underline"
                                     >
-                                        Lupa kata sandi?
+                                        {language === 'en' ? 'Forgot password?' : 'Lupa kata sandi?'}
                                     </button>
                                 </div>
                             )}
@@ -534,13 +568,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                                     <Loader2 size={18} className="animate-spin text-white" />
                                 ) : mode === 'login' ? (
                                     <>
-                                        <span>Login</span>
+                                        <span>{language === 'en' ? 'Sign In' : 'Masuk'}</span>
                                         <ArrowRight size={16} />
                                     </>
                                 ) : mode === 'register' ? (
-                                    'Daftar Akun Baru'
+                                    (language === 'en' ? 'Register New Account' : 'Daftar Akun Baru')
                                 ) : (
-                                    'Kirim Link Verifikasi'
+                                    (language === 'en' ? 'Send Reset Link' : 'Kirim Link Verifikasi')
                                 )}
                             </button>
                         </form>
@@ -561,7 +595,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                                         <path d="M5.84 14.1c-.22-.66-.35-1.36-.35-2.1s.13-1.44.35-2.1V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l3.66-2.84z" fill="#FBBC05" />
                                         <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 6.18l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
                                     </svg>
-                                    <span>Login via Google</span>
+                                    <span>{language === 'en' ? 'Sign in with Google' : 'Login via Google'}</span>
                                 </button>
                             </div>
                         )}
@@ -569,22 +603,36 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                         {/* Security Notice Box */}
                         <div className="flex items-start gap-2.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 text-slate-500 dark:text-slate-400 text-[11px] leading-relaxed mt-5">
                             <Shield size={16} className="text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
-                            <span>Halaman ini hanya untuk pengguna internal yang terdaftar. Jaga kerahasiaan akun dan kata sandi Anda.</span>
+                            <span>
+                                {language === 'en'
+                                    ? 'This portal is restricted to authorized internal personnel. Keep your credentials secure.'
+                                    : 'Halaman ini hanya untuk pengguna internal yang terdaftar. Jaga kerahasiaan akun dan kata sandi Anda.'}
+                            </span>
                         </div>
 
                         {/* Mode Switchers */}
                         <div className="mt-5 text-center text-xs font-semibold text-slate-500 dark:text-slate-400">
                             {mode === 'verify-otp' ? (
                                 <p>
-                                    Sudah punya akun?{' '}
+                                    {language === 'en' ? 'Already have an account? ' : 'Sudah punya akun? '}
                                     <button type="button" onClick={() => switchMode('login')} className="text-blue-600 dark:text-blue-400 font-bold hover:underline cursor-pointer">
-                                        Masuk
+                                        {language === 'en' ? 'Sign In' : 'Masuk'}
                                     </button>
                                 </p>
                             ) : mode !== 'login' ? (
-                                <p>Sudah punya akun? <button type="button" onClick={() => switchMode('login')} className="text-blue-600 dark:text-blue-400 font-bold hover:underline cursor-pointer">Masuk</button></p>
+                                <p>
+                                    {language === 'en' ? 'Already have an account? ' : 'Sudah punya akun? '}
+                                    <button type="button" onClick={() => switchMode('login')} className="text-blue-600 dark:text-blue-400 font-bold hover:underline cursor-pointer">
+                                        {language === 'en' ? 'Sign In' : 'Masuk'}
+                                    </button>
+                                </p>
                             ) : (
-                                <p>Belum memiliki akses? <button type="button" onClick={() => switchMode('register')} className="text-blue-600 dark:text-blue-400 font-bold hover:underline cursor-pointer">Daftar Akun</button></p>
+                                <p>
+                                    {language === 'en' ? "Don't have an account? " : 'Belum memiliki akses? '}
+                                    <button type="button" onClick={() => switchMode('register')} className="text-blue-600 dark:text-blue-400 font-bold hover:underline cursor-pointer">
+                                        {language === 'en' ? 'Register' : 'Daftar Akun'}
+                                    </button>
+                                </p>
                             )}
                         </div>
 

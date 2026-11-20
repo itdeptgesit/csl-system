@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import { UserAccount } from '../types';
+import { useLanguage } from '../translations';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -351,6 +352,7 @@ export interface CSLExpenseApprovalProps {
 }
 
 export const CSLExpenseApproval: React.FC<CSLExpenseApprovalProps> = ({ currentUser, initialMainTab = 'transaksi' }) => {
+  const { language } = useLanguage();
   const navigate = useNavigate();
   const [expenses, setExpenses] = useState<UnifiedExpenseApproval[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -1091,13 +1093,13 @@ export const CSLExpenseApproval: React.FC<CSLExpenseApprovalProps> = ({ currentU
   }, [expenses]);
 
   const tabOptions = [
-    { key: 'ALL', label: 'Semua' },
-    { key: 'Company', label: 'Perusahaan' },
-    { key: 'Individual', label: 'Perorangan' },
-    { key: 'PENDING_APPROVAL', label: 'Menunggu Persetujuan' },
-    { key: 'APPROVED', label: 'Disetujui' },
-    { key: 'PAID', label: 'Dicairkan' },
-    { key: 'REJECTED', label: 'Ditolak' },
+    { key: 'ALL', label: language === 'en' ? 'All' : 'Semua' },
+    { key: 'Company', label: language === 'en' ? 'Company' : 'Perusahaan' },
+    { key: 'Individual', label: language === 'en' ? 'Individual' : 'Perorangan' },
+    { key: 'PENDING_APPROVAL', label: language === 'en' ? 'Pending Approval' : 'Menunggu Persetujuan' },
+    { key: 'APPROVED', label: language === 'en' ? 'Approved' : 'Disetujui' },
+    { key: 'PAID', label: language === 'en' ? 'Disbursed' : 'Dicairkan' },
+    { key: 'REJECTED', label: language === 'en' ? 'Rejected' : 'Ditolak' },
   ];
 
   return (
@@ -1105,9 +1107,9 @@ export const CSLExpenseApproval: React.FC<CSLExpenseApprovalProps> = ({ currentU
 
       {/* ── Page Title & Actions Bar using PageHeader ── */}
       <PageHeader
-        title="Budget & Expenses"
-        subtitle="ANGGARAN OPERASIONAL & PENGELUARAN LEGAL"
-        description="Monitoring dan persetujuan pengeluaran operasional serta tagihan legal corporate"
+        title={language === 'en' ? 'Budget & Expenses' : 'Anggaran & Biaya'}
+        subtitle={language === 'en' ? 'OPERATIONAL BUDGET & LEGAL EXPENSES' : 'ANGGARAN OPERASIONAL & PENGELUARAN LEGAL'}
+        description={language === 'en' ? 'Monitoring and approval of CSL operational expenses, invoices, and budget utilization' : 'Monitoring dan persetujuan pengeluaran operasional serta tagihan legal corporate'}
       >
         <div className="flex flex-wrap items-center gap-2">
           {selectedIds.length > 0 && (
@@ -1160,7 +1162,7 @@ export const CSLExpenseApproval: React.FC<CSLExpenseApprovalProps> = ({ currentU
               }}
               className="h-9 text-xs gap-1.5 font-semibold shadow-xs"
             >
-              <Printer className="h-3.5 w-3.5" /> Cetak {selectedIds.length} Voucher
+              <Printer className="h-3.5 w-3.5" /> {language === 'en' ? `Print ${selectedIds.length} Vouchers` : `Cetak ${selectedIds.length} Voucher`}
             </Button>
           )}
 
@@ -1168,11 +1170,11 @@ export const CSLExpenseApproval: React.FC<CSLExpenseApprovalProps> = ({ currentU
             variant="outline"
             size="sm"
             onClick={fetchData}
-            title="Muat ulang data pengeluaran"
+            title={language === 'en' ? 'Reload expense data' : 'Muat ulang data pengeluaran'}
             className="h-9 text-xs gap-1.5 font-semibold shadow-xs"
           >
             <RefreshCcw className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-            <span>Muat Ulang</span>
+            <span>{language === 'en' ? 'Reload' : 'Muat Ulang'}</span>
           </Button>
 
           <Button
@@ -1186,7 +1188,7 @@ export const CSLExpenseApproval: React.FC<CSLExpenseApprovalProps> = ({ currentU
             className="h-9 text-xs gap-1.5 bg-[#0a2540] hover:bg-[#16375c] text-white font-bold shadow-xs"
           >
             <Plus className="h-3.5 w-3.5" />
-            <span>Tambah Pengeluaran</span>
+            <span>{language === 'en' ? 'Add Expense' : 'Tambah Pengeluaran'}</span>
           </Button>
         </div>
       </PageHeader>
@@ -1202,7 +1204,7 @@ export const CSLExpenseApproval: React.FC<CSLExpenseApprovalProps> = ({ currentU
           }`}
         >
           <Receipt className="size-3.5" />
-          <span>Transaksi ({expenses.length})</span>
+          <span>{language === 'en' ? 'Transactions' : 'Transaksi'} ({expenses.length})</span>
         </button>
         <button
           onClick={() => setActiveMainTab('analisis')}
@@ -1213,7 +1215,7 @@ export const CSLExpenseApproval: React.FC<CSLExpenseApprovalProps> = ({ currentU
           }`}
         >
           <BarChart3 className="size-3.5" />
-          <span>Analisis</span>
+          <span>{language === 'en' ? 'Analysis' : 'Analisis'}</span>
         </button>
       </div>
 
@@ -1232,20 +1234,20 @@ export const CSLExpenseApproval: React.FC<CSLExpenseApprovalProps> = ({ currentU
             {/* Card 1: Total Pengajuan */}
             <div className="bg-card border border-border/80 p-5 rounded-2xl shadow-xs flex flex-col justify-between hover:border-border transition-colors">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-muted-foreground">Total Pengajuan</span>
+                <span className="text-xs font-semibold text-muted-foreground">{language === 'en' ? 'Total Submissions' : 'Total Pengajuan'}</span>
                 <div className="size-8 rounded-lg border border-border/60 text-muted-foreground flex items-center justify-center">
                   <DollarSign size={15} />
                 </div>
               </div>
               <div className="mt-3">
                 <p className="text-2xl font-bold font-mono text-foreground">
-                  {totalRequestsCount} <span className="text-sm font-medium text-muted-foreground font-sans">Pengajuan</span>
+                  {totalRequestsCount} <span className="text-sm font-medium text-muted-foreground font-sans">{language === 'en' ? 'Requests' : 'Pengajuan'}</span>
                 </p>
                 <p className="text-sm font-bold font-mono text-foreground mt-1">
                   {formatCslCurrency(totalReportingAmount)}
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Total terkonsolidasi (IDR)
+                  {language === 'en' ? 'Total consolidated (IDR)' : 'Total terkonsolidasi (IDR)'}
                 </p>
               </div>
             </div>
@@ -1253,20 +1255,20 @@ export const CSLExpenseApproval: React.FC<CSLExpenseApprovalProps> = ({ currentU
             {/* Card 2: Menunggu Persetujuan */}
             <div className="bg-card border border-border/80 p-5 rounded-2xl shadow-xs flex flex-col justify-between hover:border-border transition-colors">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-muted-foreground">Menunggu Persetujuan</span>
+                <span className="text-xs font-semibold text-muted-foreground">{language === 'en' ? 'Pending Approval' : 'Menunggu Persetujuan'}</span>
                 <div className="size-8 rounded-lg border border-amber-300 dark:border-amber-800 text-amber-500 flex items-center justify-center">
                   <Clock size={15} />
                 </div>
               </div>
               <div className="mt-3">
                 <p className="text-2xl font-bold font-mono text-amber-600 dark:text-amber-400">
-                  {pendingCount} <span className="text-sm font-medium text-amber-600/70 font-sans">Pengajuan</span>
+                  {pendingCount} <span className="text-sm font-medium text-amber-600/70 font-sans">{language === 'en' ? 'Requests' : 'Pengajuan'}</span>
                 </p>
                 <p className="text-sm font-bold font-mono text-amber-600 dark:text-amber-400 mt-1">
                   {formatCslCurrency(pendingReportingAmount)}
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Menunggu review
+                  {language === 'en' ? 'Awaiting review' : 'Menunggu review'}
                 </p>
               </div>
             </div>
@@ -1274,20 +1276,20 @@ export const CSLExpenseApproval: React.FC<CSLExpenseApprovalProps> = ({ currentU
             {/* Card 3: Disetujui / Dicairkan */}
             <div className="bg-card border border-border/80 p-5 rounded-2xl shadow-xs flex flex-col justify-between hover:border-border transition-colors">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-muted-foreground">Disetujui / Dicairkan</span>
+                <span className="text-xs font-semibold text-muted-foreground">{language === 'en' ? 'Approved / Disbursed' : 'Disetujui / Dicairkan'}</span>
                 <div className="size-8 rounded-lg border border-emerald-300 dark:border-emerald-800 text-emerald-500 flex items-center justify-center">
                   <CheckCircle2 size={15} />
                 </div>
               </div>
               <div className="mt-3">
                 <p className="text-2xl font-bold font-mono text-emerald-600 dark:text-emerald-400">
-                  {approvedCount} <span className="text-sm font-medium text-emerald-600/70 font-sans">Pengajuan</span>
+                  {approvedCount} <span className="text-sm font-medium text-emerald-600/70 font-sans">{language === 'en' ? 'Requests' : 'Pengajuan'}</span>
                 </p>
                 <p className="text-sm font-bold font-mono text-emerald-600 dark:text-emerald-400 mt-1">
                   {formatCslCurrency(approvedReportingAmount)}
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Siap atau sudah dicairkan
+                  {language === 'en' ? 'Ready or disbursed' : 'Siap atau sudah dicairkan'}
                 </p>
               </div>
             </div>
@@ -1295,7 +1297,7 @@ export const CSLExpenseApproval: React.FC<CSLExpenseApprovalProps> = ({ currentU
             {/* Card 4: Eksposur Mata Uang */}
             <div className="bg-card border border-border/80 p-5 rounded-2xl shadow-xs flex flex-col justify-between hover:border-border transition-colors">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-muted-foreground">Eksposur Mata Uang</span>
+                <span className="text-xs font-semibold text-muted-foreground">{language === 'en' ? 'Currency Exposure' : 'Eksposur Mata Uang'}</span>
                 <div className="size-8 rounded-lg border border-indigo-300 dark:border-indigo-800 text-indigo-500 flex items-center justify-center">
                   <Globe size={15} />
                 </div>
@@ -1338,7 +1340,7 @@ export const CSLExpenseApproval: React.FC<CSLExpenseApprovalProps> = ({ currentU
           <div className="relative w-full sm:w-80">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Cari semua data: ID, penerima, proyek, nominal, status..."
+              placeholder={language === 'en' ? 'Search all data: ID, payee, project, amount, status...' : 'Cari semua data: ID, penerima, proyek, nominal, status...'}
               className="pl-9 h-9 text-sm rounded-md"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -1367,24 +1369,24 @@ export const CSLExpenseApproval: React.FC<CSLExpenseApprovalProps> = ({ currentU
       <div className="rounded-xl border border-border/80 bg-card shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-border/60 flex flex-wrap items-center justify-between gap-3 bg-card">
           <div>
-            <h3 className="font-bold text-sm text-foreground">Pengajuan Biaya &amp; Tagihan</h3>
-            <p className="text-xs text-muted-foreground mt-0.5">Kelola biaya operasional, klasifikasi penerima, dan voucher pembayaran</p>
+            <h3 className="font-bold text-sm text-foreground">{language === 'en' ? 'Expenses & Invoices Submissions' : 'Pengajuan Biaya & Tagihan'}</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">{language === 'en' ? 'Manage operational expenses, payee classification, and payment vouchers' : 'Kelola biaya operasional, klasifikasi penerima, dan voucher pembayaran'}</p>
           </div>
           <span className="text-xs font-mono text-muted-foreground bg-muted/50 border border-border/50 px-2.5 py-1 rounded-md">
-            {filteredExpenses.length} Data
+            {filteredExpenses.length} {language === 'en' ? 'Entries' : 'Data'}
           </span>
         </div>
 
         {isLoading ? (
           <div className="py-20 flex items-center justify-center gap-2 text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
-            <span className="text-sm">Memuat data pengajuan biaya…</span>
+            <span className="text-sm">{language === 'en' ? 'Loading expense submissions…' : 'Memuat data pengajuan biaya…'}</span>
           </div>
         ) : filteredExpenses.length === 0 ? (
           <div className="py-20 text-center">
             <Receipt className="h-8 w-8 mx-auto mb-3 text-muted-foreground/40" />
-            <p className="text-sm text-muted-foreground">Tidak ada pengajuan biaya ditemukan.</p>
-            <p className="text-xs text-muted-foreground/60 mt-1">Coba sesuaikan pencarian atau filter tab Anda.</p>
+            <p className="text-sm text-muted-foreground">{language === 'en' ? 'No expense submissions found.' : 'Tidak ada pengajuan biaya ditemukan.'}</p>
+            <p className="text-xs text-muted-foreground/60 mt-1">{language === 'en' ? 'Try adjusting your search or filter tab.' : 'Coba sesuaikan pencarian atau filter tab Anda.'}</p>
           </div>
         ) : (
           <>
@@ -1399,15 +1401,15 @@ export const CSLExpenseApproval: React.FC<CSLExpenseApprovalProps> = ({ currentU
                     onChange={(e) => setSelectedIds(e.target.checked ? pagedExpenses.map(x => x.id) : [])}
                   />
                 </TableHead>
-                <TableHead className="text-xs font-semibold text-foreground/80">Pengajuan / Tanggal</TableHead>
-                <TableHead className="text-xs font-semibold text-foreground/80">Tipe Penerima</TableHead>
-                <TableHead className="text-xs font-semibold text-foreground/80">Dibayarkan Kepada</TableHead>
-                <TableHead className="text-xs font-semibold text-foreground/80">Kategori Biaya</TableHead>
-                <TableHead className="text-xs font-semibold text-foreground/80">Proyek / Deskripsi</TableHead>
-                <TableHead className="text-xs font-semibold text-foreground/80">Mata Uang &amp; Jumlah</TableHead>
-                <TableHead className="text-xs font-semibold text-foreground/80">Diajukan Oleh</TableHead>
+                <TableHead className="text-xs font-semibold text-foreground/80">{language === 'en' ? 'Submission / Date' : 'Pengajuan / Tanggal'}</TableHead>
+                <TableHead className="text-xs font-semibold text-foreground/80">{language === 'en' ? 'Payee Type' : 'Tipe Penerima'}</TableHead>
+                <TableHead className="text-xs font-semibold text-foreground/80">{language === 'en' ? 'Payable To' : 'Dibayarkan Kepada'}</TableHead>
+                <TableHead className="text-xs font-semibold text-foreground/80">{language === 'en' ? 'Expense Category' : 'Kategori Biaya'}</TableHead>
+                <TableHead className="text-xs font-semibold text-foreground/80">{language === 'en' ? 'Project / Description' : 'Proyek / Deskripsi'}</TableHead>
+                <TableHead className="text-xs font-semibold text-foreground/80">{language === 'en' ? 'Currency & Amount' : 'Mata Uang & Jumlah'}</TableHead>
+                <TableHead className="text-xs font-semibold text-foreground/80">{language === 'en' ? 'Submitted By' : 'Diajukan Oleh'}</TableHead>
                 <TableHead className="text-xs font-semibold text-foreground/80">Status</TableHead>
-                <TableHead className="text-xs font-semibold text-foreground/80 text-right pr-5">Aksi</TableHead>
+                <TableHead className="text-xs font-semibold text-foreground/80 text-right pr-5">{language === 'en' ? 'Action' : 'Aksi'}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -1516,7 +1518,7 @@ export const CSLExpenseApproval: React.FC<CSLExpenseApprovalProps> = ({ currentU
 
                   <TableCell>
                     {(() => {
-                      const b = getUnifiedStatusBadge(exp.status);
+                      const b = getUnifiedStatusBadge(exp.status, language);
                       return (
                         <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${b.className}`}>
                           <span className={`size-1.5 rounded-full ${b.dotColor}`} />
@@ -1525,12 +1527,12 @@ export const CSLExpenseApproval: React.FC<CSLExpenseApprovalProps> = ({ currentU
                       );
                     })()}
                     {exp.approved_by_name && (exp.status === 'APPROVED' || exp.status === 'DISBURSED' || exp.status === 'PAID') && (
-                      <div className="text-[9px] text-muted-foreground font-medium mt-0.5 truncate max-w-[120px]" title={`Disetujui oleh: ${exp.approved_by_name}`}>
+                      <div className="text-[9px] text-muted-foreground font-medium mt-0.5 truncate max-w-[120px]" title={`${language === 'en' ? 'Approved by:' : 'Disetujui oleh:'} ${exp.approved_by_name}`}>
                         ✓ {exp.approved_by_name}
                       </div>
                     )}
                     {exp.approved_by_name && exp.status === 'REJECTED' && (
-                      <div className="text-[9px] text-rose-500 font-medium mt-0.5 truncate max-w-[120px]" title={`Ditolak oleh: ${exp.approved_by_name}`}>
+                      <div className="text-[9px] text-rose-500 font-medium mt-0.5 truncate max-w-[120px]" title={`${language === 'en' ? 'Rejected by:' : 'Ditolak oleh:'} ${exp.approved_by_name}`}>
                         ✕ {exp.approved_by_name}
                       </div>
                     )}
@@ -1543,10 +1545,10 @@ export const CSLExpenseApproval: React.FC<CSLExpenseApprovalProps> = ({ currentU
                       </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-52">
                           <DropdownMenuItem onClick={() => setViewingDetail(exp)} className="gap-2 text-xs">
-                            <Eye className="h-3.5 w-3.5" /> Lihat Rincian
+                            <Eye className="h-3.5 w-3.5" /> {language === 'en' ? 'View Details' : 'Lihat Rincian'}
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handlePrintPdf(exp)} className="gap-2 text-xs">
-                            <Printer className="h-3.5 w-3.5" /> Cetak PDF Voucher
+                            <Printer className="h-3.5 w-3.5" /> {language === 'en' ? 'Print PDF Voucher' : 'Cetak PDF Voucher'}
                           </DropdownMenuItem>
 
                           {isDesignatedApprover && exp.status === 'PENDING_APPROVAL' && (
@@ -1556,13 +1558,13 @@ export const CSLExpenseApproval: React.FC<CSLExpenseApprovalProps> = ({ currentU
                                 onClick={() => { setSelected(exp); setConfirmAction('approve'); }}
                                 className="gap-2 text-xs text-emerald-600 focus:text-emerald-600 cursor-pointer"
                               >
-                                <CheckCircle2 className="h-3.5 w-3.5" /> Setujui Permintaan
+                                <CheckCircle2 className="h-3.5 w-3.5" /> {language === 'en' ? 'Approve Request' : 'Setujui Permintaan'}
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() => { setSelected(exp); setConfirmAction('reject'); }}
                                 className="gap-2 text-xs text-rose-600 focus:text-rose-600 cursor-pointer"
                               >
-                                <XCircle className="h-3.5 w-3.5" /> Tolak Permintaan
+                                <XCircle className="h-3.5 w-3.5" /> {language === 'en' ? 'Reject Request' : 'Tolak Permintaan'}
                               </DropdownMenuItem>
                             </>
                           )}
@@ -1574,7 +1576,7 @@ export const CSLExpenseApproval: React.FC<CSLExpenseApprovalProps> = ({ currentU
                                 onClick={() => { setSelected(exp); setConfirmAction('disburse'); }}
                                 className="gap-2 text-xs text-blue-600 focus:text-blue-600 cursor-pointer"
                               >
-                                <DollarSign className="h-3.5 w-3.5" /> Tandai Telah Dicairkan
+                                <DollarSign className="h-3.5 w-3.5" /> {language === 'en' ? 'Mark as Disbursed' : 'Tandai Telah Dicairkan'}
                               </DropdownMenuItem>
                             </>
                           )}
@@ -1586,13 +1588,13 @@ export const CSLExpenseApproval: React.FC<CSLExpenseApprovalProps> = ({ currentU
                                 onClick={() => handleOpenEdit(exp)}
                                 className="gap-2 text-xs text-amber-600 focus:text-amber-600 cursor-pointer"
                               >
-                                <Pencil className="h-3.5 w-3.5" /> Edit Permintaan
+                                <Pencil className="h-3.5 w-3.5" /> {language === 'en' ? 'Edit Request' : 'Edit Permintaan'}
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() => { setSelected(exp); setConfirmAction('delete'); }}
                                 className="gap-2 text-xs text-rose-600 focus:text-rose-600 cursor-pointer"
                               >
-                                <Trash2 className="h-3.5 w-3.5" /> Hapus Permintaan
+                                <Trash2 className="h-3.5 w-3.5" /> {language === 'en' ? 'Delete Request' : 'Hapus Permintaan'}
                               </DropdownMenuItem>
                             </>
                           )}
@@ -1607,13 +1609,13 @@ export const CSLExpenseApproval: React.FC<CSLExpenseApprovalProps> = ({ currentU
             {/* Subtotal Row (design.md §14.3) */}
             <div className="px-5 py-2.5 bg-slate-50 dark:bg-slate-900/60 border-t border-border/40 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground font-medium">
               <span>
-                <strong className="text-foreground">Subtotal Halaman Ini</strong> ({pagedExpenses.length} entri):{' '}
+                <strong className="text-foreground">{language === 'en' ? 'Page Subtotal' : 'Subtotal Halaman Ini'}</strong> ({pagedExpenses.length} {language === 'en' ? 'entries' : 'entri'}):{' '}
                 <span className="font-mono font-bold text-foreground">
                   {formatCslCurrency(pagedExpenses.reduce((sum, e) => sum + (Number(e.reporting_amount) || 0), 0))}
                 </span>
               </span>
               <span>
-                <strong className="text-foreground">Total Keseluruhan</strong> ({filteredExpenses.length} entri):{' '}
+                <strong className="text-foreground">{language === 'en' ? 'Grand Total' : 'Total Keseluruhan'}</strong> ({filteredExpenses.length} {language === 'en' ? 'entries' : 'entri'}):{' '}
                 <span className="font-mono font-bold text-[#0a2540] dark:text-emerald-400">
                   {formatCslCurrency(filteredExpenses.reduce((sum, e) => sum + (Number(e.reporting_amount) || 0), 0))}
                 </span>
@@ -1624,7 +1626,7 @@ export const CSLExpenseApproval: React.FC<CSLExpenseApprovalProps> = ({ currentU
             {filteredExpenses.length > 0 && (
               <div className="px-5 py-3 border-t border-border/40 flex flex-wrap items-center justify-between gap-3 bg-card">
                 <p className="text-xs text-muted-foreground">
-                  Menampilkan <span className="font-semibold text-foreground">{formatCslRange((currentPage - 1) * PAGE_SIZE + 1, Math.min(currentPage * PAGE_SIZE, filteredExpenses.length), filteredExpenses.length)}</span>
+                  {language === 'en' ? 'Showing ' : 'Menampilkan '}<span className="font-semibold text-foreground">{formatCslRange((currentPage - 1) * PAGE_SIZE + 1, Math.min(currentPage * PAGE_SIZE, filteredExpenses.length), filteredExpenses.length, language)}</span>
                 </p>
                 <div className="flex items-center gap-1">
                   <button

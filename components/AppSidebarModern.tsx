@@ -298,6 +298,13 @@ export function AppSidebarModern({
     const roleLower = (currentUser?.role || '').trim().toLowerCase();
     const isCslTeam = roleLower === 'super admin' || roleLower === 'admin' || roleLower === 'staff' || (currentUser?.groups || []).includes("csl_staff");
 
+    const getMenuLabel = (id: string, defaultLabel: string): string => {
+      const key = `menu_${id.replace(/-/g, '_')}`;
+      const translated = t(key as any);
+      if (translated && translated !== key) return translated;
+      return defaultLabel;
+    };
+
     return allMenus
       .filter(
         (m) =>
@@ -306,7 +313,7 @@ export function AppSidebarModern({
           allowedMenuIds.has(m.id)
       )
       .map((m) => ({
-        title: m.label,
+        title: getMenuLabel(m.id, m.label),
         url: m.id === "dashboard" ? "/" : `/${m.id}`,
         icon: ICON_MAP[m.iconName] || LayoutGrid,
         isActive:
@@ -314,7 +321,7 @@ export function AppSidebarModern({
         items: allMenus
           .filter((c) => c.parentId === m.id && allowedMenuIds.has(c.id))
           .map((c) => ({
-            title: c.id === 'csl-my-requests' && isCslTeam ? 'Assigned to Me' : c.label,
+            title: c.id === 'csl-my-requests' && isCslTeam ? t('menu_assigned_to_me') : getMenuLabel(c.id, c.label),
             url: `/${c.id}`,
             icon: ICON_MAP[c.iconName] || LayoutGrid,
           })),
@@ -324,7 +331,7 @@ export function AppSidebarModern({
   // Main nav: everything except 'settings'
   const mainItems: NavItem[] = React.useMemo(
     () => buildNavItems(["settings"]),
-    [allowedMenuIds, location.pathname]
+    [allowedMenuIds, location.pathname, t]
   )
 
   // Settings group (rendered at the bottom, above user)
@@ -332,22 +339,28 @@ export function AppSidebarModern({
     if (!allowedMenuIds.has("settings")) return []
     const settingsNode = APP_MENU_STRUCTURE.find((m) => m.id === "settings")
     if (!settingsNode) return []
+    const getMenuLabel = (id: string, defaultLabel: string): string => {
+      const key = `menu_${id.replace(/-/g, '_')}`;
+      const translated = t(key as any);
+      if (translated && translated !== key) return translated;
+      return defaultLabel;
+    };
     return [
       {
-        title: settingsNode.label,
+        title: getMenuLabel(settingsNode.id, settingsNode.label),
         url: "/settings",
         icon: ICON_MAP[settingsNode.iconName] || Settings,
         isActive: false,
         items: APP_MENU_STRUCTURE.filter(
           (c) => c.parentId === "settings" && allowedMenuIds.has(c.id)
         ).map((c) => ({
-          title: c.label,
+          title: getMenuLabel(c.id, c.label),
           url: `/${c.id}`,
           icon: ICON_MAP[c.iconName] || LayoutGrid,
         })),
       },
     ]
-  }, [allowedMenuIds])
+  }, [allowedMenuIds, t])
 
   const userData = currentUser
     ? {
@@ -380,9 +393,9 @@ export function AppSidebarModern({
       </SidebarHeader>
 
       <SidebarContent>
-        <NavGroup title="Main Menu" items={mainItems} />
+        <NavGroup title={t('mainMenu')} items={mainItems} />
         {settingsItems.length > 0 && (
-          <NavGroup title="Settings" items={settingsItems} />
+          <NavGroup title={t('settings')} items={settingsItems} />
         )}
       </SidebarContent>
 

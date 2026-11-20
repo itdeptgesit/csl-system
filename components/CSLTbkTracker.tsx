@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { UserAccount } from '../types';
+import { useLanguage } from '../translations';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -325,6 +326,7 @@ const INITIAL_2026_EVENTS: TbkEventRecord[] = [
 const STORAGE_KEY = 'csl_tbk_records_v2';
 
 export const CSLTbkTracker: React.FC<{ currentUser?: UserAccount | null }> = () => {
+  const { language } = useLanguage();
   const [activeTab, setActiveTab] = useState<'analisis' | 'register'>('analisis');
   const [selectedYear, setSelectedYear] = useState<'2026' | '2025'>('2026');
 
@@ -746,9 +748,9 @@ export const CSLTbkTracker: React.FC<{ currentUser?: UserAccount | null }> = () 
     <div className="space-y-6 pb-16 font-sans animate-in fade-in duration-500">
       {/* 1. Header Bar with Year Switcher & Primary Action */}
       <PageHeader
-        title="Tracking TBK"
-        subtitle="ROUTINE ACTIVITY · KEWAJIBAN EMITEN"
-        description="Monitoring kepatuhan dan pelaporan keterbukaan informasi PT Alakasa Industrindo Tbk"
+        title={language === 'en' ? 'Public Listed Co Tracker (TBK)' : 'Tracking TBK'}
+        subtitle={language === 'en' ? 'ROUTINE ACTIVITY · PUBLIC LISTED COMPANY COMPLIANCE' : 'ROUTINE ACTIVITY · KEWAJIBAN EMITEN'}
+        description={language === 'en' ? 'Regulatory compliance and disclosure reporting for PT Alakasa Industrindo Tbk' : 'Monitoring kepatuhan dan pelaporan keterbukaan informasi PT Alakasa Industrindo Tbk'}
       >
         <div className="flex items-center gap-2.5">
           {/* Year Switcher */}

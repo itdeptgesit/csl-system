@@ -13,14 +13,14 @@ export const Footer: React.FC = () => {
       <div className="w-full flex flex-col md:flex-row justify-between items-center gap-2">
         <div className="flex items-center gap-4">
           <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-            © 2026 The Gesit Companies. CSL-SYSTEM™. All rights reserved.
+            © {year} The Gesit Companies. CSL-SYSTEM™. {t('allRightsReserved')}.
           </p>
         </div>
 
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1.5">
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.4)]"></div>
-            <span className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest">Online</span>
+            <span className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest">{t('systemOnline')}</span>
           </div>
           <span className="w-px h-3 bg-border"></span>
           <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">V 1.0.0-BETA</span>

@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { UserAccount } from '../types';
+import { useLanguage } from '../translations';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -174,6 +175,7 @@ const INITIAL_OFFSHORE_DATA: OffshoreEntity[] = [
 const STORAGE_KEY = 'csl_offshore_entities_v1';
 
 export const CSLOffshoreTracker: React.FC<{ currentUser?: UserAccount | null }> = () => {
+  const { language } = useLanguage();
   const [data, setData] = useState<OffshoreEntity[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -336,9 +338,9 @@ export const CSLOffshoreTracker: React.FC<{ currentUser?: UserAccount | null }> 
     <div className="space-y-6 pb-16 font-sans">
       {/* 1. Baris Judul */}
       <PageHeader
-        title="Tracking Offshore Co"
+        title={language === 'en' ? 'Offshore Entities Tracker' : 'Tracking Offshore Co'}
         subtitle="ROUTINE ACTIVITY · OFFSHORE ENTITIES"
-        description="Monitoring perpanjangan, registered agent, dan kepatuhan entitas luar negeri"
+        description={language === 'en' ? 'Monitoring renewals, registered agents, and international compliance for offshore entities' : 'Monitoring perpanjangan, registered agent, dan kepatuhan entitas luar negeri'}
       >
         <div className="flex items-center gap-2">
           <Button

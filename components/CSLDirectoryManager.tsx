@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { UserAccount } from '../types';
+import { useLanguage } from '../translations';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -80,17 +81,19 @@ const MOCK_CONTACTS: ContactItem[] = [
   { id: 6, name: 'BPN Jakarta Pusat', category: 'Government', organization: 'Badan Pertanahan Nasional', phone: '+62 21-3844-098', email: 'kantah.jakpus@atrbpn.go.id', city: 'Jakarta Pusat', notes: 'HGB and Land title verification' },
 ];
 
-const formatContactCategory = (cat: string) => {
+const formatContactCategory = (cat: string, lang = 'id') => {
+  const isEn = lang === 'en';
   switch ((cat || '').toLowerCase()) {
-    case 'lawyer': return 'Konsultan Hukum';
+    case 'lawyer': return isEn ? 'Legal Consultant' : 'Konsultan Hukum';
     case 'vendor': return 'Vendor';
-    case 'government': return 'Instansi Pemerintah';
-    case 'other': return 'Lainnya';
+    case 'government': return isEn ? 'Government Agency' : 'Instansi Pemerintah';
+    case 'other': return isEn ? 'Other' : 'Lainnya';
     default: return cat;
   }
 };
 
 export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ currentUser, category = 'all' }) => {
+  const { language } = useLanguage();
   const [activeCategory, setActiveCategory] = useState<'all'|'lawyer'|'vendor'|'government'|'other'>(category);
   const [searchTerm, setSearchTerm] = useState('');
   const [contacts, setContacts] = useState<ContactItem[]>(MOCK_CONTACTS);
@@ -435,11 +438,31 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
 
   const getPageMeta = () => {
     switch (activeCategory) {
-      case 'lawyer': return { title: 'Direktori Pengacara & Notaris', desc: 'Konsultan hukum retainer, advokat litigasi, PPAT, dan kantor notaris rekanan', icon: Scale };
-      case 'vendor': return { title: 'Vendor Hukum & Penerjemah Tersumpah', desc: 'Lembaga penerjemah tersumpah, legalisasi dokumen, dan konsultan HKI', icon: Store };
-      case 'government': return { title: 'Instansi Pemerintah & Kementerian', desc: 'Kemenkumham, OSS BKPM, BPN, Kantor Pajak, dan dinas perizinan daerah', icon: Landmark };
-      case 'other': return { title: 'Kontak Eksternal Lainnya', desc: 'Penasihat eksternal, konsultan independen, dan kontak darurat legal', icon: User };
-      default: return { title: 'Direktori Kontak CSL-LINK', desc: 'Direktori nomor telepon terpadu untuk mitra hukum, notaris, instansi, dan vendor', icon: Phone };
+      case 'lawyer': return {
+        title: language === 'en' ? 'Lawyers & Notaries Directory' : 'Direktori Pengacara & Notaris',
+        desc: language === 'en' ? 'Retainer legal consultants, litigation advocates, PPAT, and partner notary offices' : 'Konsultan hukum retainer, advokat litigasi, PPAT, dan kantor notaris rekanan',
+        icon: Scale
+      };
+      case 'vendor': return {
+        title: language === 'en' ? 'Legal Vendors & Sworn Translators' : 'Vendor Hukum & Penerjemah Tersumpah',
+        desc: language === 'en' ? 'Sworn translation agencies, document legalization, and IP consultants' : 'Lembaga penerjemah tersumpah, legalisasi dokumen, dan konsultan HKI',
+        icon: Store
+      };
+      case 'government': return {
+        title: language === 'en' ? 'Government & Ministerial Agencies' : 'Instansi Pemerintah & Kementerian',
+        desc: language === 'en' ? 'Ministry of Law & Human Rights (AHU), BKPM OSS, Land Agency (BPN), Tax Office, and regional licensing' : 'Kemenkumham, OSS BKPM, BPN, Kantor Pajak, dan dinas perizinan daerah',
+        icon: Landmark
+      };
+      case 'other': return {
+        title: language === 'en' ? 'Other External Contacts' : 'Kontak Eksternal Lainnya',
+        desc: language === 'en' ? 'External advisors, independent consultants, and emergency legal contacts' : 'Penasihat eksternal, konsultan independen, dan kontak darurat legal',
+        icon: User
+      };
+      default: return {
+        title: language === 'en' ? 'CSL-LINK Contact Directory' : 'Direktori Kontak CSL-LINK',
+        desc: language === 'en' ? 'Unified telephone and contact directory for legal partners, notaries, institutions, and vendors' : 'Direktori nomor telepon terpadu untuk mitra hukum, notaris, instansi, dan vendor',
+        icon: Phone
+      };
     }
   };
 
@@ -497,7 +520,7 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
             size="sm" 
             className="h-9 bg-[#0a2540] hover:bg-[#16375c] text-white font-bold text-xs shadow-xs"
           >
-            <Plus className="h-4 w-4 mr-2" /> Tambah Kontak
+            <Plus className="h-4 w-4 mr-2" /> {language === 'en' ? 'Add Contact' : 'Tambah Kontak'}
           </Button>
         </div>
       </PageHeader>
@@ -518,35 +541,35 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
           <div className="bg-card border border-border/40 p-4 rounded-xl shadow-sm flex flex-col justify-between hover:border-border/80 transition-colors">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-muted-foreground">Total Kontak</span>
+              <span className="text-xs font-medium text-muted-foreground">{language === 'en' ? 'Total Contacts' : 'Total Kontak'}</span>
               <Phone size={15} className="text-muted-foreground" />
             </div>
             <p className="text-2xl font-bold font-mono text-foreground mt-2">{contacts.length}</p>
           </div>
           <div className="bg-card border border-border/40 p-4 rounded-xl shadow-sm flex flex-col justify-between hover:border-border/80 transition-colors">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-muted-foreground">Konsultan Hukum</span>
+              <span className="text-xs font-medium text-muted-foreground">{language === 'en' ? 'Legal Consultants' : 'Konsultan Hukum'}</span>
               <Scale size={15} className="text-muted-foreground" />
             </div>
             <p className="text-2xl font-bold font-mono text-foreground mt-2">{contacts.filter(c => c.category === 'Lawyer').length}</p>
           </div>
           <div className="bg-card border border-border/40 p-4 rounded-xl shadow-sm flex flex-col justify-between hover:border-border/80 transition-colors">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-muted-foreground">Instansi Pemerintah</span>
+              <span className="text-xs font-medium text-muted-foreground">{language === 'en' ? 'Government Agencies' : 'Instansi Pemerintah'}</span>
               <Landmark size={15} className="text-muted-foreground" />
             </div>
             <p className="text-2xl font-bold font-mono text-foreground mt-2">{contacts.filter(c => c.category === 'Government').length}</p>
           </div>
           <div className="bg-card border border-border/40 p-4 rounded-xl shadow-sm flex flex-col justify-between hover:border-border/80 transition-colors">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-muted-foreground">Vendor Legal</span>
+              <span className="text-xs font-medium text-muted-foreground">{language === 'en' ? 'Legal Vendors' : 'Vendor Legal'}</span>
               <Store size={15} className="text-muted-foreground" />
             </div>
             <p className="text-2xl font-bold font-mono text-foreground mt-2">{contacts.filter(c => c.category === 'Vendor').length}</p>
           </div>
           <div className="bg-card border border-border/40 p-4 rounded-xl shadow-sm flex flex-col justify-between hover:border-border/80 transition-colors">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-muted-foreground">Lainnya</span>
+              <span className="text-xs font-medium text-muted-foreground">{language === 'en' ? 'Others' : 'Lainnya'}</span>
               <ContactRound size={15} className="text-muted-foreground" />
             </div>
             <p className="text-2xl font-bold font-mono text-foreground mt-2">
@@ -565,7 +588,7 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
           <div className="relative w-full sm:w-80">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input 
-              placeholder="Cari kontak..." 
+              placeholder={language === 'en' ? 'Search contacts...' : 'Cari kontak...'} 
               className="pl-9 h-9 text-sm rounded-md"
               value={searchTerm}
               onChange={(e) => handleSearchChange(e.target.value)}
@@ -575,11 +598,11 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
           {/* Shadcn Tabs style for categories */}
           <div className="inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground w-full sm:w-auto overflow-x-auto hide-scrollbar">
             {[
-              { id: 'all', label: 'Semua' },
-              { id: 'lawyer', label: 'Konsultan Hukum' },
+              { id: 'all', label: language === 'en' ? 'All' : 'Semua' },
+              { id: 'lawyer', label: language === 'en' ? 'Legal Consultants' : 'Konsultan Hukum' },
               { id: 'vendor', label: 'Vendor' },
-              { id: 'government', label: 'Instansi Pemerintah' },
-              { id: 'other', label: 'Lainnya' }
+              { id: 'government', label: language === 'en' ? 'Government' : 'Instansi Pemerintah' },
+              { id: 'other', label: language === 'en' ? 'Others' : 'Lainnya' }
             ].map(cat => (
               <button
                 key={cat.id}
@@ -641,7 +664,7 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
                       <h3 className="font-semibold text-sm text-foreground leading-tight truncate">{contact.name}</h3>
-                      <span className="inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium text-muted-foreground whitespace-nowrap shrink-0">{formatContactCategory(contact.category)}</span>
+                      <span className="inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium text-muted-foreground whitespace-nowrap shrink-0">{formatContactCategory(contact.category, language)}</span>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1 truncate"><Building2 size={11} className="shrink-0" /> {contact.organization}</p>
                   </div>
@@ -673,7 +696,7 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button onClick={() => openEditModal(contact)} className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors"><Edit3 size={13} /></button>
                     {isSuperAdmin && (
-                      <button onClick={() => setDeleteConfirm(contact)} title="Delete Contact" className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors"><Trash2 size={13} /></button>
+                      <button onClick={() => setDeleteConfirm(contact)} title={language === 'en' ? 'Delete Contact' : 'Hapus Kontak'} className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors"><Trash2 size={13} /></button>
                     )}
                   </div>
                 </div>
@@ -687,12 +710,12 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent border-b border-border/40">
-                <TableHead className="text-xs font-semibold text-foreground/80 pl-6">Detail Kontak</TableHead>
-                <TableHead className="text-xs font-semibold text-foreground/80">Kategori</TableHead>
-                <TableHead className="text-xs font-semibold text-foreground/80">Telepon</TableHead>
+                <TableHead className="text-xs font-semibold text-foreground/80 pl-6">{language === 'en' ? 'Contact Details' : 'Detail Kontak'}</TableHead>
+                <TableHead className="text-xs font-semibold text-foreground/80">{language === 'en' ? 'Category' : 'Kategori'}</TableHead>
+                <TableHead className="text-xs font-semibold text-foreground/80">{language === 'en' ? 'Phone' : 'Telepon'}</TableHead>
                 <TableHead className="text-xs font-semibold text-foreground/80">Email</TableHead>
-                <TableHead className="text-xs font-semibold text-foreground/80">Kota</TableHead>
-                <TableHead className="text-xs font-semibold text-foreground/80 text-right pr-6">Aksi</TableHead>
+                <TableHead className="text-xs font-semibold text-foreground/80">{language === 'en' ? 'City' : 'Kota'}</TableHead>
+                <TableHead className="text-xs font-semibold text-foreground/80 text-right pr-6">{language === 'en' ? 'Actions' : 'Aksi'}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -710,7 +733,7 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
                     </div>
                   </TableCell>
                   <TableCell className="py-4">
-                    <span className="inline-flex items-center rounded-md border border-border/70 px-2 py-0.5 text-xs font-medium bg-muted/60 text-foreground">{formatContactCategory(contact.category)}</span>
+                    <span className="inline-flex items-center rounded-md border border-border/70 px-2 py-0.5 text-xs font-medium bg-muted/60 text-foreground">{formatContactCategory(contact.category, language)}</span>
                   </TableCell>
                   <TableCell className="py-4">
                     <button onClick={() => copyToClipboard(contact.phone, `${contact.id}-phone`)} className="flex items-center gap-1.5 font-mono text-xs text-foreground hover:text-foreground/80 transition-colors group/cp">
@@ -731,7 +754,7 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
                     <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button onClick={() => openEditModal(contact)} className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors"><Edit3 size={14} /></button>
                       {isSuperAdmin && (
-                        <button onClick={() => setDeleteConfirm(contact)} title="Delete Contact (Super Admin Only)" className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors"><Trash2 size={14} /></button>
+                        <button onClick={() => setDeleteConfirm(contact)} title={language === 'en' ? 'Delete Contact (Super Admin Only)' : 'Hapus Kontak (Khusus Super Admin)'} className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors"><Trash2 size={14} /></button>
                       )}
                     </div>
                   </TableCell>
@@ -747,7 +770,9 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
       {!loading && totalPages > 1 && (
         <div className="flex items-center justify-between bg-card border border-border/40 rounded-2xl px-5 py-3 shadow-sm">
           <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">
-            MENAMPILKAN {((currentPage - 1) * ITEMS_PER_PAGE) + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, filteredContacts.length)} DARI {filteredContacts.length} KONTAK
+            {language === 'en'
+              ? `SHOWING ${((currentPage - 1) * ITEMS_PER_PAGE) + 1}–${Math.min(currentPage * ITEMS_PER_PAGE, filteredContacts.length)} OF ${filteredContacts.length} CONTACTS`
+              : `MENAMPILKAN ${((currentPage - 1) * ITEMS_PER_PAGE) + 1}–${Math.min(currentPage * ITEMS_PER_PAGE, filteredContacts.length)} DARI ${filteredContacts.length} KONTAK`}
           </p>
           <div className="flex items-center gap-1">
             <button
@@ -784,8 +809,8 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
       {!loading && filteredContacts.length === 0 && (
         <div className="bg-card border border-border/40 rounded-2xl p-12 text-center text-muted-foreground space-y-2">
           <Phone className="h-10 w-10 mx-auto opacity-20" />
-          <p className="font-bold text-sm text-foreground">No contacts found</p>
-          <p className="text-xs opacity-70">Try adjusting your search query or add a new contact</p>
+          <p className="font-bold text-sm text-foreground">{language === 'en' ? 'No contacts found' : 'Tidak ada kontak ditemukan'}</p>
+          <p className="text-xs opacity-70">{language === 'en' ? 'Try adjusting your search query or add a new contact' : 'Coba sesuaikan kata kunci pencarian atau tambah kontak baru'}</p>
         </div>
       )}
 
@@ -802,12 +827,12 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
               </div>
               <div className="flex-1 min-w-0">
                 <DialogTitle className="text-lg font-bold leading-tight">
-                  {editingContact ? 'Edit Contact' : 'Add New Contact'}
+                  {editingContact ? (language === 'en' ? 'Edit Contact' : 'Ubah Kontak') : (language === 'en' ? 'Add New Contact' : 'Tambah Kontak Baru')}
                 </DialogTitle>
                 <DialogDescription className="text-xs mt-0.5 leading-relaxed">
                   {editingContact
-                    ? 'Update contact details in the directory.'
-                    : 'Add legal counsel, notary, vendor, or government contact.'}
+                    ? (language === 'en' ? 'Update contact details in the directory.' : 'Perbarui rincian kontak di direktori.')
+                    : (language === 'en' ? 'Add legal counsel, notary, vendor, or government contact.' : 'Tambah konsultan hukum, notaris, vendor, atau kontak instansi.')}
                 </DialogDescription>
               </div>
             </div>
@@ -819,14 +844,14 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
               {/* Category Selector Cards */}
               <div className="space-y-2">
                 <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Category <span className="text-destructive normal-case tracking-normal font-bold">*</span>
+                  {language === 'en' ? 'Category' : 'Kategori'} <span className="text-destructive normal-case tracking-normal font-bold">*</span>
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   {[
-                    { value: 'Lawyer',     label: 'Konsultan Hukum / Notaris', icon: Scale,    color: 'blue' },
-                    { value: 'Government', label: 'Instansi Pemerintah',        icon: Landmark, color: 'amber' },
-                    { value: 'Vendor',     label: 'Vendor / Penerjemah',        icon: Store,    color: 'violet' },
-                    { value: 'Other',      label: 'Kontak Lainnya',             icon: User,     color: 'slate' },
+                    { value: 'Lawyer',     label: language === 'en' ? 'Legal Counsel / Notary' : 'Konsultan Hukum / Notaris', icon: Scale,    color: 'blue' },
+                    { value: 'Government', label: language === 'en' ? 'Government Agency' : 'Instansi Pemerintah',        icon: Landmark, color: 'amber' },
+                    { value: 'Vendor',     label: language === 'en' ? 'Vendor / Translator' : 'Vendor / Penerjemah',        icon: Store,    color: 'violet' },
+                    { value: 'Other',      label: language === 'en' ? 'Other Contacts' : 'Kontak Lainnya',             icon: User,     color: 'slate' },
                   ].map(({ value, label, icon: Icon, color }) => {
                     const isSelected = formData.category === value;
                     const colorMap: Record<string, string> = {
@@ -854,7 +879,7 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
               {/* Full Name */}
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Full Name / Title <span className="text-destructive normal-case tracking-normal font-bold">*</span>
+                  {language === 'en' ? 'Full Name / Title' : 'Nama Lengkap / Gelar'} <span className="text-destructive normal-case tracking-normal font-bold">*</span>
                 </label>
                 <div className="relative">
                   <User size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/60" />
@@ -870,7 +895,7 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
 
               {/* Organization */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Organization / Law Firm</label>
+                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{language === 'en' ? 'Organization / Law Firm' : 'Instansi / Kantor Hukum'}</label>
                 <div className="relative">
                   <Building2 size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/60" />
                   <Input
@@ -886,7 +911,7 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Phone <span className="text-destructive normal-case tracking-normal font-bold">*</span>
+                    {language === 'en' ? 'Phone' : 'Telepon'} <span className="text-destructive normal-case tracking-normal font-bold">*</span>
                   </label>
                   <div className="relative">
                     <Phone size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/60" />
@@ -900,7 +925,7 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
                   </div>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">City</label>
+                  <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{language === 'en' ? 'City' : 'Kota'}</label>
                   <div className="relative">
                     <MapPin size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/60" />
                     <Input
@@ -915,7 +940,7 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
 
               {/* Email */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Email Address</label>
+                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{language === 'en' ? 'Email Address' : 'Alamat Email'}</label>
                 <div className="relative">
                   <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/60" />
                   <Input
@@ -930,10 +955,10 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
 
               {/* Notes */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Notes / Specialization</label>
+                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{language === 'en' ? 'Notes / Specialization' : 'Catatan / Spesialisasi'}</label>
                 <textarea
                   rows={3}
-                  placeholder="Specialization, deed services, OSS permits..."
+                  placeholder={language === 'en' ? 'Specialization, deed services, OSS permits...' : 'Spesialisasi, jasa akta, perizinan OSS...'}
                   value={formData.notes}
                   onChange={e => setFormData({ ...formData, notes: e.target.value })}
                   className="w-full px-3 py-2.5 text-sm rounded-lg border border-input bg-transparent placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-ring/50 focus:border-ring resize-none transition-colors"
@@ -944,7 +969,7 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
 
             {/* Footer */}
             <div className="flex items-center justify-between gap-3 px-6 py-4 border-t border-border/50 bg-muted/30">
-              <p className="text-xs text-muted-foreground"><span className="text-destructive font-bold">*</span> Required fields</p>
+              <p className="text-xs text-muted-foreground"><span className="text-destructive font-bold">*</span> {language === 'en' ? 'Required fields' : 'Wajib diisi'}</p>
               <div className="flex gap-2">
                 <Button
                   type="button"
@@ -953,7 +978,7 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
                   onClick={() => setIsModalOpen(false)}
                   className="px-4"
                 >
-                  Cancel
+                  {language === 'en' ? 'Cancel' : 'Batal'}
                 </Button>
                 <Button
                   type="submit"
@@ -962,8 +987,8 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
                   className="px-5 gap-2"
                 >
                   {isSubmitting
-                    ? <><Loader2 size={14} className="animate-spin" /> Saving...</>
-                    : <><Save size={14} /> {editingContact ? 'Update Contact' : 'Save Contact'}</>}
+                    ? <><Loader2 size={14} className="animate-spin" /> {language === 'en' ? 'Saving...' : 'Menyimpan...'}</>
+                    : <><Save size={14} /> {editingContact ? (language === 'en' ? 'Update Contact' : 'Simpan Perubahan') : (language === 'en' ? 'Save Contact' : 'Simpan Kontak')}</>}
                 </Button>
               </div>
             </div>
@@ -975,14 +1000,16 @@ export const CSLDirectoryManager: React.FC<CSLDirectoryManagerProps> = ({ curren
       <Dialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>Delete Contact?</DialogTitle>
+            <DialogTitle>{language === 'en' ? 'Delete Contact?' : 'Hapus Kontak?'}</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete <strong>{deleteConfirm?.name}</strong> from the directory? This action cannot be undone.
+              {language === 'en'
+                ? <>Are you sure you want to delete <strong>{deleteConfirm?.name}</strong> from the directory? This action cannot be undone.</>
+                : <>Apakah Anda yakin ingin menghapus <strong>{deleteConfirm?.name}</strong> dari direktori? Tindakan ini tidak dapat dibatalkan.</>}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteConfirm(null)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleConfirmDelete}>Delete Contact</Button>
+            <Button variant="outline" onClick={() => setDeleteConfirm(null)}>{language === 'en' ? 'Cancel' : 'Batal'}</Button>
+            <Button variant="destructive" onClick={handleConfirmDelete}>{language === 'en' ? 'Delete Contact' : 'Hapus Kontak'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

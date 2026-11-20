@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
-    Bell, Menu, ChevronDown, LogOut, User, Sun, Moon,
+    Bell, Menu, ChevronDown, LogOut, User, Sun, Moon, Globe,
     LayoutGrid,
     LifeBuoy, Activity, Calendar, ShoppingCart, Package, Network, Folder,
     Shield, Users, Building2, Briefcase, Layers, Zap, Phone, Megaphone,
@@ -222,6 +222,15 @@ export const TopNavigation: React.FC<TopNavigationProps> = ({
                         <button onClick={onShare} aria-label="Share page" className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-white transition-all hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg" title="Share">
                             <Share2 size={16} />
                         </button>
+                        <button 
+                            onClick={() => setLanguage(language === 'en' ? 'id' : 'en')} 
+                            aria-label="Toggle language" 
+                            className="p-1.5 text-xs font-bold text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white transition-all hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg flex items-center gap-1"
+                            title={language === 'en' ? 'Switch to Bahasa Indonesia' : 'Switch to English'}
+                        >
+                            <Globe size={14} />
+                            <span className="uppercase text-[11px] font-mono">{language}</span>
+                        </button>
                         <button onClick={toggleTheme} aria-label="Toggle light/dark theme" className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-white transition-all hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">
                             {isDark ? <Sun size={16} /> : <Moon size={16} />}
                         </button>
@@ -252,6 +261,17 @@ export const TopNavigation: React.FC<TopNavigationProps> = ({
 
                     {/* Right: Controls */}
                     <div className="flex items-center gap-1">
+                        {/* Language Toggle */}
+                        <button 
+                            onClick={() => setLanguage(language === 'en' ? 'id' : 'en')} 
+                            aria-label="Toggle language" 
+                            className="p-1.5 px-2 text-xs font-bold text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white transition-all rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-1.5"
+                            title={language === 'en' ? 'Switch to Bahasa Indonesia' : 'Switch to English'}
+                        >
+                            <Globe size={16} />
+                            <span className="uppercase text-[11px] font-mono">{language}</span>
+                        </button>
+
                         {/* Theme Toggle */}
                         <button onClick={toggleTheme} aria-label="Toggle dark mode" className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-white transition-all rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800">
                             {isDark ? <Sun size={18} /> : <Moon size={18} />}

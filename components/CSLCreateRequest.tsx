@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
+import { useLanguage } from '../translations';
 import { notifyRequestUpdate } from '../utils/cslNotificationUtils';
 
 interface CSLCategory {
@@ -38,6 +39,7 @@ function generateRequestNumber(): string {
 }
 
 export const CSLCreateRequest: React.FC<CSLCreateRequestProps> = ({ currentUser, onClose, onSuccess }) => {
+  const { language } = useLanguage();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -138,7 +140,7 @@ export const CSLCreateRequest: React.FC<CSLCreateRequestProps> = ({ currentUser,
     const { data: insertData, error } = await supabase.from('csl_requests').insert([payload]).select('id').single();
     if (error) {
       console.error('DB insert error:', error.message);
-      toast.error(`Gagal mengirim permintaan: ${error.message}`);
+      toast.error(language === 'en' ? `Failed to submit request: ${error.message}` : `Gagal mengirim permintaan: ${error.message}`);
       setIsSubmitting(false);
       return;
     }
@@ -150,7 +152,7 @@ export const CSLCreateRequest: React.FC<CSLCreateRequestProps> = ({ currentUser,
         status: 'SUBMITTED',
         actor_name: currentUser?.fullName || currentUser?.email || 'Pemohon',
         actor_id: currentUser?.id ? String(currentUser.id) : null,
-        note: 'Permintaan diajukan oleh pemohon',
+        note: language === 'en' ? 'Request submitted by requester' : 'Permintaan diajukan oleh pemohon',
         has_files: attachedFiles.length > 0,
       }]);
 
@@ -163,7 +165,7 @@ export const CSLCreateRequest: React.FC<CSLCreateRequestProps> = ({ currentUser,
         requester_name: currentUser?.fullName || currentUser?.email || 'Pemohon',
         department: form.department === 'Other' ? form.otherDepartment : form.department,
         company: currentUser?.company || 'PT GESIT',
-        category_name: (form.department === 'Other' ? form.otherDepartment : form.department) || 'Permintaan Legal',
+        category_name: (form.department === 'Other' ? form.otherDepartment : form.department) || (language === 'en' ? 'Legal Request' : 'Permintaan Legal'),
         description: form.description,
         status: 'SUBMITTED'
       }, 'SUBMITTED');
@@ -176,7 +178,7 @@ export const CSLCreateRequest: React.FC<CSLCreateRequestProps> = ({ currentUser,
         try {
           const progressVal = Math.round(15 + ((i + 0.3) / attachedFiles.length) * 75);
           setUploadProgress(progressVal);
-          setUploadStatusText(`Mengunggah berkas ${i + 1}/${attachedFiles.length}: ${file.name}`);
+          setUploadStatusText(language === 'en' ? `Uploading file ${i + 1}/${attachedFiles.length}: ${file.name}` : `Mengunggah berkas ${i + 1}/${attachedFiles.length}: ${file.name}`);
 
           // Convert file to base64
           const reader = new FileReader();
@@ -224,7 +226,7 @@ export const CSLCreateRequest: React.FC<CSLCreateRequestProps> = ({ currentUser,
     }
 
     setUploadProgress(100);
-    setUploadStatusText('Selesai!');
+    setUploadStatusText(language === 'en' ? 'Done!' : 'Selesai!');
     setSubmittedNumber(requestNumber);
     setSubmitted(true);
     setIsSubmitting(false);
@@ -237,10 +239,10 @@ export const CSLCreateRequest: React.FC<CSLCreateRequestProps> = ({ currentUser,
           <CheckCircle2 size={42} className="text-[#C9A84C]" />
         </div>
         <div>
-          <p className="text-[10px] font-black uppercase tracking-widest text-[#C9A84C] mb-2">Permintaan Terkirim!</p>
+          <p className="text-[10px] font-black uppercase tracking-widest text-[#C9A84C] mb-2">{language === 'en' ? 'Request Submitted!' : 'Permintaan Terkirim!'}</p>
           <h2 className="text-3xl font-black text-foreground font-mono">{submittedNumber}</h2>
           <p className="text-sm text-muted-foreground mt-3 max-w-sm leading-relaxed">
-            Permintaan kamu telah diterima. Tim CSL akan segera menghubungi kamu melalui email.
+            {language === 'en' ? 'Your request has been received. The CSL Team will contact you by email shortly.' : 'Permintaan kamu telah diterima. Tim CSL akan segera menghubungi kamu melalui email.'}
           </p>
         </div>
         <div className="flex gap-3 mt-8">
@@ -248,14 +250,14 @@ export const CSLCreateRequest: React.FC<CSLCreateRequestProps> = ({ currentUser,
             if (onSuccess) onSuccess();
             if (onClose) onClose();
           }}>
-            Tutup & Lihat Data
+            {language === 'en' ? 'Close & View Data' : 'Tutup & Lihat Data'}
           </Button>
           <Button className="rounded-lg font-bold text-sm h-10 px-5 bg-slate-800 dark:bg-slate-200 dark:text-slate-900 hover:opacity-90" onClick={() => {
             setSubmitted(false);
             setForm({ ...form, categoryId: '', description: '', tujuan: '', required_date: '', otherDepartment: '' });
             setAttachedFiles([]);
           }}>
-            Buat Permintaan Lain
+            {language === 'en' ? 'Create Another Request' : 'Buat Permintaan Lain'}
           </Button>
         </div>
       </div>
@@ -269,11 +271,11 @@ export const CSLCreateRequest: React.FC<CSLCreateRequestProps> = ({ currentUser,
         <div className="bg-card border border-border/40 rounded-xl overflow-hidden shadow-sm">
           <div className="flex items-center gap-2.5 px-5 py-3 border-b border-border/40 bg-muted/20">
             <div className="w-5 h-5 rounded-md flex items-center justify-center text-xs font-semibold shrink-0 bg-muted text-foreground border border-border/40">1</div>
-            <h2 className="text-sm font-semibold text-foreground">Identitas Pemohon</h2>
+            <h2 className="text-sm font-semibold text-foreground">{language === 'en' ? 'Requester Identity' : 'Identitas Pemohon'}</h2>
           </div>
           <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-foreground">Nama Pemohon</label>
+              <label className="text-xs font-medium text-foreground">{language === 'en' ? 'Requester Name' : 'Nama Pemohon'}</label>
               <Input readOnly value={currentUser?.fullName || '—'} className="h-9 bg-muted/40 cursor-default" />
             </div>
             <div className="space-y-1.5">
@@ -281,7 +283,7 @@ export const CSLCreateRequest: React.FC<CSLCreateRequestProps> = ({ currentUser,
               <Input readOnly value={currentUser?.email || '—'} className="h-9 bg-muted/40 text-muted-foreground cursor-default truncate" />
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-foreground">Divisi <span className="text-destructive">*</span></label>
+              <label className="text-xs font-medium text-foreground">{language === 'en' ? 'Division / Dept' : 'Divisi'} <span className="text-destructive">*</span></label>
               <div className="relative">
                 <select
                   required
@@ -289,13 +291,13 @@ export const CSLCreateRequest: React.FC<CSLCreateRequestProps> = ({ currentUser,
                   onChange={e => setForm(f => ({ ...f, department: e.target.value }))}
                   className="h-9 w-full rounded-md border border-input bg-background pl-3 pr-8 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring text-foreground appearance-none"
                 >
-                  <option value="">— Pilih Divisi —</option>
+                  <option value="">{language === 'en' ? '— Select Division —' : '— Pilih Divisi —'}</option>
                   {isLoadingMaster ? (
-                    <option disabled>Loading...</option>
+                    <option disabled>{language === 'en' ? 'Loading...' : 'Memuat...'}</option>
                   ) : (
                     <>
                       {masterDepartments.map(d => <option key={d} value={d}>{d}</option>)}
-                      <option value="Other">Lainnya (Ketik sendiri)</option>
+                      <option value="Other">{language === 'en' ? 'Other (Custom)' : 'Lainnya (Ketik sendiri)'}</option>
                     </>
                   )}
                 </select>
@@ -305,11 +307,11 @@ export const CSLCreateRequest: React.FC<CSLCreateRequestProps> = ({ currentUser,
             
             {form.department === 'Other' && (
               <div className="space-y-1.5 animate-in fade-in duration-300">
-                <label className="text-xs font-medium text-foreground">Nama Divisi <span className="text-destructive">*</span></label>
+                <label className="text-xs font-medium text-foreground">{language === 'en' ? 'Division Name' : 'Nama Divisi'} <span className="text-destructive">*</span></label>
                 <Input
                   type="text"
                   required
-                  placeholder="Ketik nama divisi"
+                  placeholder={language === 'en' ? 'Enter division name' : 'Ketik nama divisi'}
                   value={form.otherDepartment}
                   onChange={e => setForm(f => ({ ...f, otherDepartment: e.target.value }))}
                   className="h-9"
@@ -323,12 +325,12 @@ export const CSLCreateRequest: React.FC<CSLCreateRequestProps> = ({ currentUser,
         <div className="bg-card border border-border/40 rounded-xl overflow-hidden shadow-sm">
           <div className="flex items-center gap-2.5 px-5 py-3 border-b border-border/40 bg-muted/20">
             <div className="w-5 h-5 rounded-md flex items-center justify-center text-xs font-semibold shrink-0 bg-muted text-foreground border border-border/40">2</div>
-            <h2 className="text-sm font-semibold text-foreground">Detail Permintaan</h2>
+            <h2 className="text-sm font-semibold text-foreground">{language === 'en' ? 'Request Details' : 'Detail Permintaan'}</h2>
           </div>
           <div className="p-5 space-y-4">
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-foreground">
-                Kategori Permintaan <span className="text-destructive">*</span>
+                {language === 'en' ? 'Request Category' : 'Kategori Permintaan'} <span className="text-destructive">*</span>
               </label>
               <div className="relative">
                 <select
@@ -337,7 +339,7 @@ export const CSLCreateRequest: React.FC<CSLCreateRequestProps> = ({ currentUser,
                   onChange={e => setForm(f => ({ ...f, categoryId: e.target.value }))}
                   className="h-9 w-full rounded-md border border-input bg-background pl-3 pr-8 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring text-foreground appearance-none"
                 >
-                  <option value="">— Pilih Kategori —</option>
+                  <option value="">{language === 'en' ? '— Select Category —' : '— Pilih Kategori —'}</option>
                   {categories.map(category => (
                     <option key={category.id} value={category.id}>
                       {category.name}
@@ -346,22 +348,22 @@ export const CSLCreateRequest: React.FC<CSLCreateRequestProps> = ({ currentUser,
                 </select>
                 <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
               </div>
-              <p className="text-[11px] text-muted-foreground">Kategori menentukan tim penanganan dan target SLA request.</p>
+              <p className="text-[11px] text-muted-foreground">{language === 'en' ? 'Category determines assignment and target SLA.' : 'Kategori menentukan tim penanganan dan target SLA request.'}</p>
             </div>
 
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-foreground">
-                Deskripsi Permintaan Data / Draft <span className="text-destructive">*</span>
+                {language === 'en' ? 'Data / Draft Request Description' : 'Deskripsi Permintaan Data / Draft'} <span className="text-destructive">*</span>
               </label>
               <p className="text-[11px] text-muted-foreground">
-                Contoh: Surat Kuasa, CTC ID, Legalitas Dokumen PT xxx, Perubahan Anggaran Dasar, Perjanjian Kerjasama, dll.
+                {language === 'en' ? 'e.g. Power of Attorney, CTC ID, PT Legalities, Articles of Association, Partnership Agreement, etc.' : 'Contoh: Surat Kuasa, CTC ID, Legalitas Dokumen PT xxx, Perubahan Anggaran Dasar, Perjanjian Kerjasama, dll.'}
               </p>
               <div className="relative">
                 <Textarea
                   required
                   maxLength={1000}
                   rows={3}
-                  placeholder="Jelaskan dokumen atau draft yang dibutuhkan secara spesifik"
+                  placeholder={language === 'en' ? 'Explain the specific document or draft required' : 'Jelaskan dokumen atau draft yang dibutuhkan secara spesifik'}
                   value={form.description}
                   onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
                   className="text-sm resize-none pb-6"
@@ -374,17 +376,17 @@ export const CSLCreateRequest: React.FC<CSLCreateRequestProps> = ({ currentUser,
 
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-foreground">
-                Tujuan Permintaan Data / Draft <span className="text-destructive">*</span>
+                {language === 'en' ? 'Purpose of Request' : 'Tujuan Permintaan Data / Draft'} <span className="text-destructive">*</span>
               </label>
               <p className="text-[11px] text-muted-foreground">
-                Contoh: Untuk keperluan pengajuan izin usaha ke BKPM, untuk presentasi ke investor, dll.
+                {language === 'en' ? 'e.g. For business license application to BKPM, investor pitch, etc.' : 'Contoh: Untuk keperluan pengajuan izin usaha ke BKPM, untuk presentasi ke investor, dll.'}
               </p>
               <div className="relative">
                 <Textarea
                   required
                   maxLength={1000}
                   rows={3}
-                  placeholder="Jelaskan untuk kebutuhan apa dokumen ini diperlukan"
+                  placeholder={language === 'en' ? 'Explain what this document will be used for' : 'Jelaskan untuk kebutuhan apa dokumen ini diperlukan'}
                   value={form.tujuan}
                   onChange={e => setForm(f => ({ ...f, tujuan: e.target.value }))}
                   className="text-sm resize-none pb-6"
@@ -397,7 +399,7 @@ export const CSLCreateRequest: React.FC<CSLCreateRequestProps> = ({ currentUser,
 
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-foreground">
-                Permintaan Dibutuhkan Pada Tanggal <span className="text-destructive">*</span>
+                {language === 'en' ? 'Required By Date' : 'Permintaan Dibutuhkan Pada Tanggal'} <span className="text-destructive">*</span>
               </label>
               <Input
                 type="date"
@@ -407,7 +409,7 @@ export const CSLCreateRequest: React.FC<CSLCreateRequestProps> = ({ currentUser,
                 onChange={e => setForm(f => ({ ...f, required_date: e.target.value }))}
                 className="h-9 w-full sm:w-60"
               />
-              <p className="text-[11px] text-muted-foreground">Tanggal paling lambat dokumen harus sudah siap diterima</p>
+              <p className="text-[11px] text-muted-foreground">{language === 'en' ? 'Latest acceptable date for receiving the completed document' : 'Tanggal paling lambat dokumen harus sudah siap diterima'}</p>
             </div>
           </div>
         </div>
@@ -416,16 +418,16 @@ export const CSLCreateRequest: React.FC<CSLCreateRequestProps> = ({ currentUser,
         <div className="bg-card border border-border/40 rounded-xl overflow-hidden shadow-sm">
           <div className="flex items-center gap-2.5 px-5 py-3 border-b border-border/40 bg-muted/20">
             <div className="w-5 h-5 rounded-md flex items-center justify-center text-xs font-semibold shrink-0 bg-muted text-foreground border border-border/40">3</div>
-            <h2 className="text-sm font-semibold text-foreground">Lampiran Dokumen</h2>
+            <h2 className="text-sm font-semibold text-foreground">{language === 'en' ? 'Document Attachments' : 'Lampiran Dokumen'}</h2>
           </div>
           <div className="p-5 space-y-3">
             <div>
               <label className="text-xs font-medium text-foreground">
-                Unggah Daftar Permintaan{' '}
-                <span className="font-normal text-muted-foreground">(Opsional)</span>
+                {language === 'en' ? 'Upload Files' : 'Unggah Daftar Permintaan'}{' '}
+                <span className="font-normal text-muted-foreground">{language === 'en' ? '(Optional)' : '(Opsional)'}</span>
               </label>
               <p className="text-[11px] text-muted-foreground mt-0.5">
-                Screenshot WhatsApp, email, template dokumen, draft terkait, dll.
+                {language === 'en' ? 'WhatsApp screenshots, emails, templates, drafts, etc.' : 'Screenshot WhatsApp, email, template dokumen, draft terkait, dll.'}
               </p>
             </div>
             <div
@@ -438,12 +440,12 @@ export const CSLCreateRequest: React.FC<CSLCreateRequestProps> = ({ currentUser,
               }`}
             >
               <Upload size={20} className="text-muted-foreground" />
-              <p className="text-xs font-medium text-foreground">Klik untuk pilih file</p>
-              <p className="text-[11px] text-muted-foreground">atau seret dan lepas file di sini</p>
+              <p className="text-xs font-medium text-foreground">{language === 'en' ? 'Click to select files' : 'Klik untuk pilih file'}</p>
+              <p className="text-[11px] text-muted-foreground">{language === 'en' ? 'or drag and drop files here' : 'atau seret dan lepas file di sini'}</p>
               <input ref={fileInputRef} type="file" multiple accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.xls,.xlsx"
                 className="hidden" onChange={e => addFiles(e.target.files)} />
             </div>
-            <p className="text-[10px] text-muted-foreground">JPG, PNG, PDF, DOCX, XLSX — maks. 10MB per file</p>
+            <p className="text-[10px] text-muted-foreground">JPG, PNG, PDF, DOCX, XLSX — {language === 'en' ? 'max. 10MB per file' : 'maks. 10MB per file'}</p>
             {attachedFiles.length > 0 && (
               <div className="space-y-1.5 pt-1">
                 {attachedFiles.map(file => (
@@ -470,7 +472,9 @@ export const CSLCreateRequest: React.FC<CSLCreateRequestProps> = ({ currentUser,
         <div className="flex items-start gap-2.5 bg-muted/40 border border-border/50 rounded-xl px-4 py-3">
           <Info size={15} className="text-muted-foreground shrink-0 mt-0.5" />
           <p className="text-xs text-muted-foreground leading-relaxed">
-            Pantau terus sistem CSL ini dan cek juga email Anda secara berkala untuk mengetahui perkembangan request.
+            {language === 'en'
+              ? 'Monitor this CSL system and regularly check your email for updates regarding your request.'
+              : 'Pantau terus sistem CSL ini dan cek juga email Anda secara berkala untuk mengetahui perkembangan request.'}
           </p>
         </div>
 
@@ -480,7 +484,7 @@ export const CSLCreateRequest: React.FC<CSLCreateRequestProps> = ({ currentUser,
             <div className="flex items-center justify-between text-xs">
               <span className="font-medium text-foreground flex items-center gap-1.5 truncate">
                 <Loader2 size={13} className="animate-spin text-primary shrink-0" />
-                {uploadStatusText || 'Mengunggah lampiran...'}
+                {uploadStatusText || (language === 'en' ? 'Uploading attachments...' : 'Mengunggah lampiran...')}
               </span>
               <span className="font-mono text-xs font-semibold text-foreground shrink-0">{uploadProgress}%</span>
             </div>
@@ -496,12 +500,12 @@ export const CSLCreateRequest: React.FC<CSLCreateRequestProps> = ({ currentUser,
         {/* Action Buttons */}
         <div className="flex gap-3 pt-2">
           <Button type="button" variant="outline" onClick={() => onClose?.()} disabled={isSubmitting} className="flex-1 h-9 rounded-md text-xs font-medium">
-            Batal
+            {language === 'en' ? 'Cancel' : 'Batal'}
           </Button>
           <Button type="submit" disabled={isSubmitting} className="flex-1 h-9 rounded-md text-xs font-medium">
             {isSubmitting
-              ? <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Mengirim...</>
-              : <><Send className="mr-1.5 h-3.5 w-3.5" /> Kirim Permintaan</>}
+              ? <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> {language === 'en' ? 'Submitting...' : 'Mengirim...'}</>
+              : <><Send className="mr-1.5 h-3.5 w-3.5" /> {language === 'en' ? 'Submit Request' : 'Kirim Permintaan'}</>}
           </Button>
         </div>
       </form>

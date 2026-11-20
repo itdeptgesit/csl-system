@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { UserAccount } from '../types';
+import { useLanguage } from '../translations';
 import { PageHeader } from '@/components/ui/PageHeader';
 import {
   Key,
@@ -88,14 +89,15 @@ const CATEGORIES = [
   'Utilitas & Lainnya',
 ];
 
-function formatVaultCategory(cat: string) {
-  if (!cat) return 'Utilitas & Lainnya';
+function formatVaultCategory(cat: string, lang = 'id') {
+  const isEn = lang === 'en';
+  if (!cat) return isEn ? 'Utilities & Other' : 'Utilitas & Lainnya';
   const c = cat.toLowerCase();
-  if (c.includes('pemerintah') || c.includes('government')) return 'Pemerintahan';
-  if (c.includes('perbankan') || c.includes('bank') || c.includes('finansial')) return 'Perbankan';
+  if (c.includes('pemerintah') || c.includes('government')) return isEn ? 'Government' : 'Pemerintahan';
+  if (c.includes('perbankan') || c.includes('bank') || c.includes('finansial')) return isEn ? 'Banking' : 'Perbankan';
   if (c.includes('internal')) return 'Internal CSL';
-  if (c.includes('konsultan') || c.includes('notaris') || c.includes('consultant')) return 'Konsultan & Notaris';
-  if (c.includes('utilit') || c.includes('other')) return 'Utilitas & Lainnya';
+  if (c.includes('konsultan') || c.includes('notaris') || c.includes('consultant')) return isEn ? 'Consultants & Notary' : 'Konsultan & Notaris';
+  if (c.includes('utilit') || c.includes('other')) return isEn ? 'Utilities & Other' : 'Utilitas & Lainnya';
   return cat;
 }
 
@@ -121,7 +123,7 @@ function getCategoryBadgeClass(cat: string) {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> = ({ currentUser }) => {
-
+  const { language } = useLanguage();
   // — Vault state
   const [vaultKey, setVaultKey] = useState<CryptoKey | null>(null);
   const [isReady, setIsReady] = useState(false);
@@ -261,7 +263,7 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
             } catch {
               setCredentials(prev => {
                 if (prev.some(c => c.id === raw.id)) return prev;
-                return [{ ...raw, decrypted: { username: raw.username_preview || '[Terenkripsi]', password: '' } }, ...prev];
+                return [{ ...raw, decrypted: { username: raw.username_preview || (language === 'en' ? '[Encrypted]' : '[Terenkripsi]'), password: '' } }, ...prev];
               });
             }
           } else if (payload.eventType === 'UPDATE') {
@@ -290,7 +292,7 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
     if (!text) return;
     navigator.clipboard.writeText(text);
     setCopiedKey(key);
-    toast.success(`${label} disalin.`);
+    toast.success(language === 'en' ? `${label} copied.` : `${label} disalin.`);
     setTimeout(() => setCopiedKey(p => p === key ? null : p), 2000);
   }
 
@@ -330,16 +332,16 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
     const pwd = generateStrongPassword({ length: 18, includeSymbols: true, includeNumbers: true, includeUppercase: true });
     setForm(p => ({ ...p, password: pwd }));
     setShowFormPass(true);
-    toast.success('Password kuat berhasil di-generate!');
+    toast.success(language === 'en' ? 'Strong password generated!' : 'Password kuat berhasil di-generate!');
   }
 
   // — Save credential (add or edit)
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
-    if (!vaultKey) { toast.error('Vault belum siap.'); return; }
-    if (!form.title.trim()) { toast.error('Nama layanan wajib diisi.'); return; }
-    if (!form.username.trim()) { toast.error('Username wajib diisi.'); return; }
-    if (!form.password) { toast.error('Password wajib diisi.'); return; }
+    if (!vaultKey) { toast.error(language === 'en' ? 'Vault is not ready.' : 'Vault belum siap.'); return; }
+    if (!form.title.trim()) { toast.error(language === 'en' ? 'Service name is required.' : 'Nama layanan wajib diisi.'); return; }
+    if (!form.username.trim()) { toast.error(language === 'en' ? 'Username is required.' : 'Username wajib diisi.'); return; }
+    if (!form.password) { toast.error(language === 'en' ? 'Password is required.' : 'Password wajib diisi.'); return; }
 
     const authorName = currentUser?.fullName || currentUser?.username || 'CSL Team';
 
@@ -389,7 +391,7 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
           currentUser?.role || 'Staff',
           'Update Credential',
           'Credential Vault',
-          `Memperbarui kredensial: ${form.title.trim()} (${form.category})`
+          language === 'en' ? `Updating credential: ${form.title.trim()} (${form.category})` : `Memperbarui kredensial: ${form.title.trim()} (${form.category})`
         );
 
         const updated: CredentialItem = {
@@ -401,7 +403,7 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
         const next = credentials.map(c => c.id === editingItem.id ? updated : c);
         setCredentials(next);
         localStorage.setItem(LS_CREDENTIALS, JSON.stringify(next.map(({ decrypted: _, ...r }) => r)));
-        toast.success('Kredensial berhasil diperbarui.');
+        toast.success(language === 'en' ? 'Credential updated successfully.' : 'Kredensial berhasil diperbarui.');
       } else {
         // INSERT
         let inserted: CredentialItem | null = null;
@@ -421,7 +423,7 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
           currentUser?.role || 'Staff',
           'Create Credential',
           'Credential Vault',
-          `Menambahkan kredensial baru: ${form.title.trim()} (${form.category})`
+          language === 'en' ? `Adding new credential: ${form.title.trim()} (${form.category})` : `Menambahkan kredensial baru: ${form.title.trim()} (${form.category})`
         );
 
         if (!inserted) {
@@ -438,11 +440,11 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
         const next = [inserted, ...credentials];
         setCredentials(next);
         localStorage.setItem(LS_CREDENTIALS, JSON.stringify(next.map(({ decrypted: _, ...r }) => r)));
-        toast.success('Kredensial baru berhasil disimpan & terenkripsi.');
+        toast.success(language === 'en' ? 'New credential saved and encrypted.' : 'Kredensial baru berhasil disimpan & terenkripsi.');
       }
       setIsFormOpen(false);
     } catch (err: any) {
-      toast.error('Gagal menyimpan: ' + err.message);
+      toast.error((language === 'en' ? 'Failed to save: ' : 'Gagal menyimpan: ') + err.message);
     } finally {
       setIsLoading(false);
     }
@@ -450,7 +452,7 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
 
   // — Delete credential
   async function handleDelete(item: CredentialItem) {
-    if (!confirm(`Hapus kredensial untuk "${item.title}"?`)) return;
+    if (!confirm(language === 'en' ? `Delete credential for "${item.title}"?` : `Hapus kredensial untuk "${item.title}"?`)) return;
     try { await supabase.from('csl_credentials').delete().eq('id', item.id); } catch { /* ignore */ }
     const authorName = currentUser?.fullName || currentUser?.username || 'CSL Team';
     await trackActivity(
@@ -458,12 +460,12 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
       currentUser?.role || 'Staff',
       'Delete Credential',
       'Credential Vault',
-      `Menghapus kredensial: ${item.title}`
+      language === 'en' ? `Deleting credential: ${item.title}` : `Menghapus kredensial: ${item.title}`
     );
     const next = credentials.filter(c => c.id !== item.id);
     setCredentials(next);
     localStorage.setItem(LS_CREDENTIALS, JSON.stringify(next.map(({ decrypted: _, ...r }) => r)));
-    toast.success('Kredensial dihapus.');
+    toast.success(language === 'en' ? 'Credential deleted.' : 'Kredensial dihapus.');
   }
 
   // — Filtered list
@@ -489,12 +491,12 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
       <div className="space-y-6 animate-in fade-in duration-500 pb-12">
         <PageHeader
           title="Credentials Vault"
-          description="Penyimpanan akun & password bersama untuk seluruh Staff CSL dan Admin dengan enkripsi AES-256-GCM"
+          description={language === 'en' ? 'Shared account and password storage for all CSL Staff and Admins, encrypted with AES-256-GCM.' : 'Penyimpanan akun & password bersama untuk seluruh Staff CSL dan Admin dengan enkripsi AES-256-GCM'}
         />
         <div className="flex items-center justify-center min-h-[300px]">
           <div className="flex flex-col items-center gap-3 text-muted-foreground">
             <Loader2 className="h-8 w-8 animate-spin" />
-            <p className="text-sm font-medium">Memuat Credentials Vault...</p>
+            <p className="text-sm font-medium">{language === 'en' ? 'Loading Credentials Vault...' : 'Memuat Credentials Vault...'}</p>
           </div>
         </div>
       </div>
@@ -506,12 +508,15 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-12">
       <PageHeader
-        title="Credentials Vault"
-        description="Kelola akun & password bersama tim CSL secara terenkripsi AES-256-GCM. Akses & input bersama untuk seluruh Staff CSL dan Admin."
+        title={language === 'en' ? 'Credentials Vault' : 'Brankas Kredensial'}
+        subtitle="SECURITY · CREDENTIALS VAULT"
+        description={language === 'en'
+          ? 'Manage shared encrypted accounts and credentials with AES-256-GCM. Shared access for CSL Staff and Admins.'
+          : 'Kelola akun & password bersama tim CSL secara terenkripsi AES-256-GCM. Akses & input bersama untuk seluruh Staff CSL dan Admin.'}
       >
         <div className="flex flex-wrap items-center gap-2">
           <Button size="sm" onClick={openAdd} className="h-9 text-xs">
-            <Plus className="h-4 w-4 mr-1.5" /> Tambah Akun
+            <Plus className="h-4 w-4 mr-1.5" /> {language === 'en' ? 'Add Account' : 'Tambah Akun'}
           </Button>
         </div>
       </PageHeader>
@@ -521,7 +526,7 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
         <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 p-4 rounded-lg text-xs font-bold flex items-center justify-between shadow-sm">
           <div className="flex items-center gap-2">
             <Database className="h-4 w-4 text-amber-600 shrink-0" />
-            <span>Tabel Supabase belum dibuat di database cloud. Jalankan skrip SQL di Supabase SQL Editor agar seluruh Staff CSL & Admin dapat mengakses data bersama di cloud.</span>
+            <span>{language === 'en' ? 'The Supabase table has not been created in the cloud database. Run the SQL script in the Supabase SQL Editor so all CSL Staff and Admins can access shared data in the cloud.' : 'Tabel Supabase belum dibuat di database cloud. Jalankan skrip SQL di Supabase SQL Editor agar seluruh Staff CSL & Admin dapat mengakses data bersama di cloud.'}</span>
           </div>
           <Button
             variant="outline"
@@ -529,7 +534,7 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
             onClick={() => setIsSqlModalOpen(true)}
             className="h-7 text-xs border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-200"
           >
-            Lihat & Salin SQL
+            {language === 'en' ? 'View & Copy SQL' : 'Lihat & Salin SQL'}
           </Button>
         </div>
       )}
@@ -538,7 +543,7 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
       <div className="bg-primary/5 border border-primary/20 rounded-lg px-4 py-3 flex items-center gap-3">
         <Users size={15} className="text-primary shrink-0" />
         <p className="text-xs text-foreground/80">
-          <strong>Akses Bersama</strong> — Data vault dapat diakses oleh seluruh Staff CSL & Admin yang sudah login ke sistem. Terenkripsi AES-256-GCM.
+          <strong>{language === 'en' ? 'Shared Access' : 'Akses Bersama'}</strong> — {language === 'en' ? 'Vault data can be accessed by all CSL Staff and Admins who are logged in to the system. Encrypted with AES-256-GCM.' : 'Data vault dapat diakses oleh seluruh Staff CSL & Admin yang sudah login ke sistem. Terenkripsi AES-256-GCM.'}
         </p>
         <ShieldCheck size={14} className="text-emerald-500 shrink-0 ml-auto" />
       </div>
@@ -546,9 +551,9 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { label: 'Total Akun', value: credentials.length, icon: Key },
-          { label: 'Pemerintahan', value: credentials.filter(c => formatVaultCategory(c.category) === 'Pemerintahan').length, icon: Globe },
-          { label: 'Perbankan', value: credentials.filter(c => formatVaultCategory(c.category) === 'Perbankan').length, icon: ShieldCheck },
+          { label: language === 'en' ? 'Total Accounts' : 'Total Akun', value: credentials.length, icon: Key },
+          { label: formatVaultCategory('Pemerintahan', language), value: credentials.filter(c => formatVaultCategory(c.category) === 'Pemerintahan').length, icon: Globe },
+          { label: formatVaultCategory('Perbankan', language), value: credentials.filter(c => formatVaultCategory(c.category) === 'Perbankan').length, icon: ShieldCheck },
           { label: 'Internal CSL', value: credentials.filter(c => formatVaultCategory(c.category) === 'Internal CSL').length, icon: KeyRound },
         ].map(({ label, value, icon: Icon }) => (
           <div key={label} className="bg-card border border-border/40 p-5 rounded-lg shadow-sm flex flex-col justify-between hover:border-border/80 transition-colors">
@@ -568,7 +573,7 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
           <div className="relative w-full sm:w-80">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Cari nama, username, website..."
+              placeholder={language === 'en' ? 'Search name, username, website...' : 'Cari nama, username, website...'}
               className="pl-9 h-9 text-sm rounded-md"
               value={searchTerm}
               onChange={e => { setSearchTerm(e.target.value); }}
@@ -582,7 +587,7 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
                 className={`inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-xs font-medium transition-all ${activeCat === cat ? 'bg-background text-foreground shadow-sm' : 'hover:text-foreground'
                   }`}
               >
-                {cat === 'Semua' ? `Semua (${credentials.length})` : cat}
+                {cat === 'Semua' ? (language === 'en' ? `All (${credentials.length})` : `Semua (${credentials.length})`) : formatVaultCategory(cat, language)}
               </button>
             ))}
           </div>
@@ -615,9 +620,9 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
           <div className="bg-destructive/10 border border-destructive/30 text-destructive rounded-lg px-4 py-3 flex items-start gap-3">
             <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold">{failedCount} kredensial gagal didekripsi</p>
+              <p className="text-xs font-semibold">{language === 'en' ? `${failedCount} credentials failed to decrypt` : `${failedCount} kredensial gagal didekripsi`}</p>
               <p className="text-[11px] mt-0.5 text-destructive/80">
-                Data ini dienkripsi dengan master password lama dan tidak bisa dibaca lagi. Hapus dan input ulang data tersebut.
+                {language === 'en' ? 'This data was encrypted with the old master password and can no longer be read. Delete it and enter it again.' : 'Data ini dienkripsi dengan master password lama dan tidak bisa dibaca lagi. Hapus dan input ulang data tersebut.'}
               </p>
             </div>
           </div>
@@ -627,20 +632,20 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
       {/* Content */}
       {isLoading ? (
         <div className="bg-card border border-border/40 rounded-lg p-12 text-center text-muted-foreground flex items-center justify-center gap-2 font-bold text-sm">
-          <Loader2 className="h-5 w-5 animate-spin text-foreground/60" /> Memuat dan mendekripsi data...
+          <Loader2 className="h-5 w-5 animate-spin text-foreground/60" /> {language === 'en' ? 'Loading and decrypting data...' : 'Memuat dan mendekripsi data...'}
         </div>
       ) : filtered.length === 0 ? (
         <div className="bg-card border border-border/40 rounded-lg p-12 text-center">
           <Key className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
           <h3 className="font-semibold text-foreground text-sm">
-            {searchTerm ? 'Tidak ada hasil ditemukan' : 'Belum ada akun tersimpan'}
+            {searchTerm ? (language === 'en' ? 'No results found' : 'Tidak ada hasil ditemukan') : (language === 'en' ? 'No accounts saved yet' : 'Belum ada akun tersimpan')}
           </h3>
           <p className="text-xs text-muted-foreground mt-1">
-            {searchTerm ? 'Coba ganti kata kunci.' : 'Tambahkan akun pertama Anda. Password dienkripsi otomatis.'}
+            {searchTerm ? (language === 'en' ? 'Try a different keyword.' : 'Coba ganti kata kunci.') : (language === 'en' ? 'Add your first account. Passwords are encrypted automatically.' : 'Tambahkan akun pertama Anda. Password dienkripsi otomatis.')}
           </p>
           {!searchTerm && (
             <Button size="sm" onClick={openAdd} className="mt-4 h-9 text-xs">
-              <Plus className="h-4 w-4 mr-1.5" /> Tambah Akun
+              <Plus className="h-4 w-4 mr-1.5" /> {language === 'en' ? 'Add Account' : 'Tambah Akun'}
             </Button>
           )}
         </div>
@@ -666,7 +671,7 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
                       <div className="flex items-start justify-between gap-2">
                         <h3 className="font-semibold text-sm text-foreground leading-tight truncate">{item.title}</h3>
                         <span className="inline-flex items-center rounded-md border border-destructive/30 bg-destructive/10 px-2 py-0.5 text-[10px] font-semibold text-destructive whitespace-nowrap shrink-0">
-                          Gagal Dekripsi
+                          {language === 'en' ? 'Decryption failed' : 'Gagal Dekripsi'}
                         </span>
                       </div>
                       {item.website_url && (
@@ -679,20 +684,20 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
                     <div className="flex items-start gap-2 p-3 rounded-md bg-destructive/10 border border-destructive/20">
                       <AlertTriangle size={13} className="text-destructive shrink-0 mt-0.5" />
                       <p className="text-[11px] text-destructive leading-relaxed">
-                        Data ini dienkripsi dengan password lama dan tidak bisa dibaca. Hapus entri ini, lalu tambahkan ulang.
+                        {language === 'en' ? 'This data was encrypted with the old password and cannot be read. Delete this entry, then add it again.' : 'Data ini dienkripsi dengan password lama dan tidak bisa dibaca. Hapus entri ini, lalu tambahkan ulang.'}
                       </p>
                     </div>
                   </div>
                   {/* Footer */}
                   <div className="px-4 py-3 border-t border-destructive/20 bg-destructive/5 flex items-center justify-between">
-                    <span className="text-[11px] text-muted-foreground">Oleh: {item.created_by || 'CSL Team'}</span>
+                    <span className="text-[11px] text-muted-foreground">{language === 'en' ? 'By:' : 'Oleh:'} {item.created_by || 'CSL Team'}</span>
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => handleDelete(item)}
                         className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-destructive hover:bg-destructive hover:text-destructive-foreground rounded-md border border-destructive/40 transition-colors"
-                        title="Hapus data ini, lalu input ulang"
+                        title={language === 'en' ? 'Delete this data, then re-enter it' : 'Hapus data ini, lalu input ulang'}
                       >
-                        <Trash2 size={12} /> Hapus & Input Ulang
+                        <Trash2 size={12} /> {language === 'en' ? 'Delete & Re-enter' : 'Hapus & Input Ulang'}
                       </button>
                     </div>
                   </div>
@@ -725,7 +730,7 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
                         <span className="truncate">{item.website_url.replace(/^https?:\/\//, '')}</span>
                       </a>
                     ) : (
-                      <p className="text-xs text-muted-foreground mt-0.5 italic">Tidak ada URL</p>
+                      <p className="text-xs text-muted-foreground mt-0.5 italic">{language === 'en' ? 'No URL' : 'Tidak ada URL'}</p>
                     )}
                   </div>
                 </div>
@@ -754,14 +759,14 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
                       <button
                         onClick={() => toggleReveal(item.id)}
                         className="p-1 text-muted-foreground hover:text-foreground rounded transition-colors"
-                        title={revealed ? 'Sembunyikan' : 'Tampilkan'}
+                        title={language === 'en' ? (revealed ? 'Hide' : 'Show') : (revealed ? 'Sembunyikan' : 'Tampilkan')}
                       >
                         {revealed ? <EyeOff size={12} /> : <Eye size={12} />}
                       </button>
                       <button
                         onClick={() => handleCopy(password, `p-${item.id}`, 'Password')}
                         className="p-1 text-muted-foreground hover:text-foreground rounded transition-colors"
-                        title="Salin Password"
+                        title={language === 'en' ? 'Copy Password' : 'Salin Password'}
                       >
                         {copiedKey === `p-${item.id}` ? <Check size={12} /> : <Copy size={11} />}
                       </button>
@@ -787,9 +792,9 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
 
                 {/* Card footer */}
                 <div className="px-4 py-2.5 border-t bg-muted/20 flex items-center justify-between text-[11px] text-muted-foreground">
-                  <div className="flex items-center gap-1.5 truncate max-w-[170px]" title={`Ditambahkan oleh ${item.created_by || 'CSL Team'}`}>
+                  <div className="flex items-center gap-1.5 truncate max-w-[170px]" title={language === 'en' ? `Added by ${item.created_by || 'CSL Team'}` : `Ditambahkan oleh ${item.created_by || 'CSL Team'}`}>
                     <ShieldCheck size={12} className="text-emerald-500 shrink-0" />
-                    <span className="truncate">Oleh: <strong className="font-semibold text-foreground/90">{item.created_by || 'CSL Team'}</strong></span>
+                    <span className="truncate">{language === 'en' ? 'By:' : 'Oleh:'} <strong className="font-semibold text-foreground/90">{item.created_by || 'CSL Team'}</strong></span>
                   </div>
                   <div className="flex items-center gap-1">
                     {item.website_url && (
@@ -797,15 +802,15 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
                         href={item.website_url.startsWith('http') ? item.website_url : `https://${item.website_url}`}
                         target="_blank" rel="noreferrer"
                         className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors"
-                        title="Buka Website"
+                        title={language === 'en' ? 'Open Website' : 'Buka Website'}
                       >
                         <ExternalLink size={13} />
                       </a>
                     )}
-                    <button onClick={() => openEdit(item)} className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors" title="Edit Kredensial">
+                    <button onClick={() => openEdit(item)} className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors" title={language === 'en' ? 'Edit Credential' : 'Edit Kredensial'}>
                       <Edit3 size={13} />
                     </button>
-                    <button onClick={() => handleDelete(item)} className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors" title="Hapus Kredensial">
+                    <button onClick={() => handleDelete(item)} className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors" title={language === 'en' ? 'Delete Credential' : 'Hapus Kredensial'}>
                       <Trash2 size={13} />
                     </button>
                   </div>
@@ -820,14 +825,14 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent border-b border-border/40">
-                <TableHead className="text-xs font-semibold text-foreground/80 pl-6">Layanan</TableHead>
-                <TableHead className="text-xs font-semibold text-foreground/80">Kategori</TableHead>
-                <TableHead className="text-xs font-semibold text-foreground/80">Nama PT</TableHead>
+                <TableHead className="text-xs font-semibold text-foreground/80 pl-6">{language === 'en' ? 'Service' : 'Layanan'}</TableHead>
+                <TableHead className="text-xs font-semibold text-foreground/80">{language === 'en' ? 'Category' : 'Kategori'}</TableHead>
+                <TableHead className="text-xs font-semibold text-foreground/80">{language === 'en' ? 'Company Name' : 'Nama PT'}</TableHead>
                 <TableHead className="text-xs font-semibold text-foreground/80">Username / Email</TableHead>
                 <TableHead className="text-xs font-semibold text-foreground/80">Password</TableHead>
-                <TableHead className="text-xs font-semibold text-foreground/80">Catatan</TableHead>
-                <TableHead className="text-xs font-semibold text-foreground/80">Ditambahkan Oleh</TableHead>
-                <TableHead className="text-xs font-semibold text-foreground/80 text-right pr-6">Aksi</TableHead>
+                <TableHead className="text-xs font-semibold text-foreground/80">{language === 'en' ? 'Notes' : 'Catatan'}</TableHead>
+                <TableHead className="text-xs font-semibold text-foreground/80">{language === 'en' ? 'Added By' : 'Ditambahkan Oleh'}</TableHead>
+                <TableHead className="text-xs font-semibold text-foreground/80 text-right pr-6">{language === 'en' ? 'Actions' : 'Aksi'}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -861,7 +866,7 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
                     <TableCell className="py-4">
                       {isDecryptFailed ? (
                         <span className="inline-flex items-center rounded-md border border-destructive/30 bg-destructive/10 px-2 py-0.5 text-[10px] font-semibold text-destructive">
-                          Gagal Dekripsi
+                          {language === 'en' ? 'Decryption failed' : 'Gagal Dekripsi'}
                         </span>
                       ) : (
                         <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium ${getCategoryBadgeClass(item.category)}`}>
@@ -879,7 +884,7 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
                     <TableCell className="py-4">
                       {isDecryptFailed ? (
                         <span className="flex items-center gap-1.5 text-xs text-destructive italic">
-                          <AlertTriangle size={11} /> Tidak dapat dibaca
+                          <AlertTriangle size={11} /> {language === 'en' ? 'Unreadable' : 'Tidak dapat dibaca'}
                         </span>
                       ) : (
                         <button
@@ -944,10 +949,10 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
             </div>
             <div>
               <DialogTitle className="text-base font-bold text-foreground dark:text-zinc-100">
-                {editingItem ? 'Edit Kredensial' : 'Tambah Kredensial Baru'}
+                {editingItem ? (language === 'en' ? 'Edit Credential' : 'Edit Kredensial') : (language === 'en' ? 'Add New Credential' : 'Tambah Kredensial Baru')}
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground dark:text-zinc-400 mt-0.5">
-                Data akun dienkripsi end-to-end dengan standar militer AES-256-GCM sebelum disimpan.
+                {language === 'en' ? 'Account data is encrypted end-to-end with military-grade AES-256-GCM before being stored.' : 'Data akun dienkripsi end-to-end dengan standar militer AES-256-GCM sebelum disimpan.'}
               </DialogDescription>
             </div>
           </div>
@@ -959,19 +964,19 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
               <div className="bg-card dark:bg-zinc-900/90 border border-border/60 dark:border-zinc-800 rounded-xl overflow-hidden shadow-sm">
                 <div className="flex items-center gap-2.5 px-5 py-3 border-b border-border/50 dark:border-zinc-800 bg-muted/30 dark:bg-zinc-800/50">
                   <div className="w-5 h-5 rounded-md flex items-center justify-center text-xs font-bold shrink-0 bg-primary/10 text-primary border border-primary/25">1</div>
-                  <h3 className="text-xs font-bold text-foreground dark:text-zinc-200 uppercase tracking-wider">Informasi Layanan &amp; Perusahaan</h3>
+                  <h3 className="text-xs font-bold text-foreground dark:text-zinc-200 uppercase tracking-wider">{language === 'en' ? 'Service & Company Information' : 'Informasi Layanan & Perusahaan'}</h3>
                 </div>
                 <div className="p-5 space-y-4">
                   {/* Row 1: Nama Layanan & Nama PT */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <label className="text-xs font-semibold text-foreground dark:text-zinc-300">
-                        Nama Layanan / Akun <span className="text-destructive">*</span>
+                        {language === 'en' ? 'Service / Account Name' : 'Nama Layanan / Akun'} <span className="text-destructive">*</span>
                       </label>
                       <Input
                         value={form.title}
                         onChange={e => setForm({ ...form, title: e.target.value })}
-                        placeholder="cth: DJP Online, AHU Online, KlikBCA"
+                        placeholder={language === 'en' ? 'e.g.: DJP Online, AHU Online, KlikBCA' : 'cth: DJP Online, AHU Online, KlikBCA'}
                         className="h-10 text-sm dark:bg-zinc-800/90 dark:border-zinc-700 dark:text-zinc-100 dark:placeholder:text-zinc-500"
                         autoFocus
                         required
@@ -980,14 +985,14 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
 
                     <div className="space-y-1.5">
                       <label className="text-xs font-semibold text-foreground dark:text-zinc-300">
-                        Nama PT / Entitas <span className="text-muted-foreground dark:text-zinc-500 font-normal">(Opsional)</span>
+                        {language === 'en' ? 'Company / Entity Name' : 'Nama PT / Entitas'} <span className="text-muted-foreground dark:text-zinc-500 font-normal">{language === 'en' ? '(Optional)' : '(Opsional)'}</span>
                       </label>
                       <div className="relative">
                         <Building2 size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground dark:text-zinc-500 pointer-events-none" />
                         <Input
                           value={form.nama_pt}
                           onChange={e => setForm({ ...form, nama_pt: e.target.value })}
-                          placeholder="cth: PT Desi Jaya / PT CSL..."
+                          placeholder={language === 'en' ? 'e.g.: PT Desi Jaya / PT CSL...' : 'cth: PT Desi Jaya / PT CSL...'}
                           className="h-10 text-sm pl-9 dark:bg-zinc-800/90 dark:border-zinc-700 dark:text-zinc-100 dark:placeholder:text-zinc-500"
                         />
                       </div>
@@ -997,14 +1002,14 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
                   {/* Row 2: Kategori & URL */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-foreground dark:text-zinc-300">Kategori</label>
+                      <label className="text-xs font-semibold text-foreground dark:text-zinc-300">{language === 'en' ? 'Category' : 'Kategori'}</label>
                       <div className="relative">
                         <select
                           value={form.category}
                           onChange={e => setForm({ ...form, category: e.target.value })}
                           className="h-10 w-full rounded-md border border-input dark:border-zinc-700 bg-background dark:bg-zinc-800/90 pl-3 pr-8 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring text-foreground dark:text-zinc-100 appearance-none"
                         >
-                          {CATEGORIES.map(c => <option key={c} value={c} className="dark:bg-zinc-800 dark:text-zinc-100">{c}</option>)}
+                          {CATEGORIES.map(c => <option key={c} value={c} className="dark:bg-zinc-800 dark:text-zinc-100">{formatVaultCategory(c, language)}</option>)}
                         </select>
                         <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground dark:text-zinc-400 pointer-events-none" />
                       </div>
@@ -1012,7 +1017,7 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
 
                     <div className="space-y-1.5">
                       <label className="text-xs font-semibold text-foreground dark:text-zinc-300">
-                        URL Website <span className="text-muted-foreground dark:text-zinc-500 font-normal">(Opsional)</span>
+                        URL Website <span className="text-muted-foreground dark:text-zinc-500 font-normal">{language === 'en' ? '(Optional)' : '(Opsional)'}</span>
                       </label>
                       <div className="relative">
                         <Link2 size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground dark:text-zinc-500 pointer-events-none" />
@@ -1032,7 +1037,7 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
               <div className="bg-card dark:bg-zinc-900/90 border border-border/60 dark:border-zinc-800 rounded-xl overflow-hidden shadow-sm">
                 <div className="flex items-center gap-2.5 px-5 py-3 border-b border-border/50 dark:border-zinc-800 bg-muted/30 dark:bg-zinc-800/50">
                   <div className="w-5 h-5 rounded-md flex items-center justify-center text-xs font-bold shrink-0 bg-primary/10 text-primary border border-primary/25">2</div>
-                  <h3 className="text-xs font-bold text-foreground dark:text-zinc-200 uppercase tracking-wider">Kredensial Akses &amp; Akun</h3>
+                  <h3 className="text-xs font-bold text-foreground dark:text-zinc-200 uppercase tracking-wider">{language === 'en' ? 'Access Credentials & Accounts' : 'Kredensial Akses & Akun'}</h3>
                 </div>
                 <div className="p-5 space-y-4">
                   {/* Row: Username + Password */}
@@ -1046,7 +1051,7 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
                         <Input
                           value={form.username}
                           onChange={e => setForm({ ...form, username: e.target.value })}
-                          placeholder="cth: admin@gesit.co.id"
+                          placeholder={language === 'en' ? 'e.g.: admin@gesit.co.id' : 'cth: admin@gesit.co.id'}
                           className="h-10 text-sm pl-9 dark:bg-zinc-800/90 dark:border-zinc-700 dark:text-zinc-100 dark:placeholder:text-zinc-500"
                           required
                         />
@@ -1063,7 +1068,7 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
                           onClick={handleGenerate}
                           className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:text-primary/80 transition-colors"
                         >
-                          <Sparkles size={11} /> Generate Sandi
+                          <Sparkles size={11} /> {language === 'en' ? 'Generate Password' : 'Generate Sandi'}
                         </button>
                       </div>
                       <div className="relative">
@@ -1072,7 +1077,7 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
                           type={showFormPass ? 'text' : 'password'}
                           value={form.password}
                           onChange={e => setForm({ ...form, password: e.target.value })}
-                          placeholder="Masukkan password..."
+                          placeholder={language === 'en' ? 'Enter password...' : 'Masukkan password...'}
                           className="h-10 text-sm pl-9 pr-10 font-mono tracking-wider dark:bg-zinc-800/90 dark:border-zinc-700 dark:text-zinc-100 dark:placeholder:text-zinc-500"
                           required
                         />
@@ -1094,7 +1099,7 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
                     const hasNum = /[0-9]/.test(form.password);
                     const hasSym = /[^A-Za-z0-9]/.test(form.password);
                     const score = (len >= 8 ? 1 : 0) + (len >= 14 ? 1 : 0) + (hasUpper ? 1 : 0) + (hasNum ? 1 : 0) + (hasSym ? 1 : 0);
-                    const label = score <= 1 ? 'Lemah' : score <= 3 ? 'Sedang' : 'Kuat';
+                    const label = language === 'en' ? (score <= 1 ? 'Weak' : score <= 3 ? 'Medium' : 'Strong') : (score <= 1 ? 'Lemah' : score <= 3 ? 'Sedang' : 'Kuat');
                     const color = score <= 1 ? 'bg-destructive' : score <= 3 ? 'bg-amber-400' : 'bg-emerald-500';
                     return (
                       <div className="space-y-1.5 pt-1">
@@ -1104,7 +1109,7 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
                           ))}
                         </div>
                         <p className="text-[11px] text-muted-foreground dark:text-zinc-400">
-                          Kekuatan Sandi: <span className={score <= 1 ? 'text-destructive font-semibold' : score <= 3 ? 'text-amber-500 font-semibold' : 'text-emerald-500 font-semibold'}>{label}</span>
+                          {language === 'en' ? 'Password strength:' : 'Kekuatan Sandi:'} <span className={score <= 1 ? 'text-destructive font-semibold' : score <= 3 ? 'text-amber-500 font-semibold' : 'text-emerald-500 font-semibold'}>{label}</span>
                         </p>
                       </div>
                     );
@@ -1116,22 +1121,22 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
               <div className="bg-card dark:bg-zinc-900/90 border border-border/60 dark:border-zinc-800 rounded-xl overflow-hidden shadow-sm">
                 <div className="flex items-center gap-2.5 px-5 py-3 border-b border-border/50 dark:border-zinc-800 bg-muted/30 dark:bg-zinc-800/50">
                   <div className="w-5 h-5 rounded-md flex items-center justify-center text-xs font-bold shrink-0 bg-primary/10 text-primary border border-primary/25">3</div>
-                  <h3 className="text-xs font-bold text-foreground dark:text-zinc-200 uppercase tracking-wider">Catatan &amp; Token Keamanan</h3>
+                  <h3 className="text-xs font-bold text-foreground dark:text-zinc-200 uppercase tracking-wider">{language === 'en' ? 'Notes & Security Tokens' : 'Catatan & Token Keamanan'}</h3>
                 </div>
                 <div className="p-5 space-y-2">
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold text-foreground dark:text-zinc-300">
-                      Catatan / PIN / Info Tambahan <span className="font-normal text-muted-foreground dark:text-zinc-500">(Opsional)</span>
+                      {language === 'en' ? 'Notes / PIN / Additional Info' : 'Catatan / PIN / Info Tambahan'} <span className="font-normal text-muted-foreground dark:text-zinc-500">{language === 'en' ? '(Optional)' : '(Opsional)'}</span>
                     </label>
                     <p className="text-[11px] text-muted-foreground dark:text-zinc-400">
-                      Token 2FA, PIN ATM, pertanyaan keamanan, atau detail informasi penting lainnya.
+                      {language === 'en' ? '2FA tokens, ATM PINs, security questions, or other important information.' : 'Token 2FA, PIN ATM, pertanyaan keamanan, atau detail informasi penting lainnya.'}
                     </p>
                     <div className="relative mt-2">
                       <StickyNote size={14} className="absolute left-3 top-3 text-muted-foreground dark:text-zinc-500 pointer-events-none" />
                       <textarea
                         value={form.notes}
                         onChange={e => setForm({ ...form, notes: e.target.value })}
-                        placeholder="Contoh: PIN 2FA = 123456, Pertanyaan keamanan: nama ibu..."
+                        placeholder={language === 'en' ? "Example: 2FA PIN = 123456, Security question: mother's name..." : 'Contoh: PIN 2FA = 123456, Pertanyaan keamanan: nama ibu...'}
                         rows={3}
                         className="w-full text-sm pl-9 pr-3 py-2.5 rounded-lg border border-input dark:border-zinc-700 bg-background dark:bg-zinc-800/90 dark:text-zinc-100 dark:placeholder:text-zinc-500 resize-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring transition-colors"
                       />
@@ -1146,7 +1151,7 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
             <div className="flex items-center justify-between gap-3 px-6 py-4 border-t border-border/60 dark:border-zinc-800 bg-muted/30 dark:bg-zinc-800/50">
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground dark:text-zinc-400">
                 <ShieldCheck size={14} className="text-emerald-500" />
-                Dienkripsi AES-256-GCM (Zero-Knowledge)
+                {language === 'en' ? 'Encrypted' : 'Dienkripsi'} AES-256-GCM (Zero-Knowledge)
               </div>
               <div className="flex items-center gap-2.5">
                 <Button
@@ -1157,12 +1162,12 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
                   disabled={isLoading}
                   className="h-9 px-4 text-xs font-medium dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-700"
                 >
-                  Batal
+                  {language === 'en' ? 'Cancel' : 'Batal'}
                 </Button>
                 <Button type="submit" size="sm" disabled={isLoading} className="h-9 px-4 text-xs font-medium gap-1.5 shadow-sm">
                   {isLoading
-                    ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Menyimpan...</>
-                    : <><Save className="h-3.5 w-3.5" /> {editingItem ? 'Simpan Perubahan' : 'Enkripsi & Simpan'}</>
+                    ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> {language === 'en' ? 'Saving...' : 'Menyimpan...'}</>
+                    : <><Save className="h-3.5 w-3.5" /> {editingItem ? (language === 'en' ? 'Save Changes' : 'Simpan Perubahan') : (language === 'en' ? 'Encrypt & Save' : 'Enkripsi & Simpan')}</>
                   }
                 </Button>
               </div>
@@ -1176,10 +1181,10 @@ export const CSLCredentialVault: React.FC<{ currentUser?: UserAccount | null }> 
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base">
-              <Database className="h-5 w-5" /> SQL Migrasi Supabase — Credential Vault
+              <Database className="h-5 w-5" /> {language === 'en' ? 'Supabase SQL Migration' : 'SQL Migrasi Supabase'} — Credential Vault
             </DialogTitle>
             <DialogDescription className="text-xs">
-              Jalankan skrip ini di Supabase Dashboard &gt; SQL Editor agar data tersinkronisasi ke cloud.
+              {language === 'en' ? 'Run this script in Supabase Dashboard > SQL Editor to sync data to the cloud.' : 'Jalankan skrip ini di Supabase Dashboard &gt; SQL Editor agar data tersinkronisasi ke cloud.'}
             </DialogDescription>
           </DialogHeader>
           <pre className="bg-muted text-foreground/90 p-4 rounded-md font-mono text-[11px] overflow-x-auto max-h-64 mt-2 border border-border/40 leading-relaxed">{`-- 1. Tabel Konfigurasi Vault (Salt & Internal Key Verifier)
@@ -1225,17 +1230,17 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN NULL;
 END $$;`}</pre>
           <DialogFooter className="gap-2 pt-2">
-            <Button type="button" variant="outline" size="sm" onClick={() => setIsSqlModalOpen(false)} className="h-9">Tutup</Button>
+            <Button type="button" variant="outline" size="sm" onClick={() => setIsSqlModalOpen(false)} className="h-9">{language === 'en' ? 'Close' : 'Tutup'}</Button>
             <Button
               type="button"
               size="sm"
               className="h-9"
               onClick={() => {
                 navigator.clipboard.writeText(`-- 1. Tabel Konfigurasi Vault\nCREATE TABLE IF NOT EXISTS csl_vault_config (id text PRIMARY KEY DEFAULT 'default', salt text NOT NULL, verifier_cipher text NOT NULL, verifier_iv text NOT NULL, updated_at timestamptz DEFAULT now());\nALTER TABLE csl_vault_config ENABLE ROW LEVEL SECURITY;\nDROP POLICY IF EXISTS "vault_config_all" ON csl_vault_config;\nCREATE POLICY "vault_config_all" ON csl_vault_config FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);\nGRANT ALL ON TABLE csl_vault_config TO anon, authenticated, service_role;\n\n-- 2. Tabel Kredensial Terenkripsi\nCREATE TABLE IF NOT EXISTS csl_credentials (id bigserial PRIMARY KEY, title text NOT NULL, category text DEFAULT 'General', website_url text, encrypted_data text NOT NULL, iv text NOT NULL, username_preview text, created_by text, created_at timestamptz DEFAULT now(), updated_at timestamptz DEFAULT now());\nALTER TABLE csl_credentials ENABLE ROW LEVEL SECURITY;\nDROP POLICY IF EXISTS "credentials_all" ON csl_credentials;\nCREATE POLICY "credentials_all" ON csl_credentials FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);\nGRANT ALL ON TABLE csl_credentials TO anon, authenticated, service_role;\nGRANT ALL ON SEQUENCE csl_credentials_id_seq TO anon, authenticated, service_role;\n\n-- 3. Indexes & Supabase Realtime\nCREATE INDEX IF NOT EXISTS idx_csl_credentials_category ON csl_credentials(category);\nCREATE INDEX IF NOT EXISTS idx_csl_credentials_created_at ON csl_credentials(created_at DESC);\nDO $$\nBEGIN\n  IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND tablename = 'csl_credentials') THEN\n    ALTER PUBLICATION supabase_realtime ADD TABLE csl_credentials;\n  END IF;\nEXCEPTION WHEN OTHERS THEN NULL;\nEND $$;`);
-                toast.success('SQL berhasil disalin!');
+                toast.success(language === 'en' ? 'SQL copied successfully!' : 'SQL berhasil disalin!');
               }}
             >
-              <Copy className="h-4 w-4 mr-1.5" /> Salin SQL
+              <Copy className="h-4 w-4 mr-1.5" /> {language === 'en' ? 'Copy SQL' : 'Salin SQL'}
             </Button>
           </DialogFooter>
         </DialogContent>

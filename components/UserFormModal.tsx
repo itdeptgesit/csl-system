@@ -2,9 +2,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Shield, Users, Building2, UserCheck, Layers, Briefcase, MapPin, Loader2, Image as ImageIcon, Camera, LifeBuoy, Eye, EyeOff, PenTool } from 'lucide-react';
+import { X, Shield, Users, Building2, UserCheck, Layers, Briefcase, MapPin, Loader2, Image as ImageIcon, Camera, LifeBuoy, Eye, EyeOff, PenTool, Mail } from 'lucide-react';
 import { UserAccount, UserGroup, Company } from '../types';
-import { supabase } from '../lib/supabaseClient';
+import { supabase, sendAdminUserPasswordResetEmail } from '../lib/supabaseClient';
 import { useToast } from './ToastProvider';
 import {
     Dialog,
@@ -12,6 +12,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
+import { useLanguage } from '../translations';
 
 interface UserFormModalProps {
     isOpen: boolean;
@@ -23,6 +24,7 @@ interface UserFormModalProps {
 
 export const UserFormModal: React.FC<UserFormModalProps> = ({ isOpen, onClose, onSubmit, initialData, availableGroups }) => {
     const { showToast } = useToast();
+    const { language } = useLanguage();
     const [formData, setFormData] = useState<Partial<UserAccount>>({});
     const [userOptions, setUserOptions] = useState<{ id: string, name: string }[]>([]);
     const [companyList, setCompanyList] = useState<Company[]>([]);
@@ -30,6 +32,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({ isOpen, onClose, o
     const [isUploading, setIsUploading] = useState(false);
     const [isUploadingESign, setIsUploadingESign] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+    const [isSendingReset, setIsSendingReset] = useState(false);
 
     useEffect(() => {
         const fetchResources = async () => {
@@ -117,13 +120,13 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({ isOpen, onClose, o
             const data = await response.json();
             if (data.secure_url) {
                 setFormData(prev => ({ ...prev, eSignUrl: data.secure_url }));
-                showToast('E-Signature berhasil diupload', 'success');
+                showToast(language === 'en' ? 'E-Signature uploaded successfully' : 'E-Signature berhasil diupload', 'success');
             } else {
-                throw new Error(data.error?.message || 'Upload gagal');
+                throw new Error(data.error?.message || (language === 'en' ? 'Upload failed' : 'Upload gagal'));
             }
         } catch (error) {
             console.error('Upload E-Sign Error:', error);
-            showToast('E-Sign upload gagal', 'error');
+            showToast(language === 'en' ? 'E-Sign upload failed' : 'E-Sign upload gagal', 'error');
         } finally {
             setIsUploadingESign(false);
         }
@@ -182,13 +185,39 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({ isOpen, onClose, o
                             </div>
 
                             <div className="md:col-span-2">
-                                <label className={labelClass}>{initialData ? 'New Password (Optional)' : 'Set Password (Optional)'}</label>
+                                <label className={labelClass}>{initialData ? (language === 'en' ? 'New Password (Optional)' : 'Password Baru (Opsional)') : (language === 'en' ? 'Set Password (Optional)' : 'Set Password (Opsional)')}</label>
                                 <div className="relative">
-                                    <input type={showPassword ? "text" : "password"} className={`${inputClass} pr-10`} value={(formData as any).password || ''} onChange={e => setFormData({ ...formData, password: e.target.value } as any)} placeholder={initialData ? "Leave empty to keep unchanged" : "Set password for login"} />
+                                    <input type={showPassword ? "text" : "password"} className={`${inputClass} pr-10`} value={(formData as any).password || ''} onChange={e => setFormData({ ...formData, password: e.target.value } as any)} placeholder={initialData ? (language === 'en' ? "Leave empty to keep unchanged" : "Kosongkan jika tidak ingin mengubah") : (language === 'en' ? "Set password for login" : "Tentukan password untuk login")} />
                                     <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-[calc(50%+2px)] -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
                                         {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                                     </button>
                                 </div>
+                                {initialData && formData.email && (
+                                    <div className="flex items-center justify-between mt-2 pt-1">
+                                        <span className="text-[11px] text-slate-500 dark:text-zinc-400">
+                                            {language === 'en' ? 'Or send reset password link to user email:' : 'Atau kirim tautan reset ke email user:'}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={async () => {
+                                                setIsSendingReset(true);
+                                                try {
+                                                    await sendAdminUserPasswordResetEmail(formData.email!);
+                                                    showToast(language === 'en' ? `Password reset link sent to ${formData.email}` : `Tautan reset password berhasil dikirim ke ${formData.email}`, 'success');
+                                                } catch (err: any) {
+                                                    showToast((language === 'en' ? 'Failed to send reset link: ' : 'Gagal mengirim tautan: ') + err.message, 'error');
+                                                } finally {
+                                                    setIsSendingReset(false);
+                                                }
+                                            }}
+                                            disabled={isSendingReset}
+                                            className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 underline inline-flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                                        >
+                                            {isSendingReset ? <Loader2 size={12} className="animate-spin" /> : <Mail size={12} />}
+                                            {language === 'en' ? 'Send Reset Link' : 'Kirim Link Reset'}
+                                        </button>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="md:col-span-2">
@@ -322,10 +351,10 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({ isOpen, onClose, o
                             <div>
                                 <label className={labelClass}>Access Role</label>
                                 <select className={inputClass} value={formData.role || 'User'} onChange={e => setFormData({ ...formData, role: e.target.value as any })}>
-                                    <option value="Super Admin">Super Admin (Kelola Seluruh Sistem)</option>
-                                    <option value="Admin">Admin (Approve & Edit, Tanpa Hapus)</option>
-                                    <option value="Staff">Staff (Kerjakan Request & Membuat)</option>
-                                    <option value="User">User (Hanya Request CSL)</option>
+                                    <option value="Super Admin">{language === 'en' ? 'Super Admin (Manage Entire System)' : 'Super Admin (Kelola Seluruh Sistem)'}</option>
+                                    <option value="Admin">{language === 'en' ? 'Admin (Approve & Edit, No Delete)' : 'Admin (Approve & Edit, Tanpa Hapus)'}</option>
+                                    <option value="Staff">{language === 'en' ? 'Staff (Handle & Create Requests)' : 'Staff (Kerjakan Request & Membuat)'}</option>
+                                    <option value="User">{language === 'en' ? 'User (CSL Requests Only)' : 'User (Hanya Request CSL)'}</option>
                                 </select>
                             </div>
                             <div>

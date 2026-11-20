@@ -14,6 +14,7 @@ import {
   DialogDescription, 
   DialogFooter 
 } from '@/components/ui/dialog';
+import { useLanguage } from '../translations';
 
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -96,6 +97,7 @@ const MOCK_INSTANCES: CSLRoutineInstance[] = [
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export const CSLRoutineManager: React.FC<CSLRoutineManagerProps> = ({ currentUser, view = 'monitoring' }) => {
+  const { language } = useLanguage();
   const [routines, setRoutines] = useState<CSLRoutine[]>([]);
   const [instances, setInstances] = useState<CSLRoutineInstance[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -391,7 +393,7 @@ export const CSLRoutineManager: React.FC<CSLRoutineManagerProps> = ({ currentUse
       setIsAddOpen(false);
       setAdminFile(null);
       setAdminFilePreview(null);
-      showFeedback(`Routine "${newRoutine.title}" berhasil dibuat & notifikasi dikirim ke Staff!`);
+      showFeedback(language === 'en' ? `Routine "${newRoutine.title}" was created successfully & notification sent to Staff!` : `Routine "${newRoutine.title}" berhasil dibuat & notifikasi dikirim ke Staff!`);
       setFormData({ title: '', category: 'Tax', frequency: 'MONTHLY', due_day: 15, assigned_pic_name: '', description: '' });
     }
   };
@@ -410,10 +412,10 @@ export const CSLRoutineManager: React.FC<CSLRoutineManagerProps> = ({ currentUse
       if (typeof routineId === 'number' || !String(routineId).startsWith('req-')) {
         await supabase.from('csl_routines').delete().eq('id', routineId);
       }
-      showFeedback(`Routine "${routineTitle}" telah berhasil dihapus.`);
+      showFeedback(language === 'en' ? `Routine "${routineTitle}" was deleted successfully.` : `Routine "${routineTitle}" telah berhasil dihapus.`);
     } catch (err) {
       console.warn('Routine removed from state', err);
-      showFeedback(`Routine "${routineTitle}" dihapus dari tampilan.`);
+      showFeedback(language === 'en' ? `Routine "${routineTitle}" was removed from the view.` : `Routine "${routineTitle}" dihapus dari tampilan.`);
     } finally {
       setRoutineToDelete(null);
     }
@@ -544,7 +546,7 @@ export const CSLRoutineManager: React.FC<CSLRoutineManagerProps> = ({ currentUse
       }
     }
 
-    const updatedNotes = staffWorkNotes.trim() || selectedInstance.completion_notes || 'Tugas telah diselesaikan dan dikirimkan oleh Staff.';
+    const updatedNotes = staffWorkNotes.trim() || selectedInstance.completion_notes || (language === 'en' ? 'Task completed and submitted by Staff.' : 'Tugas telah diselesaikan dan dikirimkan oleh Staff.');
     const nowIso = new Date().toISOString();
 
     setInstances(prev => prev.map(i =>
@@ -575,7 +577,7 @@ export const CSLRoutineManager: React.FC<CSLRoutineManagerProps> = ({ currentUse
     } finally {
       setIsSubmittingWork(false);
       setSelectedInstance(null);
-      showFeedback(`Tugas "${selectedInstance.routine_title}" telah berhasil dikirim & diselesaikan!`);
+      showFeedback(language === 'en' ? `Task "${selectedInstance.routine_title}" was submitted & completed successfully!` : `Tugas "${selectedInstance.routine_title}" telah berhasil dikirim & diselesaikan!`);
     }
   };
 
@@ -626,9 +628,9 @@ export const CSLRoutineManager: React.FC<CSLRoutineManagerProps> = ({ currentUse
                 <TableHead className="text-[10px] font-black uppercase tracking-widest">Frequency</TableHead>
                 <TableHead className="text-[10px] font-black uppercase tracking-widest">Target Day</TableHead>
                 <TableHead className="text-[10px] font-black uppercase tracking-widest">Assigned PIC</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-widest">Tanggal Dibuat</TableHead>
+                <TableHead className="text-[10px] font-black uppercase tracking-widest">{language === 'en' ? 'Created Date' : 'Tanggal Dibuat'}</TableHead>
                 <TableHead className="text-[10px] font-black uppercase tracking-widest">Status</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-widest text-right">Aksi</TableHead>
+                <TableHead className="text-[10px] font-black uppercase tracking-widest text-right">{language === 'en' ? 'Actions' : 'Aksi'}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -639,9 +641,9 @@ export const CSLRoutineManager: React.FC<CSLRoutineManagerProps> = ({ currentUse
                       <div className="w-12 h-12 rounded-2xl bg-muted/60 flex items-center justify-center text-muted-foreground/60 mb-1">
                         <FolderOpen size={24} />
                       </div>
-                      <p className="text-sm font-bold text-foreground">Tidak Ada Data Routine Activity</p>
+                      <p className="text-sm font-bold text-foreground">{language === 'en' ? 'No Routine Activity Data' : 'Tidak Ada Data Routine Activity'}</p>
                       <p className="text-xs text-muted-foreground max-w-sm">
-                        {searchTerm ? `Tidak ditemukan data yang sesuai dengan kata kunci "${searchTerm}".` : 'Belum ada data jadwal kegiatan rutin yang terdaftar. Klik "+ New Routine Schedule" untuk menambahkan.'}
+                        {searchTerm ? (language === 'en' ? `No data matching the keyword "${searchTerm}" was found.` : `Tidak ditemukan data yang sesuai dengan kata kunci "${searchTerm}".`) : (language === 'en' ? 'No routine activity schedules have been registered. Click "+ New Routine Schedule" to add one.' : 'Belum ada data jadwal kegiatan rutin yang terdaftar. Klik "+ New Routine Schedule" untuk menambahkan.')}
                       </p>
                     </div>
                   </TableCell>
@@ -703,7 +705,7 @@ export const CSLRoutineManager: React.FC<CSLRoutineManagerProps> = ({ currentUse
                             onClick={e => { e.stopPropagation(); setSelectedInstance(inst); }}
                             className="h-8 text-xs font-bold border-indigo-200 hover:bg-indigo-50 text-indigo-600 dark:border-indigo-800 dark:hover:bg-indigo-950/40 rounded-xl"
                           >
-                            <Activity size={13} className="mr-1" /> Kerjakan
+                            <Activity size={13} className="mr-1" /> {language === 'en' ? 'Work on Task' : 'Kerjakan'}
                           </Button>
                         )}
 
@@ -715,7 +717,7 @@ export const CSLRoutineManager: React.FC<CSLRoutineManagerProps> = ({ currentUse
                               e.stopPropagation();
                               setRoutineToDelete({ id: r.id, title: r.title });
                             }}
-                            title="Hapus Routine"
+                            title={language === 'en' ? 'Delete Routine' : 'Hapus Routine'}
                             className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl"
                           >
                             <Trash2 size={14} />
@@ -818,7 +820,7 @@ export const CSLRoutineManager: React.FC<CSLRoutineManagerProps> = ({ currentUse
                 <TableHead className="text-[10px] font-black uppercase tracking-widest">Period</TableHead>
                 <TableHead className="text-[10px] font-black uppercase tracking-widest">Due Date</TableHead>
                 <TableHead className="text-[10px] font-black uppercase tracking-widest">Status</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-widest text-right">Aksi</TableHead>
+                <TableHead className="text-[10px] font-black uppercase tracking-widest text-right">{language === 'en' ? 'Actions' : 'Aksi'}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -829,11 +831,11 @@ export const CSLRoutineManager: React.FC<CSLRoutineManagerProps> = ({ currentUse
                       <div className="w-12 h-12 rounded-2xl bg-muted/60 flex items-center justify-center text-muted-foreground/60 mb-1">
                         <FolderOpen size={24} />
                       </div>
-                      <p className="text-sm font-bold text-foreground">Tidak Ada Task / Penugasan</p>
+                      <p className="text-sm font-bold text-foreground">{language === 'en' ? 'No Tasks / Assignments' : 'Tidak Ada Task / Penugasan'}</p>
                       <p className="text-xs text-muted-foreground max-w-sm">
                         {searchTerm || statusFilter !== 'ALL'
-                          ? 'Tidak ditemukan task yang sesuai dengan kriteria pencarian / filter Anda.'
-                          : 'Belum ada daftar task berjalan pada periode ini.'}
+                          ? (language === 'en' ? 'No tasks matching your search / filter criteria were found.' : 'Tidak ditemukan task yang sesuai dengan kriteria pencarian / filter Anda.')
+                          : (language === 'en' ? 'There are no active tasks for this period.' : 'Belum ada daftar task berjalan pada periode ini.')}
                       </p>
                     </div>
                   </TableCell>
@@ -864,7 +866,7 @@ export const CSLRoutineManager: React.FC<CSLRoutineManagerProps> = ({ currentUse
                         onClick={e => { e.stopPropagation(); setSelectedInstance(inst); }}
                         className="h-8 text-xs font-bold border-indigo-200 hover:bg-indigo-50 text-indigo-600 dark:border-indigo-800 dark:hover:bg-indigo-950/40 rounded-xl"
                       >
-                        <Activity size={13} className="mr-1" /> {isAdmin ? 'Detail Task' : 'Kerjakan'}
+                        <Activity size={13} className="mr-1" /> {isAdmin ? 'Detail Task' : (language === 'en' ? 'Work on Task' : 'Kerjakan')}
                       </Button>
 
                       {isAdmin && (
@@ -875,7 +877,7 @@ export const CSLRoutineManager: React.FC<CSLRoutineManagerProps> = ({ currentUse
                             e.stopPropagation();
                             setRoutineToDelete({ id: inst.routine_id || inst.id, title: inst.routine_title || 'Task' });
                           }}
-                          title="Hapus Task"
+                          title={language === 'en' ? 'Delete Task' : 'Hapus Task'}
                           className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl"
                         >
                           <Trash2 size={14} />
@@ -921,7 +923,7 @@ export const CSLRoutineManager: React.FC<CSLRoutineManagerProps> = ({ currentUse
                   {selectedInstance.routine_title}
                 </DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground mt-1">
-                  Kategori: <span className="font-bold text-indigo-600">{selectedInstance.routine_category}</span>
+                  {language === 'en' ? 'Category:' : 'Kategori:'} <span className="font-bold text-indigo-600">{selectedInstance.routine_category}</span>
                 </DialogDescription>
               </DialogHeader>
 
@@ -929,11 +931,11 @@ export const CSLRoutineManager: React.FC<CSLRoutineManagerProps> = ({ currentUse
                 {/* Information cards */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-muted/40 border border-border/20 p-3.5 rounded-2xl">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Periode</p>
-                    <p className="text-xs font-extrabold text-foreground font-mono">{selectedInstance.period_start} s/d {selectedInstance.period_end}</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">{language === 'en' ? 'Period' : 'Periode'}</p>
+                    <p className="text-xs font-extrabold text-foreground font-mono">{selectedInstance.period_start} {language === 'en' ? 'to' : 's/d'} {selectedInstance.period_end}</p>
                   </div>
                   <div className="bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800/30 p-3.5 rounded-2xl">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-indigo-600 mb-1">Tenggat Waktu (Due Date)</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-indigo-600 mb-1">{language === 'en' ? 'Due Date' : 'Tenggat Waktu (Due Date)'}</p>
                     <p className="text-sm font-black text-indigo-700 dark:text-indigo-300 font-mono">{selectedInstance.due_date}</p>
                   </div>
                 </div>
@@ -947,9 +949,9 @@ export const CSLRoutineManager: React.FC<CSLRoutineManagerProps> = ({ currentUse
                           <Paperclip size={16} className="text-indigo-600" />
                         </div>
                         <div>
-                          <p className="text-[10px] font-black uppercase tracking-widest text-indigo-600 mb-0.5">Dokumen Acuan dari Admin</p>
+                          <p className="text-[10px] font-black uppercase tracking-widest text-indigo-600 mb-0.5">{language === 'en' ? 'Reference Document from Admin' : 'Dokumen Acuan dari Admin'}</p>
                           <p className="text-xs font-bold text-foreground truncate max-w-[280px]">
-                            {selectedInstance.admin_attachment_name || 'Dokumen Acuan'}
+                            {selectedInstance.admin_attachment_name || (language === 'en' ? 'Reference Document' : 'Dokumen Acuan')}
                           </p>
                         </div>
                       </div>
@@ -959,7 +961,7 @@ export const CSLRoutineManager: React.FC<CSLRoutineManagerProps> = ({ currentUse
                         rel="noreferrer"
                         className="flex items-center gap-1 text-xs font-bold text-indigo-600 hover:text-indigo-800 underline underline-offset-2 shrink-0"
                       >
-                        Buka File <ExternalLink size={12} />
+                        {language === 'en' ? 'Open File' : 'Buka File'} <ExternalLink size={12} />
                       </a>
                     </div>
                   </div>
@@ -970,23 +972,23 @@ export const CSLRoutineManager: React.FC<CSLRoutineManagerProps> = ({ currentUse
                   <div className="bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/30 p-4 rounded-2xl space-y-2">
                     <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
                       <CheckCircle2 size={16} />
-                      <span className="text-[10px] font-black uppercase tracking-widest">Pekerjaan Telah Selesai</span>
+                      <span className="text-[10px] font-black uppercase tracking-widest">{language === 'en' ? 'Work Completed' : 'Pekerjaan Telah Selesai'}</span>
                     </div>
                     {selectedInstance.completed_at && (
                       <p className="text-[11px] text-emerald-800 dark:text-emerald-300 font-semibold">
-                        Diselesaikan pada: {new Date(selectedInstance.completed_at).toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' })}
+                        {language === 'en' ? 'Completed on:' : 'Diselesaikan pada:'} {new Date(selectedInstance.completed_at).toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' })}
                       </p>
                     )}
                     {selectedInstance.completion_notes && (
                       <div className="bg-white/80 dark:bg-zinc-900/50 p-3 rounded-xl border border-emerald-200/50 dark:border-emerald-800/30 text-xs font-medium text-foreground">
-                        <span className="font-bold text-emerald-700 dark:text-emerald-400 block mb-0.5">Catatan Staff:</span>
+                        <span className="font-bold text-emerald-700 dark:text-emerald-400 block mb-0.5">{language === 'en' ? 'Staff Notes:' : 'Catatan Staff:'}</span>
                         {selectedInstance.completion_notes}
                       </div>
                     )}
                     {(selectedInstance.work_file_url || selectedInstance.work_file_name) && (
                       <div className="flex items-center justify-between pt-1">
                         <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300 truncate max-w-[280px]">
-                          📄 File Hasil: {selectedInstance.work_file_name || 'Dokumen_Hasil_Kerja'}
+                          📄 {language === 'en' ? 'Output File:' : 'File Hasil:'} {selectedInstance.work_file_name || (language === 'en' ? 'Work_Output_Document' : 'Dokumen_Hasil_Kerja')}
                         </span>
                         {selectedInstance.work_file_url && (
                           <a
@@ -995,7 +997,7 @@ export const CSLRoutineManager: React.FC<CSLRoutineManagerProps> = ({ currentUse
                             rel="noreferrer"
                             className="flex items-center gap-1 text-xs font-bold text-emerald-700 hover:text-emerald-900 underline underline-offset-2 shrink-0"
                           >
-                            Buka di Google Drive <ExternalLink size={12} />
+                            {language === 'en' ? 'Open in Google Drive' : 'Buka di Google Drive'} <ExternalLink size={12} />
                           </a>
                         )}
                       </div>
@@ -1008,12 +1010,12 @@ export const CSLRoutineManager: React.FC<CSLRoutineManagerProps> = ({ currentUse
                   <div className="bg-muted/30 border border-border/30 rounded-2xl p-4 space-y-3">
                     <div className="flex items-center gap-2 text-foreground">
                       <Save size={15} className="text-emerald-600" />
-                      <span className="text-xs font-bold uppercase tracking-wider">Form Hasil Pengerjaan Staff</span>
+                      <span className="text-xs font-bold uppercase tracking-wider">{language === 'en' ? 'Staff Work Submission Form' : 'Form Hasil Pengerjaan Staff'}</span>
                     </div>
 
                     <div>
                       <label className="text-[11px] font-bold text-muted-foreground mb-1 block">
-                        Upload File Hasil Kerjaan (Output)
+                        {language === 'en' ? 'Upload Output File' : 'Upload File Hasil Kerjaan (Output)'}
                       </label>
                       <Input
                         type="file"
@@ -1025,18 +1027,18 @@ export const CSLRoutineManager: React.FC<CSLRoutineManagerProps> = ({ currentUse
                       />
                       {staffWorkFile && (
                         <p className="text-[11px] text-emerald-600 font-bold mt-1">
-                          File siap dikirim: {staffWorkFile.name}
+                          {language === 'en' ? 'File ready to submit:' : 'File siap dikirim:'} {staffWorkFile.name}
                         </p>
                       )}
                     </div>
 
                     <div>
                       <label className="text-[11px] font-bold text-muted-foreground mb-1 block">
-                        Deskripsi / Catatan Pengerjaan Staff
+                        {language === 'en' ? 'Work Description / Staff Notes' : 'Deskripsi / Catatan Pengerjaan Staff'}
                       </label>
                       <textarea
                         rows={2}
-                        placeholder="Tuliskan ringkasan hasil pekerjaan atau penjelasan tambahan..."
+                        placeholder={language === 'en' ? 'Write a summary of the work results or additional notes...' : 'Tuliskan ringkasan hasil pekerjaan atau penjelasan tambahan...'}
                         value={staffWorkNotes}
                         onChange={e => setStaffWorkNotes(e.target.value)}
                         className="w-full p-3 text-xs bg-white dark:bg-muted/40 border border-border/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium resize-none"
@@ -1050,16 +1052,16 @@ export const CSLRoutineManager: React.FC<CSLRoutineManagerProps> = ({ currentUse
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-indigo-600">
                       <MessageSquare size={16} />
-                      <span className="text-xs font-extrabold uppercase tracking-wider">Diskusi & Chat (Admin ↔ Staff CSL)</span>
+                      <span className="text-xs font-extrabold uppercase tracking-wider">{language === 'en' ? 'Discussion & Chat (Admin ↔ CSL Staff)' : 'Diskusi & Chat (Admin ↔ Staff CSL)'}</span>
                     </div>
-                    <span className="text-[10px] text-muted-foreground font-semibold">{chatMessages.length} Pesan</span>
+                    <span className="text-[10px] text-muted-foreground font-semibold">{chatMessages.length} {language === 'en' ? 'Messages' : 'Pesan'}</span>
                   </div>
 
                   {/* Bubble List */}
                   <div className="bg-muted/20 border border-border/20 rounded-2xl p-3 h-44 overflow-y-auto space-y-2.5">
                     {chatMessages.length === 0 ? (
                       <div className="h-full flex items-center justify-center text-xs text-muted-foreground italic">
-                        Belum ada instruksi atau chat. Tulis pesan di bawah untuk memulai diskusi.
+                        {language === 'en' ? 'No instructions or chat yet. Write a message below to start the discussion.' : 'Belum ada instruksi atau chat. Tulis pesan di bawah untuk memulai diskusi.'}
                       </div>
                     ) : (
                       chatMessages.map(msg => {
@@ -1091,7 +1093,7 @@ export const CSLRoutineManager: React.FC<CSLRoutineManagerProps> = ({ currentUse
                   {/* Input Chat */}
                   <div className="flex gap-2">
                     <Input
-                      placeholder="Ketik pesan / pertanyakan ke Admin/Staff..."
+                      placeholder={language === 'en' ? 'Type a message / ask Admin/Staff...' : 'Ketik pesan / pertanyakan ke Admin/Staff...'}
                       value={newChatMsg}
                       onChange={e => setNewChatMsg(e.target.value)}
                       onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleSendChat())}
@@ -1111,7 +1113,7 @@ export const CSLRoutineManager: React.FC<CSLRoutineManagerProps> = ({ currentUse
 
               <DialogFooter className="px-6 pb-6 pt-4 border-t border-border/30 flex gap-2 sm:justify-end shrink-0">
                 <Button variant="outline" size="sm" onClick={() => setSelectedInstance(null)} className="text-xs font-bold rounded-xl h-9">
-                  Tutup
+                  {language === 'en' ? 'Close' : 'Tutup'}
                 </Button>
                 {!isAdmin && selectedInstance.status !== 'COMPLETED' && (
                   <Button
@@ -1121,7 +1123,7 @@ export const CSLRoutineManager: React.FC<CSLRoutineManagerProps> = ({ currentUse
                     className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl h-9 px-5 shadow-md"
                   >
                     <CheckCircle2 size={14} className="mr-1.5" />
-                    {isSubmittingWork ? 'Mengirim Pekerjaan...' : 'Kirim & Selesaikan Tugas'}
+                    {isSubmittingWork ? (language === 'en' ? 'Submitting Work...' : 'Mengirim Pekerjaan...') : (language === 'en' ? 'Submit & Complete Task' : 'Kirim & Selesaikan Tugas')}
                   </Button>
                 )}
               </DialogFooter>
@@ -1217,7 +1219,7 @@ export const CSLRoutineManager: React.FC<CSLRoutineManagerProps> = ({ currentUse
                   onChange={e => setFormData({ ...formData, assigned_pic_name: e.target.value })}
                   className="w-full h-10 px-3 text-sm bg-muted/30 border border-border/30 rounded-xl font-semibold"
                 >
-                  <option value="">-- Pilih Staff CSL --</option>
+                  <option value="">{language === 'en' ? '-- Select CSL Staff --' : '-- Pilih Staff CSL --'}</option>
                   {staffUsers.length > 0 ? (
                     staffUsers.map(u => (
                       <option key={u.id} value={u.full_name}>
@@ -1249,7 +1251,7 @@ export const CSLRoutineManager: React.FC<CSLRoutineManagerProps> = ({ currentUse
             {/* Lampiran Dokumen Acuan (Admin) */}
             <div className="bg-indigo-50/60 dark:bg-indigo-950/20 border border-indigo-200/60 dark:border-indigo-800/30 rounded-xl p-4 space-y-2">
               <label className="text-[11px] font-bold text-indigo-700 dark:text-indigo-300 block flex items-center gap-1.5">
-                <Paperclip size={13} /> Lampiran Dokumen Acuan untuk Staff (Opsional)
+                <Paperclip size={13} /> {language === 'en' ? 'Reference Document Attachment for Staff (Optional)' : 'Lampiran Dokumen Acuan untuk Staff (Opsional)'}
               </label>
               <Input
                 type="file"
@@ -1267,10 +1269,10 @@ export const CSLRoutineManager: React.FC<CSLRoutineManagerProps> = ({ currentUse
                 <div className="flex items-center gap-2 mt-1">
                   <Paperclip size={12} className="text-indigo-500 shrink-0" />
                   <span className="text-[11px] text-indigo-700 dark:text-indigo-300 font-semibold truncate">{adminFilePreview.name}</span>
-                  <button type="button" onClick={() => { setAdminFile(null); setAdminFilePreview(null); }} className="text-[10px] text-red-500 hover:underline ml-auto shrink-0">Hapus</button>
+                  <button type="button" onClick={() => { setAdminFile(null); setAdminFilePreview(null); }} className="text-[10px] text-red-500 hover:underline ml-auto shrink-0">{language === 'en' ? 'Remove' : 'Hapus'}</button>
                 </div>
               )}
-              <p className="text-[10px] text-muted-foreground">File ini akan terlihat oleh Staff saat membuka task detail.</p>
+              <p className="text-[10px] text-muted-foreground">{language === 'en' ? 'This file will be visible to Staff when they open the task detail.' : 'File ini akan terlihat oleh Staff saat membuka task detail.'}</p>
             </div>
 
             <DialogFooter className="pt-4 border-t border-border/30 gap-2 flex sm:justify-end">
@@ -1294,10 +1296,10 @@ export const CSLRoutineManager: React.FC<CSLRoutineManagerProps> = ({ currentUse
         <DialogContent className="sm:max-w-[420px] p-6 bg-white dark:bg-zinc-950 rounded-2xl border border-slate-100 dark:border-zinc-800 shadow-2xl font-sans">
           <div className="flex flex-col space-y-2 text-left pt-1">
             <h3 className="text-base font-bold text-slate-900 dark:text-zinc-50 leading-tight">
-              Hapus Routine / Task Permanen?
+              {language === 'en' ? 'Permanently Delete Routine / Task?' : 'Hapus Routine / Task Permanen?'}
             </h3>
             <p className="text-xs text-slate-500 dark:text-zinc-400 leading-relaxed font-normal">
-              Tindakan ini tidak dapat dibatalkan. Tugas <span className="font-semibold text-slate-800 dark:text-zinc-200">"{routineToDelete?.title}"</span> beserta seluruh data percakapan dan dokumen yang terkait akan dihapus secara permanen dari sistem.
+              {language === 'en' ? 'This action cannot be undone. Task ' : 'Tindakan ini tidak dapat dibatalkan. Tugas '}<span className="font-semibold text-slate-800 dark:text-zinc-200">"{routineToDelete?.title}"</span>{language === 'en' ? ' along with all related conversation data and documents will be permanently deleted from the system.' : ' beserta seluruh data percakapan dan dokumen yang terkait akan dihapus secara permanen dari sistem.'}
             </p>
           </div>
 
@@ -1309,7 +1311,7 @@ export const CSLRoutineManager: React.FC<CSLRoutineManagerProps> = ({ currentUse
               onClick={() => setRoutineToDelete(null)}
               className="text-xs font-semibold h-9 px-4 rounded-lg border-slate-200 bg-slate-50/50 hover:bg-slate-100 text-slate-700 dark:bg-zinc-900 dark:border-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-800 transition-colors"
             >
-              Batal
+              {language === 'en' ? 'Cancel' : 'Batal'}
             </Button>
             <Button
               type="button"
@@ -1317,7 +1319,7 @@ export const CSLRoutineManager: React.FC<CSLRoutineManagerProps> = ({ currentUse
               onClick={confirmDeleteRoutine}
               className="bg-red-600 hover:bg-red-700 text-white text-xs font-bold h-9 px-5 rounded-lg shadow-sm transition-colors"
             >
-              Ya, Hapus
+              {language === 'en' ? 'Yes, Delete' : 'Ya, Hapus'}
             </Button>
           </div>
         </DialogContent>

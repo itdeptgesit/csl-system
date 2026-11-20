@@ -25,7 +25,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import { CSLCreateRequest } from './CSLCreateRequest';
-
+import { useLanguage } from '../translations';
 // ── Types ────────────────────────────────────────────────────────────────────
 interface CSLCategory {
   id: number;
@@ -34,7 +34,6 @@ interface CSLCategory {
   sla_days: number;
   description?: string;
 }
-
 interface CSLRequest {
   id: number;
   request_number: string;
@@ -57,7 +56,6 @@ interface CSLRequest {
   completed_at?: string;
   created_at: string;
   updated_at: string;
-
   // Phase 2 Fields
   csl_response?: string;
   csl_response_at?: string;
@@ -67,17 +65,14 @@ interface CSLRequest {
   feedback_comment?: string;
   feedback_submitted_at?: string;
 }
-
 interface CSLRequestManagerProps {
   currentUser: UserAccount | null;
   view?: 'all' | 'mine' | 'categories';
 }
-
 const CHAT_ATTACHMENT_MAX_FILES = 5;
 const CHAT_ATTACHMENT_MAX_BYTES = 10 * 1024 * 1024;
 const CHAT_ATTACHMENT_ACCEPT = '.pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png';
 const CHAT_ATTACHMENT_EXTENSIONS = new Set(['pdf', 'doc', 'docx', 'xls', 'xlsx', 'jpg', 'jpeg', 'png']);
-
 // ── SLA & Status Styling (Modern Informative Badge Style) ───────────────
 export function computeRequestProgress(req: { progress?: number | null; status?: string }): number {
   const status = (req.status || '').toUpperCase();
@@ -92,16 +87,17 @@ export function computeRequestProgress(req: { progress?: number | null; status?:
   if (status === 'REJECTED') return 100;
   return 15;
 }
-
-const SLA_BADGE: Record<SLAStatus, { label: string; className: string }> = {
-  ON_TRACK: { label: 'Sesuai Jadwal', className: 'border-emerald-500/20 text-emerald-700 dark:text-emerald-300 bg-emerald-500/10' },
-  DUE_SOON: { label: 'Mendekati Tenggat', className: 'border-amber-500/20 text-amber-700 dark:text-amber-300 bg-amber-500/10 font-medium' },
-  DUE_TODAY: { label: 'Jatuh Tempo Hari Ini', className: 'border-orange-500/30 text-orange-700 dark:text-orange-300 bg-orange-500/15 font-semibold' },
-  OVERDUE: { label: 'Lewat Tenggat', className: 'border-rose-500/30 bg-rose-500/15 text-rose-700 dark:text-rose-300 font-semibold' },
-  COMPLETED_ON_TIME: { label: 'Selesai ✓', className: 'border-emerald-500/20 text-emerald-700 dark:text-emerald-300 bg-emerald-500/10' },
-  COMPLETED_LATE: { label: 'Selesai Terlambat', className: 'border-zinc-500/20 text-zinc-600 dark:text-zinc-400 bg-zinc-500/10' },
+const getSlaBadge = (sla: SLAStatus, isEn: boolean = false) => {
+  const map: Record<SLAStatus, { label: string; className: string }> = {
+    ON_TRACK: { label: isEn ? 'On Track' : 'Sesuai Jadwal', className: 'border-emerald-500/20 text-emerald-700 dark:text-emerald-300 bg-emerald-500/10' },
+    DUE_SOON: { label: isEn ? 'Due Soon' : 'Mendekati Tenggat', className: 'border-amber-500/20 text-amber-700 dark:text-amber-300 bg-amber-500/10 font-medium' },
+    DUE_TODAY: { label: isEn ? 'Due Today' : 'Jatuh Tempo Hari Ini', className: 'border-orange-500/30 text-orange-700 dark:text-orange-300 bg-orange-500/15 font-semibold' },
+    OVERDUE: { label: isEn ? 'Overdue' : 'Lewat Tenggat', className: 'border-rose-500/30 bg-rose-500/15 text-rose-700 dark:text-rose-300 font-semibold' },
+    COMPLETED_ON_TIME: { label: isEn ? 'Completed ✓' : 'Selesai ✓', className: 'border-emerald-500/20 text-emerald-700 dark:text-emerald-300 bg-emerald-500/10' },
+    COMPLETED_LATE: { label: isEn ? 'Completed Late' : 'Selesai Terlambat', className: 'border-zinc-500/20 text-zinc-600 dark:text-zinc-400 bg-zinc-500/10' },
+  };
+  return map[sla] || map.ON_TRACK;
 };
-
 const STATUS_BADGE: Record<string, string> = {
   SUBMITTED: 'border-blue-500/25 text-blue-700 dark:text-blue-300 bg-blue-500/10 font-medium',
   PROCESSING: 'border-amber-500/25 text-amber-700 dark:text-amber-300 bg-amber-500/10 font-medium',
@@ -111,14 +107,22 @@ const STATUS_BADGE: Record<string, string> = {
   REJECTED: 'border-rose-500/25 text-rose-700 dark:text-rose-300 bg-rose-500/10 font-medium',
   DRAFT: 'border-zinc-500/25 text-zinc-600 dark:text-zinc-400 bg-zinc-500/10 font-medium',
 };
-
 const PRIORITY_BADGE: Record<string, string> = {
   Low: 'border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 bg-zinc-100/80 dark:bg-zinc-800/60',
   Medium: 'border-blue-500/25 text-blue-700 dark:text-blue-300 bg-blue-500/10',
   High: 'border-amber-500/25 text-amber-700 dark:text-amber-300 bg-amber-500/10 font-medium',
   Critical: 'border-rose-500/30 text-rose-700 dark:text-rose-300 bg-rose-500/15 font-semibold',
 };
-
+const STATUS_LABELS_EN: Record<string, string> = {
+  SUBMITTED: 'Submitted',
+  PROCESSING: 'Processing',
+  REVIEW_USER: 'User Review',
+  IN_REVIEW: 'In Review',
+  COMPLETED: 'Completed',
+  CLOSED: 'Closed',
+  REJECTED: 'Rejected',
+  DRAFT: 'Draft',
+};
 const STATUS_LABELS_ID: Record<string, string> = {
   SUBMITTED: 'Diajukan',
   PROCESSING: 'Diproses',
@@ -129,127 +133,60 @@ const STATUS_LABELS_ID: Record<string, string> = {
   REJECTED: 'Ditolak',
   DRAFT: 'Draf',
 };
-
-const formatStatusText = (status: string) => {
+const formatStatusText = (status: string, isEn: boolean = false) => {
   if (!status) return '';
   const upper = status.toUpperCase();
-  if (STATUS_LABELS_ID[upper]) return STATUS_LABELS_ID[upper];
+  if (isEn && STATUS_LABELS_EN[upper]) return STATUS_LABELS_EN[upper];
+  if (!isEn && STATUS_LABELS_ID[upper]) return STATUS_LABELS_ID[upper];
   return status
     .split('_')
     .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
     .join(' ');
 };
-
-// ── MOCK DATA (used when DB is offline) ──────────────────────────────────────
-const MOCK_REQUESTS: CSLRequest[] = [
-  {
-    id: 1,
-    request_number: 'CSL-202608-0001',
-    category_id: 1,
-    category_name: 'Agreement',
-    requester_name: 'Budi Santoso',
-    requester_email: 'budi@gesit.co.id',
-    department: 'Finance',
-    company: 'PT GESIT',
-    assigned_pic_name: 'Legal Officer',
-    priority: 'High',
-    status: 'IN_REVIEW',
-    description: 'Review distribution agreement with PT Mitra Sejati.',
-    progress: 40,
-    sla_target_days: 5,
-    sla_due_date: new Date(Date.now() + 2 * 86400000).toISOString(),
-    created_at: new Date(Date.now() - 3 * 86400000).toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: 2,
-    request_number: 'CSL-202608-0002',
-    category_id: 2,
-    category_name: 'Documents',
-    requester_name: 'Dewi Lestari',
-    requester_email: 'dewi@gesit.co.id',
-    department: 'HR & GA',
-    company: 'PT GESIT',
-    assigned_pic_name: 'Senior Counsel',
-    priority: 'Medium',
-    status: 'PROCESSING',
-    description: 'Draft employment contract template for management level.',
-    progress: 70,
-    sla_target_days: 5,
-    sla_due_date: new Date(Date.now() + 1 * 86400000).toISOString(),
-    created_at: new Date(Date.now() - 4 * 86400000).toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: 3,
-    request_number: 'CSL-202608-0003',
-    category_id: 2,
-    category_name: 'Documents',
-    requester_name: 'Agus Purnomo',
-    requester_email: 'agus@gesit.co.id',
-    department: 'Operations',
-    company: 'PT GESIT',
-    priority: 'Low',
-    status: 'SUBMITTED',
-    description: 'Permintaan salinan Akta Perubahan Direksi tahun 2024.',
-    progress: 0,
-    sla_target_days: 2,
-    sla_due_date: new Date(Date.now() - 1 * 86400000).toISOString(),
-    created_at: new Date(Date.now() - 3 * 86400000).toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-];
-
-const MOCK_CATEGORIES: CSLCategory[] = [
-  { id: 1, code: 'AGR', name: 'Agreement', sla_days: 5, description: 'Penyusunan & review perjanjian kerjasama bisnis' },
-  { id: 2, code: 'LREV', name: 'Legal Review', sla_days: 5, description: 'Kajian hukum dokumen operasional & regulasi' },
-  { id: 3, code: 'CORPSECR', name: 'Corporate Secretary', sla_days: 5, description: 'Rapat Direksi/Komisaris, RUPS, perizinan korporasi' },
-  { id: 4, code: 'OSS', name: 'OSS & Perizinan', sla_days: 14, description: 'Pengurusan NIB, izin usaha melalui sistem OSS' },
-  { id: 5, code: 'LIC', name: 'Licensing', sla_days: 10, description: 'Perpanjangan izin operasional, sertifikasi & lisensi' },
-  { id: 6, code: 'NOTARY', name: 'Notaris & Akta', sla_days: 7, description: 'Pengurusan akta notaris, pendaftaran Kemenkumham' },
-  { id: 7, code: 'LEGALOP', name: 'Legal Opinion', sla_days: 5, description: 'Pendapat hukum formal untuk transaksi strategis' },
-  { id: 8, code: 'DOCREQ', name: 'Permintaan Dokumen', sla_days: 2, description: 'Salinan akta, legalitas perusahaan, SK Kemenkumham' },
-  { id: 9, code: 'COMPLIANCE', name: 'Kepatuhan Hukum', sla_days: 5, description: 'Monitoring kepatuhan regulasi industri terkini' },
-  { id: 10, code: 'OTHER', name: 'Lainnya', sla_days: 5, description: 'Konsultasi hukum & kebutuhan administrasi legal lainnya' },
-];
-
+// ── DB only (no mock) ──────────────────────────────────────
 // ── Categories View ───────────────────────────────────────────────────────────
-const CategoriesView: React.FC<{ categories: CSLCategory[] }> = ({ categories }) => (
-  <div className="space-y-6">
-    <PageHeader title="Request Categories" description="SLA configuration by request type" />
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {categories.map(cat => (
-        <div key={cat.id} className="rounded-lg border bg-card p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
-          <div>
-            <div className="flex items-start justify-between gap-2 mb-2">
-              <span className="font-mono text-xs text-muted-foreground font-semibold px-2 py-0.5 rounded-md bg-muted border">
-                {cat.code}
-              </span>
-              <span className="inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium text-muted-foreground">
-                {cat.sla_days}d SLA
-              </span>
+const CategoriesView: React.FC<{ categories: CSLCategory[] }> = ({ categories }) => {
+  const { language } = useLanguage();
+  const isEn = language === 'en';
+  return (
+    <div className="space-y-6">
+      <PageHeader 
+        title={isEn ? "Request Categories" : "Kategori Permintaan"} 
+        description={isEn ? "SLA configuration by request type" : "Konfigurasi SLA berdasarkan jenis permintaan"} 
+      />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {categories.map(cat => (
+          <div key={cat.id} className="rounded-lg border bg-card p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+            <div>
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <span className="font-mono text-xs text-muted-foreground font-semibold px-2 py-0.5 rounded-md bg-muted border">
+                  {cat.code}
+                </span>
+                <span className="inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                  {cat.sla_days}d SLA
+                </span>
+              </div>
+              <h3 className="text-sm font-semibold text-foreground leading-snug">{cat.name}</h3>
+              <p className="text-xs text-muted-foreground mt-2 leading-relaxed line-clamp-3">{cat.description}</p>
             </div>
-            <h3 className="text-sm font-semibold text-foreground leading-snug">{cat.name}</h3>
-            <p className="text-xs text-muted-foreground mt-2 leading-relaxed line-clamp-3">{cat.description}</p>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
-  </div>
-);
-
+  );
+};
 // ── Main Component ────────────────────────────────────────────────────────────
 export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUser, view = 'all' }) => {
   const navigate = useNavigate();
+  const { language, t } = useLanguage();
+  const isEn = language === 'en';
   const [requests, setRequests] = useState<CSLRequest[]>([]);
   const [categories, setCategories] = useState<CSLCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
-  const [useMock, setUseMock] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [cslStaffUsers, setCslStaffUsers] = useState<{ id: string; fullName: string; email: string; role: string }[]>([]);
-
   // Phase 2 State
   const [selectedRequest, setSelectedRequest] = useState<CSLRequest | null>(null);
   const [requestLogs, setRequestLogs] = useState<any[]>([]);
@@ -259,7 +196,6 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
   const [isDraggingResponse, setIsDraggingResponse] = useState(false);
   const responseFileRef = useRef<HTMLInputElement>(null);
   const [feedbackForm, setFeedbackForm] = useState({ overall: 5, responseTime: 5, quality: 5, comment: '' });
-
   // New Comment State
   const [newComment, setNewComment] = useState('');
   const [chatFiles, setChatFiles] = useState<File[]>([]);
@@ -268,7 +204,6 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [mentionState, setMentionState] = useState<{ active: boolean, query: string, index: number }>({ active: false, query: '', index: 0 });
   const chatEndRef = useRef<HTMLDivElement>(null);
-
   // Document Upload State (GDrive)
   const [requestDocuments, setRequestDocuments] = useState<any[]>([]);
   const [docForm, setDocForm] = useState({ doc_name: '', doc_type: '', gdrive_url: '' });
@@ -278,38 +213,29 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
   const [docUploadProgress, setDocUploadProgress] = useState(0);
   const [docUploadStatus, setDocUploadStatus] = useState('');
   const [showDocForm, setShowDocForm] = useState(false);
-
   const roleLower = (currentUser?.role || '').trim().toLowerCase();
-
   const isSuperAdmin = useMemo(() => {
     return roleLower === 'super admin' || roleLower === 'super_admin' || roleLower === 'owner';
   }, [roleLower]);
-
   const isAdmin = useMemo(() => {
     return isSuperAdmin || roleLower === 'admin' || (currentUser?.groups || []).some(g => g.toLowerCase().includes('admin'));
   }, [roleLower, isSuperAdmin, currentUser]);
-
   const isStaff = useMemo(() => {
     return roleLower === 'staff' || roleLower === 'csl staff' || roleLower === 'csl_staff';
   }, [roleLower]);
-
   const isCslTeam = useMemo(() => {
     return isSuperAdmin || isAdmin || isStaff || (currentUser?.groups || []).some(g => ['admin', 'csl_admin', 'csl_staff'].includes(g.toLowerCase()));
   }, [isSuperAdmin, isAdmin, isStaff, currentUser]);
-
   const canDelete = isSuperAdmin || isAdmin;
   const canEdit = isSuperAdmin || isAdmin;
   const canApprove = isSuperAdmin || isAdmin;
-
   // Edit & Delete State
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editForm, setEditForm] = useState<Partial<CSLRequest>>({});
   const [requestToDelete, setRequestToDelete] = useState<number | null>(null);
-
   const handleDeleteRequest = async (id: number) => {
     setRequestToDelete(id);
   };
-
   const confirmDelete = async () => {
     if (!requestToDelete) return;
     setIsSubmitting(true);
@@ -318,57 +244,48 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
       if (error) throw error;
       setRequests(prev => prev.filter(r => r.id !== requestToDelete));
       setSelectedRequest(null);
-      toast.success('Request berhasil dihapus permanen.');
+      toast.success(isEn ? 'Request permanently deleted.' : 'Request berhasil dihapus permanen.');
     } catch (err: any) {
-      toast.error('Gagal menghapus request: ' + err.message);
+      toast.error((isEn ? 'Failed to delete request: ' : 'Gagal menghapus request: ') + err.message);
     } finally {
       setRequestToDelete(null);
       setIsSubmitting(false);
     }
   };
-
   const handleEditSave = async () => {
     if (!editForm.id) return;
     setIsSubmitting(true);
     try {
       const selectedStaff = cslStaffUsers.find(s => s.id === editForm.assigned_pic_id);
-
       const payload: any = {
         status: editForm.status,
         updated_at: new Date().toISOString()
       };
-
       if (editForm.assigned_pic_id !== undefined) {
         payload.assigned_pic_id = editForm.assigned_pic_id || null;
         payload.assigned_pic_name = selectedStaff ? selectedStaff.fullName : (editForm.assigned_pic_name || null);
       }
-
       const { error } = await supabase.from('csl_requests').update(payload).eq('id', editForm.id);
       if (error) throw error;
-
       const targetReq = requests.find(r => r.id === editForm.id);
       if (targetReq) {
         const isPicChanged = payload.assigned_pic_id && payload.assigned_pic_id !== targetReq.assigned_pic_id;
         const updatedReq = { ...targetReq, ...payload };
-
-        await notifyRequestUpdate(updatedReq, 'STATUS_CHANGED', `Status/PIC diperbarui oleh Admin`);
-
+        await notifyRequestUpdate(updatedReq, 'STATUS_CHANGED', isEn ? 'Status/PIC updated by Admin' : 'Status/PIC diperbarui oleh Admin');
         if (isPicChanged) {
           await notifyRequestUpdate(updatedReq, 'ASSIGNED');
         }
       }
-
       await fetchData();
       setIsEditDialogOpen(false);
       setEditForm({});
-      toast.success('Perubahan status & penugasan PIC berhasil disimpan.');
+      toast.success(isEn ? 'Status & PIC assignment changes saved successfully.' : 'Perubahan status & penugasan PIC berhasil disimpan.');
     } catch (err: any) {
-      toast.error('Gagal menyimpan perubahan: ' + err.message);
+      toast.error((isEn ? 'Failed to save changes: ' : 'Gagal menyimpan perubahan: ') + err.message);
     } finally {
       setIsSubmitting(false);
     }
   };
-
   const fetchData = async () => {
     setIsLoading(true);
     try {
@@ -378,7 +295,6 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
         .from('user_accounts')
         .select('id, full_name, email, role, groups')
         .order('full_name');
-
       if (staffData && staffData.length > 0) {
         // Filter strictly for CSL Staff (role === 'staff' or 'csl_staff' or has req_review group)
         const staffOnly = staffData.filter(u => {
@@ -386,7 +302,6 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
           const grp = Array.isArray(u.groups) ? u.groups.map((g: string) => String(g).toLowerCase()) : [];
           return r === 'staff' || r === 'csl staff' || r === 'csl_staff' || grp.includes('csl_staff') || grp.includes('req_review');
         });
-
         setCslStaffUsers(staffOnly.map(u => ({
           id: String(u.id),
           fullName: u.full_name || u.email,
@@ -400,58 +315,38 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
           { id: 'f162b12f-a7a6-4ad5-98d3-0f4a03a7c362', fullName: 'Sylvia', email: 'sylvia@gesit.co.id', role: 'staff' },
         ]);
       }
-
       // Fetch categories
       const { data: catData, error: catErr } = await supabase
         .from('csl_request_categories').select('*').order('name');
       if (!catErr && catData?.length) {
         setCategories(catData);
       } else {
-        setCategories(MOCK_CATEGORIES);
-        setUseMock(true);
+        setCategories([]);
       }
-
       // Fetch requests strictly based on role-based scoping:
       // - Admin / Super Admin / Staff: See ALL requests
       // - User: See ONLY requests created by them
       let query = supabase.from('csl_requests').select('*').order('created_at', { ascending: false });
-
       if (isAdmin || isStaff) {
         // CSL Team sees full system requests
       } else {
         query = query.eq('requester_email', currentUser?.email || '');
       }
-
       const { data: reqData, error: reqErr } = await query;
-      if (!reqErr && reqData) {
-        setRequests(reqData);
-        setUseMock(false);
+      if (reqErr) {
+        console.error('Failed to fetch requests:', reqErr.message);
+        setRequests([]);
       } else {
-        // Use mock data filtered strictly by role
-        let filtered = MOCK_REQUESTS;
-        if (isAdmin || isStaff) {
-          filtered = MOCK_REQUESTS;
-        } else {
-          filtered = MOCK_REQUESTS.filter(r => r.requester_email === currentUser?.email);
-        }
-        setRequests(filtered);
-        setUseMock(true);
+        setRequests(reqData || []);
       }
-    } catch {
-      let fallback = MOCK_REQUESTS;
-      if (!isAdmin && !isStaff) {
-        fallback = MOCK_REQUESTS.filter(r => r.requester_email === currentUser?.email);
-      }
-      setRequests(fallback);
-      setCategories(MOCK_CATEGORIES);
-      setUseMock(true);
+    } catch (err) {
+      console.error('Error fetching requests:', err);
+      setRequests([]);
     } finally {
       setIsLoading(false);
     }
   };
-
   useEffect(() => { fetchData(); }, [view, currentUser?.email]);
-
   // SLA metrics
   const slaStats = useMemo(() => {
     const active = requests.filter(r => !['COMPLETED', 'CLOSED', 'CANCELLED', 'REJECTED'].includes(r.status));
@@ -465,7 +360,6 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
       total: requests.length,
     };
   }, [requests]);
-
   const filtered = useMemo(() => {
     let list = requests;
     if (statusFilter !== 'ALL') list = list.filter(r => r.status === statusFilter);
@@ -480,7 +374,6 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
     }
     return list;
   }, [requests, statusFilter, searchTerm]);
-
   const closeDetailModal = () => {
     setSelectedRequest(null);
     setNewComment('');
@@ -488,7 +381,6 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
     setIsInternalComment(false);
     setResponseFiles([]);
   };
-
   // Keyboard shortcut to close popup modal on ESC & prevent background scroll
   useEffect(() => {
     if (!selectedRequest) return;
@@ -505,7 +397,6 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [selectedRequest]);
-
   const handleRowClick = async (req: CSLRequest) => {
     setSelectedRequest(req);
     setNewComment('');
@@ -532,7 +423,6 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
       console.log(`✅ Fetched ${logs?.length || 0} logs for request ${req.id}`);
       if (logs) setRequestLogs(logs);
     }
-
     // Fetch request documents
     const { data: docs } = await supabase
       .from('csl_request_documents')
@@ -541,32 +431,26 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
       .order('created_at', { ascending: false });
     if (docs) setRequestDocuments(docs);
   };
-
   const submitResponse = async () => {
     if (!selectedRequest) return;
     setIsSubmitting(true);
-
     // Determine if this is a Documents category request
     const reqCatName = categories.find(c => c.id === (selectedRequest as any).category_id)?.name || (selectedRequest as any).category_name || '';
     const isDocumentsCategory = reqCatName === 'Documents';
-
     // For Documents category: if user selects REVIEW_USER or COMPLETED and has files, auto-complete
     let finalStatus = responseForm.status;
     if (isDocumentsCategory && ['REVIEW_USER', 'COMPLETED'].includes(responseForm.status)) {
       finalStatus = 'COMPLETED';
     }
-
     const payload: any = {
       status: finalStatus,
       updated_at: new Date().toISOString(),
     };
-
     // Automatically set the responding staff as PIC ONLY if it hasn't been assigned yet
     if (!selectedRequest.assigned_pic_id) {
       payload.assigned_pic_id = String(currentUser?.id || '');
       payload.assigned_pic_name = currentUser?.fullName || currentUser?.email || '';
     }
-
     if (['COMPLETED', 'REJECTED', 'RESPONDED', 'REVIEW_USER'].includes(responseForm.status) && responseForm.response) {
       payload.csl_response = responseForm.response;
       payload.csl_response_at = new Date().toISOString();
@@ -574,20 +458,17 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
         payload.completed_at = new Date().toISOString();
       }
     }
-
     // Build response files metadata
     const existingFiles: any[] = (() => {
       try { return JSON.parse((selectedRequest as any).csl_response_files || '[]'); } catch { return []; }
     })();
     const newFileMeta: any[] = [...existingFiles];
-
     // Add GDrive link
     if (responseForm.gdriveLink.trim()) {
       newFileMeta.push({ type: 'gdrive', url: responseForm.gdriveLink.trim(), name: 'Google Drive Link', added_at: new Date().toISOString() });
     }
-
     // Upload files to Google Drive
-    if (responseFiles.length > 0 && !useMock) {
+    if (responseFiles.length > 0 ) {
       for (const file of responseFiles) {
         try {
           // Convert to Base64
@@ -597,9 +478,7 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
             reader.onload = () => resolve(reader.result as string);
             reader.onerror = e => reject(e);
           });
-
           const base64 = await toBase64(file);
-
           // Call edge function
           const { data: uploadData, error: uploadError } = await supabase.functions.invoke('upload-to-gdrive', {
             body: {
@@ -610,7 +489,6 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
               folderType: 'request'
             }
           });
-
           if (uploadError || !uploadData?.success) {
             console.warn('Google Drive upload failed:', file.name, uploadError?.message || uploadData?.error);
             // Fallback to supabase storage if you want, but for now just fail silently as before
@@ -627,28 +505,26 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
         }
       }
     }
-
     if (newFileMeta.length > existingFiles.length) {
       payload.csl_response_files = JSON.stringify(newFileMeta);
     }
-
     try {
-      if (!useMock) {
+      if (true) {
         const { error } = await supabase.from('csl_requests').update(payload).eq('id', selectedRequest.id);
         if (error) {
-          toast.error(`Gagal menyimpan update: ${error.message}`);
+          toast.error(isEn ? `Failed to save update: ${error.message}` : `Gagal menyimpan update: ${error.message}`);
           setIsSubmitting(false);
           return;
         }
         const attachments = newFileMeta.map((f: any) => ({ name: f.name, url: f.url }));
         await notifyRequestUpdate({ ...selectedRequest, ...payload }, 'STATUS_CHANGED', payload.csl_response, attachments);
         const statusLabel: Record<string, string> = {
-          PROCESSING: 'Permintaan sedang diproses',
-          REVIEW_USER: 'Review dibutuhkan dari pemohon',
-          COMPLETED: 'Permintaan telah diselesaikan',
-          REJECTED: 'Permintaan ditolak',
+          PROCESSING: isEn ? 'Request is in progress' : 'Permintaan sedang diproses',
+          REVIEW_USER: isEn ? 'User review required' : 'Review dibutuhkan dari pemohon',
+          COMPLETED: isEn ? 'Request has been completed' : 'Permintaan telah diselesaikan',
+          REJECTED: isEn ? 'Request rejected' : 'Permintaan ditolak',
         };
-        const autoNote = responseForm.response?.trim() || statusLabel[responseForm.status] || `Status diubah ke ${responseForm.status}`;
+        const autoNote = responseForm.response?.trim() || statusLabel[responseForm.status] || (isEn ? `Status changed to ${responseForm.status}` : `Status diubah ke ${responseForm.status}`);
         const { error: logErr } = await supabase.from('csl_request_logs').insert([{
           request_id: selectedRequest.id,
           status: responseForm.status,
@@ -669,18 +545,15 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
       setIsSubmitting(false);
     }
   };
-
   const submitComment = async () => {
     if (!selectedRequest || (!newComment.trim() && chatFiles.length === 0)) return;
     setIsSubmittingComment(true);
-
     try {
       const hasSpecificMention = cslStaffUsers.some(u => newComment.includes(`@${u.fullName}`));
       const isInternal = isInternalComment || (isCslTeam && (newComment.includes('@admin') || hasSpecificMention));
       const note = newComment.trim() || `Mengirim ${chatFiles.length} dokumen pendukung`;
       let attachments: { name: string; url: string; fileId: string | null; size: number; mimeType: string }[] = [];
-
-      if (!useMock) {
+      if (true) {
         for (const file of chatFiles) {
           const base64 = await new Promise<string>((resolve, reject) => {
             const reader = new FileReader();
@@ -703,7 +576,6 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
           }
           attachments.push({ name: file.name, url: uploadData.gdriveUrl, fileId: uploadData.fileId || null, size: file.size, mimeType: file.type || 'application/octet-stream' });
         }
-
         if (attachments.length > 0) {
           const { error: documentError } = await supabase.from('csl_request_documents').insert(attachments.map(file => ({
             request_id: selectedRequest.id,
@@ -717,7 +589,6 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
           })));
           if (documentError) throw documentError;
         }
-
         let { error: insertErr } = await supabase.from('csl_request_logs').insert([{
           request_id: selectedRequest.id,
           status: selectedRequest.status,
@@ -728,7 +599,6 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
           attachments,
           is_internal: isInternal,
         }]);
-
         // Fallback jika migrasi kolom 'attachments' di Supabase belum sempat dijalankan
         if (insertErr && (insertErr.message?.includes('attachments') || (insertErr as any).code === 'PGRST204')) {
           const fallbackNote = attachments.length > 0
@@ -745,9 +615,7 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
           }]);
           insertErr = retry.error;
         }
-
         if (insertErr) throw insertErr;
-
         if (!isInternal) {
           const notificationAttachments = attachments.map(file => ({ name: file.name, url: file.url }));
           if (currentUser?.email !== selectedRequest.requester_email) {
@@ -763,7 +631,6 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
             }
           }
         }
-
         const [{ data: logs }, { data: docs }] = await Promise.all([
           supabase.from('csl_request_logs').select('*').eq('request_id', selectedRequest.id).order('created_at', { ascending: true }),
           supabase.from('csl_request_documents').select('*').eq('request_id', selectedRequest.id).order('created_at', { ascending: false }),
@@ -783,29 +650,24 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
       setIsInternalComment(false);
       setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
     } catch (err: any) {
-      toast.error(`Gagal mengirim pesan: ${err?.message || 'Unknown error'}`);
+      toast.error(isEn ? `Failed to send message: ${err?.message || 'Unknown error'}` : `Gagal mengirim pesan: ${err?.message || 'Unknown error'}`);
     } finally {
       setIsSubmittingComment(false);
     }
   };
-
   const submitDocument = async () => {
     if (!selectedRequest || !docForm.doc_name.trim()) return;
     if (!docForm.gdrive_url.trim() && !docFile) return;
-
     setIsSubmittingDoc(true);
     setDocUploadProgress(15);
-    setDocUploadStatus('Menyiapkan berkas...');
-
+    setDocUploadStatus(isEn ? 'Preparing file...' : 'Menyiapkan berkas...');
     try {
-      if (!useMock) {
+      if (true) {
         let finalGdriveUrl = docForm.gdrive_url.trim();
         let fileId = null;
-
         if (docFile) {
           setDocUploadProgress(30);
-          setDocUploadStatus(`Membaca ${docFile.name}...`);
-
+          setDocUploadStatus(isEn ? `Reading ${docFile.name}...` : `Membaca ${docFile.name}...`);
           // Convert to Base64
           const toBase64 = (file: File) => new Promise<string>((resolve, reject) => {
             const reader = new FileReader();
@@ -813,12 +675,9 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
             reader.onload = () => resolve(reader.result as string);
             reader.onerror = error => reject(error);
           });
-
           const base64 = await toBase64(docFile);
-
           setDocUploadProgress(55);
-          setDocUploadStatus('Mengunggah ke Google Drive...');
-
+          setDocUploadStatus(isEn ? 'Uploading to Google Drive...' : 'Mengunggah ke Google Drive...');
           // Call edge function
           const { data: uploadData, error: uploadError } = await supabase.functions.invoke('upload-to-gdrive', {
             body: {
@@ -829,45 +688,38 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
               folderType: 'request'
             }
           });
-
           if (uploadError || !uploadData?.success) {
-            throw new Error(uploadError?.message || uploadData?.error || 'Gagal upload ke Google Drive');
+            throw new Error(uploadError?.message || uploadData?.error || (isEn ? 'Failed to upload to Google Drive' : 'Gagal upload ke Google Drive'));
           }
-
           setDocUploadProgress(85);
-          setDocUploadStatus('Menyimpan informasi dokumen...');
+          setDocUploadStatus(isEn ? 'Saving document info...' : 'Menyimpan informasi dokumen...');
           finalGdriveUrl = uploadData.gdriveUrl;
           fileId = uploadData.fileId;
         }
-
         const { error } = await supabase.from('csl_request_documents').insert([{
           request_id: selectedRequest.id,
           doc_name: docForm.doc_name.trim(),
-          doc_type: docForm.doc_type || 'Lainnya',
+          doc_type: docForm.doc_type || (isEn ? 'Other' : 'Lainnya'),
           gdrive_url: finalGdriveUrl,
           gdrive_file_id: fileId,
           uploaded_by_name: currentUser?.fullName || currentUser?.email || 'Staff CSL',
           uploaded_by_id: currentUser?.id ? String(currentUser.id) : null,
           is_visible_to_requester: true,
         }]);
-
         if (error) {
-          toast.error(`Gagal menyimpan dokumen: ${error.message}`);
+          toast.error(isEn ? `Failed to save document: ${error.message}` : `Gagal menyimpan dokumen: ${error.message}`);
           setIsSubmittingDoc(false);
           return;
         }
-
         setDocUploadProgress(100);
-        setDocUploadStatus('Selesai!');
-
+        setDocUploadStatus(isEn ? 'Done!' : 'Selesai!');
         // Notify requester or CSL staff about new document
         const attachment = { name: docForm.doc_name.trim(), url: finalGdriveUrl };
         if (currentUser?.email !== selectedRequest.requester_email) {
-          await notifyRequestUpdate(selectedRequest, 'STATUS_CHANGED', `Dokumen baru telah dilampirkan: ${docForm.doc_name.trim()}`, [attachment]);
+          await notifyRequestUpdate(selectedRequest, 'STATUS_CHANGED', isEn ? `New document attached: ${docForm.doc_name.trim()}` : `Dokumen baru telah dilampirkan: ${docForm.doc_name.trim()}`, [attachment]);
         } else {
-          await notifyRequestUpdate(selectedRequest, 'USER_RESPONDED', `Pemohon melampirkan dokumen baru: ${docForm.doc_name.trim()}`, [attachment]);
+          await notifyRequestUpdate(selectedRequest, 'USER_RESPONDED', isEn ? `Requester attached a new document: ${docForm.doc_name.trim()}` : `Pemohon melampirkan dokumen baru: ${docForm.doc_name.trim()}`, [attachment]);
         }
-
         // Refresh documents
         const { data: docs } = await supabase
           .from('csl_request_documents')
@@ -875,17 +727,15 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
           .eq('request_id', selectedRequest.id)
           .order('created_at', { ascending: false });
         if (docs) setRequestDocuments(docs);
-
         // Add log entry for document upload
         await supabase.from('csl_request_logs').insert([{
           request_id: selectedRequest.id,
           status: selectedRequest.status, // Keep current status
           actor_name: currentUser?.fullName || currentUser?.email || 'Staff CSL',
           actor_id: currentUser?.id ? String(currentUser.id) : null,
-          note: `Dokumen ditambahkan: ${docForm.doc_name.trim()}`,
+          note: isEn ? `Document added: ${docForm.doc_name.trim()}` : `Dokumen ditambahkan: ${docForm.doc_name.trim()}`,
           has_files: true,
         }]);
-
         // Refresh logs
         const { data: logs } = await supabase
           .from('csl_request_logs')
@@ -895,7 +745,7 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
         if (logs) setRequestLogs(logs);
       } else {
         setDocUploadProgress(100);
-        setDocUploadStatus('Selesai (Mock)!');
+        setDocUploadStatus('Done (Mock)!');
         setRequestDocuments(prev => [{
           id: Date.now(),
           request_id: selectedRequest.id,
@@ -907,13 +757,12 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
           created_at: new Date().toISOString(),
         }, ...prev]);
       }
-
       setDocForm({ doc_name: '', doc_type: '', gdrive_url: '' });
       setDocFile(null);
       setShowDocForm(false);
-      toast.success('Dokumen berhasil dilampirkan.');
+      toast.success(isEn ? 'Document successfully attached.' : 'Dokumen berhasil dilampirkan.');
     } catch (err: any) {
-      toast.error(`Error tidak terduga: ${err?.message || 'Unknown error'}`);
+      toast.error(isEn ? `Unexpected error: ${err?.message || 'Unknown error'}` : `Error tidak terduga: ${err?.message || 'Unknown error'}`);
     } finally {
       setIsSubmittingDoc(false);
       setTimeout(() => {
@@ -922,11 +771,9 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
       }, 800);
     }
   };
-
   const submitFeedback = async () => {
     if (!selectedRequest) return;
     setIsSubmitting(true);
-
     const payload = {
       feedback_overall_rating: feedbackForm.overall,
       feedback_response_time_rating: feedbackForm.responseTime,
@@ -934,79 +781,69 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
       feedback_comment: feedbackForm.comment,
       feedback_submitted_at: new Date().toISOString()
     };
-
     try {
-      if (!useMock) {
+      if (true) {
         const { error } = await supabase.from('csl_requests').update(payload).eq('id', selectedRequest.id);
         if (error) throw error;
       }
-      toast.success('Terima kasih atas penilaian dan feedback Anda!');
+      toast.success(isEn ? 'Thank you for your rating and feedback!' : 'Terima kasih atas penilaian dan feedback Anda!');
       await fetchData();
       setSelectedRequest(null);
     } catch (err: any) {
-      toast.error('Gagal mengirim feedback: ' + (err.message || 'Terjadi kesalahan'));
+      toast.error((isEn ? 'Failed to submit feedback: ' : 'Gagal mengirim feedback: ') + (err.message || 'Error occurred'));
     } finally {
       setIsSubmitting(false);
     }
   };
-
   if (view === 'categories') return <CategoriesView categories={categories} />;
-
-  const pageTitle = 'Request / Ticketing';
+  const pageTitle = t('req_title');
   const pageDesc = isAdmin
-    ? 'Ikhtisar seluruh permintaan legal CSL antar departemen & staf'
+    ? t('req_admin_desc')
     : isStaff
-      ? 'Permintaan yang ditugaskan kepada Anda dan menunggu tindakan'
-      : 'Pantau status dan kepatuhan SLA dari permintaan yang Anda ajukan';
-
+      ? t('req_staff_desc')
+      : t('req_user_desc');
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-10">
       <PageHeader 
         title={pageTitle} 
-        subtitle="SERVICE DESK · CORPORATE SECRETARY & LEGAL"
+        subtitle={t('req_subtitle')}
         description={pageDesc}
       >
         <div className="flex items-center gap-2">
-          {useMock && (
-            <span className="text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1 uppercase tracking-wider">
-              Demo Data
-            </span>
-          )}
           <Button variant="outline" size="sm" onClick={fetchData} className="text-xs font-bold">
-            <RefreshCcw className="h-3.5 w-3.5 mr-1.5" /> Segarkan
+            <RefreshCcw className="h-3.5 w-3.5 mr-1.5" /> {t('req_refresh')}
           </Button>
           <Button size="sm" onClick={() => setIsCreateOpen(true)} className="bg-[#0a2540] hover:bg-[#16375c] text-white font-bold text-xs h-9 shadow-xs">
-            <Plus className="h-4 w-4 mr-1.5" /> Buat Permintaan
+            <Plus className="h-4 w-4 mr-1.5" /> {t('req_create_btn')}
           </Button>
         </div>
       </PageHeader>
-
       {/* SLA Stat Cards (Exact Shadcn Card style from Directory) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         {[
           {
-            label: 'Sesuai SLA',
+            label: t('req_on_track'),
             value: slaStats.onTrack,
             icon: CheckCircle2,
-            sub: 'Aktif, dalam target waktu',
+            sub: t('req_on_track_sub'),
           },
           {
-            label: 'Mendekati Tenggat',
+            label: t('req_due_soon'),
             value: slaStats.dueSoon + slaStats.dueToday,
             icon: Clock,
-            sub: 'Mendekati batas waktu SLA',
+            sub: t('req_due_soon_sub'),
           },
           {
-            label: 'Lewat Tenggat',
+            label: t('req_overdue'),
             value: slaStats.overdue,
             icon: AlertTriangle,
-            sub: 'Melebihi target batas SLA',
+            sub: t('req_overdue_sub'),
           },
           {
-            label: 'Total Permintaan',
+            label: t('req_total'),
             value: slaStats.total,
             icon: BarChart2,
-            sub: `${slaStats.onTime} selesai tepat waktu`,
+            sub: `${slaStats.onTime} ${t('req_total_sub')}`,
           },
         ].map(({ label, value, icon: Icon, sub }) => (
           <div key={label} className="bg-card border border-border/40 p-5 rounded-xl shadow-sm flex flex-col justify-between">
@@ -1021,7 +858,6 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
           </div>
         ))}
       </div>
-
       {/* Search & Filter Toolbar (Exact Shadcn Style as Directory) */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
         {/* Left Side: Search + Filter Tabs */}
@@ -1030,22 +866,21 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
           <div className="relative w-full sm:w-80">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input 
-              placeholder="Cari nomor, pemohon, deskripsi..." 
+              placeholder={t('req_search_ph')} 
               className="pl-9 h-9 text-sm rounded-md"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-
           {/* Shadcn Tabs style for status */}
           <div className="inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground w-full sm:w-auto overflow-x-auto hide-scrollbar">
             {[
-              { id: 'ALL', label: 'Semua' },
-              { id: 'SUBMITTED', label: 'Diajukan' },
-              { id: 'PROCESSING', label: 'Diproses' },
-              { id: 'REVIEW_USER', label: 'Review Pemohon' },
-              { id: 'COMPLETED', label: 'Selesai' },
-              { id: 'REJECTED', label: 'Ditolak' },
+              { id: 'ALL', label: t('req_filter_all') },
+              { id: 'SUBMITTED', label: t('req_filter_submitted') },
+              { id: 'PROCESSING', label: t('req_filter_processing') },
+              { id: 'REVIEW_USER', label: t('req_filter_review') },
+              { id: 'COMPLETED', label: t('req_filter_completed') },
+              { id: 'REJECTED', label: t('req_filter_rejected') },
             ].map(cat => (
               <button
                 key={cat.id}
@@ -1062,58 +897,55 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
           </div>
         </div>
       </div>
-
       {/* Content Rendering: Table */}
       {isLoading ? (
         <div className="bg-card border border-border/40 rounded-xl p-12 text-center text-muted-foreground flex items-center justify-center gap-2 font-medium text-sm">
-          <Loader2 className="h-5 w-5 animate-spin text-primary" /> Memuat data permintaan...
+          <Loader2 className="h-5 w-5 animate-spin text-primary" /> {t('req_loading')}
         </div>
       ) : filtered.length === 0 ? (
         <div className="bg-card border border-border/40 rounded-xl p-12 text-center text-muted-foreground flex flex-col items-center justify-center gap-2">
           <Ticket size={32} className="opacity-30" />
-          <p className="font-semibold text-sm text-foreground">Tidak ada permintaan ditemukan</p>
-          <p className="text-xs text-muted-foreground">Coba sesuaikan kata kunci pencarian atau kriteria filter Anda.</p>
+          <p className="font-semibold text-sm text-foreground">{t('req_not_found')}</p>
+          <p className="text-xs text-muted-foreground">{t('req_not_found_sub')}</p>
         </div>
       ) : (
         <div className="rounded-xl border border-border/80 bg-card shadow-sm overflow-hidden">
           {/* Card Header */}
           <div className="px-6 py-4 border-b border-border/60 flex flex-wrap items-center justify-between gap-3 bg-card">
             <div>
-              <h3 className="font-semibold text-sm text-foreground">Daftar Permintaan CSL</h3>
-              <p className="text-xs text-muted-foreground mt-0.5">Kelola dan pantau seluruh tiket permintaan Legal &amp; Corporate Secretary</p>
+              <h3 className="font-semibold text-sm text-foreground">{t('req_list_title')}</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">{t('req_list_sub')}</p>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-mono text-muted-foreground bg-muted/50 border border-border/50 px-2.5 py-1 rounded-md">
-                {filtered.length} Permintaan
+                {filtered.length} {t('req_badge_requests')}
               </span>
             </div>
           </div>
-
           <Table className="w-full table-fixed">
             <TableHeader className="sticky top-0 z-10 bg-card">
               <TableRow className="border-border/60 hover:bg-transparent bg-muted/30">
-                <TableHead className="h-10 pl-6 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground w-[38%]">Permintaan</TableHead>
+                <TableHead className="h-10 pl-6 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground w-[38%]">{t('req_col_request')}</TableHead>
                 {view !== 'mine' && (
-                  <TableHead className="h-10 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground w-[18%]">Pemohon</TableHead>
+                  <TableHead className="h-10 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground w-[18%]">{t('req_col_requester')}</TableHead>
                 )}
-                <TableHead className="h-10 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground w-[16%]">Penanggung Jawab</TableHead>
-                <TableHead className="h-10 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground w-[22%]">Status &amp; Tenggat</TableHead>
-                <TableHead className="h-10 pr-4 text-right text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground w-[6%]">Aksi</TableHead>
+                <TableHead className="h-10 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground w-[16%]">{t('req_col_pic')}</TableHead>
+                <TableHead className="h-10 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground w-[22%]">{t('req_col_status')}</TableHead>
+                <TableHead className="h-10 pr-4 text-right text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground w-[6%]">{t('req_col_action')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filtered.map((req) => {
                 const displaySlaDueDate = req.required_date || req.sla_due_date;
                 const slaStatus = getSlaStatus(displaySlaDueDate, req.status, req.completed_at);
-                const slaBadge = SLA_BADGE[slaStatus];
+                const slaBadge = getSlaBadge(slaStatus, isEn);
                 const dueDate = displaySlaDueDate
-                  ? new Date(displaySlaDueDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
-                  : 'Belum ditentukan';
-                const requestDate = new Date(req.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
-                const catName = categories.find(c => c.id === req.category_id)?.name || req.category_name || 'Permintaan';
+                  ? new Date(displaySlaDueDate).toLocaleDateString(isEn ? 'en-US' : 'id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
+                  : t('req_not_set');
+                const requestDate = new Date(req.created_at).toLocaleDateString(isEn ? 'en-US' : 'id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+                const catName = categories.find(c => c.id === req.category_id)?.name || req.category_name || (isEn ? 'Request' : 'Permintaan');
                 const getInitials = (name: string) => name.replace(/(Adv\.|S\.H\.|M\.H\.|Dra\.|PT)/gi, '').trim().substring(0, 2).toUpperCase();
                 const progressValue = computeRequestProgress(req);
-
                 return (
                   <TableRow
                     key={req.id}
@@ -1136,7 +968,6 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                         </div>
                       </div>
                     </TableCell>
-
                     {/* Pemohon */}
                     {view !== 'mine' && (
                       <TableCell className="py-3.5">
@@ -1151,25 +982,23 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                         </div>
                       </TableCell>
                     )}
-
                     {/* PIC Assigned */}
                     <TableCell className="py-3.5">
                       <div className="min-w-0">
                         <p className="text-xs font-medium text-foreground truncate">
-                          {req.assigned_pic_name || <span className="text-muted-foreground italic">Belum Ditugaskan</span>}
+                          {req.assigned_pic_name || <span className="text-muted-foreground italic">{t('req_unassigned')}</span>}
                         </p>
                         <p className="text-[11px] text-muted-foreground truncate">
                           {req.assigned_pic_name ? 'Legal Officer' : '-'}
                         </p>
                       </div>
                     </TableCell>
-
                     {/* Status & Timeline */}
                     <TableCell className="py-3.5 pr-3">
                       <div className="space-y-1.5 min-w-0">
                         <div className="flex items-center justify-between gap-2">
                           <span className={`inline-flex min-w-0 items-center rounded-md border px-2 py-0.5 text-[10px] font-medium whitespace-nowrap ${STATUS_BADGE[req.status] || ''}`}>
-                            {formatStatusText(req.status)}
+                            {formatStatusText(req.status, isEn)}
                           </span>
                           <span className="text-[10px] font-mono font-medium text-foreground shrink-0">{progressValue}%</span>
                         </div>
@@ -1180,14 +1009,13 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                           />
                         </div>
                         <div className="flex items-center justify-between gap-2 text-[10px]">
-                          <span className="text-muted-foreground truncate">Tenggat: {dueDate}</span>
+                          <span className="text-muted-foreground truncate">{isEn ? 'Due: ' : 'Tenggat: '}{dueDate}</span>
                           <span className={`font-medium whitespace-nowrap ${slaStatus === 'OVERDUE' ? 'text-destructive' : 'text-muted-foreground'}`}>
                             {slaBadge.label}
                           </span>
                         </div>
                       </div>
                     </TableCell>
-
                     {/* Aksi */}
                     <TableCell className="py-3.5 pr-6 text-right" onClick={(e) => e.stopPropagation()}>
                       {canEdit || canDelete ? (
@@ -1196,7 +1024,7 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                             render={
                               <button
                                 className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors inline-flex items-center justify-center cursor-pointer"
-                                title="Menu Aksi"
+                                title={isEn ? "Action Menu" : "Menu Aksi"}
                               />
                             }
                           >
@@ -1211,7 +1039,7 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                               className="cursor-pointer text-xs"
                             >
                               <Eye size={13} className="mr-2" />
-                              <span>Lihat Detail</span>
+                              <span>{t('req_view_detail')}</span>
                             </DropdownMenuItem>
                             {canEdit && (
                               <DropdownMenuItem
@@ -1232,7 +1060,7 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                                 className="cursor-pointer text-xs"
                               >
                                 <Pencil size={13} className="mr-2" />
-                                <span>Edit Request</span>
+                                <span>{isEn ? 'Edit Request' : 'Edit Permintaan'}</span>
                               </DropdownMenuItem>
                             )}
                             {canDelete && (
@@ -1247,7 +1075,7 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                                   className="cursor-pointer text-xs text-destructive focus:text-destructive"
                                 >
                                   <Trash2 size={13} className="mr-2 text-destructive" />
-                                  <span>Hapus Request</span>
+                                  <span>{t('req_delete')}</span>
                                 </DropdownMenuItem>
                               </>
                             )}
@@ -1260,7 +1088,7 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                             handleRowClick(req);
                           }}
                           className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors inline-flex items-center justify-center cursor-pointer"
-                          title="Lihat Detail"
+                          title={t('req_view_detail')}
                         >
                           <Eye size={14} />
                         </button>
@@ -1271,23 +1099,18 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
               })}
             </TableBody>
           </Table>
-
           {/* Table Footer */}
           <div className="px-6 py-3.5 bg-muted/20 border-t border-border/40 flex items-center justify-between">
             <p className="text-xs text-muted-foreground">
-              Menampilkan <span className="font-semibold text-foreground">{filtered.length}</span> dari <span className="font-semibold text-foreground">{requests.length}</span> permintaan
-            </p>
-            {useMock && <Badge variant="outline" className="text-xs font-medium text-muted-foreground border-border bg-muted/40">Demo Data</Badge>}
-          </div>
+              {t('req_showing')} <span className="font-semibold text-foreground">{filtered.length}</span> {t('req_of')} <span className="font-semibold text-foreground">{requests.length}</span> {t('req_requests_unit')}
+            </p></div>
         </div>
       )}
-
       {/* Slide-over Detail Panel per design.md §1.4, §6, §13.5 */}
       {selectedRequest && (() => {
         const displaySlaDueDate = selectedRequest.required_date || selectedRequest.sla_due_date;
         const sla = getSlaStatus(displaySlaDueDate, selectedRequest.status, selectedRequest.completed_at);
-        const slaBadge = SLA_BADGE[sla];
-
+        const slaBadge = getSlaBadge(sla, isEn);
         const oldAttachments: string[] = (() => {
           try { return JSON.parse((selectedRequest as any).attachments || '[]'); } catch { return []; }
         })();
@@ -1296,10 +1119,9 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
         })();
         const hasDocuments = oldAttachments.length > 0 || requestDocuments.length > 0 || responseFilesList.length > 0;
         const totalDocCount = oldAttachments.length + requestDocuments.length + responseFilesList.length;
-
         const fallbackEvents: { date: string; status: string; actor: string; note?: string; hasFiles?: boolean; attachments?: any[]; isInternal?: boolean }[] =
           requestLogs.length === 0
-            ? [{ date: selectedRequest.created_at, status: 'SUBMITTED', actor: selectedRequest.requester_name, note: 'Permintaan diajukan oleh pemohon' }]
+            ? [{ date: selectedRequest.created_at, status: 'SUBMITTED', actor: selectedRequest.requester_name, note: isEn ? 'Request submitted by requester' : 'Permintaan diajukan oleh pemohon' }]
             : [];
         const allEvents = [
           ...fallbackEvents,
@@ -1314,7 +1136,6 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
           }))
         ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
           .filter(evt => isCslTeam || !evt.isInternal);
-
         const renderDocIcon = (name: string) => {
           const ext = (name.split('.').pop() || '').toLowerCase();
           if (['pdf'].includes(ext)) return <FileText size={15} className="text-red-500 shrink-0" />;
@@ -1323,7 +1144,6 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
           if (['png', 'jpg', 'jpeg', 'webp', 'gif'].includes(ext)) return <Paperclip size={15} className="text-amber-500 shrink-0" />;
           return <Paperclip size={15} className="text-muted-foreground shrink-0" />;
         };
-
         return (
           <div
             className="fixed inset-0 z-50 bg-[#0a192f]/50 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 md:p-6 animate-in fade-in duration-200"
@@ -1344,22 +1164,21 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                           {selectedRequest.request_number}
                         </span>
                         <span className={`inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold ${STATUS_BADGE[selectedRequest.status] || ''}`}>
-                          {formatStatusText(selectedRequest.status)}
+                          {formatStatusText(selectedRequest.status, isEn)}
                         </span>
                         <span className={`inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-medium ${slaBadge.className}`}>
                           {slaBadge.label}
                         </span>
                         {selectedRequest.priority && ['High', 'Critical'].includes(selectedRequest.priority) && (
                           <span className={`inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-medium ${PRIORITY_BADGE[selectedRequest.priority] || ''}`}>
-                            Prioritas {selectedRequest.priority}
+                            {isEn ? 'Priority' : 'Prioritas'} {selectedRequest.priority}
                           </span>
                         )}
                       </div>
                       <p className="text-xs text-[#758196] truncate">
-                        Diajukan oleh <span className="font-semibold text-[#16233a] dark:text-slate-200">{selectedRequest.requester_name}</span> · {selectedRequest.department} ({selectedRequest.company})
+                        {t('req_requester')} <span className="font-semibold text-[#16233a] dark:text-slate-200">{selectedRequest.requester_name}</span> · {selectedRequest.department} ({selectedRequest.company})
                       </p>
                     </div>
-
                     <button
                       onClick={closeDetailModal}
                       className="p-1.5 rounded-full border border-[#e6e9f0] dark:border-slate-700 hover:bg-[#f6f7f9] dark:hover:bg-slate-800 text-[#758196] hover:text-[#0a2540] dark:hover:text-white transition-colors shrink-0"
@@ -1368,7 +1187,6 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                     </button>
                   </div>
                 </div>
-
                 {/* Tabs Navigation */}
                 <Tabs defaultValue="overview" className="flex-1 flex flex-col min-h-0 overflow-hidden">
                   <div className="px-6 border-b border-border bg-muted/20 shrink-0">
@@ -1377,13 +1195,13 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                         value="overview"
                         className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent px-1 pb-3 pt-2 text-xs font-semibold text-muted-foreground data-[state=active]:text-foreground transition-all"
                       >
-                        Detail Permintaan
+                        {t('req_details_tab')}
                       </TabsTrigger>
                       <TabsTrigger
                         value="activity"
                         className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent px-1 pb-3 pt-2 text-xs font-semibold text-muted-foreground data-[state=active]:text-foreground transition-all flex items-center gap-1.5"
                       >
-                        Log &amp; Diskusi
+                        {t('req_logs_tab')}
                         {allEvents.length > 0 && (
                           <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-muted border border-border text-foreground font-mono">
                             {allEvents.length}
@@ -1395,13 +1213,12 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                           value="action"
                           className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent px-1 pb-3 pt-2 text-xs font-semibold text-muted-foreground data-[state=active]:text-foreground transition-all flex items-center gap-1.5"
                         >
-                          Tindakan CSL
+                          {t('req_csl_action_tab')}
                           <span className="w-1.5 h-1.5 rounded-full bg-foreground" />
                         </TabsTrigger>
                       )}
                     </TabsList>
                   </div>
-
                   {/* TAB 1: OVERVIEW */}
                   <TabsContent value="overview" className="flex-1 overflow-y-auto p-6 space-y-4 m-0 data-[state=inactive]:hidden">
                     {/* Status Lifecycle Stepper */}
@@ -1409,19 +1226,18 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <Activity size={14} className="text-muted-foreground" />
-                          <span className="text-xs font-semibold text-foreground">Tahapan Pengerjaan Permintaan</span>
+                          <span className="text-xs font-semibold text-foreground">{t('req_workflow_stages')}</span>
                         </div>
                         <span className="text-xs font-mono font-medium text-foreground bg-muted px-2.5 py-0.5 rounded border border-border/50">
                           Progress: {computeRequestProgress(selectedRequest)}%
                         </span>
                       </div>
-
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 pt-1">
                         {[
-                          { step: 1, label: 'Diajukan', desc: 'Permintaan Masuk', isDone: true, isActive: false },
-                          { step: 2, label: 'Diproses', desc: 'Sedang Dikerjakan', isDone: ['PROCESSING', 'REVIEW_USER', 'COMPLETED'].includes(selectedRequest.status), isActive: selectedRequest.status === 'PROCESSING' },
-                          { step: 3, label: 'Review', desc: 'Review Pemohon', isDone: ['REVIEW_USER', 'COMPLETED'].includes(selectedRequest.status), isActive: selectedRequest.status === 'REVIEW_USER' },
-                          { step: 4, label: 'Selesai', desc: 'Tuntas', isDone: selectedRequest.status === 'COMPLETED', isActive: selectedRequest.status === 'COMPLETED' },
+                          { step: 1, label: t('req_stage_submitted'), desc: t('req_stage_submitted_sub'), isDone: true, isActive: false },
+                          { step: 2, label: t('req_stage_processing'), desc: t('req_stage_processing_sub'), isDone: ['PROCESSING', 'REVIEW_USER', 'COMPLETED'].includes(selectedRequest.status), isActive: selectedRequest.status === 'PROCESSING' },
+                          { step: 3, label: t('req_stage_review'), desc: t('req_stage_review_sub'), isDone: ['REVIEW_USER', 'COMPLETED'].includes(selectedRequest.status), isActive: selectedRequest.status === 'REVIEW_USER' },
+                          { step: 4, label: t('req_stage_completed'), desc: t('req_stage_completed_sub'), isDone: selectedRequest.status === 'COMPLETED', isActive: selectedRequest.status === 'COMPLETED' },
                         ].map((s) => (
                           <div key={s.step} className="flex flex-col gap-1.5 p-2 rounded-lg bg-muted/20 border border-border/40">
                             <div className={`h-1.5 rounded-full transition-all ${s.isDone ? 'bg-primary' : 'bg-muted border border-border/50'}`} />
@@ -1440,13 +1256,12 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                         ))}
                       </div>
                     </div>
-
                     {/* Key Metrics Grid */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                       {/* Pemohon */}
                       <div className="p-3.5 rounded-xl border border-border bg-card space-y-2">
                         <div className="flex items-center justify-between text-muted-foreground">
-                          <span className="text-[11px] font-medium">Pemohon</span>
+                          <span className="text-[11px] font-medium">{t('req_requester')}</span>
                           <UserCircle2 size={14} />
                         </div>
                         <div>
@@ -1457,40 +1272,38 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                           {selectedRequest.department} · {selectedRequest.company}
                         </div>
                       </div>
-
                       {/* PIC Legal */}
                       <div className="p-3.5 rounded-xl border border-border bg-card space-y-2">
                         <div className="flex items-center justify-between text-muted-foreground">
-                          <span className="text-[11px] font-medium">PIC Legal</span>
+                          <span className="text-[11px] font-medium">{t('req_legal_pic')}</span>
                           <Shield size={14} />
                         </div>
                         <div>
                           <p className="text-xs font-bold text-foreground truncate">
-                            {selectedRequest.assigned_pic_name || <span className="text-muted-foreground italic font-normal">Belum Ditugaskan</span>}
+                            {selectedRequest.assigned_pic_name || <span className="text-muted-foreground italic font-normal">{t('req_unassigned')}</span>}
                           </p>
                           <p className="text-[11px] text-muted-foreground truncate">
-                            {selectedRequest.assigned_pic_name ? 'Legal Officer / Counsel' : 'Menunggu penugasan CSL'}
+                            {selectedRequest.assigned_pic_name ? t('req_legal_officer_counsel') : t('req_awaiting_assignment')}
                           </p>
                         </div>
                         <div className="text-[10px] text-muted-foreground bg-muted/50 px-2 py-0.5 rounded truncate border border-border/40">
-                          Kategori: {selectedRequest.category_name || categories.find(c => c.id === selectedRequest.category_id)?.name || 'Permintaan'}
+                          {isEn ? 'Category: ' : 'Kategori: '}{selectedRequest.category_name || categories.find(c => c.id === selectedRequest.category_id)?.name || (isEn ? 'Request' : 'Permintaan')}
                         </div>
                       </div>
-
                       {/* Target SLA & Due */}
                       <div className="p-3.5 rounded-xl border border-border bg-card space-y-2">
                         <div className="flex items-center justify-between text-muted-foreground">
-                          <span className="text-[11px] font-medium">Target SLA &amp; Due</span>
+                          <span className="text-[11px] font-medium">{t('req_sla_and_due')}</span>
                           <Clock size={14} />
                         </div>
                         <div>
                           <p className="text-xs font-bold text-foreground">
-                            Due: {new Date(displaySlaDueDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                            Due: {new Date(displaySlaDueDate).toLocaleDateString(isEn ? 'en-US' : 'id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
                           </p>
                           <p className="text-[11px] text-muted-foreground">
                             {selectedRequest.required_date
-                              ? `Target pemohon (${slaBadge.label})`
-                              : `${selectedRequest.sla_target_days || 5} hari kerja`}
+                              ? `${t('req_target_user')} (${slaBadge.label})`
+                              : `${selectedRequest.sla_target_days || 5} ${t('req_business_days')}`}
                           </p>
                         </div>
                         <div className="flex items-center gap-1.5">
@@ -1499,51 +1312,48 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                           </span>
                         </div>
                       </div>
-
                       {/* Info Kategori & Tanggal */}
                       <div className="p-3.5 rounded-xl border border-border bg-card space-y-2">
                         <div className="flex items-center justify-between text-muted-foreground">
-                          <span className="text-[11px] font-medium">Kategori Permintaan</span>
+                          <span className="text-[11px] font-medium">{t('req_category')}</span>
                           <FileText size={14} />
                         </div>
                         <div>
                           <p className="text-xs font-bold text-foreground truncate">
-                            {selectedRequest.category_name || categories.find(c => c.id === selectedRequest.category_id)?.name || 'Permintaan Legal'}
+                            {selectedRequest.category_name || categories.find(c => c.id === selectedRequest.category_id)?.name || (isEn ? 'Legal Request' : 'Permintaan Legal')}
                           </p>
                           <p className="text-[11px] text-muted-foreground">
-                            Prioritas: <span className="font-medium text-foreground">{selectedRequest.priority || 'Normal'}</span>
+                            {isEn ? 'Priority' : 'Prioritas'}: <span className="font-medium text-foreground">{selectedRequest.priority || 'Normal'}</span>
                           </p>
                         </div>
                         <div className="text-[10px] text-muted-foreground bg-muted/50 px-2 py-0.5 rounded truncate border border-border/40">
-                          Dibuat: {new Date(selectedRequest.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          {isEn ? 'Created' : 'Dibuat'}: {new Date(selectedRequest.created_at).toLocaleDateString(isEn ? 'en-US' : 'id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
                         </div>
                       </div>
                     </div>
-
                     {/* Required Date Banner */}
                     {selectedRequest.required_date && (
                       <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl border border-border bg-muted/20 text-xs">
                         <Clock size={15} className="text-foreground shrink-0" />
                         <div className="flex-1 flex flex-wrap items-center justify-between gap-2">
                           <div>
-                            <span className="text-muted-foreground">Target Kebutuhan Pemohon: </span>
+                            <span className="text-muted-foreground">{t('req_target_need')}: </span>
                             <span className="font-semibold text-foreground">
-                              {new Date(selectedRequest.required_date).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                              {new Date(selectedRequest.required_date).toLocaleDateString(isEn ? 'en-US' : 'id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
                             </span>
                           </div>
                           <span className="text-[11px] text-muted-foreground">
-                            SLA Sistem: {selectedRequest.sla_target_days || 5} hari kerja
+                            {t('req_system_sla')}: {selectedRequest.sla_target_days || 5} {t('req_business_days')}
                           </span>
                         </div>
                       </div>
                     )}
-
                     {/* Deskripsi Permintaan */}
                     <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
                       <div className="px-4 py-2.5 bg-muted/30 border-b border-border flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <FileText size={14} className="text-muted-foreground" />
-                          <span className="text-xs font-semibold text-foreground">Rincian Deskripsi Permintaan</span>
+                          <span className="text-xs font-semibold text-foreground">{t('req_desc_details')}</span>
                         </div>
                         <span className="text-[11px] font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded border border-border/40">
                           {selectedRequest.category_name || categories.find(c => c.id === selectedRequest.category_id)?.name || 'Legal Request'}
@@ -1557,13 +1367,12 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                         </div>
                       </div>
                     </div>
-
                     {/* Tujuan Permintaan */}
                     {(selectedRequest as any).tujuan && (
                       <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
                         <div className="px-4 py-2.5 bg-muted/30 border-b border-border flex items-center gap-2">
                           <Target size={14} className="text-muted-foreground" />
-                          <span className="text-xs font-semibold text-foreground">Tujuan Permintaan</span>
+                          <span className="text-xs font-semibold text-foreground">{t('req_purpose')}</span>
                         </div>
                         <div className="p-4 bg-background">
                           <div className="border-l-2 border-primary/40 pl-3.5 py-0.5">
@@ -1574,19 +1383,17 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                         </div>
                       </div>
                     )}
-
                     {/* Dokumen Lampiran */}
                     {(() => {
                       const isVisibleToUser = ['REVIEW_USER', 'COMPLETED', 'CLOSED'].includes(selectedRequest.status);
                       if (isCslTeam && !hasDocuments && !showDocForm) return null;
                       if (!isCslTeam && (!hasDocuments || !isVisibleToUser)) return null;
-
                       return (
                         <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
                           <div className="px-4 py-2.5 bg-muted/30 border-b border-border flex justify-between items-center">
                             <div className="flex items-center gap-2">
                               <FolderOpen size={14} className="text-muted-foreground" />
-                              <span className="text-xs font-semibold text-foreground">Dokumen Lampiran &amp; Berkas ({totalDocCount})</span>
+                              <span className="text-xs font-semibold text-foreground">{t('req_attached_docs')} ({totalDocCount})</span>
                             </div>
                             {isCslTeam && !['COMPLETED', 'CLOSED'].includes(selectedRequest.status) && (
                               <Button
@@ -1595,11 +1402,10 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                                 onClick={() => setShowDocForm(!showDocForm)}
                                 className="h-7 text-xs px-2.5 text-foreground hover:bg-muted font-medium"
                               >
-                                {showDocForm ? 'Batal' : '+ Tambah Dokumen'}
+                                {showDocForm ? (isEn ? 'Cancel' : 'Batal') : t('req_add_doc')}
                               </Button>
                             )}
                           </div>
-
                           <div className="p-4 space-y-2">
                             {/* Old Attachments */}
                             {oldAttachments.map((url, i) => {
@@ -1617,13 +1423,12 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                                     <span className="text-xs font-medium text-foreground truncate group-hover:underline">{name}</span>
                                   </div>
                                   <div className="flex items-center gap-2 shrink-0 ml-2">
-                                    <span className="text-[10px] font-medium px-2 py-0.5 rounded border border-border bg-muted/40 text-muted-foreground">Lampiran</span>
+                                    <span className="text-[10px] font-medium px-2 py-0.5 rounded border border-border bg-muted/40 text-muted-foreground">{isEn ? 'Attachment' : 'Lampiran'}</span>
                                     <ArrowUpRight size={13} className="text-muted-foreground group-hover:text-foreground" />
                                   </div>
                                 </a>
                               );
                             })}
-
                             {/* GDrive & Request Documents */}
                             {requestDocuments.map((doc, i) => (
                               <div key={`gdrive-${i}`} className="flex items-center justify-between px-3.5 py-2.5 rounded-lg border border-border bg-background hover:bg-muted/40 transition-colors group">
@@ -1638,38 +1443,35 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                                     </span>
                                   )}
                                   <span className="text-[10px] text-muted-foreground hidden sm:inline">
-                                    {doc.uploaded_by_name?.split(' ')[0] || 'Pemohon'}
+                                    {doc.uploaded_by_name?.split(' ')[0] || (isEn ? 'Requester' : 'Pemohon')}
                                   </span>
                                   <ArrowUpRight size={13} className="text-muted-foreground group-hover:text-foreground" />
                                 </div>
                               </div>
                             ))}
-
                             {/* Response Files */}
                             {responseFilesList.map((f, i) => (
                               <div key={`resp-${i}`} className="flex items-center justify-between px-3.5 py-2.5 rounded-lg border border-border bg-muted/20 hover:bg-muted/40 transition-colors group">
                                 <a href={f.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 min-w-0 flex-1">
                                   {renderDocIcon(f.name || 'file')}
-                                  <span className="text-xs font-medium text-foreground truncate group-hover:underline">{f.name || 'Lampiran Tim CSL'}</span>
+                                  <span className="text-xs font-medium text-foreground truncate group-hover:underline">{f.name || (isEn ? 'CSL Team Attachment' : 'Lampiran Tim CSL')}</span>
                                 </a>
                                 <div className="flex items-center gap-2 shrink-0 ml-2">
-                                  <span className="text-[10px] font-medium px-2 py-0.5 rounded border border-border bg-card text-foreground">Respon CSL</span>
+                                  <span className="text-[10px] font-medium px-2 py-0.5 rounded border border-border bg-card text-foreground">{isEn ? 'CSL Response' : 'Respon CSL'}</span>
                                   <ArrowUpRight size={13} className="text-muted-foreground group-hover:text-foreground" />
                                 </div>
                               </div>
                             ))}
-
-                            {!hasDocuments && <p className="text-xs text-muted-foreground italic text-center py-2">Belum ada dokumen lampiran.</p>}
+                            {!hasDocuments && <p className="text-xs text-muted-foreground italic text-center py-2">{t('req_no_docs')}</p>}
                           </div>
-
                           {/* Add Document Form */}
                           {showDocForm && (
                             <div className="p-4 border-t border-border bg-muted/10 space-y-3">
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 <div className="space-y-1">
-                                  <label className="text-[11px] font-semibold text-foreground">Nama Dokumen *</label>
+                                  <label className="text-[11px] font-semibold text-foreground">{t('req_doc_name')} *</label>
                                   <Input
-                                    placeholder="Cth: Surat Kuasa Final"
+                                    placeholder={isEn ? "e.g. Final Power of Attorney" : "Cth: Surat Kuasa Final"}
                                     value={docForm.doc_name}
                                     onChange={e => setDocForm({ ...docForm, doc_name: e.target.value })}
                                     className="h-8 text-xs bg-background"
@@ -1677,9 +1479,9 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                                   />
                                 </div>
                                 <div className="space-y-1">
-                                  <label className="text-[11px] font-semibold text-foreground">Jenis Dokumen</label>
+                                  <label className="text-[11px] font-semibold text-foreground">{t('req_doc_type')}</label>
                                   <Input
-                                    placeholder="Cth: Akta, Draft, Form"
+                                    placeholder={isEn ? "e.g. Deed, Draft, Form" : "Cth: Akta, Draft, Form"}
                                     value={docForm.doc_type}
                                     onChange={e => setDocForm({ ...docForm, doc_type: e.target.value })}
                                     className="h-8 text-xs bg-background"
@@ -1688,7 +1490,7 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                                 </div>
                               </div>
                               <div className="space-y-2 pt-1">
-                                <label className="text-[11px] font-semibold text-foreground block">Upload File Fisik atau Tautan</label>
+                                <label className="text-[11px] font-semibold text-foreground block">{isEn ? "Upload Physical File or Link" : "Upload File Fisik atau Tautan"}</label>
                                 <input
                                   type="file"
                                   ref={docFileRef}
@@ -1712,17 +1514,16 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                                 >
                                   <Upload size={14} className="text-muted-foreground" />
                                   <span className="text-xs font-medium text-foreground">
-                                    {docFile ? `${docFile.name} (${(docFile.size / 1024).toFixed(0)} KB)` : 'Klik untuk pilih file dari komputer...'}
+                                    {docFile ? `${docFile.name} (${(docFile.size / 1024).toFixed(0)} KB)` : t('req_choose_file')}
                                   </span>
                                 </div>
-
                                 {/* Upload Progress Bar */}
                                 {isSubmittingDoc && (
                                   <div className="space-y-1.5 p-3 rounded-lg bg-background border border-border/80 shadow-xs">
                                     <div className="flex items-center justify-between text-xs">
                                       <span className="font-medium text-foreground flex items-center gap-1.5">
                                         <Loader2 size={13} className="animate-spin text-primary" />
-                                        {docUploadStatus || 'Mengunggah file...'}
+                                        {docUploadStatus || (isEn ? 'Uploading file...' : 'Mengunggah file...')}
                                       </span>
                                       <span className="font-mono text-xs font-semibold text-foreground">{docUploadProgress}%</span>
                                     </div>
@@ -1734,14 +1535,13 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                                     </div>
                                   </div>
                                 )}
-
                                 <div className="flex items-center gap-3 my-1">
                                   <div className="flex-1 h-px bg-border"></div>
-                                  <span className="text-[10px] font-semibold text-muted-foreground">ATAU</span>
+                                  <span className="text-[10px] font-semibold text-muted-foreground">{isEn ? 'OR' : 'ATAU'}</span>
                                   <div className="flex-1 h-px bg-border"></div>
                                 </div>
                                 <div className="space-y-1">
-                                  <label className="text-[11px] font-semibold text-foreground">Link Google Drive</label>
+                                  <label className="text-[11px] font-semibold text-foreground">{isEn ? 'Google Drive Link' : 'Link Google Drive'}</label>
                                   <Input
                                     type="url"
                                     placeholder="https://drive.google.com/..."
@@ -1763,7 +1563,7 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                                   disabled={isSubmittingDoc}
                                   className="h-8 text-xs"
                                 >
-                                  Batal
+                                  {isEn ? 'Cancel' : 'Batal'}
                                 </Button>
                                 <Button
                                   size="sm"
@@ -1774,10 +1574,10 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                                   {isSubmittingDoc ? (
                                     <>
                                       <Loader2 size={13} className="animate-spin mr-1.5" />
-                                      Mengunggah...
+                                      {isEn ? 'Uploading...' : 'Mengunggah...'}
                                     </>
                                   ) : (
-                                    'Simpan Dokumen'
+                                    t('req_save_doc')
                                   )}
                                 </Button>
                               </div>
@@ -1786,35 +1586,33 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                         </div>
                       );
                     })()}
-
                     {/* Balasan CSL Display */}
                     {selectedRequest.csl_response && (
                       <div className="rounded-lg border border-border bg-muted/20 p-4 space-y-2">
                         <div className="flex items-center gap-2">
                           <MessageSquare size={14} className="text-foreground" />
-                          <span className="text-xs font-semibold text-foreground">Balasan Resmi Tim CSL</span>
+                          <span className="text-xs font-semibold text-foreground">{t('req_csl_official_reply')}</span>
                           {selectedRequest.csl_response_at && (
                             <span className="text-[11px] text-muted-foreground ml-auto">
-                              {new Date(selectedRequest.csl_response_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                              {new Date(selectedRequest.csl_response_at).toLocaleDateString(isEn ? 'en-US' : 'id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
                             </span>
                           )}
                         </div>
                         <p className="text-xs md:text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap">{selectedRequest.csl_response}</p>
                       </div>
                     )}
-
                     {/* Feedback Display */}
                     {selectedRequest.feedback_submitted_at && (
                       <div className="rounded-lg border border-border bg-card p-4 space-y-3">
                         <div className="flex items-center gap-2">
                           <Star size={14} className="text-foreground fill-foreground" />
-                          <span className="text-xs font-semibold text-foreground">Feedback Pemohon</span>
+                          <span className="text-xs font-semibold text-foreground">{t('req_service_feedback')}</span>
                         </div>
                         <div className="grid grid-cols-3 gap-3">
                           {[
-                            { label: 'Overall', val: selectedRequest.feedback_overall_rating },
-                            { label: 'Kecepatan', val: selectedRequest.feedback_response_time_rating },
-                            { label: 'Kualitas', val: selectedRequest.feedback_service_quality_rating },
+                            { label: t('req_overall'), val: selectedRequest.feedback_overall_rating },
+                            { label: t('req_resp_speed'), val: selectedRequest.feedback_response_time_rating },
+                            { label: t('req_service_quality'), val: selectedRequest.feedback_service_quality_rating },
                           ].map(f => (
                             <div key={f.label} className="text-center p-2.5 bg-muted/30 rounded-md border border-border">
                               <p className="text-[10px] font-medium text-muted-foreground mb-0.5">{f.label}</p>
@@ -1829,19 +1627,18 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                         )}
                       </div>
                     )}
-
                     {/* Feedback Form (Requester) */}
                     {!isCslTeam && ['COMPLETED', 'CLOSED'].includes(selectedRequest.status) && !selectedRequest.feedback_submitted_at && (
                       <div className="rounded-lg border border-border bg-card overflow-hidden">
                         <div className="px-4 py-2.5 bg-muted/30 border-b border-border">
-                          <span className="text-xs font-semibold text-foreground">Beri Feedback Layanan</span>
+                          <span className="text-xs font-semibold text-foreground">{t('req_rate_service')}</span>
                         </div>
                         <div className="p-4 space-y-3">
-                          <p className="text-xs text-muted-foreground">Bagaimana pengalaman Anda terhadap pelayanan tim CSL untuk tiket ini?</p>
+                          <p className="text-xs text-muted-foreground">{t('req_how_experience')}</p>
                           {[
-                            { key: 'overall', label: 'Overall' },
-                            { key: 'responseTime', label: 'Kecepatan Respon' },
-                            { key: 'quality', label: 'Kualitas Layanan' }
+                            { key: 'overall', label: t('req_overall') },
+                            { key: 'responseTime', label: t('req_resp_speed') },
+                            { key: 'quality', label: t('req_service_quality') }
                           ].map(field => (
                             <div key={field.key} className="flex items-center justify-between">
                               <span className="text-xs font-medium text-foreground">{field.label}</span>
@@ -1854,15 +1651,14 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                               </div>
                             </div>
                           ))}
-                          <Textarea rows={2} className="w-full text-xs" placeholder="Komentar tambahan untuk perbaikan (opsional)..." value={feedbackForm.comment} onChange={e => setFeedbackForm({ ...feedbackForm, comment: e.target.value })} />
+                          <Textarea rows={2} className="w-full text-xs" placeholder={t('req_feedback_comment_ph')} value={feedbackForm.comment} onChange={e => setFeedbackForm({ ...feedbackForm, comment: e.target.value })} />
                           <Button onClick={submitFeedback} disabled={isSubmitting} className="w-full h-8 text-xs font-semibold">
-                            Kirim Feedback
+                            {t('req_submit_feedback')}
                           </Button>
                         </div>
                       </div>
                     )}
                   </TabsContent>
-
                   {/* TAB 2: LOG PROSES & DISKUSI (CHAT INTERFACE) */}
                   <TabsContent value="activity" className="flex-1 flex flex-col min-h-0 m-0 data-[state=inactive]:hidden bg-muted/15">
                     {/* Chat Messages Stream */}
@@ -1872,9 +1668,9 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                           <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
                             <MessageSquare size={18} className="text-muted-foreground" />
                           </div>
-                          <p className="text-xs font-semibold text-foreground">Belum Ada Percakapan</p>
+                          <p className="text-xs font-semibold text-foreground">{t('req_no_chat')}</p>
                           <p className="text-[11px] text-muted-foreground max-w-xs">
-                            Mulai diskusi atau tanyakan perkembangan permintaan ini pada kolom pesan di bawah.
+                            {t('req_no_chat_sub')}
                           </p>
                         </div>
                       ) : (
@@ -1883,9 +1679,9 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                             evt.note.includes('Permintaan diajukan') ||
                             evt.note.includes('Dokumen ditambahkan:') ||
                             evt.note.includes('Status/PIC diperbarui') ||
-                            evt.note.includes('Status diubah')
+                            evt.note.includes('Status diubah') ||
+                            evt.note.includes('Request submitted')
                           );
-
                           // System Event Pill (Centered)
                           if (isSystemNote) {
                             return (
@@ -1894,25 +1690,23 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                                   <Activity size={11} className="text-muted-foreground shrink-0" />
                                   <span>{evt.note}</span>
                                   <span className="text-[10px] text-muted-foreground/60 ml-1">
-                                    {new Date(evt.date).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                                    {new Date(evt.date).toLocaleTimeString(isEn ? 'en-US' : 'id-ID', { hour: '2-digit', minute: '2-digit' })}
                                   </span>
                                 </div>
                               </div>
                             );
                           }
-
                           const isMe = (currentUser?.fullName && evt.actor?.toLowerCase() === currentUser.fullName.toLowerCase()) ||
                             (currentUser?.email && evt.actor?.toLowerCase() === currentUser.email.toLowerCase());
-
                           // Chat Message: Right Aligned (Sent by Current User)
                           if (isMe) {
                             return (
                               <div key={i} className="flex flex-col items-end gap-1 pl-12">
                                 <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground pr-1">
-                                  <span className="font-semibold text-foreground">Anda</span>
+                                  <span className="font-semibold text-foreground">{t('req_you')}</span>
                                   <span>•</span>
                                   <span>
-                                    {new Date(evt.date).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                                    {new Date(evt.date).toLocaleTimeString(isEn ? 'en-US' : 'id-ID', { hour: '2-digit', minute: '2-digit' })}
                                   </span>
                                 </div>
                                 <div
@@ -1925,7 +1719,7 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                                   {evt.isInternal && (
                                     <div className="flex items-center gap-1 text-[10px] font-semibold text-amber-600 dark:text-amber-400 mb-1 pb-1 border-b border-amber-500/20">
                                       <Shield size={10} />
-                                      <span>Catatan Internal CSL</span>
+                                      <span>{t('req_csl_internal_note')}</span>
                                     </div>
                                   )}
                                   <p className="whitespace-pre-wrap">{evt.note}</p>
@@ -1944,7 +1738,6 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                               </div>
                             );
                           }
-
                           // Chat Message: Left Aligned (Other Participants / Staff)
                           return (
                             <div key={i} className="flex items-start gap-2.5 pr-12">
@@ -1961,11 +1754,11 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                                     </span>
                                   ) : (
                                     <span className="text-[9px] font-medium px-1.5 py-0.2 rounded border border-border bg-muted/40 text-muted-foreground">
-                                      {evt.actor === selectedRequest.requester_name ? 'Pemohon' : 'Tim CSL'}
+                                      {evt.actor === selectedRequest.requester_name ? (isEn ? 'Requester' : 'Pemohon') : (isEn ? 'CSL Team' : 'Tim CSL')}
                                     </span>
                                   )}
                                   <span className="text-[10px] text-muted-foreground ml-auto">
-                                    {new Date(evt.date).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                                    {new Date(evt.date).toLocaleTimeString(isEn ? 'en-US' : 'id-ID', { hour: '2-digit', minute: '2-digit' })}
                                   </span>
                                 </div>
                                 <div
@@ -1995,7 +1788,6 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                       )}
                       <div ref={chatEndRef} />
                     </div>
-
                     {/* Chat Input Bar */}
                     {!['CLOSED', 'COMPLETED', 'REJECTED'].includes(selectedRequest.status) && (
                       <div className="p-3.5 border-t border-border bg-card shrink-0 space-y-2">
@@ -2008,12 +1800,11 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                                 onChange={e => setIsInternalComment(e.target.checked)}
                                 className="rounded border-border h-3.5 w-3.5 accent-primary"
                               />
-                              <span>Kirim sebagai <strong className="font-semibold text-foreground">Catatan Internal</strong> (hanya tim CSL)</span>
+                              <span>{isEn ? 'Send as ' : 'Kirim sebagai '}<strong className="font-semibold text-foreground">{t('req_csl_internal_note')}</strong> ({isEn ? 'CSL team only' : 'hanya tim CSL'})</span>
                             </label>
-                            <span className="text-[10px] text-muted-foreground hidden sm:inline">Ketik @ untuk mention staff</span>
+                            <span className="text-[10px] text-muted-foreground hidden sm:inline">{t('req_type_mention')}</span>
                           </div>
                         )}
-
                         {chatFiles.length > 0 && (
                           <div className="flex flex-wrap gap-2 px-1">
                             {chatFiles.map((file, index) => (
@@ -2021,7 +1812,7 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                                 <FileText size={13} className="shrink-0" />
                                 <span className="max-w-48 truncate font-medium">{file.name}</span>
                                 <span className="text-[10px] text-muted-foreground">{(file.size / 1024).toFixed(0)} KB</span>
-                                <button type="button" onClick={() => setChatFiles(files => files.filter((_, i) => i !== index))} disabled={isSubmittingComment} aria-label={`Hapus ${file.name}`}>
+                                <button type="button" onClick={() => setChatFiles(files => files.filter((_, i) => i !== index))} disabled={isSubmittingComment} aria-label={isEn ? `Delete ${file.name}` : `Hapus ${file.name}`}>
                                   <X size={12} />
                                 </button>
                               </div>
@@ -2042,14 +1833,14 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                               return !CHAT_ATTACHMENT_EXTENSIONS.has(extension) || file.size > CHAT_ATTACHMENT_MAX_BYTES;
                             });
                             if (invalid) {
-                              toast.error(`File ${invalid.name} tidak didukung atau melebihi 10 MB.`);
+                              toast.error(isEn ? `File ${invalid.name} is not supported or exceeds 10 MB.` : `File ${invalid.name} tidak didukung atau melebihi 10 MB.`);
                               event.target.value = '';
                               return;
                             }
                             setChatFiles(files => {
                               const combined = [...files, ...selected];
                               if (combined.length > CHAT_ATTACHMENT_MAX_FILES) {
-                                toast.error(`Maksimal ${CHAT_ATTACHMENT_MAX_FILES} file per pesan.`);
+                                toast.error(isEn ? `Maximum ${CHAT_ATTACHMENT_MAX_FILES} files per message.` : `Maksimal ${CHAT_ATTACHMENT_MAX_FILES} file per pesan.`);
                                 return files;
                               }
                               return combined;
@@ -2061,7 +1852,7 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                           {/* Mention Popup */}
                           {mentionState.active && (
                             <div className="absolute bottom-full left-0 mb-2 w-64 max-h-48 overflow-y-auto bg-card border border-border rounded-lg shadow-xl z-50 py-1">
-                              <p className="text-[10px] font-semibold uppercase text-muted-foreground px-3 py-1 border-b border-border bg-muted/20">Tag Tim CSL</p>
+                              <p className="text-[10px] font-semibold uppercase text-muted-foreground px-3 py-1 border-b border-border bg-muted/20">{t('req_tag_csl')}</p>
                               {cslStaffUsers
                                 .filter(u => u.fullName.toLowerCase().includes(mentionState.query.toLowerCase()))
                                 .map((u) => (
@@ -2082,7 +1873,6 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                                 ))}
                             </div>
                           )}
-
                           <Button
                             type="button"
                             variant="outline"
@@ -2090,25 +1880,23 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                             onClick={() => chatFileRef.current?.click()}
                             disabled={isSubmittingComment}
                             className="h-10 w-10 shrink-0 rounded-xl"
-                            title="Lampirkan dokumen pendukung"
-                            aria-label="Lampirkan dokumen pendukung"
+                            title={isEn ? "Attach supporting documents" : "Lampirkan dokumen pendukung"}
+                            aria-label={isEn ? "Attach supporting documents" : "Lampirkan dokumen pendukung"}
                           >
                             <Paperclip size={15} />
                           </Button>
                           <Textarea
                             rows={1}
-                            placeholder={isInternalComment ? "Tulis catatan internal untuk tim CSL..." : "Ketik pesan atau balasan diskusi... (Enter untuk kirim)"}
+                            placeholder={isInternalComment ? (isEn ? "Write internal note for CSL team..." : "Tulis catatan internal untuk tim CSL...") : (isEn ? "Write a message or reply... (Enter to send)" : "Ketik pesan atau balasan diskusi... (Enter untuk kirim)")}
                             value={newComment}
                             onChange={(e) => {
                               const val = e.target.value;
                               setNewComment(val);
                               e.target.style.height = 'auto';
                               e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
-
                               const cursorPos = e.target.selectionStart;
                               const textBeforeCursor = val.slice(0, cursorPos);
                               const match = textBeforeCursor.match(/(?:^|\s)@([a-zA-Z0-9_ ]*)$/);
-
                               if (match && isCslTeam) {
                                 const atIndex = match[0].startsWith(' ') ? match.index! + 1 : match.index!;
                                 setMentionState({ active: true, query: match[1], index: atIndex });
@@ -2142,7 +1930,7 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                             disabled={isSubmittingComment || (!newComment.trim() && chatFiles.length === 0)}
                             onClick={submitComment}
                             className="h-10 w-10 shrink-0 rounded-xl bg-primary text-primary-foreground hover:opacity-90 transition-all shadow-xs"
-                            title="Kirim Pesan"
+                            title={t('req_send')}
                           >
                             {isSubmittingComment ? <Loader2 size={14} className="animate-spin" /> : <Send size={15} />}
                           </Button>
@@ -2150,24 +1938,22 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                       </div>
                     )}
                   </TabsContent>
-
                   {/* TAB 3: TINDAKAN CSL (UPDATE STATUS) */}
                   {isCslTeam && !['COMPLETED', 'CLOSED'].includes(selectedRequest.status) && (
                     <TabsContent value="action" className="flex-1 overflow-y-auto p-6 space-y-4 m-0 data-[state=inactive]:hidden">
                       <div className="rounded-lg border border-border bg-card p-5 space-y-4">
                         <div>
-                          <h4 className="text-sm font-semibold text-foreground">Update Status &amp; Tindak Lanjut</h4>
-                          <p className="text-xs text-muted-foreground mt-0.5">Pilih status pemrosesan permintaan dan lampirkan dokumen hasil jika ada.</p>
+                          <h4 className="text-sm font-semibold text-foreground">{t('req_csl_action_title')}</h4>
+                          <p className="text-xs text-muted-foreground mt-0.5">{t('req_csl_action_desc')}</p>
                         </div>
-
                         <div className="space-y-1.5">
-                          <label className="text-xs font-semibold text-foreground">Status Baru</label>
+                          <label className="text-xs font-semibold text-foreground">{t('req_new_status')}</label>
                           <select
                             className="h-9 w-full rounded-md border border-input bg-background px-3 text-xs shadow-sm focus:outline-none focus:ring-1 focus:ring-ring text-foreground"
                             value={responseForm.status}
                             onChange={e => setResponseForm({ ...responseForm, status: e.target.value })}
                           >
-                            <option value="">— Pilih Status —</option>
+                            <option value="">{t('req_select_status')}</option>
                             <option value="PROCESSING">Processing</option>
                             {/* Review User hanya untuk Agreement */}
                             {(() => {
@@ -2181,22 +1967,20 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                             <option value="REJECTED">Rejected</option>
                           </select>
                         </div>
-
                         {['COMPLETED', 'REJECTED', 'REVIEW_USER'].includes(responseForm.status) && (
                           <div className="space-y-1.5">
-                            <label className="text-xs font-semibold text-foreground">Catatan / Balasan untuk Pemohon</label>
+                            <label className="text-xs font-semibold text-foreground">{t('req_reply_to_user')}</label>
                             <Textarea
                               rows={3}
                               className="text-xs"
-                              placeholder="Tuliskan catatan, rekomendasi, atau kesimpulan untuk pemohon..."
+                              placeholder={t('req_reply_to_user_ph')}
                               value={responseForm.response}
                               onChange={e => setResponseForm({ ...responseForm, response: e.target.value })}
                             />
                           </div>
                         )}
-
                         <div className="space-y-2 pt-2 border-t border-border">
-                          <label className="text-xs font-semibold text-foreground block">Lampirkan File Fisik (Opsional)</label>
+                          <label className="text-xs font-semibold text-foreground block">{t('req_attach_physical')}</label>
                           <div
                             onClick={() => responseFileRef.current?.click()}
                             onDragOver={e => { e.preventDefault(); setIsDraggingResponse(true); }}
@@ -2214,8 +1998,8 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                             }`}
                           >
                             <Paperclip size={16} className="text-muted-foreground" />
-                            <p className="text-xs font-semibold text-foreground">Klik atau seret file ke sini</p>
-                            <p className="text-[10px] text-muted-foreground">PDF, DOCX, XLSX, JPG, PNG — maks. 10MB</p>
+                            <p className="text-xs font-semibold text-foreground">{t('req_click_or_drag')}</p>
+                            <p className="text-[10px] text-muted-foreground">PDF, DOCX, XLSX, JPG, PNG — {isEn ? 'max. 10MB' : 'maks. 10MB'}</p>
                             <input ref={responseFileRef} type="file" multiple
                               accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
                               className="hidden"
@@ -2228,7 +2012,6 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                               }}
                             />
                           </div>
-
                           {responseFiles.length > 0 && (
                             <div className="space-y-1.5 pt-1">
                               {responseFiles.map(file => (
@@ -2245,11 +2028,10 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                               ))}
                             </div>
                           )}
-
                           {/* Existing Response Files Preview */}
                           {responseFilesList.length > 0 && (
                             <div className="pt-2">
-                              <p className="text-[11px] font-semibold uppercase text-muted-foreground mb-1.5">File Respon Sebelumnya</p>
+                              <p className="text-[11px] font-semibold uppercase text-muted-foreground mb-1.5">{t('req_prev_response_files')}</p>
                               <div className="space-y-1.5">
                                 {responseFilesList.map((item: any, i: number) => (
                                   <a key={i} href={item.url} target="_blank" rel="noopener noreferrer"
@@ -2262,9 +2044,8 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                             </div>
                           )}
                         </div>
-
                         <Button onClick={submitResponse} disabled={isSubmitting || !responseForm.status} className="w-full h-10 font-semibold text-xs mt-2">
-                          <Send size={14} className="mr-2" /> Simpan Update Status
+                          <Send size={14} className="mr-2" /> {t('req_save_status_update')}
                         </Button>
                       </div>
                     </TabsContent>
@@ -2275,13 +2056,12 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
           </div>
         );
       })()}
-
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
         <DialogContent className="sm:max-w-3xl max-h-[90vh] flex flex-col p-0 overflow-hidden rounded-xl border bg-card shadow-xl">
           <DialogHeader className="px-6 py-4 border-b border-border bg-muted/20">
-            <DialogTitle className="text-lg font-semibold text-foreground">Buat Permintaan Baru</DialogTitle>
+            <DialogTitle className="text-lg font-semibold text-foreground">{t('req_create_dialog_title')}</DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
-              Ajukan permintaan ke tim Legal &amp; Corporate Secretary
+              {t('req_create_dialog_sub')}
             </DialogDescription>
           </DialogHeader>
           <div className="px-6 py-5 overflow-y-auto flex-1">
@@ -2295,19 +2075,18 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
           </div>
         </DialogContent>
       </Dialog>
-
       {/* Edit Dialog for Admin */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="sm:max-w-md p-0 overflow-hidden rounded-xl border bg-card shadow-xl">
           <DialogHeader className="px-6 py-4 border-b bg-muted/20">
-            <DialogTitle className="text-base font-semibold">Edit Status &amp; Penugasan PIC</DialogTitle>
+            <DialogTitle className="text-base font-semibold">{t('req_edit_dialog_title')}</DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
-              Khusus Admin: Koreksi status secara paksa &amp; alihkan penugasan ke Staff CSL.
+              {t('req_edit_dialog_sub')}
             </DialogDescription>
           </DialogHeader>
           <div className="p-6 space-y-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-foreground">Status Request</label>
+              <label className="text-xs font-medium text-foreground">{isEn ? 'Request Status' : 'Status Request'}</label>
               <select
                 className="h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring text-foreground"
                 value={editForm.status || ''}
@@ -2316,9 +2095,8 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                 {Object.keys(STATUS_BADGE).map(s => <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>)}
               </select>
             </div>
-
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-foreground">Tugaskan ke Staff (PIC)</label>
+              <label className="text-xs font-medium text-foreground">{isEn ? 'Assign to Staff (PIC)' : 'Tugaskan ke Staff (PIC)'}</label>
               <select
                 className="h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring text-foreground"
                 value={editForm.assigned_pic_id || ''}
@@ -2331,7 +2109,7 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
                   });
                 }}
               >
-                <option value="">-- Belum Ditugaskan (Unassigned) --</option>
+                <option value="">{isEn ? '-- Unassigned --' : '-- Belum Ditugaskan (Unassigned) --'}</option>
                 {cslStaffUsers.map(staff => (
                   <option key={staff.id} value={staff.id}>
                     {staff.fullName} ({staff.email})
@@ -2342,27 +2120,26 @@ export const CSLRequestManager: React.FC<CSLRequestManagerProps> = ({ currentUse
           </div>
           <DialogFooter className="px-6 py-3.5 border-t bg-muted/10 gap-2 flex sm:justify-end">
             <Button variant="outline" size="sm" onClick={() => setIsEditDialogOpen(false)} className="text-xs h-9">
-              Batal
+              {isEn ? 'Cancel' : 'Batal'}
             </Button>
             <Button size="sm" onClick={handleEditSave} disabled={isSubmitting} className="text-xs h-9">
-              {isSubmitting ? 'Menyimpan...' : 'Simpan Perubahan'}
+              {isSubmitting ? (isEn ? 'Saving...' : 'Menyimpan...') : (isEn ? 'Save Changes' : 'Simpan Perubahan')}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
       <AlertDialog open={requestToDelete !== null} onOpenChange={(open) => !open && setRequestToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Hapus Request Permanen?</AlertDialogTitle>
+            <AlertDialogTitle>{t('req_delete_dialog_title')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Tindakan ini tidak dapat dibatalkan. Request beserta seluruh data dokumen dan percakapan yang terkait akan dihapus secara permanen dari sistem.
+              {t('req_delete_dialog_desc')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isSubmitting}>Batal</AlertDialogCancel>
+            <AlertDialogCancel disabled={isSubmitting}>{isEn ? 'Cancel' : 'Batal'}</AlertDialogCancel>
             <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700 text-white" disabled={isSubmitting}>
-              {isSubmitting ? 'Menghapus...' : 'Ya, Hapus'}
+              {isSubmitting ? (isEn ? 'Deleting...' : 'Menghapus...') : (isEn ? 'Yes, Delete' : 'Ya, Hapus')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

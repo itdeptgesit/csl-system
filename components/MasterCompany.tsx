@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import groupEmailCompanies from '../data/group_email_companies.json';
+import { useLanguage } from '../translations';
 
 interface MasterCompanyProps {
     currentUser: UserAccount | null;
@@ -22,6 +23,7 @@ interface MasterCompanyProps {
 
 export const MasterCompany: React.FC<MasterCompanyProps> = ({ currentUser }) => {
     const { showToast } = useToast();
+    const { language } = useLanguage();
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingCompany, setEditingCompany] = useState<Company | null>(null);
@@ -93,7 +95,7 @@ export const MasterCompany: React.FC<MasterCompanyProps> = ({ currentUser }) => 
 
             await fetchCompanies();
             setDeleteCompany(null);
-            showToast("Perusahaan berhasil dihapus", 'success');
+            showToast(language === 'en' ? 'Company deleted successfully' : 'Perusahaan berhasil dihapus', 'success');
         } catch (err: any) {
             showToast("Failed to delete record: " + err.message, 'error');
         } finally {
@@ -118,9 +120,9 @@ export const MasterCompany: React.FC<MasterCompanyProps> = ({ currentUser }) => 
             );
 
             fetchCompanies();
-            showToast(`Perusahaan berhasil ${editingCompany ? 'diperbarui' : 'ditambahkan'}`, 'success');
+            showToast(language === 'en' ? `Company ${editingCompany ? 'updated' : 'added'} successfully` : `Perusahaan berhasil ${editingCompany ? 'diperbarui' : 'ditambahkan'}`, 'success');
         } catch (err: any) {
-            showToast("Gagal menyimpan data: " + err.message, 'error');
+            showToast((language === 'en' ? 'Failed to save data: ' : 'Gagal menyimpan data: ') + err.message, 'error');
         }
     };
 
@@ -164,10 +166,10 @@ export const MasterCompany: React.FC<MasterCompanyProps> = ({ currentUser }) => 
                 `Synced ${addedCount} corporate entities from Group-Email-Cleaned-List.xlsx`
             );
 
-            showToast(`Sinkronisasi sukses: ${addedCount} entitas baru berhasil didaftarkan.`, 'success');
+            showToast(language === 'en' ? `Sync successful: ${addedCount} new entities registered.` : `Sinkronisasi sukses: ${addedCount} entitas baru berhasil didaftarkan.`, 'success');
             await fetchCompanies();
         } catch (err: any) {
-            showToast('Gagal sinkronisasi: ' + (err.message || 'Periksa koneksi'), 'error');
+            showToast((language === 'en' ? 'Sync failed: ' : 'Gagal sinkronisasi: ') + (err.message || (language === 'en' ? 'Check your connection' : 'Periksa koneksi')), 'error');
         } finally {
             setIsSyncing(false);
         }
@@ -186,17 +188,17 @@ export const MasterCompany: React.FC<MasterCompanyProps> = ({ currentUser }) => 
                         onClick={handleSyncGroupEmail}
                         disabled={isSyncing}
                         className="h-9 text-xs font-semibold gap-1.5 border-[#e6e9f0] hover:bg-[#f6f7f9]"
-                        title="Sinkronkan 79 entitas resmi dari Group-Email-Cleaned-List.xlsx"
+                        title={language === 'en' ? 'Sync 79 official entities from Group-Email-Cleaned-List.xlsx' : 'Sinkronkan 79 entitas resmi dari Group-Email-Cleaned-List.xlsx'}
                     >
                         <FileSpreadsheet className={`h-3.5 w-3.5 text-[#0a2540] ${isSyncing ? 'animate-spin' : ''}`} />
-                        {isSyncing ? 'Menyinkronkan...' : 'Sinkronkan Group Email (79)'}
+                        {isSyncing ? (language === 'en' ? 'Syncing...' : 'Menyinkronkan...') : (language === 'en' ? 'Sync Group Email (79)' : 'Sinkronkan Group Email (79)')}
                     </Button>
                     <Button
                         variant="ghost"
                         size="icon"
                         onClick={fetchCompanies}
                         className="w-9 hover:bg-muted"
-                        title="Muat ulang data"
+                        title={language === 'en' ? 'Reload data' : 'Muat ulang data'}
                     >
                         <RefreshCcw size={16} className={isLoading ? 'animate-spin' : ''} />
                     </Button>
@@ -214,7 +216,7 @@ export const MasterCompany: React.FC<MasterCompanyProps> = ({ currentUser }) => 
                 <div className="p-4 border-b border-slate-100 dark:border-zinc-800 bg-slate-50/40 dark:bg-zinc-800/30 flex items-center justify-between gap-4">
                     <div className="relative flex-1 max-w-md">
                         <Input
-                            placeholder="Cari nama perusahaan, kode, email group..."
+                            placeholder={language === 'en' ? 'Search company name, code, group email...' : 'Cari nama perusahaan, kode, email group...'}
                             className="w-full pl-10 pr-4 py-2 bg-white dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 rounded-lg text-xs"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
@@ -222,7 +224,7 @@ export const MasterCompany: React.FC<MasterCompanyProps> = ({ currentUser }) => 
                         <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-zinc-500" />
                     </div>
                     <div className="text-xs text-[#758196] font-medium">
-                        Total: <span className="font-bold text-[#0a2540] dark:text-white">{filteredCompanies.length}</span> entitas
+                        {language === 'en' ? 'Total' : 'Total'}: <span className="font-bold text-[#0a2540] dark:text-white">{filteredCompanies.length}</span> {language === 'en' ? 'entities' : 'entitas'}
                     </div>
                 </div>
 
@@ -231,18 +233,18 @@ export const MasterCompany: React.FC<MasterCompanyProps> = ({ currentUser }) => 
                         <TableHeader>
                             <TableRow className="bg-slate-50/60 dark:bg-zinc-800/50">
                                 <TableHead className="w-16 text-center text-[10px] font-bold uppercase tracking-wider text-slate-400">ID</TableHead>
-                                <TableHead className="w-24 text-[10px] font-bold uppercase tracking-wider text-slate-400">Kode</TableHead>
-                                <TableHead className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Nama Perusahaan / Entitas</TableHead>
-                                <TableHead className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Alamat Email Group</TableHead>
-                                <TableHead className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Alamat Kantor</TableHead>
-                                <TableHead className="w-20 text-center text-[10px] font-bold uppercase tracking-wider text-slate-400">Aksi</TableHead>
+                                <TableHead className="w-24 text-[10px] font-bold uppercase tracking-wider text-slate-400">{language === 'en' ? 'Code' : 'Kode'}</TableHead>
+                                <TableHead className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{language === 'en' ? 'Company / Entity Name' : 'Nama Perusahaan / Entitas'}</TableHead>
+                                <TableHead className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{language === 'en' ? 'Group Email Address' : 'Alamat Email Group'}</TableHead>
+                                <TableHead className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{language === 'en' ? 'Office Address' : 'Alamat Kantor'}</TableHead>
+                                <TableHead className="w-20 text-center text-[10px] font-bold uppercase tracking-wider text-slate-400">{language === 'en' ? 'Actions' : 'Aksi'}</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {isLoading ? (
                                 <TableRow><TableCell colSpan={6} className="text-center py-20"><RefreshCcw className="animate-spin text-[#0a2540] mx-auto" size={24} /></TableCell></TableRow>
                             ) : filteredCompanies.length === 0 ? (
-                                <TableRow><TableCell colSpan={6} className="text-center py-20 text-slate-500 font-medium">Tidak ada data perusahaan yang sesuai.</TableCell></TableRow>
+                                <TableRow><TableCell colSpan={6} className="text-center py-20 text-slate-500 font-medium">{language === 'en' ? 'No matching company data found.' : 'Tidak ada data perusahaan yang sesuai.'}</TableCell></TableRow>
                             ) : filteredCompanies.map((company) => {
                                 const emailInfo = emailLookup.byName.get(company.name.toLowerCase().trim()) || (company.code ? emailLookup.byCode.get(company.code.toUpperCase().trim()) : undefined);
                                 return (

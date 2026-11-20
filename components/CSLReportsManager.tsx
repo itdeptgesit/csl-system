@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { UserAccount } from '../types';
+import { useLanguage } from '../translations';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -17,6 +18,7 @@ interface CSLReportsManagerProps {
 }
 
 export const CSLReportsManager: React.FC<CSLReportsManagerProps> = ({ currentUser, view = 'request' }) => {
+  const { language } = useLanguage();
   const [loading, setLoading] = useState(true);
 
   // States for Requests
@@ -91,13 +93,17 @@ export const CSLReportsManager: React.FC<CSLReportsManagerProps> = ({ currentUse
 
     return (
       <div className="space-y-6 animate-in fade-in duration-500 pb-12 font-sans">
-        <PageHeader title="Laporan Permintaan & Kepatuhan SLA" description="Analisis menyeluruh atas volume dan kepatuhan waktu penanganan berkas legal">
+        <PageHeader
+          title={language === 'en' ? 'Requests & SLA Compliance Report' : 'Laporan Permintaan & Kepatuhan SLA'}
+          subtitle={language === 'en' ? 'REPORTS · SLA & TICKETING ANALYTICS' : 'LAPORAN · ANALISIS TIKET & SLA'}
+          description={language === 'en' ? 'Comprehensive analysis of legal file volume, handling time, and SLA compliance' : 'Analisis menyeluruh atas volume dan kepatuhan waktu penanganan berkas legal'}
+        >
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" className="text-xs font-bold rounded-xl h-9">
-              <Filter size={13} className="mr-1.5" /> Filter Periode
+              <Filter size={13} className="mr-1.5" /> {language === 'en' ? 'Period Filter' : 'Filter Periode'}
             </Button>
             <Button size="sm" className="bg-[#0a2540] hover:bg-[#16375c] text-white font-bold text-xs rounded-xl h-9 px-4 shadow-xs">
-              <Download size={13} className="mr-1.5" /> Ekspor PDF
+              <Download size={13} className="mr-1.5" /> {language === 'en' ? 'Export PDF' : 'Ekspor PDF'}
             </Button>
           </div>
         </PageHeader>
@@ -105,21 +111,21 @@ export const CSLReportsManager: React.FC<CSLReportsManagerProps> = ({ currentUse
         {/* Top Metric Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-5">
           <div className="bg-card border border-border/40 p-5 rounded-2xl shadow-sm">
-            <span className="text-[10px] font-black uppercase text-muted-foreground">Total Permintaan</span>
+            <span className="text-[10px] font-black uppercase text-muted-foreground">{language === 'en' ? 'Total Requests' : 'Total Permintaan'}</span>
             <p className="text-3xl font-black text-foreground mt-1">{totalRequests}</p>
           </div>
           <div className="bg-card border border-border/40 p-5 rounded-2xl shadow-sm">
-            <span className="text-[10px] font-black uppercase text-muted-foreground">Selesai (Completed)</span>
+            <span className="text-[10px] font-black uppercase text-muted-foreground">{language === 'en' ? 'Completed' : 'Selesai (Completed)'}</span>
             <p className="text-3xl font-black text-emerald-600 mt-1">{completedRequests}</p>
           </div>
           <div className="bg-card border border-border/40 p-5 rounded-2xl shadow-sm">
-            <span className="text-[10px] font-black uppercase text-muted-foreground">Aktif / Diproses</span>
+            <span className="text-[10px] font-black uppercase text-muted-foreground">{language === 'en' ? 'Active / In Progress' : 'Aktif / Diproses'}</span>
             <p className="text-3xl font-black text-blue-600 mt-1">{activeRequests}</p>
           </div>
           <div className="bg-card border border-border/40 p-5 rounded-2xl shadow-sm">
-            <span className="text-[10px] font-black uppercase text-muted-foreground">Departemen Terbanyak</span>
+            <span className="text-[10px] font-black uppercase text-muted-foreground">{language === 'en' ? 'Top Department' : 'Departemen Terbanyak'}</span>
             <p className="text-lg font-bold text-foreground truncate mt-2">{topDept[0]}</p>
-            <span className="text-[11px] text-muted-foreground font-semibold">{topDept[1]} Permintaan</span>
+            <span className="text-[11px] text-muted-foreground font-semibold">{topDept[1]} {language === 'en' ? 'Requests' : 'Permintaan'}</span>
           </div>
         </div>
 
@@ -128,18 +134,18 @@ export const CSLReportsManager: React.FC<CSLReportsManagerProps> = ({ currentUse
           <Table>
             <TableHeader className="bg-muted/30">
               <TableRow>
-                <TableHead className="text-[10px] font-black uppercase tracking-widest w-[140px]">No. Permintaan</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-widest">Deskripsi</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-widest">Departemen</TableHead>
+                <TableHead className="text-[10px] font-black uppercase tracking-widest w-[140px]">{language === 'en' ? 'Request No.' : 'No. Permintaan'}</TableHead>
+                <TableHead className="text-[10px] font-black uppercase tracking-widest">{language === 'en' ? 'Description' : 'Deskripsi'}</TableHead>
+                <TableHead className="text-[10px] font-black uppercase tracking-widest">{language === 'en' ? 'Department' : 'Departemen'}</TableHead>
                 <TableHead className="text-[10px] font-black uppercase tracking-widest">Status</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-widest">Tanggal</TableHead>
+                <TableHead className="text-[10px] font-black uppercase tracking-widest">{language === 'en' ? 'Date' : 'Tanggal'}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
-                <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Memuat data laporan...</TableCell></TableRow>
+                <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">{language === 'en' ? 'Loading report data...' : 'Memuat data laporan...'}</TableCell></TableRow>
               ) : requests.length === 0 ? (
-                <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Tidak ada data permintaan.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">{language === 'en' ? 'No request data available.' : 'Tidak ada data permintaan.'}</TableCell></TableRow>
               ) : (
                 requests.slice(0, 15).map((req, idx) => {
                   const badge = getUnifiedStatusBadge(req.status);
@@ -182,39 +188,43 @@ export const CSLReportsManager: React.FC<CSLReportsManagerProps> = ({ currentUse
 
     return (
       <div className="space-y-6 animate-in fade-in duration-500 pb-12 font-sans">
-        <PageHeader title="Laporan & Pemantauan Tugas CSL" description="Distribusi dan status penyelesaian tugas rutin di seluruh kategori">
+        <PageHeader
+          title={language === 'en' ? 'CSL Tasks & Routine Monitoring Report' : 'Laporan & Pemantauan Tugas CSL'}
+          subtitle={language === 'en' ? 'REPORTS · TASK DISTRIBUTION & COMPLETION' : 'LAPORAN · DISTRIBUSI & PENYELESAIAN TUGAS'}
+          description={language === 'en' ? 'Distribution and completion status of routine tasks across all categories' : 'Distribusi dan status penyelesaian tugas rutin di seluruh kategori'}
+        >
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" className="text-xs font-bold rounded-xl h-9">
-              <Filter size={13} className="mr-1.5" /> Filter Periode
+              <Filter size={13} className="mr-1.5" /> {language === 'en' ? 'Period Filter' : 'Filter Periode'}
             </Button>
             <Button size="sm" className="bg-[#0a2540] hover:bg-[#16375c] text-white font-bold text-xs rounded-xl h-9 px-4 shadow-xs">
-              <Download size={13} className="mr-1.5" /> Ekspor PDF
+              <Download size={13} className="mr-1.5" /> {language === 'en' ? 'Export PDF' : 'Ekspor PDF'}
             </Button>
           </div>
         </PageHeader>
 
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-5">
           <div className="bg-card border border-border/40 p-5 rounded-2xl shadow-sm">
-            <span className="text-[10px] font-black uppercase text-muted-foreground">Total Tugas</span>
+            <span className="text-[10px] font-black uppercase text-muted-foreground">{language === 'en' ? 'Total Tasks' : 'Total Tugas'}</span>
             <p className="text-3xl font-black text-foreground mt-1">{totalTasks}</p>
           </div>
           <div className="bg-card border border-border/40 p-5 rounded-2xl shadow-sm">
-            <span className="text-[10px] font-black uppercase text-muted-foreground">Selesai (Completed)</span>
+            <span className="text-[10px] font-black uppercase text-muted-foreground">{language === 'en' ? 'Completed' : 'Selesai (Completed)'}</span>
             <p className="text-3xl font-black text-emerald-600 mt-1">{completedTasks}</p>
           </div>
           <div className="bg-card border border-border/40 p-5 rounded-2xl shadow-sm">
-            <span className="text-[10px] font-black uppercase text-muted-foreground">Dalam Proses</span>
+            <span className="text-[10px] font-black uppercase text-muted-foreground">{language === 'en' ? 'In Progress' : 'Dalam Proses'}</span>
             <p className="text-3xl font-black text-blue-600 mt-1">{inProgressTasks}</p>
           </div>
           <div className="bg-card border border-border/40 p-5 rounded-2xl shadow-sm">
-            <span className="text-[10px] font-black uppercase text-muted-foreground">Terkendala (Blocked)</span>
+            <span className="text-[10px] font-black uppercase text-muted-foreground">{language === 'en' ? 'Blocked' : 'Terkendala (Blocked)'}</span>
             <p className="text-3xl font-black text-rose-600 mt-1">{blockedTasks}</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-card border border-border/40 rounded-2xl p-5 shadow-sm">
-            <h3 className="text-sm font-bold mb-4">Kategori Tugas</h3>
+            <h3 className="text-sm font-bold mb-4">{language === 'en' ? 'Task Categories' : 'Kategori Tugas'}</h3>
             <div className="space-y-3">
               {(Object.entries(catStats) as [string, number][]).map(([cat, count]) => (
                 <div key={cat} className="flex items-center justify-between">
@@ -223,7 +233,7 @@ export const CSLReportsManager: React.FC<CSLReportsManagerProps> = ({ currentUse
                 </div>
               ))}
               {Object.keys(catStats).length === 0 && (
-                <div className="text-xs text-muted-foreground">Tidak ada kategori.</div>
+                <div className="text-xs text-muted-foreground">{language === 'en' ? 'No categories.' : 'Tidak ada kategori.'}</div>
               )}
             </div>
           </div>
@@ -232,17 +242,17 @@ export const CSLReportsManager: React.FC<CSLReportsManagerProps> = ({ currentUse
             <Table>
               <TableHeader className="bg-muted/30">
                 <TableRow>
-                  <TableHead className="text-[10px] font-black uppercase tracking-widest">Kategori</TableHead>
-                  <TableHead className="text-[10px] font-black uppercase tracking-widest">Nama Tugas / Perusahaan</TableHead>
-                  <TableHead className="text-[10px] font-black uppercase tracking-widest">Penanggung Jawab</TableHead>
+                  <TableHead className="text-[10px] font-black uppercase tracking-widest">{language === 'en' ? 'Category' : 'Kategori'}</TableHead>
+                  <TableHead className="text-[10px] font-black uppercase tracking-widest">{language === 'en' ? 'Task / Company Name' : 'Nama Tugas / Perusahaan'}</TableHead>
+                  <TableHead className="text-[10px] font-black uppercase tracking-widest">{language === 'en' ? 'Assigned To' : 'Penanggung Jawab'}</TableHead>
                   <TableHead className="text-[10px] font-black uppercase tracking-widest">Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">Memuat data tugas...</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">{language === 'en' ? 'Loading task data...' : 'Memuat data tugas...'}</TableCell></TableRow>
                 ) : tasks.length === 0 ? (
-                  <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">Tidak ada data tugas.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">{language === 'en' ? 'No task data available.' : 'Tidak ada data tugas.'}</TableCell></TableRow>
                 ) : (
                   tasks.slice(0, 10).map((t, idx) => {
                     const badge = getUnifiedStatusBadge(t.status);

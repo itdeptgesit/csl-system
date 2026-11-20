@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { UserAccount } from '../types';
+import { useLanguage } from '../translations';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Plus, Search, Filter, CalendarDays, X, Bell, Pencil, Upload, ExternalLink, FileText, Loader2, CheckCircle2, Clock, AlertTriangle, Layers, Copy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -253,6 +254,7 @@ const EMPTY_ASET_FORM = { company: '', taskName: '', status: '', owner: '', star
 const EMPTY_AGREEMENT_FORM = { requestBy: '', taskName: '', status: '', owner: '', startDate: '', finishDate: '', notes: '' };
 
 export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ currentUser }) => {
+  const { language } = useLanguage();
   const [activeCategory, setActiveCategory] = useState(TASK_CATEGORIES[0]);
   const [searchTerm, setSearchTerm] = useState('');
   const [rupsData, setRupsData] = useState(DUMMY_RUPS_AR);
@@ -1078,9 +1080,9 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-12">
       <PageHeader 
-        title="Tracking RUPS - AR" 
-        subtitle="ROUTINE ACTIVITY · AKTA & KEPATUHAN RUPS"
-        description="Monitoring kepatuhan RUPS Tahunan &amp; Akta Perusahaan Grup Gesit"
+        title={language === 'en' ? 'Tracking AGM - AR' : 'Tracking RUPS - AR'} 
+        subtitle={language === 'en' ? 'ROUTINE ACTIVITY · DEED & AGM COMPLIANCE' : 'ROUTINE ACTIVITY · AKTA & KEPATUHAN RUPS'}
+        description={language === 'en' ? 'Annual General Meeting (AGM) and deed compliance monitoring for Gesit Group companies' : 'Monitoring kepatuhan RUPS Tahunan & Akta Perusahaan Grup Gesit'}
       >
         <div className="flex gap-2">
           <Button 
@@ -1089,10 +1091,10 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
             onClick={() => setCopyModalOpen(true)} 
             className="border-border/60 hover:bg-muted font-bold text-xs shadow-xs text-foreground"
           >
-            <Copy className="h-4 w-4 mr-1.5" /> Salin Data ke Tahun Baru
+            <Copy className="h-4 w-4 mr-1.5" /> {language === 'en' ? 'Copy to New Year' : 'Salin Data ke Tahun Baru'}
           </Button>
           <Button size="sm" onClick={() => setIsModalOpen(true)} className="bg-[#0a2540] hover:bg-[#16375c] text-white font-bold text-xs shadow-xs">
-            <Plus className="h-4 w-4 mr-1.5" /> Buat Tugas Baru
+            <Plus className="h-4 w-4 mr-1.5" /> {language === 'en' ? 'New Task' : 'Buat Tugas Baru'}
           </Button>
         </div>
       </PageHeader>
@@ -1115,11 +1117,11 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
           title="Klik untuk menampilkan seluruh tugas"
         >
           <div className="flex items-center justify-between text-muted-foreground mb-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider">Total Tugas RUPS</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider">{language === 'en' ? 'Total AGMS Tasks' : 'Total Tugas RUPS'}</span>
             <div className="flex items-center gap-1.5">
               {statusFilter === 'ALL' && (
                 <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300">
-                  Aktif
+                  {language === 'en' ? 'Active' : 'Aktif'}
                 </span>
               )}
               <Layers className="size-4 text-blue-500" />
@@ -1128,8 +1130,8 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
           <div>
             <div className="text-2xl font-black text-foreground">{taskStats.total}</div>
             <div className="text-[11px] text-muted-foreground font-medium mt-0.5 flex items-center justify-between">
-              <span>Kepatuhan RUPS · Periode {activePeriode}</span>
-              <span className="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400">Semua Data</span>
+              <span>{language === 'en' ? `AGMS Compliance · Period ${activePeriode}` : `Kepatuhan RUPS · Periode ${activePeriode}`}</span>
+              <span className="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400">{language === 'en' ? 'All Data' : 'Semua Data'}</span>
             </div>
           </div>
         </div>
@@ -1147,14 +1149,14 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
               ? 'border-emerald-500 dark:border-emerald-500 ring-2 ring-emerald-500/25 bg-emerald-50/30 dark:bg-emerald-950/30 shadow-xs'
               : 'border-border/60 hover:border-emerald-300 dark:hover:border-emerald-800 hover:bg-muted/30'
           }`}
-          title="Klik untuk memfilter tugas yang berstatus Selesai (Completed)"
+          title={language === 'en' ? 'Click to filter completed tasks' : 'Klik untuk memfilter tugas yang berstatus Selesai (Completed)'}
         >
           <div className="flex items-center justify-between text-muted-foreground mb-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider">Tugas Selesai</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider">{language === 'en' ? 'Completed Tasks' : 'Tugas Selesai'}</span>
             <div className="flex items-center gap-1.5">
               {statusFilter === 'Completed' && (
                 <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-emerald-200/80 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200">
-                  Aktif
+                  {language === 'en' ? 'Active' : 'Aktif'}
                 </span>
               )}
               <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
@@ -1165,9 +1167,9 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
           <div>
             <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{taskStats.completed}</div>
             <div className="text-[11px] text-muted-foreground font-medium mt-0.5 flex items-center justify-between">
-              <span>Telah diselesaikan</span>
+              <span>{language === 'en' ? 'Has been completed' : 'Telah diselesaikan'}</span>
               <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
-                {statusFilter === 'Completed' ? 'Klik untuk reset' : 'Klik filter →'}
+                {statusFilter === 'Completed' ? (language === 'en' ? 'Click to reset' : 'Klik untuk reset') : (language === 'en' ? 'Click filter →' : 'Klik filter →')}
               </span>
             </div>
           </div>
@@ -1186,14 +1188,14 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
               ? 'border-blue-500 dark:border-blue-500 ring-2 ring-blue-500/25 bg-blue-50/30 dark:bg-blue-950/30 shadow-xs'
               : 'border-border/60 hover:border-blue-300 dark:hover:border-blue-800 hover:bg-muted/30'
           }`}
-          title="Klik untuk memfilter tugas yang berstatus Dalam Proses (In progress)"
+          title={language === 'en' ? 'Click to filter tasks in progress' : 'Klik untuk memfilter tugas yang berstatus Dalam Proses (In progress)'}
         >
           <div className="flex items-center justify-between text-muted-foreground mb-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider">Dalam Proses</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider">{language === 'en' ? 'In Progress' : 'Dalam Proses'}</span>
             <div className="flex items-center gap-1.5">
               {statusFilter === 'In progress' && (
                 <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-blue-200/80 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                  Aktif
+                  {language === 'en' ? 'Active' : 'Aktif'}
                 </span>
               )}
               <Clock className="size-4 text-blue-500" />
@@ -1202,9 +1204,9 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
           <div>
             <div className="text-2xl font-black text-blue-600 dark:text-blue-400">{taskStats.inProgress}</div>
             <div className="text-[11px] text-muted-foreground font-medium mt-0.5 flex items-center justify-between">
-              <span>Sedang dikerjakan</span>
+              <span>{language === 'en' ? 'Currently in progress' : 'Sedang dikerjakan'}</span>
               <span className="text-[10px] font-semibold text-blue-600 dark:text-blue-400">
-                {statusFilter === 'In progress' ? 'Klik untuk reset' : 'Klik filter →'}
+                {statusFilter === 'In progress' ? (language === 'en' ? 'Click to reset' : 'Klik untuk reset') : (language === 'en' ? 'Click filter →' : 'Klik filter →')}
               </span>
             </div>
           </div>
@@ -1226,10 +1228,10 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
               ? 'border-amber-500 dark:border-amber-500 ring-2 ring-amber-500/25 bg-amber-50/30 dark:bg-amber-950/30 shadow-xs'
               : 'border-border/60 hover:border-rose-300 dark:hover:border-rose-800 hover:bg-muted/30'
           }`}
-          title="Klik untuk memfilter tugas yang memerlukan perhatian (Blocked / Belum Mulai)"
+          title={language === 'en' ? 'Click to filter tasks needing attention' : 'Klik untuk memfilter tugas yang memerlukan perhatian (Blocked / Belum Mulai)'}
         >
           <div className="flex items-center justify-between text-muted-foreground mb-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider">Perlu Perhatian</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider">{language === 'en' ? 'Needs Attention' : 'Perlu Perhatian'}</span>
             <div className="flex items-center gap-1.5">
               {(statusFilter === 'Blocked' || statusFilter === 'Not started') && (
                 <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-rose-200/80 text-rose-800 dark:bg-rose-900 dark:text-rose-200">
@@ -1248,7 +1250,7 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
                   setCurrentPage(1);
                 }}
                 className={`cursor-pointer hover:underline ${taskStats.blocked > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-foreground'}`}
-                title="Filter khusus status Blocked"
+                title={language === 'en' ? 'Filter Blocked status' : 'Filter khusus status Blocked'}
               >
                 {taskStats.blocked} <span className="text-xs font-bold text-rose-600">Blocked</span>
               </span>
@@ -1260,15 +1262,15 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
                   setCurrentPage(1);
                 }}
                 className="text-xs font-semibold text-muted-foreground hover:text-foreground cursor-pointer hover:underline"
-                title="Filter khusus status Belum Mulai (Not started)"
+                title={language === 'en' ? 'Filter Not Started status' : 'Filter khusus status Belum Mulai (Not started)'}
               >
-                {taskStats.notStarted} Belum Mulai
+                {taskStats.notStarted} {language === 'en' ? 'Not Started' : 'Belum Mulai'}
               </span>
             </div>
             <div className="text-[11px] text-muted-foreground font-medium mt-0.5 flex items-center justify-between">
-              <span>{taskStats.blocked > 0 ? 'Terdapat tugas terkendala' : 'Tidak ada tugas terblokir'}</span>
+              <span>{taskStats.blocked > 0 ? (language === 'en' ? 'Tasks blocked / delayed' : 'Terdapat tugas terkendala') : (language === 'en' ? 'No blocked tasks' : 'Tidak ada tugas terblokir')}</span>
               <span className="text-[10px] font-semibold text-rose-600 dark:text-rose-400">
-                {statusFilter === 'Blocked' || statusFilter === 'Not started' ? 'Klik reset' : 'Klik filter →'}
+                {statusFilter === 'Blocked' || statusFilter === 'Not started' ? (language === 'en' ? 'Click reset' : 'Klik reset') : (language === 'en' ? 'Click filter →' : 'Klik filter →')}
               </span>
             </div>
           </div>
@@ -1285,16 +1287,16 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
             setCurrentPage(1);
           }}
           className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-900 dark:text-rose-200 text-xs flex items-center justify-between cursor-pointer hover:bg-rose-100/70 dark:hover:bg-rose-900/50 transition-all active:scale-[0.995]"
-          title="Klik untuk langsung memfilter daftar tugas Blocked"
+          title={language === 'en' ? 'Click to filter Blocked tasks' : 'Klik untuk langsung memfilter daftar tugas Blocked'}
         >
           <div className="flex items-center gap-2.5">
             <AlertTriangle className="size-4 text-rose-600 shrink-0" />
             <span className="font-semibold">
-              Perlu Perhatian: Terdapat {taskStats.blockedList.length} tugas berstatus Blocked ({taskStats.blockedList.map(b => b.company).filter(Boolean).slice(0, 3).join(', ')})
+              {language === 'en' ? `Attention: There are ${taskStats.blockedList.length} Blocked tasks (${taskStats.blockedList.map(b => b.company).filter(Boolean).slice(0, 3).join(', ')})` : `Perlu Perhatian: Terdapat ${taskStats.blockedList.length} tugas berstatus Blocked (${taskStats.blockedList.map(b => b.company).filter(Boolean).slice(0, 3).join(', ')})`}
             </span>
           </div>
           <span className="text-[11px] font-bold uppercase px-2.5 py-1 rounded-lg bg-rose-200/80 text-rose-800 dark:bg-rose-900 dark:text-rose-200 flex items-center gap-1 shadow-xs">
-            {statusFilter === 'Blocked' ? '✓ Memfilter Blocked (Klik Reset)' : 'Lihat Tugas Blocked →'}
+            {statusFilter === 'Blocked' ? (language === 'en' ? '✓ Filtering Blocked (Reset)' : '✓ Memfilter Blocked (Klik Reset)') : (language === 'en' ? 'View Blocked Tasks →' : 'Lihat Tugas Blocked →')}
           </span>
         </div>
       )}
@@ -1308,7 +1310,7 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
           <Input
             value={searchTerm}
             onChange={e => handleSearchChange(e.target.value)}
-            placeholder="Cari perusahaan, PIC, notaris, status RUPS..."
+            placeholder={language === 'en' ? 'Search company, PIC, notary, AGMS status...' : 'Cari perusahaan, PIC, notaris, status RUPS...'}
             className="h-9 rounded-lg border-border/60 bg-background pl-9 text-sm shadow-none"
           />
         </div>
@@ -1359,7 +1361,7 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
                           updatedBy: 'System (Auto Rollover)'
                         }))
                       ]);
-                      toast.success(`Daftar ${allKnownCompanies.length} perusahaan otomatis disiapkan untuk Periode ${newYear}!`);
+                      toast.success(language === 'en' ? `List of ${allKnownCompanies.length} companies automatically prepared for Period ${newYear}!` : `Daftar ${allKnownCompanies.length} perusahaan otomatis disiapkan untuk Periode ${newYear}!`);
                     }
                   } catch (e) {
                     console.error('Auto populate new year failed:', e);
@@ -1370,7 +1372,7 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
             className="h-9 cursor-pointer rounded-lg border border-border/60 bg-background px-3 text-xs font-semibold text-foreground outline-none transition-colors hover:bg-muted focus:ring-2 focus:ring-ring/30"
           >
             {[2024, 2025, 2026, 2027, 2028].map(y => (
-              <option key={y} value={y.toString()}>Periode {y}</option>
+              <option key={y} value={y.toString()}>{language === 'en' ? `Period ${y}` : `Periode ${y}`}</option>
             ))}
           </select>
         )}
@@ -1385,7 +1387,7 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
             }}
             className="h-9 cursor-pointer rounded-lg border border-border/60 bg-background px-3 text-xs font-semibold text-foreground outline-none transition-colors hover:bg-muted focus:ring-2 focus:ring-ring/30"
           >
-            <option value="ALL">Semua Status</option>
+            <option value="ALL">{language === 'en' ? 'All Status' : 'Semua Status'}</option>
             <option value="Completed">Completed</option>
             <option value="In progress">In progress</option>
             <option value="Not started">Not started</option>
@@ -1402,15 +1404,15 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
             <TableHeader className="bg-muted/60">
               <TableRow className="border-b border-border/70 hover:bg-muted/60">
                 <TableHead className="h-10 w-12 px-3 text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">#</TableHead>
-                <TableHead className="h-10 min-w-[210px] px-4 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Perusahaan</TableHead>
-                <TableHead className="h-10 w-[130px] px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Tahapan</TableHead>
-                <TableHead className="h-10 w-[120px] px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Metode</TableHead>
+                <TableHead className="h-10 min-w-[210px] px-4 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{language === 'en' ? 'Company' : 'Perusahaan'}</TableHead>
+                <TableHead className="h-10 w-[130px] px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{language === 'en' ? 'Stage' : 'Tahapan'}</TableHead>
+                <TableHead className="h-10 w-[120px] px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{language === 'en' ? 'Method' : 'Metode'}</TableHead>
                 <TableHead className="h-10 w-[130px] px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Status</TableHead>
-                <TableHead className="h-10 w-[135px] px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Tanggal Mulai</TableHead>
-                <TableHead className="h-10 w-[135px] px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Tanggal Selesai</TableHead>
-                <TableHead className="h-10 min-w-[170px] px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Legalitas / Akta</TableHead>
-                <TableHead className="h-10 w-[140px] px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Diperbarui Oleh</TableHead>
-                <TableHead className="h-10 w-16 px-2 text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Aksi</TableHead>
+                <TableHead className="h-10 w-[135px] px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{language === 'en' ? 'Start Date' : 'Tanggal Mulai'}</TableHead>
+                <TableHead className="h-10 w-[135px] px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{language === 'en' ? 'Finish Date' : 'Tanggal Selesai'}</TableHead>
+                <TableHead className="h-10 min-w-[170px] px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{language === 'en' ? 'Legality / Deed' : 'Legalitas / Akta'}</TableHead>
+                <TableHead className="h-10 w-[140px] px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{language === 'en' ? 'Updated By' : 'Diperbarui Oleh'}</TableHead>
+                <TableHead className="h-10 w-16 px-2 text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{language === 'en' ? 'Action' : 'Aksi'}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -1551,7 +1553,7 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
           {/* Pagination Footer */}
           <div className="flex flex-col gap-3 border-t border-border/60 bg-muted/20 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
             <span className="text-[11px] text-muted-foreground">
-              Menampilkan {filteredRups.length === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, filteredRups.length)} dari <span className="font-semibold text-foreground">{filteredRups.length}</span> entri
+              {language === 'en' ? `Showing ${filteredRups.length === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1}–${Math.min(safePage * PAGE_SIZE, filteredRups.length)} of ` : `Menampilkan ${filteredRups.length === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1}–${Math.min(safePage * PAGE_SIZE, filteredRups.length)} dari `}<span className="font-semibold text-foreground">{filteredRups.length}</span> {language === 'en' ? 'entries' : 'entri'}
             </span>
             <div className="flex items-center gap-1">
               <button
@@ -1601,13 +1603,13 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
             <TableHeader className="bg-[#6B4B8B] text-white">
               <TableRow className="hover:bg-[#6B4B8B]">
                 <TableHead className="w-12 text-center text-white/90 font-bold">#</TableHead>
-                <TableHead className="text-white/90 font-bold border-l border-white/20">Perusahaan</TableHead>
-                <TableHead className="text-white/90 font-bold border-l border-white/20">Tugas</TableHead>
+                <TableHead className="text-white/90 font-bold border-l border-white/20">{language === 'en' ? 'Company' : 'Perusahaan'}</TableHead>
+                <TableHead className="text-white/90 font-bold border-l border-white/20">{language === 'en' ? 'Task' : 'Tugas'}</TableHead>
                 <TableHead className="text-white/90 font-bold border-l border-white/20">Status</TableHead>
-                <TableHead className="text-white/90 font-bold border-l border-white/20">Penanggung Jawab</TableHead>
-                <TableHead className="text-white/90 font-bold border-l border-white/20">Tanggal Mulai</TableHead>
-                <TableHead className="text-white/90 font-bold border-l border-white/20">Tenggat Waktu</TableHead>
-                <TableHead className="text-white/90 font-bold border-l border-white/20">Catatan</TableHead>
+                <TableHead className="text-white/90 font-bold border-l border-white/20">{language === 'en' ? 'Owner / PIC' : 'Penanggung Jawab'}</TableHead>
+                <TableHead className="text-white/90 font-bold border-l border-white/20">{language === 'en' ? 'Start Date' : 'Tanggal Mulai'}</TableHead>
+                <TableHead className="text-white/90 font-bold border-l border-white/20">{language === 'en' ? 'Due Date' : 'Tenggat Waktu'}</TableHead>
+                <TableHead className="text-white/90 font-bold border-l border-white/20">{language === 'en' ? 'Notes' : 'Catatan'}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -1622,7 +1624,7 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
                       type="text" 
                       value={item.taskName}
                       onChange={(e) => handleUpdateAset(item.id, 'taskName', e.target.value)}
-                      placeholder="Task name..."
+                      placeholder={language === 'en' ? 'Task name...' : 'Nama tugas...'}
                       className="w-full h-full text-xs px-3 py-2.5 bg-transparent border-none outline-none focus:bg-[#6B4B8B]/10 text-foreground"
                     />
                   </TableCell>
@@ -1674,7 +1676,7 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
                       type="text" 
                       value={item.notes}
                       onChange={(e) => handleUpdateAset(item.id, 'notes', e.target.value)}
-                      placeholder="Notes..."
+                      placeholder={language === 'en' ? 'Notes...' : 'Catatan...'}
                       className="w-full h-full text-xs px-3 py-2.5 bg-transparent border-none outline-none focus:bg-[#6B4B8B]/10 text-muted-foreground min-w-[200px]"
                     />
                   </TableCell>
@@ -1686,7 +1688,7 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
           {/* Pagination Footer */}
           <div className="flex items-center justify-between px-4 py-2.5 border-t border-border/30 bg-muted/10">
             <span className="text-[11px] text-muted-foreground">
-              Menampilkan {filteredAset.length === 0 ? 0 : (safePageAset - 1) * PAGE_SIZE + 1}–{Math.min(safePageAset * PAGE_SIZE, filteredAset.length)} dari <span className="font-bold text-foreground">{filteredAset.length}</span> entri
+              {language === 'en' ? `Showing ${filteredAset.length === 0 ? 0 : (safePageAset - 1) * PAGE_SIZE + 1}–${Math.min(safePageAset * PAGE_SIZE, filteredAset.length)} of ` : `Menampilkan ${filteredAset.length === 0 ? 0 : (safePageAset - 1) * PAGE_SIZE + 1}–${Math.min(safePageAset * PAGE_SIZE, filteredAset.length)} dari `}<span className="font-bold text-foreground">{filteredAset.length}</span> {language === 'en' ? 'entries' : 'entri'}
             </span>
             <div className="flex items-center gap-1">
               <button
@@ -1736,13 +1738,13 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
             <TableHeader className="bg-[#4A3570] text-white">
               <TableRow className="hover:bg-[#4A3570]">
                 <TableHead className="w-10 text-center text-white/90 font-bold">#</TableHead>
-                <TableHead className="text-white/90 font-bold border-l border-white/20">Pemohon / Pihak</TableHead>
-                <TableHead className="text-white/90 font-bold border-l border-white/20">Tugas</TableHead>
+                <TableHead className="text-white/90 font-bold border-l border-white/20">{language === 'en' ? 'Requester / Parties' : 'Pemohon / Pihak'}</TableHead>
+                <TableHead className="text-white/90 font-bold border-l border-white/20">{language === 'en' ? 'Task' : 'Tugas'}</TableHead>
                 <TableHead className="text-white/90 font-bold border-l border-white/20">Status</TableHead>
-                <TableHead className="text-white/90 font-bold border-l border-white/20">Penanggung Jawab</TableHead>
-                <TableHead className="text-white/90 font-bold border-l border-white/20">Tanggal Mulai</TableHead>
-                <TableHead className="text-white/90 font-bold border-l border-white/20">Tanggal Selesai</TableHead>
-                <TableHead className="text-white/90 font-bold border-l border-white/20">Catatan</TableHead>
+                <TableHead className="text-white/90 font-bold border-l border-white/20">{language === 'en' ? 'Owner / PIC' : 'Penanggung Jawab'}</TableHead>
+                <TableHead className="text-white/90 font-bold border-l border-white/20">{language === 'en' ? 'Start Date' : 'Tanggal Mulai'}</TableHead>
+                <TableHead className="text-white/90 font-bold border-l border-white/20">{language === 'en' ? 'Finish Date' : 'Tanggal Selesai'}</TableHead>
+                <TableHead className="text-white/90 font-bold border-l border-white/20">{language === 'en' ? 'Notes' : 'Catatan'}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -1754,7 +1756,7 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
                       type="text"
                       value={item.requestBy}
                       onChange={(e) => handleUpdateAgreement(item.id, 'requestBy', e.target.value)}
-                      placeholder="Request by..."
+                      placeholder={language === 'en' ? 'Request by...' : 'Pemohon...'}
                       className="w-full h-full text-xs px-3 py-2.5 bg-transparent border-none outline-none focus:bg-[#4A3570]/10 text-foreground font-medium"
                     />
                   </TableCell>
@@ -1763,7 +1765,7 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
                       type="text"
                       value={item.taskName}
                       onChange={(e) => handleUpdateAgreement(item.id, 'taskName', e.target.value)}
-                      placeholder="Task..."
+                      placeholder={language === 'en' ? 'Task...' : 'Tugas...'}
                       className="w-full h-full text-xs px-3 py-2.5 bg-transparent border-none outline-none focus:bg-[#4A3570]/10 text-foreground"
                     />
                   </TableCell>
@@ -1807,7 +1809,7 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
                       type="text"
                       value={item.notes}
                       onChange={(e) => handleUpdateAgreement(item.id, 'notes', e.target.value)}
-                      placeholder="Notes..."
+                      placeholder={language === 'en' ? 'Notes...' : 'Catatan...'}
                       className="w-full h-full text-xs px-3 py-2.5 bg-transparent border-none outline-none focus:bg-[#4A3570]/10 text-muted-foreground min-w-[200px]"
                     />
                   </TableCell>
@@ -1818,7 +1820,7 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
           {/* Pagination */}
           <div className="flex items-center justify-between px-4 py-2.5 border-t border-border/30 bg-muted/10">
             <span className="text-[11px] text-muted-foreground">
-              Menampilkan {filteredAgreement.length === 0 ? 0 : (safePageAgreement - 1) * PAGE_SIZE + 1}–{Math.min(safePageAgreement * PAGE_SIZE, filteredAgreement.length)} dari <span className="font-bold text-foreground">{filteredAgreement.length}</span> entri
+              {language === 'en' ? `Showing ${filteredAgreement.length === 0 ? 0 : (safePageAgreement - 1) * PAGE_SIZE + 1}–${Math.min(safePageAgreement * PAGE_SIZE, filteredAgreement.length)} of ` : `Menampilkan ${filteredAgreement.length === 0 ? 0 : (safePageAgreement - 1) * PAGE_SIZE + 1}–${Math.min(safePageAgreement * PAGE_SIZE, filteredAgreement.length)} dari `}<span className="font-bold text-foreground">{filteredAgreement.length}</span> {language === 'en' ? 'entries' : 'entri'}
             </span>
             <div className="flex items-center gap-1">
               <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={safePageAgreement <= 1} className="h-7 rounded-md border border-border/60 bg-background px-2.5 text-[11px] font-medium transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-30">← Prev</button>
@@ -1829,7 +1831,7 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
         </div>
       ) : (
         <div className="bg-card border border-border/10 rounded-xl p-16 text-center text-muted-foreground/50 text-xs font-bold uppercase tracking-widest shadow-sm">
-          Belum ada task untuk kategori {activeCategory}.
+          {language === 'en' ? `No tasks found for category ${activeCategory}.` : `Belum ada task untuk kategori ${activeCategory}.`}
         </div>
       )}
 
@@ -1840,9 +1842,9 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
             <div className="flex items-center gap-2 mb-1">
               <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600">{activeCategory}</span>
             </div>
-            <DialogTitle className="text-xl font-black">Buat Task Baru</DialogTitle>
+            <DialogTitle className="text-xl font-black">{language === 'en' ? 'Create New Task' : 'Buat Task Baru'}</DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
-              Tambahkan task baru ke kategori <span className="font-bold text-foreground">{activeCategory}</span>.
+              {language === 'en' ? 'Add new task to category ' : 'Tambahkan task baru ke kategori '}<span className="font-bold text-foreground">{activeCategory}</span>.
             </DialogDescription>
           </DialogHeader>
 
@@ -2008,18 +2010,18 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
             {/* ── Other categories placeholder ── */}
             {activeCategory !== 'RUPS-AR' && activeCategory !== 'ASET' && activeCategory !== 'AGREEMENT' && (
               <div className="py-8 text-center text-muted-foreground/50 text-xs font-bold uppercase tracking-widest">
-                Form untuk kategori <span className="text-foreground">{activeCategory}</span> belum tersedia.
+                {language === 'en' ? `Form for category ${activeCategory} is not available yet.` : `Form untuk kategori ${activeCategory} belum tersedia.`}
               </div>
             )}
           </div>
 
           <DialogFooter className="p-4 border-t bg-muted/10 gap-2 flex sm:justify-end">
             <Button type="button" variant="outline" size="sm" onClick={() => setIsModalOpen(false)} className="text-xs font-bold rounded-xl h-9">
-              Batal
+              {language === 'en' ? 'Cancel' : 'Batal'}
             </Button>
             {(activeCategory === 'RUPS-AR' || activeCategory === 'ASET' || activeCategory === 'AGREEMENT') && (
               <Button size="sm" onClick={handleAddTask} className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl h-9 px-5">
-                <Plus className="h-4 w-4 mr-1.5" /> Tambah Task
+                <Plus className="h-4 w-4 mr-1.5" /> {language === 'en' ? 'Add Task' : 'Tambah Task'}
               </Button>
             )}
           </DialogFooter>
@@ -2031,17 +2033,17 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
         <DialogContent className="sm:max-w-lg p-0 overflow-hidden rounded-2xl">
           <DialogHeader className="p-6 pb-4 border-b bg-muted/20">
             <DialogTitle className="text-lg font-black flex items-center gap-2">
-              Legalitas RUPS-AR
+              {language === 'en' ? 'AGMS Legality' : 'Legalitas RUPS-AR'}
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
-              {selectedRupsDetail?.company} • Periode {selectedRupsDetail?.periode || activePeriode}
+              {selectedRupsDetail?.company} • {language === 'en' ? `Period ${selectedRupsDetail?.periode || activePeriode}` : `Periode ${selectedRupsDetail?.periode || activePeriode}`}
             </DialogDescription>
           </DialogHeader>
           {selectedRupsDetail && (
             <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[10px] font-black uppercase tracking-wider text-muted-foreground block mb-1">Tahapan Workflow</label>
+                  <label className="text-[10px] font-black uppercase tracking-wider text-muted-foreground block mb-1">{language === 'en' ? 'Workflow Stage' : 'Tahapan Workflow'}</label>
                   <select
                     value={selectedRupsDetail.stage || 'Drafting'}
                     onChange={(e) => {
@@ -2051,15 +2053,15 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
                     }}
                     className="h-9 w-full rounded-lg border border-border/60 bg-muted/30 px-3 text-xs font-semibold outline-none"
                   >
-                    <option value="Drafting">1. Drafting Risalah / Sirkuler</option>
-                    <option value="Sirkuler / TTD">2. Proses Tanda Tangan Pemegang Saham</option>
-                    <option value="Proses Notaris">3. Proses Notaris (Akta)</option>
-                    <option value="Pelaporan AHU">4. Pelaporan AHU Kemenkumham</option>
-                    <option value="Selesai">5. Selesai (Completed)</option>
+                    <option value="Drafting">{language === 'en' ? '1. Drafting Minutes / Circular' : '1. Drafting Risalah / Sirkuler'}</option>
+                    <option value="Sirkuler / TTD">{language === 'en' ? '2. Shareholder Signature Process' : '2. Proses Tanda Tangan Pemegang Saham'}</option>
+                    <option value="Proses Notaris">{language === 'en' ? '3. Notary Process (Deed)' : '3. Proses Notaris (Akta)'}</option>
+                    <option value="Pelaporan AHU">{language === 'en' ? '4. AHU Reporting (Ministry of Law)' : '4. Pelaporan AHU Kemenkumham'}</option>
+                    <option value="Selesai">{language === 'en' ? '5. Completed' : '5. Selesai (Completed)'}</option>
                   </select>
                 </div>
                 <div>
-                  <label className="text-[10px] font-black uppercase tracking-wider text-muted-foreground block mb-1">Metode RUPS</label>
+                  <label className="text-[10px] font-black uppercase tracking-wider text-muted-foreground block mb-1">{language === 'en' ? 'AGMS Method' : 'Metode RUPS'}</label>
                   <select
                     value={selectedRupsDetail.method || 'Sirkuler'}
                     onChange={(e) => {
@@ -2069,29 +2071,29 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
                     }}
                     className="h-9 w-full rounded-lg border border-border/60 bg-muted/30 px-3 text-xs font-semibold outline-none"
                   >
-                    <option value="Sirkuler">Keputusan Sirkuler</option>
-                    <option value="RUPS Fisik">RUPS Fisik</option>
-                    <option value="Hybrid">Hybrid (Online & Fisik)</option>
+                    <option value="Sirkuler">{language === 'en' ? 'Circular Resolution' : 'Keputusan Sirkuler'}</option>
+                    <option value="RUPS Fisik">{language === 'en' ? 'Physical AGMS' : 'RUPS Fisik'}</option>
+                    <option value="Hybrid">{language === 'en' ? 'Hybrid (Online & Physical)' : 'Hybrid (Online & Fisik)'}</option>
                   </select>
                 </div>
               </div>
 
               <div className="border-t border-border/40 pt-3">
-                <h4 className="text-xs font-black uppercase tracking-wider text-foreground mb-2.5">Data Notaris & Akta</h4>
+                <h4 className="text-xs font-black uppercase tracking-wider text-foreground mb-2.5">{language === 'en' ? 'Notary & Deed Data' : 'Data Notaris & Akta'}</h4>
                 <div className="space-y-3">
                   <div>
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-1">Nama Notaris</label>
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-1">{language === 'en' ? 'Notary Name' : 'Nama Notaris'}</label>
                     <Input
                       value={selectedRupsDetail.notaryName || ''}
                       onChange={(e) => setSelectedRupsDetail(prev => prev ? { ...prev, notaryName: e.target.value } : null)}
                       onBlur={(e) => handleUpdateRups(selectedRupsDetail.id, 'notaryName', e.target.value)}
-                      placeholder="Contoh: Notaris Ashoya Ratam, S.H., M.Kn."
+                      placeholder={language === 'en' ? 'Example: Notary Ashoya Ratam, S.H., M.Kn.' : 'Contoh: Notaris Ashoya Ratam, S.H., M.Kn.'}
                       className="h-9 text-xs bg-muted/30"
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-1">Nomor Akta</label>
+                      <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-1">{language === 'en' ? 'Deed Number' : 'Nomor Akta'}</label>
                       <Input
                         value={selectedRupsDetail.deedNumber || ''}
                         onChange={(e) => setSelectedRupsDetail(prev => prev ? { ...prev, deedNumber: e.target.value } : null)}
@@ -2101,7 +2103,7 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-1">Tanggal Akta</label>
+                      <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-1">{language === 'en' ? 'Deed Date' : 'Tanggal Akta'}</label>
                       <Input
                         type="date"
                         value={selectedRupsDetail.deedDate || ''}
@@ -2115,10 +2117,10 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
               </div>
 
               <div className="border-t border-border/40 pt-3">
-                <h4 className="text-xs font-black uppercase tracking-wider text-foreground mb-2.5">Penerimaan / SK AHU Kemenkumham</h4>
+                <h4 className="text-xs font-black uppercase tracking-wider text-foreground mb-2.5">{language === 'en' ? 'AHU Approval / Decree' : 'Penerimaan / SK AHU Kemenkumham'}</h4>
                 <div className="grid grid-cols-3 gap-3">
                   <div className="col-span-2">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-1">Nomor SK / Bukti AHU</label>
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-1">{language === 'en' ? 'AHU Decree Number' : 'Nomor SK / Bukti AHU'}</label>
                     <Input
                       value={selectedRupsDetail.ahuNumber || ''}
                       onChange={(e) => setSelectedRupsDetail(prev => prev ? { ...prev, ahuNumber: e.target.value } : null)}
@@ -2128,7 +2130,7 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-1">Status AHU</label>
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-1">{language === 'en' ? 'AHU Status' : 'Status AHU'}</label>
                     <select
                       value={selectedRupsDetail.ahuStatus || 'Pending'}
                       onChange={(e) => {
@@ -2139,8 +2141,8 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
                       className="h-9 w-full rounded-lg border border-border/60 bg-muted/30 px-2 text-xs font-bold outline-none"
                     >
                       <option value="Pending">Pending</option>
-                      <option value="Diajukan">Diajukan</option>
-                      <option value="Terbit SK">Terbit SK</option>
+                      <option value="Diajukan">{language === 'en' ? 'Submitted' : 'Diajukan'}</option>
+                      <option value="Terbit SK">{language === 'en' ? 'Decree Issued' : 'Terbit SK'}</option>
                       <option value="Blocked">Blocked</option>
                     </select>
                   </div>
@@ -2149,7 +2151,7 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
 
               <div className="border-t border-border/40 pt-3">
                 <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-xs font-black uppercase tracking-wider text-foreground">Dokumen RUPS / Akta (Google Drive)</h4>
+                  <h4 className="text-xs font-black uppercase tracking-wider text-foreground">{language === 'en' ? 'AGMS / Deed Documents (Google Drive)' : 'Dokumen RUPS / Akta (Google Drive)'}</h4>
                   <input
                     type="file"
                     ref={fileInputRef}
@@ -2170,11 +2172,11 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
                   >
                     {isUploadingDoc ? (
                       <>
-                        <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> Uploading...
+                        <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> {language === 'en' ? 'Uploading...' : 'Uploading...'}
                       </>
                     ) : (
                       <>
-                        <Upload className="h-3.5 w-3.5 mr-1.5" /> Upload File
+                        <Upload className="h-3.5 w-3.5 mr-1.5" /> {language === 'en' ? 'Upload File' : 'Upload File'}
                       </>
                     )}
                   </Button>
@@ -2185,7 +2187,7 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
                     <div className="flex items-center gap-2 min-w-0">
                       <FileText className="h-4 w-4 text-indigo-600 shrink-0" />
                       <span className="text-xs font-semibold text-foreground truncate max-w-[280px]">
-                        {selectedRupsDetail.documentName || 'Dokumen RUPS (Google Drive)'}
+                        {selectedRupsDetail.documentName || (language === 'en' ? 'AGMS Document (Google Drive)' : 'Dokumen RUPS (Google Drive)')}
                       </span>
                     </div>
                     <a
@@ -2194,24 +2196,24 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-600 hover:text-indigo-500 shrink-0 ml-2"
                     >
-                      Buka Drive <ExternalLink className="h-3 w-3" />
+                      {language === 'en' ? 'Open Drive' : 'Buka Drive'} <ExternalLink className="h-3 w-3" />
                     </a>
                   </div>
                 ) : (
                   <p className="text-[11px] text-muted-foreground italic">
-                    Belum ada dokumen yang diunggah. Klik upload untuk menyimpan arsip PDF ke Google Drive.
+                    {language === 'en' ? 'No document uploaded yet. Click upload to save PDF archive to Google Drive.' : 'Belum ada dokumen yang diunggah. Klik upload untuk menyimpan arsip PDF ke Google Drive.'}
                   </p>
                 )}
               </div>
 
               <div className="border-t border-border/40 pt-3">
-                <label className="text-[10px] font-black uppercase tracking-wider text-muted-foreground block mb-1">Catatan Tambahan / Kendala</label>
+                <label className="text-[10px] font-black uppercase tracking-wider text-muted-foreground block mb-1">{language === 'en' ? 'Additional Notes / Issues' : 'Catatan Tambahan / Kendala'}</label>
                 <textarea
                   value={selectedRupsDetail.notes || ''}
                   onChange={(e) => setSelectedRupsDetail(prev => prev ? { ...prev, notes: e.target.value } : null)}
                   onBlur={(e) => handleUpdateRups(selectedRupsDetail.id, 'notes', e.target.value)}
                   rows={2}
-                  placeholder="Catatan progres, kendala tanda tangan, atau riwayat pemblokiran..."
+                  placeholder={language === 'en' ? 'Progress notes, signature delays, or block history...' : 'Catatan progres, kendala tanda tangan, atau riwayat pemblokiran...'}
                   className="w-full rounded-lg border border-border/60 bg-muted/30 p-2.5 text-xs outline-none focus:border-border resize-none"
                 />
               </div>
@@ -2219,7 +2221,7 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
           )}
           <DialogFooter className="p-4 border-t bg-muted/10">
             <Button size="sm" onClick={() => setDetailModalOpen(false)} className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl h-9 px-6 ml-auto">
-              Selesai
+              {language === 'en' ? 'Done' : 'Selesai'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -2229,7 +2231,7 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
       <Dialog open={reminderEditOpen} onOpenChange={setReminderEditOpen}>
         <DialogContent className="sm:max-w-md p-0 overflow-hidden rounded-2xl">
           <DialogHeader className="p-6 pb-4 border-b bg-muted/20">
-            <DialogTitle className="text-lg font-black">Edit Email & Reminder</DialogTitle>
+            <DialogTitle className="text-lg font-black">{language === 'en' ? 'Edit Email & Reminder' : 'Edit Email & Reminder'}</DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
               {reminderEditTarget?.company}
             </DialogDescription>
@@ -2237,7 +2239,7 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
           <div className="p-6 space-y-4">
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground block">Due Date (Reminder)</label>
+                <label className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground block">{language === 'en' ? 'Due Date (Reminder)' : 'Due Date (Reminder)'}</label>
                 <button
                   type="button"
                   onClick={() => {
@@ -2246,7 +2248,7 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
                   }}
                   className="text-[10px] font-semibold text-indigo-600 hover:text-indigo-500"
                 >
-                  Set 30 Juni (Default UU PT)
+                  {language === 'en' ? 'Set June 30 (Company Law Default)' : 'Set 30 Juni (Default UU PT)'}
                 </button>
               </div>
               <Input
@@ -2255,17 +2257,17 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
                 onChange={(e) => setReminderEditDueDate(e.target.value)}
                 className="h-9 text-sm bg-muted/30"
               />
-              <p className="text-[9px] text-muted-foreground mt-1">Default 6 bulan dari penutupan buku (30 Juni). Email reminder otomatis dikirim 1 minggu sebelum due date.</p>
+              <p className="text-[9px] text-muted-foreground mt-1">{language === 'en' ? 'Default 6 months after book closing (June 30). Email reminder is automatically sent 1 week before due date.' : 'Default 6 bulan dari penutupan buku (30 Juni). Email reminder otomatis dikirim 1 minggu sebelum due date.'}</p>
             </div>
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground block">Email Reminder</label>
+                <label className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground block">{language === 'en' ? 'Email Reminder' : 'Email Reminder'}</label>
                 <button
                   type="button"
                   onClick={() => setReminderEditEmails('corporatesecretary@gesit.co.id')}
                   className="text-[10px] font-semibold text-indigo-600 hover:text-indigo-500"
                 >
-                  Gunakan Grup CSL
+                  {language === 'en' ? 'Use CSL Group' : 'Gunakan Grup CSL'}
                 </button>
               </div>
               <Input
@@ -2274,15 +2276,15 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
                 placeholder="corporatesecretary@gesit.co.id"
                 className="h-9 text-sm bg-muted/30"
               />
-              <p className="text-[9px] text-muted-foreground mt-1">Pisahkan dengan koma untuk banyak email (default: corporatesecretary@gesit.co.id)</p>
+              <p className="text-[9px] text-muted-foreground mt-1">{language === 'en' ? 'Separate with commas for multiple emails (default: corporatesecretary@gesit.co.id)' : 'Pisahkan dengan koma untuk banyak email (default: corporatesecretary@gesit.co.id)'}</p>
             </div>
           </div>
           <DialogFooter className="p-4 border-t bg-muted/10 gap-2 flex sm:justify-end">
             <Button type="button" variant="outline" size="sm" onClick={() => setReminderEditOpen(false)} className="text-xs font-bold rounded-xl h-9">
-              Batal
+              {language === 'en' ? 'Cancel' : 'Batal'}
             </Button>
             <Button size="sm" onClick={handleSaveReminderEdit} className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl h-9 px-5">
-              Simpan
+              {language === 'en' ? 'Save' : 'Simpan'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -2298,10 +2300,10 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
               </div>
               <div>
                 <DialogTitle className="text-base font-bold text-foreground">
-                  Salin Data RUPS ke Tahun Baru
+                  {language === 'en' ? 'Copy AGMS Data to New Year' : 'Salin Data RUPS ke Tahun Baru'}
                 </DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                  Duplikasi seluruh daftar PT dari tahun sebelumnya tanpa perlu input ulang nama PT satu per satu.
+                  {language === 'en' ? 'Duplicate company list from previous year without re-entering them.' : 'Duplikasi seluruh daftar PT dari tahun sebelumnya tanpa perlu input ulang nama PT satu per satu.'}
                 </DialogDescription>
               </div>
             </div>
@@ -2311,7 +2313,7 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block mb-1.5">
-                  Dari Tahun (Sumber)
+                  {language === 'en' ? 'From Year (Source)' : 'Dari Tahun (Sumber)'}
                 </label>
                 <select
                   value={sourceYear}
@@ -2320,7 +2322,7 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
                 >
                   {[2024, 2025, 2026, 2027, 2028].map(y => (
                     <option key={y} value={y.toString()}>
-                      Periode {y} ({rupsData.filter(r => (r.periode || '').toString() === y.toString()).length} PT)
+                      {language === 'en' ? `Period ${y}` : `Periode ${y}`} ({rupsData.filter(r => (r.periode || '').toString() === y.toString()).length} PT)
                     </option>
                   ))}
                 </select>
@@ -2328,7 +2330,7 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
 
               <div>
                 <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block mb-1.5">
-                  Ke Tahun (Tujuan)
+                  {language === 'en' ? 'To Year (Target)' : 'Ke Tahun (Tujuan)'}
                 </label>
                 <select
                   value={targetYear}
@@ -2336,7 +2338,7 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
                   className="w-full h-9 text-xs font-semibold border border-border/60 bg-background rounded-lg px-3 focus:outline-none focus:ring-2 focus:ring-ring/30"
                 >
                   {[2025, 2026, 2027, 2028, 2029].map(y => (
-                    <option key={y} value={y.toString()}>Periode {y}</option>
+                    <option key={y} value={y.toString()}>{language === 'en' ? `Period ${y}` : `Periode ${y}`}</option>
                   ))}
                 </select>
               </div>
@@ -2344,7 +2346,7 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
 
             <div className="p-3 rounded-xl bg-muted/40 border border-border/40 space-y-2">
               <p className="text-[11px] font-semibold text-foreground flex items-center gap-1.5">
-                <CheckCircle2 className="h-3.5 w-3.5 text-blue-600" /> Pengaturan Duplikasi:
+                <CheckCircle2 className="h-3.5 w-3.5 text-blue-600" /> {language === 'en' ? 'Duplication Settings:' : 'Pengaturan Duplikasi:'}
               </p>
               <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none">
                 <input
@@ -2353,7 +2355,7 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
                   onChange={(e) => setKeepOwner(e.target.checked)}
                   className="rounded border-border/60 text-blue-600 focus:ring-blue-500"
                 />
-                Pertahankan PIC / Owner dari tahun sebelumnya
+                {language === 'en' ? 'Keep PIC / Owner from previous year' : 'Pertahankan PIC / Owner dari tahun sebelumnya'}
               </label>
               <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none">
                 <input
@@ -2362,14 +2364,16 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
                   onChange={(e) => setKeepMethod(e.target.checked)}
                   className="rounded border-border/60 text-blue-600 focus:ring-blue-500"
                 />
-                Pertahankan Metode RUPS (Sirkuler / Fisik)
+                {language === 'en' ? 'Keep AGMS Method (Circular / Physical)' : 'Pertahankan Metode RUPS (Sirkuler / Fisik)'}
               </label>
             </div>
 
             <div className="text-[11px] text-muted-foreground bg-blue-50/50 border border-blue-100 dark:bg-blue-950/20 dark:border-blue-900/50 p-2.5 rounded-lg flex gap-2">
               <Clock className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
               <span>
-                Status seluruh tugas di tahun baru otomatis diatur ke <b>Not started (Drafting)</b> dengan batas jatuh tempo <b>30 Juni {targetYear}</b>. Berkas akta lama tidak akan terbawa.
+                {language === 'en'
+                  ? <>All new tasks in the target year will automatically be set to <b>Not started (Drafting)</b> with due date <b>June 30, {targetYear}</b>. Old deed files will not be carried over.</>
+                  : <>Status seluruh tugas di tahun baru otomatis diatur ke <b>Not started (Drafting)</b> dengan batas jatuh tempo <b>30 Juni {targetYear}</b>. Berkas akta lama tidak akan terbawa.</>}
               </span>
             </div>
           </div>
@@ -2383,7 +2387,7 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
               disabled={isCopyingYear}
               className="text-xs font-semibold rounded-lg h-9"
             >
-              Batal
+              {language === 'en' ? 'Cancel' : 'Batal'}
             </Button>
             <Button
               size="sm"
@@ -2393,11 +2397,11 @@ export const CSLTaskManager: React.FC<{ currentUser: UserAccount | null }> = ({ 
             >
               {isCopyingYear ? (
                 <>
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" /> Menyalin...
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" /> {language === 'en' ? 'Copying...' : 'Menyalin...'}
                 </>
               ) : (
                 <>
-                  <Copy className="h-3.5 w-3.5" /> Salin Data ke {targetYear}
+                  <Copy className="h-3.5 w-3.5" /> {language === 'en' ? `Copy Data to ${targetYear}` : `Salin Data ke ${targetYear}`}
                 </>
               )}
             </Button>

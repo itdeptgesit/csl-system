@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { fetchBudgetExpensesReport, BudgetExpensesReportData } from '@/services/cslBudgetReportService';
 import { getUnifiedStatusBadge, formatCslDate, formatCslCurrency, formatCslNumber } from '@/utils/cslStatusHelper';
+import { useLanguage } from '../translations';
 
 interface CSLDashboardProps {
   currentUser: UserAccount | null;
@@ -31,6 +32,7 @@ interface CSLDashboardProps {
 }
 
 export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavigate }) => {
+  const { t, language } = useLanguage();
   const firstName = currentUser?.fullName?.split(' ')[0] || 'User';
 
   const [stats, setStats] = useState({
@@ -216,10 +218,10 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
               <span>Corporate Secretary & Legal Platform</span>
             </div>
             <h1 className="text-[30px] font-bold tracking-tight text-[#0a2540] dark:text-zinc-100 font-sans leading-tight">
-              Selamat datang kembali, {firstName}!
+              {t('welcomeBack')}, {firstName}!
             </h1>
             <p className="text-xs md:text-sm text-[#758196] leading-relaxed">
-              Pusat kendali dan monitoring permintaan hukum, rutinitas kepatuhan, repositori dokumen, persetujuan biaya, dan pelaporan CSL.
+              {t('dash_0')}
             </p>
           </div>
 
@@ -241,7 +243,9 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
           className="bg-card border border-[#e6e9f0] hover:border-[#0a2540]/30 p-4 rounded-2xl shadow-xs flex flex-col justify-between transition-colors cursor-pointer group"
         >
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-[#758196] uppercase tracking-wider">Permintaan Legal</span>
+            <span className="text-[11px] font-bold text-[#758196] uppercase tracking-wider">
+              {t('dash_1')}
+            </span>
             <div className="h-8 w-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
               <Kanban className="h-4 w-4" />
             </div>
@@ -249,11 +253,13 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
           <div className="mt-3">
             <div className="flex items-baseline gap-2">
               <p className="text-[28px] font-bold font-mono text-[#0a2540] tracking-tight">{stats.activeRequests}</p>
-              <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">Aktif</span>
+              <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                {t('active')}
+              </span>
             </div>
             <p className="text-[11px] text-[#758196] mt-1 flex items-center justify-between">
-              <span>{stats.totalRequests} total berkas</span>
-              <span className="text-[#0a2540] group-hover:underline font-semibold text-[11px]">Rincian &rarr;</span>
+              <span>{stats.totalRequests} {t('dash_2')}</span>
+              <span className="text-[#0a2540] group-hover:underline font-semibold text-[11px]">{t('viewDetails')} &rarr;</span>
             </p>
           </div>
         </div>
@@ -264,7 +270,9 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
           className="bg-card border border-[#e6e9f0] hover:border-[#0a2540]/30 p-4 rounded-2xl shadow-xs flex flex-col justify-between transition-colors cursor-pointer group"
         >
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-[#758196] uppercase tracking-wider">Kepatuhan &amp; RUPS</span>
+            <span className="text-[11px] font-bold text-[#758196] uppercase tracking-wider">
+              {t('dash_3')}
+            </span>
             <div className="h-8 w-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
               <Calendar className="h-4 w-4" />
             </div>
@@ -272,11 +280,13 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
           <div className="mt-3">
             <div className="flex items-baseline gap-2">
               <p className="text-[28px] font-bold font-mono text-[#0a2540] tracking-tight">{stats.pendingTasks}</p>
-              <span className="text-[10px] font-semibold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">Pending</span>
+              <span className="text-[10px] font-semibold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                {t('statusPending')}
+              </span>
             </div>
             <p className="text-[11px] text-[#758196] mt-1 flex items-center justify-between">
-              <span>RUPS, Aset &amp; Kontrak</span>
-              <span className="text-[#0a2540] group-hover:underline font-semibold text-[11px]">Rincian &rarr;</span>
+              <span>{t('dash_4')}</span>
+              <span className="text-[#0a2540] group-hover:underline font-semibold text-[11px]">{t('viewDetails')} &rarr;</span>
             </p>
           </div>
         </div>
@@ -287,7 +297,9 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
           className="bg-card border border-[#e6e9f0] hover:border-[#0a2540]/30 p-4 rounded-2xl shadow-xs flex flex-col justify-between transition-colors cursor-pointer group"
         >
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-[#758196] uppercase tracking-wider">Persetujuan Biaya</span>
+            <span className="text-[11px] font-bold text-[#758196] uppercase tracking-wider">
+              {t('dash_5')}
+            </span>
             <div className="h-8 w-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
               <Wallet className="h-4 w-4" />
             </div>
@@ -297,11 +309,13 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
               <p className="text-[28px] font-bold font-mono text-[#0a2540] tracking-tight">
                 {stats.pendingExpenses + stats.pendingOffshore}
               </p>
-              <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">Menunggu</span>
+              <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                {t('statusPending')}
+              </span>
             </div>
             <p className="text-[11px] text-[#758196] mt-1 flex items-center justify-between">
-              <span>{stats.pendingExpenses} Lokal • {stats.pendingOffshore} Offshore</span>
-              <span className="text-[#0a2540] group-hover:underline font-semibold text-[11px]">Rincian &rarr;</span>
+              <span>{stats.pendingExpenses} {t('dash_6')} • {stats.pendingOffshore} Offshore</span>
+              <span className="text-[#0a2540] group-hover:underline font-semibold text-[11px]">{t('viewDetails')} &rarr;</span>
             </p>
           </div>
         </div>
@@ -312,7 +326,9 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
           className="bg-card border border-[#e6e9f0] hover:border-[#0a2540]/30 p-4 rounded-2xl shadow-xs flex flex-col justify-between transition-colors cursor-pointer group"
         >
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-[#758196] uppercase tracking-wider">Ketepatan SLA</span>
+            <span className="text-[11px] font-bold text-[#758196] uppercase tracking-wider">
+              {t('slaCompliance')}
+            </span>
             <div className="h-8 w-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
               <ShieldCheck className="h-4 w-4" />
             </div>
@@ -320,11 +336,13 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
           <div className="mt-3">
             <div className="flex items-baseline gap-2">
               <p className="text-[28px] font-bold font-mono text-[#0a2540] tracking-tight">{slaPercentage}%</p>
-              <span className="text-[10px] font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200">Tepat Waktu</span>
+              <span className="text-[10px] font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200">
+                {t('dash_7')}
+              </span>
             </div>
             <p className="text-[11px] text-[#758196] mt-1 flex items-center justify-between">
-              <span>{stats.slaCompliantRequests} dari {stats.completedRequests} selesai</span>
-              <span className="text-[#0a2540] group-hover:underline font-semibold text-[11px]">Rincian &rarr;</span>
+              <span>{stats.slaCompliantRequests} {t('dash_8')} {stats.completedRequests} {t('dash_9')}</span>
+              <span className="text-[#0a2540] group-hover:underline font-semibold text-[11px]">{t('viewDetails')} &rarr;</span>
             </p>
           </div>
         </div>
@@ -336,12 +354,16 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
           <div className="space-y-0.5">
             <div className="flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-emerald-500 inline-block" />
-              <h2 className="text-sm font-bold text-[#0a2540] tracking-tight">Anggaran &amp; Pengeluaran Legal CSL ({new Date().getFullYear()})</h2>
+              <h2 className="text-sm font-bold text-[#0a2540] tracking-tight">
+                {language === 'en' ? `CSL Legal Budget & Expenses (${new Date().getFullYear()})` : `Anggaran & Pengeluaran Legal CSL (${new Date().getFullYear()})`}
+              </h2>
               <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-[#f6f7f9] text-[#758196] border border-[#e6e9f0]">
-                Persetujuan &amp; Offshore
+                {t('dash_10')}
               </span>
             </div>
-            <p className="text-xs text-[#758196]">Monitoring pagu anggaran resmi vs realisasi pengeluaran tahun berjalan</p>
+            <p className="text-xs text-[#758196]">
+              {t('dash_11')}
+            </p>
           </div>
           <Button 
             variant="outline" 
@@ -349,7 +371,7 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
             onClick={() => onNavigate('budget')} 
             className="h-8 text-xs font-semibold gap-1.5 self-start sm:self-auto border-[#e6e9f0] hover:bg-[#f6f7f9]"
           >
-            Buka Modul Budget <ArrowUpRight className="h-3.5 w-3.5 text-[#758196]" />
+            {t('dash_12')} <ArrowUpRight className="h-3.5 w-3.5 text-[#758196]" />
           </Button>
         </div>
 
@@ -357,30 +379,36 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
           {/* 3 Metric Counters */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
             <div className="p-4 rounded-xl border border-[#e6e9f0] bg-[#fafbfc]">
-              <span className="text-[11px] font-bold text-[#758196] uppercase tracking-wider block">Total Anggaran (Setahun)</span>
+              <span className="text-[11px] font-bold text-[#758196] uppercase tracking-wider block">
+                {t('dash_13')}
+              </span>
               <p className="text-xl font-bold font-mono text-[#0a2540] mt-1 tracking-tight">
                 {budgetReport ? formatCslCurrency(budgetReport.summary.totalBudget) : 'Rp 0'}
               </p>
               <p className="text-[11px] text-[#758196] mt-1">
-                Jatah pagu dana resmi tahun berjalan
+                {t('dash_14')}
               </p>
             </div>
 
             <div className="p-4 rounded-xl border border-[#e6e9f0] bg-[#fafbfc]">
-              <span className="text-[11px] font-bold text-[#758196] uppercase tracking-wider block">Sudah Terpakai (Realisasi)</span>
+              <span className="text-[11px] font-bold text-[#758196] uppercase tracking-wider block">
+                {t('dash_15')}
+              </span>
               <p className="text-xl font-bold font-mono text-emerald-700 mt-1 tracking-tight">
                 {budgetReport ? formatCslCurrency(budgetReport.summary.actualExpenses) : 'Rp 0'}
               </p>
               <div className="flex items-center justify-between text-[11px] text-[#758196] mt-1">
-                <span>Terpakai: <strong className="font-mono text-[#0a2540] font-semibold">{formatCslNumber(Number(budgetReport?.summary.budgetUtilization) || 0, 1)}%</strong></span>
+                <span>{t('dash_16')} <strong className="font-mono text-[#0a2540] font-semibold">{formatCslNumber(Number(budgetReport?.summary.budgetUtilization) || 0, 1)}%</strong></span>
                 <span className="text-[10px] font-semibold text-emerald-700">
-                  {budgetReport && budgetReport.summary.actualExpenses <= budgetReport.summary.totalBudget ? 'Aman' : 'Over Budget'}
+                  {budgetReport && budgetReport.summary.actualExpenses <= budgetReport.summary.totalBudget ? (t('dash_17')) : 'Over Budget'}
                 </span>
               </div>
             </div>
 
             <div className="p-4 rounded-xl border border-[#e6e9f0] bg-[#fafbfc]">
-              <span className="text-[11px] font-bold text-[#758196] uppercase tracking-wider block">Sisa Dana Anggaran</span>
+              <span className="text-[11px] font-bold text-[#758196] uppercase tracking-wider block">
+                {t('dash_18')}
+              </span>
               <p className={`text-xl font-bold font-mono mt-1 tracking-tight ${
                 (budgetReport?.summary.budgetRemaining ?? 0) < 0 ? 'text-rose-600' : 'text-[#0a2540]'
               }`}>
@@ -388,8 +416,8 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
               </p>
               <p className="text-[11px] text-[#758196] mt-1">
                 {budgetReport && budgetReport.summary.pendingApprovalCount > 0 
-                  ? `${budgetReport.summary.pendingApprovalCount} transaksi pending (${formatCslCurrency(budgetReport.summary.pendingApprovalAmount)})`
-                  : 'Sisa dana yang masih tersedia'}
+                  ? `${budgetReport.summary.pendingApprovalCount} ${t('dash_19')} (${formatCslCurrency(budgetReport.summary.pendingApprovalAmount)})`
+                  : (t('dash_20'))}
               </p>
             </div>
           </div>
@@ -398,7 +426,9 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
           {budgetReport && budgetReport.summary.totalBudget > 0 && (
             <div className="space-y-1.5 pt-1">
               <div className="flex justify-between items-center text-xs">
-                <span className="text-[#758196] font-medium">Tingkat Penyerapan Anggaran</span>
+                <span className="text-[#758196] font-medium">
+                  {t('dash_21')}
+                </span>
                 <span className="font-mono font-bold text-[#0a2540]">
                   {formatCslNumber(Number(budgetReport.summary.budgetUtilization) || 0, 1)}%
                 </span>
@@ -424,7 +454,7 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
             <div className="space-y-2.5">
               <span className="text-xs font-bold text-[#0a2540] uppercase tracking-wider flex items-center gap-1.5">
                 <PieChartIcon className="w-3.5 h-3.5 text-[#758196]" />
-                Realisasi Per Kategori Biaya
+                {t('dash_22')}
               </span>
               <div className="space-y-2">
                 {budgetReport && budgetReport.expenseByCategory.length > 0 ? (
@@ -442,7 +472,7 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
                     </div>
                   ))
                 ) : (
-                  <p className="text-xs text-[#758196] py-3">Belum ada pengeluaran tercatat periode ini.</p>
+                  <p className="text-xs text-[#758196] py-3">{t('dash_23')}</p>
                 )}
               </div>
             </div>
@@ -451,7 +481,7 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
             <div className="space-y-2.5">
               <span className="text-xs font-bold text-[#0a2540] uppercase tracking-wider flex items-center gap-1.5">
                 <Receipt className="w-3.5 h-3.5 text-[#758196]" />
-                Transaksi Pengeluaran Terkini
+                {t('dash_24')}
               </span>
               <div className="space-y-2">
                 {budgetReport && budgetReport.transactions.length > 0 ? (
@@ -480,7 +510,7 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
                     );
                   })
                 ) : (
-                  <p className="text-xs text-[#758196] py-3">Belum ada transaksi.</p>
+                  <p className="text-xs text-[#758196] py-3">{t('dash_25')}</p>
                 )}
               </div>
             </div>
@@ -491,14 +521,14 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
       {/* ── Quick Access Modules Grid ── */}
       <div className="space-y-3">
         <h2 className="text-xs font-bold text-[#c9a227] uppercase tracking-wider">
-          Akses Cepat Modul
+          {t('dash_26')}
         </h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3.5">
           {[
-            { id: 'csl-requests', label: 'Permintaan & Tiket', icon: Kanban, route: 'csl-requests', desc: 'Permintaan legal & pemenuhan SLA' },
-            { id: 'routine-rups', label: 'RUPS - AR', icon: Calendar, route: 'routine-rups', desc: 'Jadwal rutin, RUPS & kepatuhan' },
-            { id: 'routine-lkpm', label: 'Tracking LKPM', icon: FileCheck2, route: 'routine-lkpm', desc: 'Pantauan LKPM 81 entitas aktif terlapor' },
-            { id: 'budget', label: 'Anggaran & Biaya', icon: Wallet, route: 'budget', desc: 'Pengeluaran CSL lokal & valas' },
+            { id: 'csl-requests', label: t('menuCslRequests'), icon: Kanban, route: 'csl-requests', desc: t('dash_27') },
+            { id: 'routine-rups', label: 'RUPS - AR', icon: Calendar, route: 'routine-rups', desc: t('dash_28') },
+            { id: 'routine-lkpm', label: 'Tracking LKPM', icon: FileCheck2, route: 'routine-lkpm', desc: t('dash_29') },
+            { id: 'budget', label: t('menuBudget'), icon: Wallet, route: 'budget', desc: t('dash_30') },
           ].map((item) => {
             const Icon = item.icon;
             return (
@@ -532,20 +562,24 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
           <div className="rounded-2xl border border-[#e6e9f0] bg-card shadow-xs overflow-hidden">
             <div className="px-5 py-4 border-b border-[#e6e9f0] flex items-center justify-between">
               <div>
-                <h3 className="font-bold text-sm text-[#0a2540]">Pipeline Permintaan Legal</h3>
-                <p className="text-xs text-[#758196] mt-0.5">Ringkasan status seluruh tiket bantuan hukum berjalan</p>
+                <h3 className="font-bold text-sm text-[#0a2540]">
+                  {t('dash_31')}
+                </h3>
+                <p className="text-xs text-[#758196] mt-0.5">
+                  {t('dash_32')}
+                </p>
               </div>
               <Badge variant="outline" className="text-xs font-mono font-bold text-[#0a2540] border-[#e6e9f0]">
-                {stats.totalRequests} Total Berkas
+                {stats.totalRequests} {t('dash_33')}
               </Badge>
             </div>
             <div className="p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
               {[
-                { status: 'DRAFT', label: 'Draf', count: statusCounts.DRAFT, badge: getUnifiedStatusBadge('DRAFT') },
-                { status: 'SUBMITTED', label: 'Diajukan', count: statusCounts.SUBMITTED, badge: getUnifiedStatusBadge('SUBMITTED') },
-                { status: 'PROCESSING', label: 'Diproses', count: statusCounts.PROCESSING, badge: getUnifiedStatusBadge('PROCESSING') },
-                { status: 'REVIEW_USER', label: 'Review Pemohon', count: statusCounts.REVIEW_USER, badge: getUnifiedStatusBadge('REVIEW_USER') },
-                { status: 'COMPLETED', label: 'Selesai', count: statusCounts.COMPLETED, badge: getUnifiedStatusBadge('COMPLETED') },
+                { status: 'DRAFT', label: t('dash_34'), count: statusCounts.DRAFT, badge: getUnifiedStatusBadge('DRAFT') },
+                { status: 'SUBMITTED', label: t('dash_35'), count: statusCounts.SUBMITTED, badge: getUnifiedStatusBadge('SUBMITTED') },
+                { status: 'PROCESSING', label: t('dash_36'), count: statusCounts.PROCESSING, badge: getUnifiedStatusBadge('PROCESSING') },
+                { status: 'REVIEW_USER', label: t('dash_37'), count: statusCounts.REVIEW_USER, badge: getUnifiedStatusBadge('REVIEW_USER') },
+                { status: 'COMPLETED', label: t('statusDone'), count: statusCounts.COMPLETED, badge: getUnifiedStatusBadge('COMPLETED') },
               ].map((s) => (
                 <div 
                   key={s.status} 
@@ -563,8 +597,10 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
           <div className="rounded-2xl border border-[#e6e9f0] bg-card shadow-xs overflow-hidden">
             <div className="px-5 py-4 border-b border-[#e6e9f0] flex items-center justify-between">
               <div>
-                <h3 className="font-bold text-sm text-[#0a2540]">Permintaan Legal Terkini</h3>
-                <p className="text-xs text-[#758196] mt-0.5">Permintaan terbaru yang diajukan dan membutuhkan tindak lanjut</p>
+                <h3 className="font-bold text-sm text-[#0a2540]">{t('recentRequests')}</h3>
+                <p className="text-xs text-[#758196] mt-0.5">
+                  {t('dash_38')}
+                </p>
               </div>
               <Button 
                 variant="ghost" 
@@ -572,7 +608,7 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
                 onClick={() => onNavigate('csl-requests')} 
                 className="h-8 text-xs font-semibold gap-1 text-[#0a2540] hover:bg-[#f6f7f9]"
               >
-                Lihat Semua <ArrowUpRight className="h-3.5 w-3.5" />
+                {t('viewAll')} <ArrowUpRight className="h-3.5 w-3.5" />
               </Button>
             </div>
 
@@ -595,15 +631,15 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
                           </span>
                           {isOverdue && (
                             <Badge variant="outline" className="text-[10px] py-0 px-1.5 border-rose-300 text-rose-700 bg-rose-50 gap-1 font-semibold">
-                              <AlertTriangle className="w-2.5 h-2.5" /> Lewat Tenggat
+                              <AlertTriangle className="w-2.5 h-2.5" /> {t('dash_39')}
                             </Badge>
                           )}
                         </div>
                         <p className="text-xs font-medium text-[#16233a] truncate max-w-md">
-                          {req.description || 'Tidak ada keterangan'}
+                          {req.description || (t('dash_40'))}
                         </p>
                         <p className="text-[11px] text-[#758196]">
-                          PIC: <span className="font-semibold text-[#0a2540]">{req.assigned_pic_name || 'Belum Ditugaskan'}</span> • Diajukan: {formatCslDate(req.created_at)}
+                          PIC: <span className="font-semibold text-[#0a2540]">{req.assigned_pic_name || (t('dash_41'))}</span> • {t('dash_35')}: {formatCslDate(req.created_at)}
                         </p>
                       </div>
 
@@ -618,7 +654,7 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
                 })
               ) : (
                 <div className="py-12 text-center text-xs text-[#758196]">
-                  Tidak ada permintaan tercatat saat ini.
+                  {t('dash_42')}
                 </div>
               )}
             </div>
@@ -632,8 +668,10 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
           <div className="rounded-2xl border border-[#e6e9f0] bg-card shadow-xs overflow-hidden">
             <div className="px-5 py-4 border-b border-[#e6e9f0] flex items-center justify-between">
               <div>
-                <h3 className="font-bold text-sm text-[#0a2540]">Tindakan Saya</h3>
-                <p className="text-xs text-[#758196] mt-0.5">Tugas &amp; tinjauan yang ditugaskan ke Anda</p>
+                <h3 className="font-bold text-sm text-[#0a2540]">{t('myActionItems')}</h3>
+                <p className="text-xs text-[#758196] mt-0.5">
+                  {t('dash_43')}
+                </p>
               </div>
               <Badge variant="secondary" className="font-mono text-xs font-bold text-[#0a2540]">
                 {myActionItems.length}
@@ -651,17 +689,23 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
                     <div className="flex justify-between items-center">
                       <span className="text-xs font-mono font-bold text-[#0a2540]">{req.request_number}</span>
                       <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
-                        {req.status === 'REVIEW_USER' ? 'Perlu Review' : 'Ditugaskan ke Anda'}
+                        {req.status === 'REVIEW_USER' 
+                          ? (t('dash_44'))
+                          : (t('dash_45'))}
                       </span>
                     </div>
-                    <p className="text-xs text-[#758196] truncate">{req.description || 'Tidak ada deskripsi'}</p>
+                    <p className="text-xs text-[#758196] truncate">
+                      {req.description || (t('dash_46'))}
+                    </p>
                   </div>
                 ))
               ) : (
                 <div className="text-center py-8 text-[#758196] space-y-1">
                   <CheckCircle2 className="w-7 h-7 mx-auto text-emerald-600 mb-2" />
-                  <p className="text-xs font-bold text-[#0a2540]">Semua Tugas Selesai!</p>
-                  <p className="text-[11px]">Tidak ada tindakan tertunda yang membutuhkan perhatian Anda.</p>
+                  <p className="text-xs font-bold text-[#0a2540]">
+                    {t('dash_47')}
+                  </p>
+                  <p className="text-[11px]">{t('noActionItems')}</p>
                 </div>
               )}
             </div>
@@ -671,8 +715,10 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
           <div className="rounded-2xl border border-[#e6e9f0] bg-card shadow-xs overflow-hidden">
             <div className="px-5 py-4 border-b border-[#e6e9f0] flex items-center justify-between">
               <div>
-                <h3 className="font-bold text-sm text-[#0a2540]">Tugas &amp; Kepatuhan Mendatang</h3>
-                <p className="text-xs text-[#758196] mt-0.5">Jadwal RUPS, aset &amp; kepatuhan berkala</p>
+                <h3 className="font-bold text-sm text-[#0a2540]">{t('upcomingTasks')}</h3>
+                <p className="text-xs text-[#758196] mt-0.5">
+                  {t('dash_48')}
+                </p>
               </div>
               <Button 
                 variant="ghost" 
@@ -680,7 +726,7 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
                 onClick={() => onNavigate('routine-rups')} 
                 className="h-8 text-xs font-semibold gap-1 text-[#0a2540] hover:bg-[#f6f7f9]"
               >
-                Lihat Semua <ArrowUpRight className="h-3.5 w-3.5" />
+                {t('viewAll')} <ArrowUpRight className="h-3.5 w-3.5" />
               </Button>
             </div>
 
@@ -703,16 +749,16 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-1.5">
                             <span className="text-[10px] font-bold uppercase text-[#0a2540] tracking-wider">
-                              {task.category || 'Rutinitas'}
+                              {task.category || (t('dash_49'))}
                             </span>
                             {isTaskOverdue && (
                               <span className="text-[10px] font-bold text-rose-700 flex items-center gap-0.5">
-                                <AlertTriangle className="w-2.5 h-2.5" /> Lewat Tenggat
+                                <AlertTriangle className="w-2.5 h-2.5" /> {t('dash_39')}
                               </span>
                             )}
                           </div>
                           <p className="text-xs font-semibold text-[#16233a] truncate mt-0.5">
-                            {task.task_name || task.company || 'Tugas Tanpa Nama'}
+                            {task.task_name || task.company || (t('dash_50'))}
                           </p>
                         </div>
                         <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border ${badge.className} shrink-0`}>
@@ -726,7 +772,7 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
                         <span className={isTaskOverdue ? 'text-rose-700 font-semibold' : ''}>
                           {task.due_date || task.finish_date 
                             ? formatCslDate(task.due_date || task.finish_date)
-                            : 'Tanpa tanggal'}
+                            : (t('dash_51'))}
                         </span>
                       </div>
                     </div>
@@ -734,7 +780,7 @@ export const CSLDashboard: React.FC<CSLDashboardProps> = ({ currentUser, onNavig
                 })
               ) : (
                 <div className="text-center py-8 text-xs text-[#758196]">
-                  Tidak ada tugas mendatang.
+                  {t('dash_52')}
                 </div>
               )}
             </div>

@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { supabase, supabaseAdmin, ensureAuthUserWithPassword } from '../lib/supabaseClient';
+import { supabase, adminUsers, ensureAuthUserWithPassword } from '../lib/supabaseClient';
 
 import { UserAccount } from '../types';
+import { useLanguage } from '../translations';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -373,6 +374,7 @@ const MOCK_CATEGORIES: CategoryItem[] = [
 // Companies loaded dynamically from DB
 
 export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'categories' }) => {
+  const { language } = useLanguage();
   // ── States ──────────────────────────────────────────────────────────────────
   const [categories, setCategories] = useState<CategoryItem[]>(MOCK_CATEGORIES);
   const [users, setUsers] = useState<UserItem[]>([]);
@@ -512,9 +514,9 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
       stempel: `stempel-${code.toLowerCase()}.png`,
     };
     const labels = {
-      logo: 'Logo Perusahaan',
-      kop: 'Kop Surat',
-      stempel: 'Stempel',
+      logo: language === 'en' ? 'Company Logo' : 'Logo Perusahaan',
+      kop: language === 'en' ? 'Letterhead' : 'Kop Surat',
+      stempel: language === 'en' ? 'Stamp' : 'Stempel',
     };
     const updated = {
       ...companyAssets,
@@ -525,7 +527,7 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
     };
     setCompanyAssets(updated);
     localStorage.setItem('csl_company_assets', JSON.stringify(updated));
-    toast.success(`${labels[key]} terunggah ke Google Drive (folder CSL-LINK/Companies/${code}/).`);
+    toast.success(language === 'en' ? `${labels[key]} uploaded to Google Drive (folder CSL-LINK/Companies/${code}/).` : `${labels[key]} terunggah ke Google Drive (folder CSL-LINK/Companies/${code}/).`);
   };
 
   const handleDeleteAsset = (code: string, key: 'logo' | 'kop' | 'stempel') => {
@@ -538,7 +540,7 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
     };
     setCompanyAssets(updated);
     localStorage.setItem('csl_company_assets', JSON.stringify(updated));
-    toast.info('Berkas dihapus dari profil (berkas asli tetap di Drive).');
+    toast.info(language === 'en' ? 'File removed from profile (original file remains in Drive).' : 'Berkas dihapus dari profil (berkas asli tetap di Drive).');
   };
 
   const [deleteConfirm, setDeleteConfirm] = useState<{ type: 'category' | 'user' | 'company' | 'department'; id: number | string; name: string } | null>(null);
@@ -612,8 +614,8 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
       console.warn('Failed to save notification settings with approvers:', e);
     }
 
-    showFeedback('Pengaturan sistem, notifikasi email, dan approver berhasil disimpan!');
-    toast.success('Pengaturan sistem dan notifikasi email berhasil disimpan!');
+    showFeedback(language === 'en' ? 'System settings, email notifications, and approvers saved successfully!' : 'Pengaturan sistem, notifikasi email, dan approver berhasil disimpan!');
+    toast.success(language === 'en' ? 'System and email notification settings saved successfully!' : 'Pengaturan sistem dan notifikasi email berhasil disimpan!');
   };
 
   // ── Notification Settings State ─────────────────────────────────────────────
@@ -649,10 +651,10 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
         emailApprovalsEnabled: notifApprovals,
         cslInboxEmail: notifCslEmail.trim()
       });
-      toast.success('Pengaturan notifikasi email berhasil disimpan!');
-      showFeedback('Pengaturan notifikasi email berhasil diperbarui!');
+      toast.success(language === 'en' ? 'Email notification settings saved successfully!' : 'Pengaturan notifikasi email berhasil disimpan!');
+      showFeedback(language === 'en' ? 'Email notification settings updated successfully!' : 'Pengaturan notifikasi email berhasil diperbarui!');
     } catch (err: any) {
-      toast.error('Gagal menyimpan notifikasi: ' + (err?.message || 'Error'));
+      toast.error((language === 'en' ? 'Failed to save notifications: ' : 'Gagal menyimpan notifikasi: ') + (err?.message || 'Error'));
     } finally {
       setIsSavingNotifs(false);
     }
@@ -661,7 +663,7 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
   const handleSendTestEmail = async () => {
     const target = (testEmailRecipient || currentUser?.email || notifCslEmail || '').trim();
     if (!target) {
-      toast.error('Masukkan alamat email penerima uji coba.');
+      toast.error(language === 'en' ? 'Enter the test recipient email address.' : 'Masukkan alamat email penerima uji coba.');
       return;
     }
     setIsSendingTest(true);
@@ -708,10 +710,10 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
             <tr>
               <td style="padding: 32px;">
                 <h1 style="margin: 0 0 12px 0; font-size: 18px; font-weight: 700; color: #0f172a; line-height: 1.3;">
-                  Uji Coba Pengiriman Notifikasi Email
+                  ${language === 'en' ? 'Email Notification Delivery Test' : 'Uji Coba Pengiriman Notifikasi Email'}
                 </h1>
                 <p style="margin: 0 0 24px 0; font-size: 13px; line-height: 1.6; color: #475569;">
-                  Email ini mengonfirmasi bahwa integrasi API email pada platform <strong>CSL-LINK</strong> (Corporate Secretary &amp; Legal) aktif dan dapat mengirimkan pemberitahuan secara langsung.
+                  ${language === 'en' ? 'This email confirms that the email API integration on the <strong>CSL-LINK</strong> (Corporate Secretary &amp; Legal) platform is active and can send notifications directly.' : 'Email ini mengonfirmasi bahwa integrasi API email pada platform <strong>CSL-LINK</strong> (Corporate Secretary &amp; Legal) aktif dan dapat mengirimkan pemberitahuan secara langsung.'}
                 </p>
 
                 <!-- Status Summary Card -->
@@ -720,31 +722,31 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
                     <td style="padding: 16px 20px;">
                       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size: 13px;">
                         <tr>
-                          <td style="padding: 6px 0; color: #64748b; font-weight: 600; width: 45%;">Master Notifikasi Email</td>
+                          <td style="padding: 6px 0; color: #64748b; font-weight: 600; width: 45%;">${language === 'en' ? 'Master Email Notifications' : 'Master Notifikasi Email'}</td>
                           <td style="padding: 6px 0; text-align: right; font-weight: 700; color: ${notifMaster ? '#059669' : '#dc2626'};">
-                            ${notifMaster ? '● AKTIF (ON)' : '○ NONAKTIF'}
+                            ${notifMaster ? (language === 'en' ? '● ACTIVE (ON)' : '● AKTIF (ON)') : (language === 'en' ? '○ INACTIVE' : '○ NONAKTIF')}
                           </td>
                         </tr>
                         <tr>
-                          <td style="padding: 6px 0; color: #64748b; font-weight: 500; border-top: 1px solid #f1f5f9;">Permohonan Tiket Baru</td>
+                          <td style="padding: 6px 0; color: #64748b; font-weight: 500; border-top: 1px solid #f1f5f9;">${language === 'en' ? 'New Ticket Request' : 'Permohonan Tiket Baru'}</td>
                           <td style="padding: 6px 0; text-align: right; font-weight: 600; color: #0f172a; border-top: 1px solid #f1f5f9;">
-                            ${notifNewRequest ? 'Aktif' : 'Nonaktif'}
+                            ${notifNewRequest ? (language === 'en' ? 'Active' : 'Aktif') : (language === 'en' ? 'Inactive' : 'Nonaktif')}
                           </td>
                         </tr>
                         <tr>
-                          <td style="padding: 6px 0; color: #64748b; font-weight: 500; border-top: 1px solid #f1f5f9;">Update Status &amp; Selesai</td>
+                          <td style="padding: 6px 0; color: #64748b; font-weight: 500; border-top: 1px solid #f1f5f9;">${language === 'en' ? 'Status Update &amp; Completion' : 'Update Status &amp; Selesai'}</td>
                           <td style="padding: 6px 0; text-align: right; font-weight: 600; color: #0f172a; border-top: 1px solid #f1f5f9;">
-                            ${notifStatusChange ? 'Aktif' : 'Nonaktif'}
+                            ${notifStatusChange ? (language === 'en' ? 'Active' : 'Aktif') : (language === 'en' ? 'Inactive' : 'Nonaktif')}
                           </td>
                         </tr>
                         <tr>
-                          <td style="padding: 6px 0; color: #64748b; font-weight: 500; border-top: 1px solid #f1f5f9;">Approval Biaya &amp; Offshore</td>
+                          <td style="padding: 6px 0; color: #64748b; font-weight: 500; border-top: 1px solid #f1f5f9;">${language === 'en' ? 'Expense &amp; Offshore Approval' : 'Approval Biaya &amp; Offshore'}</td>
                           <td style="padding: 6px 0; text-align: right; font-weight: 600; color: #0f172a; border-top: 1px solid #f1f5f9;">
-                            ${notifApprovals ? 'Aktif' : 'Nonaktif'}
+                            ${notifApprovals ? (language === 'en' ? 'Active' : 'Aktif') : (language === 'en' ? 'Inactive' : 'Nonaktif')}
                           </td>
                         </tr>
                         <tr>
-                          <td style="padding: 6px 0; color: #64748b; font-weight: 500; border-top: 1px solid #f1f5f9;">Waktu Pengujian</td>
+                          <td style="padding: 6px 0; color: #64748b; font-weight: 500; border-top: 1px solid #f1f5f9;">${language === 'en' ? 'Test Time' : 'Waktu Pengujian'}</td>
                           <td style="padding: 6px 0; text-align: right; font-weight: 600; color: #0f172a; border-top: 1px solid #f1f5f9;">
                             ${new Date().toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })} WIB
                           </td>
@@ -755,7 +757,7 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
                 </table>
 
                 <p style="margin: 0; font-size: 12px; line-height: 1.5; color: #64748b;">
-                  Pemberitahuan resmi tiket hukum, SLA, kepatuhan RUPS, dan persetujuan biaya akan dikirimkan dengan identitas <strong>CSL-LINK</strong>.
+                  ${language === 'en' ? 'Official notices for legal tickets, SLA, RUPS compliance, and expense approvals will be sent under the <strong>CSL-LINK</strong> identity.' : 'Pemberitahuan resmi tiket hukum, SLA, kepatuhan RUPS, dan persetujuan biaya akan dikirimkan dengan identitas <strong>CSL-LINK</strong>.'}
                 </p>
               </td>
             </tr>
@@ -767,7 +769,7 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
                   CSL-LINK &bull; Corporate Secretary &amp; Legal
                 </p>
                 <p style="margin: 0; font-size: 11px; color: #94a3b8;">
-                  Pesan otomatis resmi sistem internal The Gesit Companies. Mohon tidak membalas langsung ke email ini.
+                  ${language === 'en' ? 'Official automated message from the internal system of The Gesit Companies. Please do not reply directly to this email.' : 'Pesan otomatis resmi sistem internal The Gesit Companies. Mohon tidak membalas langsung ke email ini.'}
                 </p>
               </td>
             </tr>
@@ -777,20 +779,20 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
       `;
       const res = await sendEmailNotification(
         target,
-        '[CSL Test] Uji Coba Pengiriman Notifikasi Email Sistem',
+        language === 'en' ? '[CSL Test] System Email Notification Test' : '[CSL Test] Uji Coba Pengiriman Notifikasi Email Sistem',
         testHtml,
         true,
         'GENERAL'
       );
       if (res.skipped) {
-        toast.warning('Pengiriman email dilewati: ' + res.reason);
+        toast.warning((language === 'en' ? 'Email delivery skipped: ' : 'Pengiriman email dilewati: ') + res.reason);
       } else if (res.success) {
-        toast.success(`Email uji coba berhasil dikirim ke ${target}!`);
+        toast.success(language === 'en' ? `Test email sent successfully to ${target}!` : `Email uji coba berhasil dikirim ke ${target}!`);
       } else {
-        toast.error(`Pengiriman gagal: ${res.reason || 'Periksa API key / batas pengiriman'}`);
+        toast.error(language === 'en' ? `Delivery failed: ${res.reason || 'Check the API key / sending limit'}` : `Pengiriman gagal: ${res.reason || 'Periksa API key / batas pengiriman'}`);
       }
     } catch (err: any) {
-      toast.error('Gagal mengirim email tes: ' + err.message);
+      toast.error((language === 'en' ? 'Failed to send test email: ' : 'Gagal mengirim email tes: ') + err.message);
     } finally {
       setIsSendingTest(false);
     }
@@ -821,11 +823,11 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
           added++;
         }
       }
-      toast.success(`Sinkronisasi LKPM selesai. ${added} entitas baru berhasil didaftarkan ke master perusahaan.`);
+      toast.success(language === 'en' ? `LKPM sync complete. ${added} new entities registered in the company master.` : `Sinkronisasi LKPM selesai. ${added} entitas baru berhasil didaftarkan ke master perusahaan.`);
       const { data } = await supabase.from('companies').select('*').order('name');
       if (data) setCompanies(data);
     } catch (e: any) {
-      toast.error('Gagal sinkronisasi data LKPM: ' + e.message);
+      toast.error((language === 'en' ? 'Failed to sync LKPM data: ' : 'Gagal sinkronisasi data LKPM: ') + e.message);
     } finally {
       setIsLoading(false);
     }
@@ -859,11 +861,11 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
           added++;
         }
       }
-      toast.success(`Sinkronisasi Group Email selesai: ${added} entitas baru berhasil didaftarkan.`);
+      toast.success(language === 'en' ? `Group Email sync complete: ${added} new entities registered.` : `Sinkronisasi Group Email selesai: ${added} entitas baru berhasil didaftarkan.`);
       const { data } = await supabase.from('companies').select('*').order('name');
       if (data) setCompanies(data);
     } catch (e: any) {
-      toast.error('Gagal sinkronisasi data Group Email: ' + e.message);
+      toast.error((language === 'en' ? 'Failed to sync Group Email data: ' : 'Gagal sinkronisasi data Group Email: ') + e.message);
     } finally {
       setIsLoading(false);
     }
@@ -1065,10 +1067,10 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
       if (data.secure_url) {
         setUserForm(prev => ({ ...prev, eSignUrl: data.secure_url }));
       } else {
-        throw new Error(data.error?.message || 'Upload gagal');
+        throw new Error(data.error?.message || (language === 'en' ? 'Upload failed' : 'Upload gagal'));
       }
     } catch (err: any) {
-      showFeedback(`E-Sign upload gagal: ${err.message}`);
+      showFeedback(language === 'en' ? `E-Sign upload failed: ${err.message}` : `E-Sign upload gagal: ${err.message}`);
     } finally {
       setIsUploadingESign(false);
     }
@@ -1087,7 +1089,7 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
       const passwordTrim = userForm.password.trim();
 
       if (passwordTrim && passwordTrim.length < 6) {
-        throw new Error('Password minimal 6 karakter');
+        throw new Error(language === 'en' ? 'Password must be at least 6 characters' : 'Password minimal 6 karakter');
       }
 
       // Ensure user exists in Supabase Auth & password is properly configured
@@ -1110,48 +1112,41 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
           updatePayload.id = authUserId;
         }
 
-        let { error } = await supabaseAdmin
-          .from('user_accounts')
-          .update(updatePayload)
-          .eq('id', editingUser.id);
-
-        if (error) {
-          const fallback = await supabase
-            .from('user_accounts')
-            .update(updatePayload)
-            .eq('id', editingUser.id);
-          if (fallback.error) throw fallback.error;
+        try {
+          await adminUsers.update(String(editingUser.id), updatePayload);
+          if (passwordTrim) {
+            showFeedback(authUserId ? (language === 'en' ? `User "${userForm.name}" and password updated!` : `User "${userForm.name}" dan password berhasil diperbarui!`) : (language === 'en' ? `User "${userForm.name}" updated. To enable direct password changes, run migration_admin_reset_password.sql in Supabase SQL Editor.` : `User "${userForm.name}" disimpan. Jalankan migration_admin_reset_password.sql di Supabase SQL Editor untuk update password langsung.`));
+          } else {
+            showFeedback(`User "${userForm.name}" updated!`);
+          }
+        } catch (err) {
+          console.error('adminUsers.update failed:', err);
+          throw err;
         }
-        showFeedback(`User "${userForm.name}" updated!`);
       } else {
-        const id = authUserId || crypto.randomUUID();
-        const username = emailTrim.split('@')[0];
-
-        const newUserPayload = {
-          id,
-          username,
-          full_name: userForm.name.trim(),
-          email: emailTrim,
-          role: userForm.role,
-          groups: groupsArr.length ? groupsArr : ['user'],
-          company: 'GESIT',
-          department: 'Other',
-          status: 'Active',
-        };
-
-        let { error } = await supabaseAdmin.from('user_accounts').insert([newUserPayload]);
-        if (error) {
-          console.warn('supabaseAdmin insert failed, trying supabase anon fallback:', error);
-          const fallback = await supabase.from('user_accounts').insert([newUserPayload]);
-          if (fallback.error) throw fallback.error;
+        const password = userForm.password || crypto.randomUUID().slice(0, 12);
+        
+        try {
+          await adminUsers.create({
+            email: emailTrim,
+            password,
+            full_name: userForm.name.trim(),
+            role: userForm.role,
+            groups: groupsArr.length ? groupsArr : ['user'],
+            company: 'GESIT',
+            department: 'Other',
+          });
+          showFeedback(language === 'en' ? `User "${userForm.name}" added!` : `User "${userForm.name}" ditambahkan!`);
+        } catch (err) {
+          console.error('adminUsers.create failed:', err);
+          throw err;
         }
-        showFeedback(`User "${userForm.name}" ditambahkan!`);
       }
       setUserModalOpen(false);
       await fetchData();
     } catch (err: any) {
       console.error('Failed to save user:', err);
-      showFeedback(`Error: ${err.message || 'Gagal menyimpan user'}`);
+      showFeedback(`Error: ${err.message || (language === 'en' ? 'Failed to save user' : 'Gagal menyimpan user')}`);
     } finally {
       setIsUserSaving(false);
     }
@@ -1170,28 +1165,18 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
     const menuIds = convertPermissionsToGroups(userPerms, permUser.role);
 
     try {
-      let { error } = await supabaseAdmin
-        .from('user_accounts')
-        .update({ groups: menuIds })
-        .eq('id', permUser.id);
-      if (error) {
-        const fallback = await supabase
-          .from('user_accounts')
-          .update({ groups: menuIds })
-          .eq('id', permUser.id);
-        if (fallback.error) throw fallback.error;
+        await adminUsers.updateGroups(String(permUser.id), menuIds);
+        // Update local state setelah DB berhasil
+        setUsers(prev => prev.map(u => u.id === permUser.id ? { ...u, groups: menuIds, permissions: userPerms } : u));
+        toast.success(language === 'en' ? `Menu permissions saved for ${permUser.name}` : `Hak akses menu berhasil disimpan untuk ${permUser.name}`);
+        showFeedback(language === 'en' ? `Menu permissions saved for ${permUser.name}` : `Hak akses menu berhasil disimpan untuk ${permUser.name}`);
+        setPermUser(null);
+      } catch (err: any) {
+        toast.error(language === 'en' ? `Failed to save: ${err.message}` : `Gagal menyimpan: ${err.message}`);
+        showFeedback(language === 'en' ? `Failed to save: ${err.message}` : `Gagal menyimpan: ${err.message}`);
+      } finally {
+        setIsSavingPerms(false);
       }
-      // Update local state setelah DB berhasil
-      setUsers(prev => prev.map(u => u.id === permUser.id ? { ...u, groups: menuIds, permissions: userPerms } : u));
-      toast.success(`Hak akses menu berhasil disimpan untuk ${permUser.name}`);
-      showFeedback(`Hak akses menu berhasil disimpan untuk ${permUser.name}`);
-      setPermUser(null);
-    } catch (err: any) {
-      toast.error(`Gagal menyimpan: ${err.message}`);
-      showFeedback(`Gagal menyimpan: ${err.message}`);
-    } finally {
-      setIsSavingPerms(false);
-    }
   };
 
   const handleToggleUserMenu = async (u: UserItem, menuKey: keyof MenuPermissions) => {
@@ -1209,15 +1194,11 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
     setUsers(prev => prev.map(item => item.id === u.id ? { ...item, groups: newGroups, permissions: updatedPerms } : item));
 
     try {
-      let { error } = await supabaseAdmin.from('user_accounts').update({ groups: newGroups }).eq('id', u.id);
-      if (error) {
-        const fallback = await supabase.from('user_accounts').update({ groups: newGroups }).eq('id', u.id);
-        if (fallback.error) throw fallback.error;
-      }
-      toast.success(`Hak akses menu diperbarui untuk ${u.name}`);
+      await adminUsers.updateGroups(String(u.id), newGroups);
+      toast.success(language === 'en' ? `Menu permissions updated for ${u.name}` : `Hak akses menu diperbarui untuk ${u.name}`);
     } catch (err: any) {
       setUsers(prev => prev.map(item => item.id === u.id ? u : item));
-      toast.error(`Gagal mengubah akses: ${err.message}`);
+      toast.error(language === 'en' ? `Failed to change access: ${err.message}` : `Gagal mengubah akses: ${err.message}`);
     }
   };
 
@@ -1249,7 +1230,7 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
   const handleSaveCompany = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!companyForm.name.trim() || !companyForm.code.trim()) {
-      toast.error('Kode dan nama resmi wajib diisi.');
+      toast.error(language === 'en' ? 'Code and official name are required.' : 'Kode dan nama resmi wajib diisi.');
       return;
     }
     try {
@@ -1293,10 +1274,10 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
 
         if (error) throw error;
         if (!data || data.length === 0) {
-          throw new Error('Database menolak perubahan (0 baris ter-update). Kebijakan RLS tabel companies di Supabase perlu di-refresh.');
+          throw new Error(language === 'en' ? 'Database rejected the change (0 rows updated). The Supabase RLS policy on the companies table needs to be refreshed.' : 'Database menolak perubahan (0 baris ter-update). Kebijakan RLS tabel companies di Supabase perlu di-refresh.');
         }
 
-        toast.success(`Entitas "${name}" (${code}) berhasil diperbarui!`);
+        toast.success(language === 'en' ? `Entity "${name}" (${code}) updated successfully!` : `Entitas "${name}" (${code}) berhasil diperbarui!`);
       } else {
         let { data, error } = await supabase
           .from('companies')
@@ -1317,12 +1298,12 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
         }
 
         if (error) throw error;
-        toast.success(`Entitas "${name}" (${code}) berhasil didaftarkan!`);
+        toast.success(language === 'en' ? `Entity "${name}" (${code}) registered successfully!` : `Entitas "${name}" (${code}) berhasil didaftarkan!`);
       }
       setCompanyModalOpen(false);
       await fetchData();
     } catch (err: any) {
-      toast.error(`Gagal menyimpan entitas: ${err.message}`);
+      toast.error(language === 'en' ? `Failed to save entity: ${err.message}` : `Gagal menyimpan entitas: ${err.message}`);
     }
   };
 
@@ -1374,17 +1355,13 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
         setCategories(categories.filter(c => c.id !== id));
       }
       if (type === 'user') {
-        let { error } = await supabaseAdmin.from('user_accounts').delete().eq('id', id);
-        if (error) {
-          const fallback = await supabase.from('user_accounts').delete().eq('id', id);
-          if (fallback.error) throw fallback.error;
-        }
         try {
-          await supabaseAdmin.auth.admin.deleteUser(id.toString());
-        } catch (authErr) {
-          console.warn('Could not delete auth user:', authErr);
+          await adminUsers.delete(String(id));
+          setUsers(users.filter(u => u.id !== id));
+        } catch (err) {
+          console.error('adminUsers.delete failed:', err);
+          throw err;
         }
-        setUsers(users.filter(u => u.id !== id));
       }
       if (type === 'company') {
         const { error } = await supabase.from('companies').delete().eq('id', id);
@@ -1396,9 +1373,9 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
         if (error) throw error;
         setDepartments(departments.filter(d => d.id !== id));
       }
-      showFeedback(`"${name}" berhasil dihapus.`);
+      showFeedback(language === 'en' ? `"${name}" deleted successfully.` : `"${name}" berhasil dihapus.`);
     } catch (err: any) {
-      showFeedback(`Gagal menghapus: ${err.message || 'Error occurred'}`);
+      showFeedback((language === 'en' ? 'Failed to delete: ' : 'Gagal menghapus: ') + (err.message || 'Error occurred'));
     }
     setDeleteConfirm(null);
   };
@@ -1416,7 +1393,10 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
     return (
       <div className="space-y-6 animate-in fade-in duration-500 pb-12 font-sans">
         {feedbackBanner}
-        <PageHeader title="Request Categories" description="Manage request types, codes, SLA targets, and configurations">
+        <PageHeader
+          title={language === 'en' ? 'Request Categories' : 'Kategori Permintaan'}
+          description={language === 'en' ? 'Manage request types, codes, SLA targets, and configurations' : 'Kelola jenis permintaan, kode, target SLA, dan konfigurasi'}
+        >
           <div className="flex items-center gap-2">
             <Button onClick={() => openCategoryModal()} size="sm" className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md">
               <Plus className="h-4 w-4 mr-1.5" /> Add Category
@@ -1512,7 +1492,10 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
     return (
       <div className="space-y-6 animate-in fade-in duration-500 pb-12 font-sans">
         {feedbackBanner}
-        <PageHeader title="SLA Configuration" description="Configure default business day SLA targets for request types">
+        <PageHeader
+          title={language === 'en' ? 'SLA Configuration' : 'Pengaturan SLA'}
+          description={language === 'en' ? 'Configure default business day SLA targets for request types' : 'Konfigurasi target SLA hari kerja standar untuk setiap kategori permintaan'}
+        >
           <Button variant="outline" size="sm" onClick={fetchData} className="text-xs font-bold">
             <RefreshCcw className="h-3.5 w-3.5 mr-1.5" /> Refresh
           </Button>
@@ -1574,7 +1557,10 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
     return (
       <div className="space-y-6 animate-in fade-in duration-500 pb-12 font-sans">
         {feedbackBanner}
-        <PageHeader title="Pengguna & Hak Akses Menu" description="Kelola akun pengguna, peran sistem, dan konfigurasi hak akses menu untuk setiap personel">
+        <PageHeader
+          title={language === 'en' ? 'Users & Menu Permissions' : 'Pengguna & Hak Akses Menu'}
+          description={language === 'en' ? 'Manage user accounts, system roles, and menu access permissions for all personnel' : 'Kelola akun pengguna, peran sistem, dan konfigurasi hak akses menu untuk setiap personel'}
+        >
           {userTab === 'users' && (
             <Button onClick={() => openUserModal()} size="sm" className="bg-[#0a2540] hover:bg-[#16375c] text-white font-bold text-xs shadow-xs rounded-xl h-9 px-4">
               <Plus className="h-4 w-4 mr-1.5" /> Tambah Pengguna
@@ -3238,7 +3224,10 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
     return (
       <div className="space-y-6 animate-in fade-in duration-500 pb-12 font-sans">
         {feedbackBanner}
-        <PageHeader title="Departemen & Divisi" description="Kelola struktur departemen organisasi dan unit kerja">
+        <PageHeader
+          title={language === 'en' ? 'Departments & Divisions' : 'Departemen & Divisi'}
+          description={language === 'en' ? 'Manage organizational department structures and business units' : 'Kelola struktur departemen organisasi dan unit kerja'}
+        >
           <Button onClick={() => openDeptModal()} size="sm" className="bg-[#0a2540] hover:bg-[#16375c] text-white font-bold text-xs shadow-xs rounded-xl h-9 px-4">
             <Plus className="h-4 w-4 mr-1.5" /> Tambah Departemen
           </Button>
@@ -3344,8 +3333,8 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
       <div className="space-y-6 animate-in fade-in duration-500 pb-12 font-sans">
         {feedbackBanner}
         <PageHeader 
-          title="Pengaturan Notifikasi Email & Tiket" 
-          description="Atur fleksibilitas pengiriman email notifikasi tiket CSL, approval biaya, dan preferensi penerima."
+          title={language === 'en' ? 'Email & Ticket Notification Settings' : 'Pengaturan Notifikasi Email & Tiket'} 
+          description={language === 'en' ? 'Configure email notification triggers for CSL tickets, expense approvals, and recipient preferences.' : 'Atur fleksibilitas pengiriman email notifikasi tiket CSL, approval biaya, dan preferensi penerima.'}
         >
           <Button 
             onClick={handleSaveNotificationSettings} 
@@ -3571,7 +3560,10 @@ export const CSLSettings: React.FC<CSLSettingsProps> = ({ currentUser, view = 'c
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-12 font-sans">
       {feedbackBanner}
-      <PageHeader title="Pengaturan Sistem" description="Konfigurasi global, preferensi notifikasi email, dan alur persetujuan berkas legal" />
+      <PageHeader
+        title={language === 'en' ? 'System Settings' : 'Pengaturan Sistem'}
+        description={language === 'en' ? 'Global configuration, email notification preferences, and legal file approval workflow' : 'Konfigurasi global, preferensi notifikasi email, dan alur persetujuan berkas legal'}
+      />
 
       <div className="space-y-6">
         {/* General Info */}

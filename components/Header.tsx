@@ -258,8 +258,8 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <div className="flex items-center min-w-0">
               <Search className="mr-2 h-4 w-4 shrink-0" />
-              <span className="hidden lg:inline-flex truncate">Search command or menus...</span>
-              <span className="inline-flex lg:hidden truncate">Search...</span>
+              <span className="hidden lg:inline-flex truncate">{t('searchCommandPlaceholder')}</span>
+              <span className="inline-flex lg:hidden truncate">{t('search')}</span>
             </div>
             <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex shrink-0 ml-2">
               <span className="text-xs">⌘</span>K
@@ -277,11 +277,11 @@ export const Header: React.FC<HeaderProps> = ({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" sideOffset={8}>
               <DropdownMenuItem onClick={() => setLanguage('en' as any)}>
-                English
+                {t('english')}
                 {language === 'en' && <Check className="ml-auto size-4 text-primary" />}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setLanguage('id' as any)}>
-                Indonesia
+                {t('indonesia')}
                 {language === 'id' && <Check className="ml-auto size-4 text-primary" />}
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -300,27 +300,27 @@ export const Header: React.FC<HeaderProps> = ({
                   <span className="absolute top-1 right-1 block h-1.5 w-1.5 rounded-full bg-rose-500" />
                 )}
               </TooltipTrigger>
-              <TooltipContent>Notifications</TooltipContent>
+              <TooltipContent>{t('notifications')}</TooltipContent>
             </Tooltip>
             <DropdownMenuContent align="end" sideOffset={8} className="w-[320px] p-0">
               <div className="px-4 py-3 flex justify-between items-center border-b border-border/10 bg-muted/20">
-                <h3 className="text-[13px] font-medium text-foreground">Notifications</h3>
+                <h3 className="text-[13px] font-medium text-foreground">{t('notifications')}</h3>
                 <div className="flex gap-3">
                   {unreadCount > 0 && (
                     <button onClick={markAllAsRead} className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground">
-                      Mark all read
+                      {t('markAllAsRead')}
                     </button>
                   )}
                   {notifications.length > 0 && (
                     <button onClick={clearAllNotifications} className="text-[10px] font-bold uppercase tracking-wider text-rose-500 hover:text-rose-600 transition-colors">
-                      Clear All
+                      {t('delete')}
                     </button>
                   )}
                 </div>
               </div>
               <div className="max-h-[350px] overflow-y-auto custom-scrollbar">
                 {notifications.length === 0 ? (
-                  <div className="py-10 text-center text-xs text-muted-foreground">Everything caught up!</div>
+                  <div className="py-10 text-center text-xs text-muted-foreground">{t('noNotifications')}</div>
                 ) : (
                   <div className="flex flex-col">
                     {notifications.map(n => (

@@ -32,7 +32,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { supabase } from './lib/supabaseClient';
 import { UserAccount, UserGroup } from './types';
 import { MOCK_GROUPS, APP_MENU_STRUCTURE, isAllowedEmailDomain, ALLOWED_EMAIL_DOMAINS } from './constants';
-import { Language, translations, LanguageContext } from './translations';
+import { Language, translations, LanguageContext, useLanguage, LanguageProvider } from './translations';
 import {
   LayoutGrid, LifeBuoy, Activity, Calendar, ShoppingCart, Package,
   Network, Folder, Shield, ChevronDown, ChevronRight, X, Users, Building2,
@@ -191,23 +191,24 @@ const InternalApp: React.FC = () => {
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [groupDefinitions, setGroupDefinitions] = useState<UserGroup[]>(MOCK_GROUPS);
   const [appSettings, setAppSettings] = useState({
-    name: 'CSL-LINK',
-    logo: '/image/logo.png',
-    primaryColor: '#2563eb',
-    fontFamily: 'Inter'
-  });
+      name: 'CSL-LINK',
+      logo: '/image/logo.png',
+      primaryColor: '#2563eb',
+      fontFamily: 'Inter'
+    });
 
-  const [language, setLanguageState] = useState<Language>('en');
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+    const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isCheckingSession, setIsCheckingSession] = useState(true);
 
-  const [globalSearchTerm, setGlobalSearchTerm] = useState("");
-  const [globalFloorFilter, setGlobalFloorFilter] = useState<'All' | 26 | 27>('All');
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
-  const [loadingMsgIdx, setLoadingMsgIdx] = useState(0);
+    const [globalSearchTerm, setGlobalSearchTerm] = useState("");
+    const [globalFloorFilter, setGlobalFloorFilter] = useState<'All' | 26 | 27>('All');
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+    const [loadingMsgIdx, setLoadingMsgIdx] = useState(0);
 
-  const LOADING_MESSAGES = [
+    const { language, setLanguage, t } = useLanguage();
+
+    const LOADING_MESSAGES = [
     "Synchronizing secure layers...",
     "Initializing core modules...",
     "Calibrating technical nodes...",
@@ -230,19 +231,16 @@ const InternalApp: React.FC = () => {
   console.log("App.tsx: Rendering InternalApp, isCheckingSession:", isCheckingSession);
 
   useEffect(() => {
-    console.log("App.tsx: Running initial effect...");
-    // Initialize Theme
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
+      console.log("App.tsx: Running initial effect...");
+      // Initialize Theme
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
 
-    const savedLang = localStorage.getItem('app_lang') as Language;
-    if (savedLang) setLanguageState(savedLang);
-
-    const checkSession = async () => {
+      const checkSession = async () => {
       console.log("App.tsx: Checking session...");
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -349,16 +347,7 @@ const InternalApp: React.FC = () => {
     if (!isCheckingSession) fetchSettings();
   }, [isCheckingSession]);
 
-  const setLanguage = (lang: Language) => {
-    setLanguageState(lang);
-    localStorage.setItem('app_lang', lang);
-  };
-
-  const t = (key: keyof typeof translations.en): string => {
-    return translations[language][key] || translations['en'][key] || key;
-  };
-
-  useEffect(() => {
+    useEffect(() => {
     const fetchGroups = async () => {
       const { data } = await supabase.from('user_groups').select('*');
       if (data && data.length > 0) {
@@ -615,7 +604,6 @@ const InternalApp: React.FC = () => {
   }, [currentUser]);
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t }}>
       <AnimatePresence mode="wait">
         {isCheckingSession ? (
           <SleekLoader />
@@ -773,22 +761,21 @@ const InternalApp: React.FC = () => {
                 )}
               </AnimatePresence>
 
-            </React.Suspense>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </LanguageContext.Provider>
-  );
-};
-
-// Wrapper Component to provide Router Context
+                          </React.Suspense>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  );
+                };
 const App: React.FC = () => {
   return (
     <Provider theme={defaultTheme} colorScheme="light">
-      <ToastProvider>
-        <InternalApp />
-        <Toaster />
-      </ToastProvider>
+      <LanguageProvider supabaseClient={supabase}>
+        <ToastProvider>
+          <InternalApp />
+          <Toaster />
+        </ToastProvider>
+      </LanguageProvider>
     </Provider>
   );
 };
@@ -812,6 +799,7 @@ const DashboardLayout: React.FC<any & { children?: React.ReactNode }> = ({
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useLanguage();
   const role = currentUser?.role?.toLowerCase() || '';
   const groups = currentUser?.groups || [];
   const currentView = location.pathname.substring(1) || 'dashboard';
@@ -996,7 +984,9 @@ const DashboardLayout: React.FC<any & { children?: React.ReactNode }> = ({
             <Breadcrumb className="hidden md:block">
               <BreadcrumbList className="gap-1.5">
                 <BreadcrumbItem>
-                  <BreadcrumbLink href="/" className="text-[13px] font-medium text-muted-foreground/60 hover:text-foreground">Home</BreadcrumbLink>
+                  <BreadcrumbLink href="/" className="text-[13px] font-medium text-muted-foreground/60 hover:text-foreground">
+                    {t('dashboard')}
+                  </BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="text-muted-foreground/30">
                   <ChevronRight size={13} />
@@ -1004,10 +994,13 @@ const DashboardLayout: React.FC<any & { children?: React.ReactNode }> = ({
                 <BreadcrumbItem>
                   <BreadcrumbPage className="text-[13px] font-medium text-foreground/80">
                     {(() => {
-                      if (!currentView || currentView === 'dashboard') return 'Dashboard';
+                      if (!currentView || currentView === 'dashboard') return t('menu_dashboard');
+                      const key = `menu_${currentView.replace(/-/g, '_')}`;
+                      const translated = t(key as any);
+                      if (translated && translated !== key) return translated;
                       const match = APP_MENU_STRUCTURE.find(m => m.id === currentView);
                       if (match) return match.label;
-                      if (currentView === 'profile') return 'Profil Pengguna';
+                      if (currentView === 'profile') return t('menu_profile');
                       return currentView.replace(/-/g, ' ');
                     })()}
                   </BreadcrumbPage>

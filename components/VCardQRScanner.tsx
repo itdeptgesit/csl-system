@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { QrCode, ScanLine, CameraOff, Upload } from 'lucide-react';
+import { useLanguage } from '../translations';
 
 interface VCardQRScannerProps {
   open: boolean;
@@ -20,6 +21,7 @@ interface VCardQRScannerProps {
 const SCANNER_ID = 'vcard-qr-scanner-region';
 
 export const VCardQRScanner: React.FC<VCardQRScannerProps> = ({ open, onClose, onResult }) => {
+  const { language } = useLanguage();
   const [error, setError] = useState<string | null>(null);
   const [scanning, setScanning] = useState(false);
   const scannerRef = useRef<Html5Qrcode | null>(null);
@@ -75,13 +77,13 @@ export const VCardQRScanner: React.FC<VCardQRScannerProps> = ({ open, onClose, o
         }).catch((err: any) => {
           const msg = err?.message || String(err);
           if (msg.toLowerCase().includes('permission')) {
-            setError('Akses kamera ditolak. Izinkan akses kamera di browser Anda.');
+            setError(language === 'en' ? 'Camera access denied. Please allow camera access in your browser.' : 'Akses kamera ditolak. Izinkan akses kamera di browser Anda.');
           } else {
-            setError('Tidak dapat membuka kamera. Pastikan perangkat Anda memiliki kamera.');
+            setError(language === 'en' ? 'Unable to open the camera. Make sure your device has a camera.' : 'Tidak dapat membuka kamera. Pastikan perangkat Anda memiliki kamera.');
           }
         });
       } catch (err: any) {
-        setError('Gagal menginisialisasi scanner. Coba refresh halaman.');
+        setError(language === 'en' ? 'Failed to initialize the scanner. Try refreshing the page.' : 'Gagal menginisialisasi scanner. Coba refresh halaman.');
       }
     }, 300);
 
@@ -109,7 +111,7 @@ export const VCardQRScanner: React.FC<VCardQRScannerProps> = ({ open, onClose, o
             Scan Business Card QR
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground mt-1">
-            Arahkan kamera ke QR code pada kartu nama. Data kontak akan otomatis terbaca.
+            {language === 'en' ? 'Point your camera at the QR code on the business card. Contact details will be read automatically.' : 'Arahkan kamera ke QR code pada kartu nama. Data kontak akan otomatis terbaca.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -155,13 +157,13 @@ export const VCardQRScanner: React.FC<VCardQRScannerProps> = ({ open, onClose, o
             {!scanning && !error && (
               <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-900">
                 <ScanLine className="w-10 h-10 text-violet-400 animate-pulse mb-2" />
-                <p className="text-zinc-400 text-xs font-medium">Membuka kamera...</p>
+                <p className="text-zinc-400 text-xs font-medium">{language === 'en' ? 'Opening camera...' : 'Membuka kamera...'}</p>
               </div>
             )}
           </div>
 
           <p className="text-center text-xs text-muted-foreground font-medium">
-            Pastikan QR code terlihat jelas dalam bingkai • Jaga tangan tetap stabil
+            {language === 'en' ? 'Make sure the QR code is clearly inside the frame • Keep your hand steady' : 'Pastikan QR code terlihat jelas dalam bingkai • Jaga tangan tetap stabil'}
           </p>
 
           <Button
@@ -170,7 +172,7 @@ export const VCardQRScanner: React.FC<VCardQRScannerProps> = ({ open, onClose, o
             className="w-full text-xs font-bold rounded-xl h-9 border-violet-300 text-violet-700 hover:bg-violet-50"
             onClick={handleClose}
           >
-            Batal / Tutup Kamera
+            {language === 'en' ? 'Cancel / Close Camera' : 'Batal / Tutup Kamera'}
           </Button>
         </div>
 

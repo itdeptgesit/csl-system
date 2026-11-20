@@ -41,61 +41,64 @@ export interface LkpmStoreData {
 
 export const INITIAL_LKPM_STORE: LkpmStoreData = rawData as LkpmStoreData;
 
-export function getDerivedStatus(unit: LkpmUnit, quarter: 'tw1' | 'tw2' | 'tw3' | 'tw4') {
+export function getDerivedStatus(unit: LkpmUnit, quarter: 'tw1' | 'tw2' | 'tw3' | 'tw4', lang: string = 'id') {
+  const isEn = lang === 'en';
   const qVal = unit.status[quarter];
 
   if (unit.sanksi) {
-    return { label: 'Sanksi', color: 'red', cat: 'sanksi' };
+    return { label: isEn ? 'Sanctioned' : 'Sanksi', color: 'red', cat: 'sanksi' };
   }
   if (unit.kategori_khusus === 'Tidak Wajib (Mikro)') {
-    return { label: 'Tidak Wajib', color: 'grey', cat: 'khusus' };
+    return { label: isEn ? 'Exempt' : 'Tidak Wajib', color: 'grey', cat: 'khusus' };
   }
   if (unit.kategori_khusus === 'Handover' && quarter !== 'tw1') {
     return { label: 'Handover', color: 'grey', cat: 'khusus' };
   }
   if (unit.kategori_khusus === 'Per-Semester' && (quarter === 'tw1' || quarter === 'tw3')) {
-    return { label: 'Per-Semester', color: 'blue', cat: 'khusus' };
+    return { label: isEn ? 'Semi-Annual' : 'Per-Semester', color: 'blue', cat: 'khusus' };
   }
 
   if (qVal === 'Lapor') {
     const hasSnk = Boolean(unit.document && unit.document.toUpperCase().includes('SNK'));
     if (!hasSnk && quarter === 'tw3' && unit.tahun === 2026) {
-      return { label: 'Bukti Kurang', color: 'amber', cat: 'bukti' };
+      return { label: isEn ? 'Missing Proof' : 'Bukti Kurang', color: 'amber', cat: 'bukti' };
     }
-    return { label: 'Terlapor', color: 'green', cat: 'terlapor' };
+    return { label: isEn ? 'Reported' : 'Terlapor', color: 'green', cat: 'terlapor' };
   }
 
   if (qVal === 'Belum') {
-    return { label: 'Belum Lapor', color: 'red', cat: 'belum' };
+    return { label: isEn ? 'Not Reported' : 'Belum Lapor', color: 'red', cat: 'belum' };
   }
 
   // Null cases
   if (unit.notes && unit.notes.toLowerCase().includes('cek')) {
-    return { label: 'Perlu Cek', color: 'amber', cat: 'cek' };
+    return { label: isEn ? 'Needs Check' : 'Perlu Cek', color: 'amber', cat: 'cek' };
   }
 
   if (unit.kategori_khusus === 'Per-Semester') {
-    return { label: 'Per-Semester', color: 'blue', cat: 'khusus' };
+    return { label: isEn ? 'Semi-Annual' : 'Per-Semester', color: 'blue', cat: 'khusus' };
   }
 
-  return { label: 'Belum Ada Catatan', color: 'grey', cat: 'khusus' };
+  return { label: isEn ? 'No Record' : 'Belum Ada Catatan', color: 'grey', cat: 'khusus' };
 }
 
-export function getQuarterDocNote(unit: LkpmUnit, quarter: 'tw1' | 'tw2' | 'tw3' | 'tw4') {
+export function getQuarterDocNote(unit: LkpmUnit, quarter: 'tw1' | 'tw2' | 'tw3' | 'tw4', lang: string = 'id') {
+  const isEn = lang === 'en';
+
   if (unit.kategori_khusus === 'Tidak Wajib (Mikro)') {
-    return 'Tidak wajib lapor';
+    return isEn ? 'Exempt from reporting' : 'Tidak wajib lapor';
   }
   if (unit.kategori_khusus === 'Handover') {
-    return quarter === 'tw1' ? 'Terlapor' : 'Handover ke PM';
+    return quarter === 'tw1' ? (isEn ? 'Reported' : 'Terlapor') : (isEn ? 'Handed over to PM' : 'Handover ke PM');
   }
   if (unit.kategori_khusus === 'Per-Semester') {
-    if (quarter === 'tw1' || quarter === 'tw3') return 'Bukan jadwal (semester)';
-    if (quarter === 'tw2') return 'Terlapor - semester I';
-    return 'Terlapor di semester II';
+    if (quarter === 'tw1' || quarter === 'tw3') return isEn ? 'Off-cycle (semi-annual)' : 'Bukan jadwal (semester)';
+    if (quarter === 'tw2') return isEn ? 'Reported - Semester I' : 'Terlapor - semester I';
+    return isEn ? 'Reported in Semester II' : 'Terlapor di semester II';
   }
 
   if (unit.tahun === 2026 && quarter === 'tw4') {
-    return unit.document ? unit.document : 'Periode berjalan - batas lapor Januari 2027';
+    return unit.document ? unit.document : (isEn ? 'In progress - deadline January 2027' : 'Periode berjalan - batas lapor Januari 2027');
   }
 
   if (unit.tahun === 2026 && quarter === 'tw3') {
@@ -103,19 +106,19 @@ export function getQuarterDocNote(unit: LkpmUnit, quarter: 'tw1' | 'tw2' | 'tw3'
       if (unit.document && unit.document.toUpperCase().includes('SNK')) {
         return unit.document;
       }
-      return 'Terlapor - nomor SNK belum dicatat';
+      return isEn ? 'Reported - SNK number pending' : 'Terlapor - nomor SNK belum dicatat';
     }
     if (unit.status.tw3 === 'Belum') {
-      return unit.notes ? `Belum lapor (${unit.notes})` : 'Belum lapor';
+      return unit.notes ? `${isEn ? 'Not reported' : 'Belum lapor'} (${unit.notes})` : (isEn ? 'Not reported' : 'Belum lapor');
     }
   }
 
   if (unit.status[quarter] === 'Lapor') {
-    return unit.document ? unit.document : 'Terlapor';
+    return unit.document ? unit.document : (isEn ? 'Reported' : 'Terlapor');
   }
   if (unit.status[quarter] === 'Belum') {
-    return unit.notes ? `Belum lapor (${unit.notes})` : 'Belum lapor';
+    return unit.notes ? `${isEn ? 'Not reported' : 'Belum lapor'} (${unit.notes})` : (isEn ? 'Not reported' : 'Belum lapor');
   }
 
-  return 'Belum ada catatan';
+  return isEn ? 'No record' : 'Belum ada catatan';
 }

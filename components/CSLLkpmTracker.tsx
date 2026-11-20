@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { UserAccount } from '../types';
+import { useLanguage } from '../translations';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -58,6 +59,7 @@ interface CSLLkpmTrackerProps {
 }
 
 export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) => {
+  const { language } = useLanguage();
   // Store data
   const [store, setStore] = useState<LkpmStoreData>(() => {
     try {
@@ -126,19 +128,20 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
 
   // Available status chips for active year
   const statusOptions = useMemo(() => {
+    const isEn = language === 'en';
     if (selectedYear === 2026) {
       return [
-        { id: 'all', label: 'Semua Status' },
-        { id: 'belum', label: 'Belum Lapor' },
-        { id: 'bukti', label: 'Bukti Kurang' },
-        { id: 'sanksi', label: 'Sanksi' },
+        { id: 'all', label: isEn ? 'All Status' : 'Semua Status' },
+        { id: 'belum', label: isEn ? 'Not Reported' : 'Belum Lapor' },
+        { id: 'bukti', label: isEn ? 'Missing Proof' : 'Bukti Kurang' },
+        { id: 'sanksi', label: isEn ? 'Sanctions' : 'Sanksi' },
       ];
     }
     return [
-      { id: 'all', label: 'Semua Status' },
-      { id: 'cek', label: 'Perlu Cek' },
+      { id: 'all', label: isEn ? 'All Status' : 'Semua Status' },
+      { id: 'cek', label: isEn ? 'Needs Check' : 'Perlu Cek' },
     ];
-  }, [selectedYear]);
+  }, [selectedYear, language]);
 
   // Copy helper
   const handleCopy = (text: string, id: string) => {
@@ -377,6 +380,7 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
 
   // Action Items / Todo for Analisis view
   const todoItems = useMemo(() => {
+    const isEn = language === 'en';
     if (selectedYear === 2026) {
       return [
         {
@@ -384,9 +388,9 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
           perusahaan: 'Bersinar Abadi Energi',
           grup: 'Mining Holding',
           kbli: '08105',
-          masalah: 'Sanksi aktif - bukti lapor belum tercatat',
+          masalah: isEn ? 'Active sanction - reporting proof unrecorded' : 'Sanksi aktif - bukti lapor belum tercatat',
           pic: '-',
-          status: 'Sanksi',
+          status: isEn ? 'Sanctioned' : 'Sanksi',
           color: 'red',
         },
         {
@@ -394,9 +398,9 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
           perusahaan: 'Terang Abadi Energi',
           grup: 'Mining Holding',
           kbli: '08105',
-          masalah: 'Sanksi aktif - bukti lapor belum tercatat',
+          masalah: isEn ? 'Active sanction - reporting proof unrecorded' : 'Sanksi aktif - bukti lapor belum tercatat',
           pic: '-',
-          status: 'Sanksi',
+          status: isEn ? 'Sanctioned' : 'Sanksi',
           color: 'red',
         },
         {
@@ -404,9 +408,9 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
           perusahaan: 'Dinamika Sejahtera Mandiri',
           grup: 'Mining Operating',
           kbli: '07293',
-          masalah: '3 KBLI belum terlapor - ditangani legal GNR',
+          masalah: isEn ? '3 KBLIs pending reporting - handled by GNR legal' : '3 KBLI belum terlapor - ditangani legal GNR',
           pic: 'Hansdi',
-          status: 'Belum Lapor',
+          status: isEn ? 'Not Reported' : 'Belum Lapor',
           color: 'red',
         },
         {
@@ -414,9 +418,9 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
           perusahaan: 'Kalimantan Alumina Nusantara',
           grup: 'Mining Operating',
           kbli: '46620',
-          masalah: '2 KBLI belum terlapor - ditangani legal KAN',
+          masalah: isEn ? '2 KBLIs pending reporting - handled by KAN legal' : '2 KBLI belum terlapor - ditangani legal KAN',
           pic: '-',
-          status: 'Belum Lapor',
+          status: isEn ? 'Not Reported' : 'Belum Lapor',
           color: 'red',
         },
         {
@@ -424,9 +428,9 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
           perusahaan: 'Alakasa Extrusindo',
           grup: 'Business Company',
           kbli: '68111',
-          masalah: 'Terlapor TW III - nomor SNK belum dicatat',
+          masalah: isEn ? 'Q3 reported - SNK certificate number not yet recorded' : 'Terlapor TW III - nomor SNK belum dicatat',
           pic: 'Petrus',
-          status: 'Bukti Kurang',
+          status: isEn ? 'Missing Proof' : 'Bukti Kurang',
           color: 'amber',
         },
         {
@@ -434,9 +438,9 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
           perusahaan: 'Gesit Intrade',
           grup: 'Business Company',
           kbli: '46511',
-          masalah: '4 KBLI terlapor - nomor SNK belum dicatat',
+          masalah: isEn ? '4 KBLIs reported - SNK certificate numbers pending' : '4 KBLI terlapor - nomor SNK belum dicatat',
           pic: 'Desi',
-          status: 'Bukti Kurang',
+          status: isEn ? 'Missing Proof' : 'Bukti Kurang',
           color: 'amber',
         },
       ];
@@ -447,9 +451,9 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
           perusahaan: 'PT Sinar Bangsa',
           grup: 'Business Company',
           kbli: '68200',
-          masalah: 'Satu NKU tercatat untuk dua KBLI (68200 & 68111)',
+          masalah: isEn ? 'Single NKU recorded for two KBLIs (68200 & 68111)' : 'Satu NKU tercatat untuk dua KBLI (68200 & 68111)',
           pic: '-',
-          status: 'Perlu Cek',
+          status: isEn ? 'Needs Check' : 'Perlu Cek',
           color: 'amber',
         },
         {
@@ -457,14 +461,14 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
           perusahaan: 'PT Sinar Bangsa',
           grup: 'Business Company',
           kbli: '68111',
-          masalah: 'Satu NKU tercatat untuk dua KBLI (68200 & 68111)',
+          masalah: isEn ? 'Single NKU recorded for two KBLIs (68200 & 68111)' : 'Satu NKU tercatat untuk dua KBLI (68200 & 68111)',
           pic: '-',
-          status: 'Perlu Cek',
+          status: isEn ? 'Needs Check' : 'Perlu Cek',
           color: 'amber',
         },
       ];
     }
-  }, [units, selectedYear]);
+  }, [units, selectedYear, language]);
 
   // Color classes helper for Chips & Badges
   const getBadgeClasses = (color: string) => {
@@ -518,9 +522,9 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
     <div className="w-full space-y-6">
       {/* Title & Actions Bar */}
       <PageHeader
-        title="Tracking Pelaporan LKPM"
+        title={language === 'en' ? 'LKPM Reporting Tracker' : 'Tracking Pelaporan LKPM'}
         subtitle="ROUTINE ACTIVITY · REGULATORY COMPLIANCE"
-        description="Monitoring jadwal dan status kepatuhan pelaporan LKPM seluruh entitas usaha"
+        description={language === 'en' ? 'Monitoring investment activity reporting (LKPM) schedules and compliance across all entities' : 'Monitoring jadwal dan status kepatuhan pelaporan LKPM seluruh entitas usaha'}
       >
 
         <div className="flex flex-wrap items-center gap-2">
@@ -564,19 +568,19 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
             className="gap-1.5 text-xs font-semibold shadow-xs hover:bg-slate-50 dark:hover:bg-slate-800"
           >
             <Download className="size-3.5" />
-            <span>Ekspor Excel</span>
+            <span>{language === 'en' ? 'Export Excel' : 'Ekspor Excel'}</span>
           </Button>
 
           <Button
             variant="outline"
             size="sm"
             onClick={() =>
-              toast.info('Impor memakai template Excel CSL-LINK. Untuk data awal, gunakan file lkpm_data.json.')
+              toast.info(language === 'en' ? 'Import uses CSL-LINK Excel template.' : 'Impor memakai template Excel CSL-LINK. Untuk data awal, gunakan file lkpm_data.json.')
             }
             className="gap-1.5 text-xs font-semibold shadow-xs hover:bg-slate-50 dark:hover:bg-slate-800"
           >
             <Upload className="size-3.5" />
-            <span>Impor Excel</span>
+            <span>{language === 'en' ? 'Import Excel' : 'Impor Excel'}</span>
           </Button>
 
           <Button
@@ -585,14 +589,14 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
             className="gap-1.5 text-xs font-bold bg-[#0a2540] hover:bg-[#16375c] text-white shadow-xs"
           >
             <Plus className="size-3.5" />
-            <span>Tambah Data</span>
+            <span>{language === 'en' ? 'Add Unit' : 'Tambah Data'}</span>
           </Button>
 
           <Button
             variant="outline"
             size="icon"
             onClick={handleReload}
-            title="Muat ulang dari lkpm_data.json"
+            title={language === 'en' ? 'Reload from lkpm_data.json' : 'Muat ulang dari lkpm_data.json'}
             className="size-8 text-slate-500 hover:text-slate-900"
           >
             <RefreshCw className="size-3.5" />
@@ -611,7 +615,7 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
           }`}
         >
           <BarChart3 className="size-3.5" />
-          <span>Analisis</span>
+          <span>{language === 'en' ? 'Analysis' : 'Analisis'}</span>
         </button>
         <button
           onClick={() => setActiveTab('comp')}
@@ -622,7 +626,7 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
           }`}
         >
           <Building2 className="size-3.5" />
-          <span>Perusahaan</span>
+          <span>{language === 'en' ? 'Comprehensive' : 'Perusahaan'}</span>
         </button>
       </div>
 
@@ -643,10 +647,10 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
                   {selectedYear === 2026 ? '81' : '49'}
                 </div>
                 <div className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-1">
-                  Perusahaan Terdaftar
+                  {language === 'en' ? 'Registered Companies' : 'Perusahaan Terdaftar'}
                 </div>
                 <div className="text-[11px] text-slate-500 mt-0.5">
-                  {selectedYear === 2026 ? '4 grup usaha · data 2026' : 'Data 2025'}
+                  {selectedYear === 2026 ? (language === 'en' ? '4 business groups · 2026 data' : '4 grup usaha · data 2026') : (language === 'en' ? '2025 Data' : 'Data 2025')}
                 </div>
               </div>
             </div>
@@ -663,10 +667,10 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
                   {selectedYear === 2026 ? '70' : '52'}
                 </div>
                 <div className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-1">
-                  Baris KBLI / NKU
+                  {language === 'en' ? 'KBLI / NKU Rows' : 'Baris KBLI / NKU'}
                 </div>
                 <div className="text-[11px] text-slate-500 mt-0.5">
-                  Unit kegiatan yang dilacak
+                  {language === 'en' ? 'Tracked activity units' : 'Unit kegiatan yang dilacak'}
                 </div>
               </div>
             </div>
@@ -686,10 +690,10 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
                   {selectedYear === 2026 ? '33' : '52'}
                 </div>
                 <div className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-1">
-                  {selectedYear === 2026 ? 'Terlapor - TW III 2026' : 'Terlapor - TW IV 2025'}
+                  {selectedYear === 2026 ? (language === 'en' ? 'Reported - Q3 2026' : 'Terlapor - TW III 2026') : (language === 'en' ? 'Reported - Q4 2025' : 'Terlapor - TW IV 2025')}
                 </div>
                 <div className="text-[11px] text-slate-500 mt-0.5">
-                  {selectedYear === 2026 ? 'Dari 70 baris KBLI/NKU' : 'Dari 52 baris KBLI/NKU'}
+                  {selectedYear === 2026 ? (language === 'en' ? 'Of 70 KBLI/NKU rows' : 'Dari 70 baris KBLI/NKU') : (language === 'en' ? 'Of 52 KBLI/NKU rows' : 'Dari 52 baris KBLI/NKU')}
                 </div>
               </div>
             </div>
@@ -701,7 +705,7 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
                   <AlertTriangle className="size-5" />
                 </div>
                 <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300">
-                  {selectedYear === 2026 ? '23 baris' : '0 baris'}
+                  {selectedYear === 2026 ? (language === 'en' ? '23 rows' : '23 baris') : (language === 'en' ? '0 rows' : '0 baris')}
                 </span>
               </div>
               <div>
@@ -709,10 +713,10 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
                   {selectedYear === 2026 ? '23' : '0'}
                 </div>
                 <div className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-1">
-                  {selectedYear === 2026 ? 'Belum Lapor - TW III' : 'Belum Lapor - TW IV'}
+                  {selectedYear === 2026 ? (language === 'en' ? 'Not Reported - Q3' : 'Belum Lapor - TW III') : (language === 'en' ? 'Not Reported - Q4' : 'Belum Lapor - TW IV')}
                 </div>
                 <div className="text-[11px] text-slate-500 mt-0.5">
-                  {selectedYear === 2026 ? 'Umumnya ditangani legal GNR / KAN' : 'Tahun 2025 tuntas'}
+                  {selectedYear === 2026 ? (language === 'en' ? 'Mainly handled by GNR / KAN legal' : 'Umumnya ditangani legal GNR / KAN') : (language === 'en' ? 'Year 2025 completed' : 'Tahun 2025 tuntas')}
                 </div>
               </div>
             </div>
@@ -725,10 +729,10 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
               <div>
                 <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
                   <BarChart3 className="size-4 text-blue-600" />
-                  {selectedYear === 2026 ? 'Progress per Grup - TW III 2026' : 'Progress per Grup - TW IV 2025'}
+                  {selectedYear === 2026 ? (language === 'en' ? 'Progress by Group - Q3 2026' : 'Progress per Grup - TW III 2026') : (language === 'en' ? 'Progress by Group - Q4 2025' : 'Progress per Grup - TW IV 2025')}
                 </h3>
                 <p className="text-xs text-slate-500 mt-1 mb-5">
-                  Baris terlapor dari total baris KBLI/NKU per grup.
+                  {language === 'en' ? 'Reported rows of total KBLI/NKU rows per group.' : 'Baris terlapor dari total baris KBLI/NKU per grup.'}
                 </p>
 
                 {selectedYear === 2026 ? (
@@ -737,7 +741,7 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
                     <div>
                       <div className="flex justify-between text-xs font-bold mb-1.5 text-slate-800 dark:text-slate-200">
                         <span>Mining Holding</span>
-                        <span className="text-slate-500">8 dari 13 (62%)</span>
+                        <span className="text-slate-500">{language === 'en' ? '8 of 13 (62%)' : '8 dari 13 (62%)'}</span>
                       </div>
                       <div className="w-full bg-slate-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
                         <div className="bg-blue-600 h-full rounded-full" style={{ width: '62%' }} />
@@ -748,7 +752,7 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
                     <div>
                       <div className="flex justify-between text-xs font-bold mb-1.5 text-slate-800 dark:text-slate-200">
                         <span>Business Company</span>
-                        <span className="text-slate-500">23 dari 32 (72%)</span>
+                        <span className="text-slate-500">{language === 'en' ? '23 of 32 (72%)' : '23 dari 32 (72%)'}</span>
                       </div>
                       <div className="w-full bg-slate-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
                         <div className="bg-blue-600 h-full rounded-full" style={{ width: '72%' }} />
@@ -759,7 +763,7 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
                     <div>
                       <div className="flex justify-between text-xs font-bold mb-1.5 text-slate-800 dark:text-slate-200">
                         <span>Mining Operating Companies</span>
-                        <span className="text-slate-500">2 dari 25 (8%)</span>
+                        <span className="text-slate-500">{language === 'en' ? '2 of 25 (8%)' : '2 dari 25 (8%)'}</span>
                       </div>
                       <div className="w-full bg-slate-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
                         <div className="bg-rose-600 h-full rounded-full" style={{ width: '8%' }} />
@@ -769,8 +773,8 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
                     {/* Di luar jadwal */}
                     <div>
                       <div className="flex justify-between text-xs font-bold mb-1.5 text-slate-800 dark:text-slate-200">
-                        <span>Di luar jadwal TW III</span>
-                        <span className="text-slate-500">14 baris (20%)</span>
+                        <span>{language === 'en' ? 'Off-schedule Q3' : 'Di luar jadwal TW III'}</span>
+                        <span className="text-slate-500">{language === 'en' ? '14 rows (20%)' : '14 baris (20%)'}</span>
                       </div>
                       <div className="w-full bg-slate-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
                         <div className="bg-amber-500 h-full rounded-full" style={{ width: '20%' }} />
@@ -783,7 +787,7 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
                     <div>
                       <div className="flex justify-between text-xs font-bold mb-1.5 text-slate-800 dark:text-slate-200">
                         <span>Mining Company</span>
-                        <span className="text-slate-500">29 dari 29 (100%)</span>
+                        <span className="text-slate-500">{language === 'en' ? '29 of 29 (100%)' : '29 dari 29 (100%)'}</span>
                       </div>
                       <div className="w-full bg-slate-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
                         <div className="bg-emerald-600 h-full rounded-full" style={{ width: '100%' }} />
@@ -794,7 +798,7 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
                     <div>
                       <div className="flex justify-between text-xs font-bold mb-1.5 text-slate-800 dark:text-slate-200">
                         <span>Business Company</span>
-                        <span className="text-slate-500">23 dari 23 (100%)</span>
+                        <span className="text-slate-500">{language === 'en' ? '23 of 23 (100%)' : '23 dari 23 (100%)'}</span>
                       </div>
                       <div className="w-full bg-slate-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
                         <div className="bg-emerald-600 h-full rounded-full" style={{ width: '100%' }} />
@@ -806,8 +810,8 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
 
               <p className="text-[11px] text-slate-500 mt-5 pt-3 border-t border-slate-100 dark:border-slate-800">
                 {selectedYear === 2026
-                  ? 'Kategori di luar jadwal: pelaporan per-semester, skala mikro tidak wajib lapor, dan handover ke PM.'
-                  : 'Semua unit terlapor di TW IV - tahun 2025 ditutup lengkap.'}
+                  ? (language === 'en' ? 'Off-schedule categories: semester reports, micro scale exempt, and handover to PM.' : 'Kategori di luar jadwal: pelaporan per-semester, skala mikro tidak wajib lapor, dan handover ke PM.')
+                  : (language === 'en' ? 'All units reported in Q4 - year 2025 fully closed.' : 'Semua unit terlapor di TW IV - tahun 2025 ditutup lengkap.')}
               </p>
             </div>
 
@@ -816,10 +820,10 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
               <div>
                 <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
                   <AlertTriangle className="size-4 text-amber-600" />
-                  Perlu Perhatian
+                  {language === 'en' ? 'Needs Attention' : 'Perlu Perhatian'}
                 </h3>
                 <p className="text-xs text-slate-500 mt-1 mb-4">
-                  Temuan dari data tracker berjalan.
+                  {language === 'en' ? 'Findings from active tracker data.' : 'Temuan dari data tracker berjalan.'}
                 </p>
 
                 {selectedYear === 2026 ? (
@@ -918,17 +922,17 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
           {/* Action Items / To-Do Table */}
           <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
             <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4">
-              Daftar Tindak Lanjut &amp; Perhatian Khusus
+              {language === 'en' ? 'Follow-Up & Priority Action Items' : 'Daftar Tindak Lanjut & Perhatian Khusus'}
             </h3>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
                   <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500">
-                    <th className="py-3 px-3 font-bold uppercase tracking-wider text-[11px]">Perusahaan</th>
-                    <th className="py-3 px-3 font-bold uppercase tracking-wider text-[11px]">Masalah</th>
+                    <th className="py-3 px-3 font-bold uppercase tracking-wider text-[11px]">{language === 'en' ? 'Company' : 'Perusahaan'}</th>
+                    <th className="py-3 px-3 font-bold uppercase tracking-wider text-[11px]">{language === 'en' ? 'Issue' : 'Masalah'}</th>
                     <th className="py-3 px-3 font-bold uppercase tracking-wider text-[11px]">PIC</th>
                     <th className="py-3 px-3 font-bold uppercase tracking-wider text-[11px]">Status</th>
-                    <th className="py-3 px-3 font-bold uppercase tracking-wider text-[11px] text-right">Aksi</th>
+                    <th className="py-3 px-3 font-bold uppercase tracking-wider text-[11px] text-right">{language === 'en' ? 'Actions' : 'Aksi'}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
@@ -974,10 +978,10 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
                               if (target) openEditModal(target);
                             }}
                             className="h-7 px-2.5 text-[11px] font-semibold gap-1 rounded-full hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 border-slate-200"
-                            title="Ubah data LKPM"
+                            title={language === 'en' ? 'Edit LKPM data' : 'Ubah data LKPM'}
                           >
                             <Pencil className="size-3" />
-                            <span>Edit</span>
+                            <span>{language === 'en' ? 'Edit' : 'Edit'}</span>
                           </Button>
                           <Button
                             variant="outline"
@@ -989,7 +993,7 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
                             }}
                             className="h-7 px-2.5 text-[11px] font-semibold gap-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
                           >
-                            <span>Detail</span>
+                            <span>{language === 'en' ? 'Detail' : 'Detail'}</span>
                             <ChevronRight className="size-3" />
                           </Button>
                         </div>
@@ -1002,7 +1006,9 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
           </div>
 
           <p className="text-center text-xs text-slate-500 pt-2">
-            Data dari lkpm_data.json - ekstrak terverifikasi dari tracker Excel CSL · Mockup: cangkang CSL-LINK, susunan data ala Dewi.
+            {language === 'en'
+              ? 'Data from lkpm_data.json - verified extraction from CSL tracker.'
+              : 'Data dari lkpm_data.json - ekstrak terverifikasi dari tracker Excel CSL · Mockup: cangkang CSL-LINK, susunan data ala Dewi.'}
           </p>
         </div>
       )}
@@ -1021,7 +1027,7 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
                   : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-50'
               }`}
             >
-              Semua Grup
+              {language === 'en' ? 'All Groups' : 'Semua Grup'}
             </button>
             {groupOptions.map((g) => (
               <button
@@ -1059,7 +1065,7 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
               <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <Input
                 type="text"
-                placeholder="Cari perusahaan / KBLI / NKU..."
+                placeholder={language === 'en' ? 'Search company / KBLI / NKU...' : 'Cari perusahaan / KBLI / NKU...'}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9 h-9 rounded-full text-xs bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
@@ -1074,27 +1080,27 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
                 <thead>
                   <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 bg-slate-50/60 dark:bg-slate-800/60">
                     <th className="py-3 px-4 font-bold uppercase tracking-wider text-[11px] min-w-[220px]">
-                      Perusahaan
+                      {language === 'en' ? 'Company' : 'Perusahaan'}
                     </th>
                     <th className="py-3 px-3 font-bold uppercase tracking-wider text-[11px]">KBLI</th>
                     <th className="py-3 px-3 font-bold uppercase tracking-wider text-[11px] min-w-[190px]">NKU</th>
                     <th className="py-3 px-3 font-bold uppercase tracking-wider text-[11px]">PIC</th>
-                    <th className="py-3 px-2 font-bold uppercase tracking-wider text-[11px] text-center">TW I</th>
+                    <th className="py-3 px-2 font-bold uppercase tracking-wider text-[11px] text-center">{language === 'en' ? 'Q1' : 'TW I'}</th>
                     <th
                       className="py-3 px-2 font-bold uppercase tracking-wider text-[11px] text-center"
-                      title="Triwulan II / Batas Lapor Semester I"
+                      title={language === 'en' ? 'Quarter II / Sem I Deadline' : 'Triwulan II / Batas Lapor Semester I'}
                     >
-                      TW II
+                      {language === 'en' ? 'Q2' : 'TW II'}
                       <span className="block text-[8.5px] font-semibold text-blue-600/90 dark:text-blue-400 lowercase -mt-0.5 tracking-normal">
                         / sem I
                       </span>
                     </th>
-                    <th className="py-3 px-2 font-bold uppercase tracking-wider text-[11px] text-center">TW III</th>
+                    <th className="py-3 px-2 font-bold uppercase tracking-wider text-[11px] text-center">{language === 'en' ? 'Q3' : 'TW III'}</th>
                     <th
                       className="py-3 px-2 font-bold uppercase tracking-wider text-[11px] text-center"
-                      title="Triwulan IV / Batas Lapor Semester II"
+                      title={language === 'en' ? 'Quarter IV / Sem II Deadline' : 'Triwulan IV / Batas Lapor Semester II'}
                     >
-                      TW IV
+                      {language === 'en' ? 'Q4' : 'TW IV'}
                       <span className="block text-[8.5px] font-semibold text-blue-600/90 dark:text-blue-400 lowercase -mt-0.5 tracking-normal">
                         / sem II
                       </span>
@@ -1102,19 +1108,19 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
                     <th className="py-3 px-3 font-bold uppercase tracking-wider text-[11px]">
                       Status {focusQuarterLabel}
                     </th>
-                    <th className="py-3 px-4 font-bold uppercase tracking-wider text-[11px] text-right">Aksi</th>
+                    <th className="py-3 px-4 font-bold uppercase tracking-wider text-[11px] text-right">{language === 'en' ? 'Actions' : 'Aksi'}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
                   {filteredUnits.length === 0 ? (
                     <tr>
                       <td colSpan={10} className="py-12 text-center text-slate-500">
-                        Tidak ada baris yang cocok dengan filter atau kata kunci.
+                        {language === 'en' ? 'No rows match filter criteria or search keyword.' : 'Tidak ada baris yang cocok dengan filter atau kata kunci.'}
                       </td>
                     </tr>
                   ) : (
                     filteredUnits.map((u) => {
-                      const derived = getDerivedStatus(u, focusQuarter);
+                      const derived = getDerivedStatus(u, focusQuarter, language);
                       return (
                         <tr
                           key={u.id}
@@ -1219,10 +1225,10 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
                                   openEditModal(u);
                                 }}
                                 className="h-7 px-2.5 text-[11px] font-semibold gap-1 rounded-full hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 border-slate-200"
-                                title="Ubah status & data LKPM"
+                                title={language === 'en' ? 'Edit LKPM status & data' : 'Ubah status & data LKPM'}
                               >
                                 <Pencil className="size-3" />
-                                <span>Edit</span>
+                                <span>{language === 'en' ? 'Edit' : 'Edit'}</span>
                               </Button>
                               <Button
                                 variant="outline"
@@ -1233,7 +1239,7 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
                                 }}
                                 className="h-7 px-2.5 text-[11px] font-semibold gap-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
                               >
-                                <span>Detail</span>
+                                <span>{language === 'en' ? 'Detail' : 'Detail'}</span>
                                 <ChevronRight className="size-3" />
                               </Button>
                             </div>
@@ -1248,7 +1254,9 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
           </div>
 
           <p className="text-center text-xs text-slate-500 pt-2">
-            Menampilkan {filteredUnits.length} dari {units.length} baris unit kegiatan LKPM {selectedYear} · Klik baris untuk detail per triwulan &amp; bukti lapor.
+            {language === 'en'
+              ? `Showing ${filteredUnits.length} of ${units.length} LKPM ${selectedYear} activity unit rows · Click row for quarterly details & filing proof.`
+              : `Menampilkan ${filteredUnits.length} dari ${units.length} baris unit kegiatan LKPM ${selectedYear} · Klik baris untuk detail per triwulan & bukti lapor.`}
           </p>
         </div>
       )}
@@ -1272,7 +1280,7 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
                     {selectedUnit.perusahaan}
                   </h2>
                   <p className="text-xs text-slate-500 font-semibold mt-1">
-                    {selectedUnit.grup} · Pelaporan LKPM {selectedYear}
+                    {selectedUnit.grup} · {language === 'en' ? `LKPM Reporting ${selectedYear}` : `Pelaporan LKPM ${selectedYear}`}
                   </p>
                 </div>
                 <div className="flex items-center gap-1.5">
@@ -1280,10 +1288,10 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
                     size="sm"
                     onClick={() => openEditModal(selectedUnit)}
                     className="h-8 px-3 text-xs font-semibold gap-1.5 bg-[#0a2540] hover:bg-[#16375c] text-white rounded-lg shadow-xs"
-                    title="Ubah data unit kegiatan ini"
+                    title={language === 'en' ? 'Edit this activity unit data' : 'Ubah data unit kegiatan ini'}
                   >
                     <Pencil className="size-3.5" />
-                    <span>Ubah</span>
+                    <span>{language === 'en' ? 'Edit' : 'Ubah'}</span>
                   </Button>
                   <button
                     onClick={() => setSelectedUnit(null)}
@@ -1324,7 +1332,7 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
                         onClick={() => handleCopy(selectedUnit.nku, 'panel-nku')}
                         className="text-[10px] font-bold text-blue-600 hover:underline flex items-center gap-1"
                       >
-                        {copiedId === 'panel-nku' ? 'Disalin!' : 'Salin'}
+                        {copiedId === 'panel-nku' ? (language === 'en' ? 'Copied!' : 'Disalin!') : (language === 'en' ? 'Copy' : 'Salin')}
                       </button>
                     )}
                   </div>
@@ -1339,7 +1347,7 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
                   </span>
                   <div>
                     {(() => {
-                      const d = getDerivedStatus(selectedUnit, focusQuarter);
+                      const d = getDerivedStatus(selectedUnit, focusQuarter, language);
                       return (
                         <span
                           className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${getBadgeClasses(
@@ -1358,11 +1366,13 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
               {/* Rincian Per Triwulan / Semester */}
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
-                  {selectedUnit.kategori_khusus === 'Per-Semester' ? 'Rincian Per Semester' : 'Rincian Per Triwulan'}
+                  {selectedUnit.kategori_khusus === 'Per-Semester'
+                    ? (language === 'en' ? 'Semi-Annual Breakdown' : 'Rincian Per Semester')
+                    : (language === 'en' ? 'Quarterly Breakdown' : 'Rincian Per Triwulan')}
                 </h3>
                 {selectedUnit.kategori_khusus === 'Per-Semester' && (
                   <span className="text-[10px] font-bold text-blue-700 bg-blue-50 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-800 px-2 py-0.5 rounded-full">
-                    Skala Usaha Kecil
+                    {language === 'en' ? 'Small Scale' : 'Skala Usaha Kecil'}
                   </span>
                 )}
               </div>
@@ -1371,28 +1381,28 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
                 {selectedUnit.kategori_khusus === 'Per-Semester' ? (
                   [
                     {
-                      label: 'Semester I (Januari – Juni)',
-                      deadline: 'Batas lapor: 1–10 Juli (TW II)',
+                      label: language === 'en' ? 'Semester I (January – June)' : 'Semester I (Januari – Juni)',
+                      deadline: language === 'en' ? 'Deadline: 1–10 July (Q2)' : 'Batas lapor: 1–10 Juli (TW II)',
                       val: selectedUnit.status.tw2,
                       note:
                         selectedUnit.status.tw2 === 'Lapor'
-                          ? selectedUnit.document || 'Terlapor - Semester I'
+                          ? selectedUnit.document || (language === 'en' ? 'Reported - Semester I' : 'Terlapor - Semester I')
                           : selectedUnit.status.tw2 === 'Belum'
-                          ? 'Belum lapor Semester I'
-                          : 'Belum ada catatan',
+                          ? (language === 'en' ? 'Pending Semester I report' : 'Belum lapor Semester I')
+                          : (language === 'en' ? 'No record' : 'Belum ada catatan'),
                     },
                     {
-                      label: 'Semester II (Juli – Desember)',
-                      deadline: 'Batas lapor: 1–10 Januari (TW IV)',
+                      label: language === 'en' ? 'Semester II (July – December)' : 'Semester II (Juli – Desember)',
+                      deadline: language === 'en' ? 'Deadline: 1–10 January (Q4)' : 'Batas lapor: 1–10 Januari (TW IV)',
                       val: selectedUnit.status.tw4,
                       note:
                         selectedUnit.status.tw4 === 'Lapor'
-                          ? selectedUnit.document || 'Terlapor - Semester II'
+                          ? selectedUnit.document || (language === 'en' ? 'Reported - Semester II' : 'Terlapor - Semester II')
                           : selectedUnit.status.tw4 === 'Belum'
-                          ? 'Belum lapor Semester II'
+                          ? (language === 'en' ? 'Pending Semester II report' : 'Belum lapor Semester II')
                           : selectedUnit.tahun === 2026
-                          ? 'Periode berjalan - batas lapor Januari 2027'
-                          : 'Belum ada catatan',
+                          ? (language === 'en' ? 'In progress - deadline January 2027' : 'Periode berjalan - batas lapor Januari 2027')
+                          : (language === 'en' ? 'No record' : 'Belum ada catatan'),
                     },
                   ].map((sem) => (
                     <div
@@ -1417,9 +1427,9 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
                   ))
                 ) : (
                   (['tw1', 'tw2', 'tw3', 'tw4'] as const).map((qKey, qIdx) => {
-                    const qLabels = ['TW I', 'TW II', 'TW III', 'TW IV'];
+                    const qLabels = language === 'en' ? ['Q1', 'Q2', 'Q3', 'Q4'] : ['TW I', 'TW II', 'TW III', 'TW IV'];
                     const qVal = selectedUnit.status[qKey];
-                    const docNote = getQuarterDocNote(selectedUnit, qKey);
+                    const docNote = getQuarterDocNote(selectedUnit, qKey, language);
 
                     return (
                       <div
@@ -1444,25 +1454,33 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
               {/* Note Alert Box */}
               {selectedUnit.sanksi && (
                 <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-rose-900 dark:text-rose-200 text-xs font-medium leading-relaxed">
-                  Menerima sanksi - jenis sanksi dan tindak lanjutnya belum tercatat di tracker.
+                  {language === 'en'
+                    ? 'Active sanction - sanction type and follow-up actions not yet recorded in tracker.'
+                    : 'Menerima sanksi - jenis sanksi dan tindak lanjutnya belum tercatat di tracker.'}
                 </div>
               )}
 
               {selectedUnit.kategori_khusus === 'Tidak Wajib (Mikro)' && (
                 <div className="p-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium leading-relaxed">
-                  Skala usaha mikro - tidak wajib lapor LKPM (Pasal 286 ayat (2)). Baris ini dikecualikan dari hitungan wajib lapor.
+                  {language === 'en'
+                    ? 'Micro enterprise scale - exempt from LKPM reporting (Article 286 para (2)). This row is excluded from mandatory count.'
+                    : 'Skala usaha mikro - tidak wajib lapor LKPM (Pasal 286 ayat (2)). Baris ini dikecualikan dari hitungan wajib lapor.'}
                 </div>
               )}
 
               {selectedUnit.kategori_khusus === 'Handover' && (
                 <div className="p-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium leading-relaxed">
-                  Sudah handover ke PM per Q2 2026 - pencatatan di CSL berhenti setelah TW I.
+                  {language === 'en'
+                    ? 'Handed over to PM as of Q2 2026 - CSL recording concluded after Q1.'
+                    : 'Sudah handover ke PM per Q2 2026 - pencatatan di CSL berhenti setelah TW I.'}
                 </div>
               )}
 
               {selectedUnit.kategori_khusus === 'Per-Semester' && (
                 <div className="p-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium leading-relaxed">
-                  Pelaporan per-semester - TW I dan TW III bukan jadwal lapor perusahaan ini.
+                  {language === 'en'
+                    ? 'Semi-annual reporting - Q1 and Q3 are off-cycle for this enterprise.'
+                    : 'Pelaporan per-semester - TW I dan TW III bukan jadwal lapor perusahaan ini.'}
                 </div>
               )}
 
@@ -1479,14 +1497,14 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
                 className="px-4 text-xs font-bold border-border"
                 onClick={() => setSelectedUnit(null)}
               >
-                Tutup
+                {language === 'en' ? 'Close' : 'Tutup'}
               </Button>
               <Button
                 className="px-4 text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90 gap-1.5"
                 onClick={() => openEditModal(selectedUnit)}
               >
                 <Pencil className="size-3.5" />
-                Ubah Data
+                {language === 'en' ? 'Edit Data' : 'Ubah Data'}
               </Button>
             </div>
           </div>
@@ -1507,10 +1525,12 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
               </div>
               <div>
                 <DialogTitle className="text-sm font-bold text-[#0a2540] tracking-tight">
-                  Tambah Unit Pelaporan LKPM
+                  {language === 'en' ? 'Add LKPM Reporting Unit' : 'Tambah Unit Pelaporan LKPM'}
                 </DialogTitle>
                 <DialogDescription className="text-[11px] text-[#758196] font-normal">
-                  Satu baris = satu unit KBLI/NKU · Triwulan fokus: {focusQuarterLabel} {selectedYear}
+                  {language === 'en'
+                    ? `One row = one KBLI/NKU unit · Target quarter: ${focusQuarterLabel} ${selectedYear}`
+                    : `Satu baris = satu unit KBLI/NKU · Triwulan fokus: ${focusQuarterLabel} ${selectedYear}`}
                 </DialogDescription>
               </div>
             </div>
@@ -1526,12 +1546,12 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
           <form onSubmit={handleSaveModal} className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3 bg-white">
             <div className="space-y-1">
               <label className="block text-[11px] font-semibold text-[#344054]">
-                Nama Perusahaan <span className="text-[#cf3527]">*</span>
+                {language === 'en' ? 'Company Name' : 'Nama Perusahaan'} <span className="text-[#cf3527]">*</span>
               </label>
               <input
                 required
                 type="text"
-                placeholder="cth. PT Contoh Sejahtera"
+                placeholder={language === 'en' ? 'e.g. PT Example Company' : 'cth. PT Contoh Sejahtera'}
                 value={formName}
                 onChange={(e) => setFormName(e.target.value)}
                 className="w-full h-9 px-3 text-xs font-semibold text-[#0a2540] bg-white border border-[#d0d5dd] rounded-lg focus:outline-none focus:border-[#0a2540] focus:ring-2 focus:ring-[#0a2540]/5 transition-all placeholder:text-[#98a2b5] shadow-2xs"
@@ -1541,7 +1561,7 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <label className="block text-[11px] font-semibold text-[#344054]">
-                  Grup Perusahaan <span className="text-[#cf3527]">*</span>
+                  {language === 'en' ? 'Company Group' : 'Grup Perusahaan'} <span className="text-[#cf3527]">*</span>
                 </label>
                 <div className="relative">
                   <select
@@ -1561,7 +1581,7 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
 
               <div className="space-y-1">
                 <label className="block text-[11px] font-semibold text-[#344054]">
-                  KBLI (Kode Klasifikasi) <span className="text-[#cf3527]">*</span>
+                  {language === 'en' ? 'KBLI (Classification Code)' : 'KBLI (Kode Klasifikasi)'} <span className="text-[#cf3527]">*</span>
                 </label>
                 <input
                   required
@@ -1577,7 +1597,7 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <label className="block text-[11px] font-semibold text-[#344054]">
-                  NKU (Nomor Kegiatan Usaha)
+                  {language === 'en' ? 'NKU (Business Activity Number)' : 'NKU (Nomor Kegiatan Usaha)'}
                 </label>
                 <input
                   type="text"
@@ -1590,11 +1610,11 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
 
               <div className="space-y-1">
                 <label className="block text-[11px] font-semibold text-[#344054]">
-                  PIC Unit
+                  {language === 'en' ? 'Unit PIC' : 'PIC Unit'}
                 </label>
                 <input
                   type="text"
-                  placeholder="Nama PIC"
+                  placeholder={language === 'en' ? 'PIC name' : 'Nama PIC'}
                   value={formPic}
                   onChange={(e) => setFormPic(e.target.value)}
                   className="w-full h-9 px-3 text-xs font-medium text-[#16233a] bg-white border border-[#d0d5dd] rounded-lg focus:outline-none focus:border-[#0a2540] focus:ring-2 focus:ring-[#0a2540]/5 transition-all placeholder:text-[#98a2b5] shadow-2xs"
@@ -1604,7 +1624,7 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
 
             <div className="space-y-1">
               <label className="block text-[11px] font-semibold text-[#344054]">
-                Status Triwulan Fokus ({focusQuarterLabel})
+                {language === 'en' ? `Focus Quarter Status (${focusQuarterLabel})` : `Status Triwulan Fokus (${focusQuarterLabel})`}
               </label>
               <div className="relative">
                 <select
@@ -1612,10 +1632,10 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
                   onChange={(e: any) => setFormStatus(e.target.value)}
                   className="w-full h-9 pl-3 pr-8 text-xs font-medium text-[#16233a] bg-white border border-[#d0d5dd] rounded-lg focus:outline-none focus:border-[#0a2540] focus:ring-2 focus:ring-[#0a2540]/5 transition-all cursor-pointer appearance-none shadow-2xs"
                 >
-                  <option value="terlapor">✓ Terlapor (dengan SNK)</option>
-                  <option value="bukti">⚠ Terlapor - Bukti Kurang</option>
-                  <option value="belum">✕ Belum Lapor</option>
-                  <option value="nonwajib">— Tidak Wajib</option>
+                  <option value="terlapor">{language === 'en' ? '✓ Reported (with SNK)' : '✓ Terlapor (dengan SNK)'}</option>
+                  <option value="bukti">{language === 'en' ? '⚠ Reported - Missing Proof' : '⚠ Terlapor - Bukti Kurang'}</option>
+                  <option value="belum">{language === 'en' ? '✕ Not Reported' : '✕ Belum Lapor'}</option>
+                  <option value="nonwajib">{language === 'en' ? '— Exempt / Not Required' : '— Tidak Wajib'}</option>
                 </select>
                 <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 size-3.5 text-[#758196]" />
               </div>
@@ -1629,14 +1649,14 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
                 onClick={() => setIsAddModalOpen(false)}
                 className="h-8.5 px-3.5 rounded-lg border-[#d0d5dd] bg-white text-[#344054] hover:bg-[#f8f9fa] text-xs font-semibold shadow-2xs"
               >
-                Batal
+                {language === 'en' ? 'Cancel' : 'Batal'}
               </Button>
               <Button
                 type="submit"
                 size="sm"
                 className="h-8.5 px-4 rounded-lg bg-[#0a2540] hover:bg-[#16375c] text-white text-xs font-bold shadow-xs transition-colors"
               >
-                Simpan Data
+                {language === 'en' ? 'Save Data' : 'Simpan Data'}
               </Button>
             </div>
           </form>
@@ -1657,10 +1677,12 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
               </div>
               <div>
                 <DialogTitle className="text-sm font-bold text-[#0a2540] tracking-tight leading-tight">
-                  Ubah Data Pelaporan LKPM
+                  {language === 'en' ? 'Edit LKPM Reporting Unit' : 'Ubah Data Pelaporan LKPM'}
                 </DialogTitle>
                 <DialogDescription className="text-[10.5px] text-[#758196] font-normal leading-tight">
-                  Perbarui status triwulan, nomor bukti SNK, PIC, atau catatan unit kegiatan.
+                  {language === 'en'
+                    ? 'Update quarterly status, SNK proof number, PIC, or unit follow-up notes.'
+                    : 'Perbarui status triwulan, nomor bukti SNK, PIC, atau catatan unit kegiatan.'}
                 </DialogDescription>
               </div>
             </div>
@@ -1680,7 +1702,7 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
                 <div className="grid grid-cols-2 gap-2.5">
                   <div className="space-y-0.5">
                     <label className="block text-[10.5px] font-semibold text-[#344054]">
-                      Nama Perusahaan <span className="text-[#cf3527]">*</span>
+                      {language === 'en' ? 'Company Name' : 'Nama Perusahaan'} <span className="text-[#cf3527]">*</span>
                     </label>
                     <input
                       required
@@ -1693,7 +1715,7 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
 
                   <div className="space-y-0.5">
                     <label className="block text-[10.5px] font-semibold text-[#344054]">
-                      Grup Perusahaan <span className="text-[#cf3527]">*</span>
+                      {language === 'en' ? 'Company Group' : 'Grup Perusahaan'} <span className="text-[#cf3527]">*</span>
                     </label>
                     <div className="relative">
                       <select
@@ -1716,7 +1738,7 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
                 <div className="grid grid-cols-2 gap-2.5">
                   <div className="space-y-0.5">
                     <label className="block text-[10.5px] font-semibold text-[#344054]">
-                      KBLI (Kode Klasifikasi) <span className="text-[#cf3527]">*</span>
+                      {language === 'en' ? 'KBLI (Classification Code)' : 'KBLI (Kode Klasifikasi)'} <span className="text-[#cf3527]">*</span>
                     </label>
                     <input
                       required
@@ -1730,7 +1752,7 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
 
                   <div className="space-y-0.5">
                     <label className="block text-[10.5px] font-semibold text-[#344054]">
-                      NKU (Nomor Kegiatan Usaha)
+                      {language === 'en' ? 'NKU (Business Activity Number)' : 'NKU (Nomor Kegiatan Usaha)'}
                     </label>
                     <input
                       type="text"
@@ -1746,7 +1768,7 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
                 <div className="grid grid-cols-2 gap-2.5">
                   <div className="space-y-0.5">
                     <label className="block text-[10.5px] font-semibold text-[#344054]">
-                      PIC FA / Keuangan
+                      {language === 'en' ? 'Finance PIC' : 'PIC FA / Keuangan'}
                     </label>
                     <input
                       type="text"
@@ -1759,7 +1781,7 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
 
                   <div className="space-y-0.5">
                     <label className="block text-[10.5px] font-semibold text-[#344054]">
-                      PIC CSL / Legal
+                      {language === 'en' ? 'Legal PIC' : 'PIC CSL / Legal'}
                     </label>
                     <input
                       type="text"
@@ -1775,7 +1797,7 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
                 <div className="grid grid-cols-2 gap-2.5">
                   <div className="space-y-0.5">
                     <label className="block text-[10.5px] font-semibold text-[#344054]">
-                      Skema / Kategori Pelaporan
+                      {language === 'en' ? 'Reporting Scheme / Category' : 'Skema / Kategori Pelaporan'}
                     </label>
                     <div className="relative">
                       <select
@@ -1795,10 +1817,10 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
                         }}
                         className="w-full h-8 pl-2.5 pr-7 text-xs font-semibold text-[#0a2540] bg-white border border-[#d0d5dd] rounded-lg focus:outline-none focus:border-[#0a2540] focus:ring-2 focus:ring-[#0a2540]/5 transition-all cursor-pointer appearance-none shadow-2xs"
                       >
-                        <option value="none">Normal (Triwulan I - IV / Menengah &amp; Besar)</option>
-                        <option value="Per-Semester">Pelaporan Per-Semester (Skala Usaha Kecil)</option>
-                        <option value="Tidak Wajib (Mikro)">Tidak Wajib (Skala Mikro)</option>
-                        <option value="Handover">Handover ke PM (Mulai Q2)</option>
+                        <option value="none">{language === 'en' ? 'Normal (Quarters I - IV / Medium & Large)' : 'Normal (Triwulan I - IV / Menengah & Besar)'}</option>
+                        <option value="Per-Semester">{language === 'en' ? 'Semi-Annual Reporting (Small Enterprise)' : 'Pelaporan Per-Semester (Skala Usaha Kecil)'}</option>
+                        <option value="Tidak Wajib (Mikro)">{language === 'en' ? 'Exempt (Micro Enterprise)' : 'Tidak Wajib (Skala Mikro)'}</option>
+                        <option value="Handover">{language === 'en' ? 'Handover to PM (Starts Q2)' : 'Handover ke PM (Mulai Q2)'}</option>
                       </select>
                       <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 size-3 text-[#758196]" />
                     </div>
@@ -1806,7 +1828,7 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
 
                   <div className="space-y-0.5">
                     <label className="block text-[10.5px] font-semibold text-[#344054]">
-                      Nomor Dokumen / Bukti SNK
+                      {language === 'en' ? 'Document / SNK Proof Number' : 'Nomor Dokumen / Bukti SNK'}
                     </label>
                     <input
                       type="text"
@@ -1824,10 +1846,10 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
                     <div className="flex items-center justify-between">
                       <span className="text-[10.5px] font-bold text-blue-950 flex items-center gap-1.5">
                         <Calendar className="size-3 text-blue-600" />
-                        Status Pelaporan Per-Semester ({selectedYear})
+                        {language === 'en' ? `Semi-Annual Reporting Status (${selectedYear})` : `Status Pelaporan Per-Semester (${selectedYear})`}
                       </span>
                       <span className="text-[9.5px] font-semibold text-blue-700 bg-blue-100/90 px-2 py-0.5 rounded-full">
-                        Skala Usaha Kecil (6 Bulanan)
+                        {language === 'en' ? 'Small Scale (6 Months)' : 'Skala Usaha Kecil (6 Bulanan)'}
                       </span>
                     </div>
 
@@ -1844,7 +1866,7 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
                       >
                         <div className="flex items-center justify-between">
                           <span className="text-[10px] font-bold text-[#16233a]">
-                            Semester I (Januari – Juni)
+                            {language === 'en' ? 'Semester I (January – June)' : 'Semester I (Januari – Juni)'}
                           </span>
                           <span
                             className={`size-1.5 rounded-full ${
@@ -1857,7 +1879,7 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
                           />
                         </div>
                         <div className="text-[9px] text-[#64748b] font-medium">
-                          Batas Lapor: 1–10 Juli (TW II)
+                          {language === 'en' ? 'Deadline: 1–10 July (Q2)' : 'Batas Lapor: 1–10 Juli (TW II)'}
                         </div>
                         <div className="relative pt-0.5">
                           <select
@@ -1873,9 +1895,9 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
                                 : 'border-[#e2e8f0] bg-white text-[#64748b]'
                             }`}
                           >
-                            <option value="null">- Kosong</option>
-                            <option value="Lapor">✓ Terlapor</option>
-                            <option value="Belum">✕ Belum</option>
+                            <option value="null">{language === 'en' ? '- Empty' : '- Kosong'}</option>
+                            <option value="Lapor">{language === 'en' ? '✓ Reported' : '✓ Terlapor'}</option>
+                            <option value="Belum">{language === 'en' ? '✕ Pending' : '✕ Belum'}</option>
                           </select>
                           <ChevronDown className="pointer-events-none absolute right-1 top-1/2 -translate-y-1/2 size-2.5 text-[#94a3b8]" />
                         </div>
@@ -1893,7 +1915,7 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
                       >
                         <div className="flex items-center justify-between">
                           <span className="text-[10px] font-bold text-[#16233a]">
-                            Semester II (Juli – Desember)
+                            {language === 'en' ? 'Semester II (July – December)' : 'Semester II (Juli – Desember)'}
                           </span>
                           <span
                             className={`size-1.5 rounded-full ${
@@ -1906,7 +1928,7 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
                           />
                         </div>
                         <div className="text-[9px] text-[#64748b] font-medium">
-                          Batas Lapor: 1–10 Januari (TW IV)
+                          {language === 'en' ? 'Deadline: 1–10 January (Q4)' : 'Batas Lapor: 1–10 Januari (TW IV)'}
                         </div>
                         <div className="relative pt-0.5">
                           <select
@@ -1922,9 +1944,9 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
                                 : 'border-[#e2e8f0] bg-white text-[#64748b]'
                             }`}
                           >
-                            <option value="null">- Kosong</option>
-                            <option value="Lapor">✓ Terlapor</option>
-                            <option value="Belum">✕ Belum</option>
+                            <option value="null">{language === 'en' ? '- Empty' : '- Kosong'}</option>
+                            <option value="Lapor">{language === 'en' ? '✓ Reported' : '✓ Terlapor'}</option>
+                            <option value="Belum">{language === 'en' ? '✕ Pending' : '✕ Belum'}</option>
                           </select>
                           <ChevronDown className="pointer-events-none absolute right-1 top-1/2 -translate-y-1/2 size-2.5 text-[#94a3b8]" />
                         </div>
@@ -1936,10 +1958,12 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
                     <Info className="size-4 text-slate-500 shrink-0 mt-0.5" />
                     <div>
                       <div className="text-xs font-bold text-slate-800">
-                        Skala Usaha Mikro — Bebas Kewajiban LKPM
+                        {language === 'en' ? 'Micro Enterprise Scale — Exempt from LKPM' : 'Skala Usaha Mikro — Bebas Kewajiban LKPM'}
                       </div>
                       <div className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
-                        Sesuai Pasal 286 ayat (2) Perka BKPM No. 5/2021, perusahaan skala mikro dibebaskan dari kewajiban pelaporan LKPM berkala.
+                        {language === 'en'
+                          ? 'Pursuant to Article 286 paragraph (2) BKPM Regulation No. 5/2021, micro enterprises are exempt from mandatory periodic LKPM reporting.'
+                          : 'Sesuai Pasal 286 ayat (2) Perka BKPM No. 5/2021, perusahaan skala mikro dibebaskan dari kewajiban pelaporan LKPM berkala.'}
                       </div>
                     </div>
                   </div>
@@ -1948,19 +1972,19 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
                     <div className="flex items-center justify-between">
                       <span className="text-[10px] font-bold text-[#0a2540] flex items-center gap-1.5">
                         <Calendar className="size-3 text-[#2f6bff]" />
-                        Status Pelaporan Tiap Triwulan ({selectedYear})
+                        {language === 'en' ? `Quarterly Reporting Status (${selectedYear})` : `Status Pelaporan Tiap Triwulan (${selectedYear})`}
                       </span>
                       <span className="text-[9.5px] font-medium text-[#758196]">
-                        Pilih status per triwulan (Skala Menengah &amp; Besar)
+                        {language === 'en' ? 'Choose quarterly status (Medium & Large Scale)' : 'Pilih status per triwulan (Skala Menengah & Besar)'}
                       </span>
                     </div>
 
                     <div className="grid grid-cols-4 gap-1.5">
                       {[
-                        { label: 'TW I', val: editTw1, setVal: setEditTw1 },
-                        { label: 'TW II', val: editTw2, setVal: setEditTw2 },
-                        { label: 'TW III', val: editTw3, setVal: setEditTw3 },
-                        { label: 'TW IV', val: editTw4, setVal: setEditTw4 },
+                        { label: language === 'en' ? 'Q1' : 'TW I', val: editTw1, setVal: setEditTw1 },
+                        { label: language === 'en' ? 'Q2' : 'TW II', val: editTw2, setVal: setEditTw2 },
+                        { label: language === 'en' ? 'Q3' : 'TW III', val: editTw3, setVal: setEditTw3 },
+                        { label: language === 'en' ? 'Q4' : 'TW IV', val: editTw4, setVal: setEditTw4 },
                       ].map((tw) => {
                         const isLapor = tw.val === 'Lapor';
                         const isBelum = tw.val === 'Belum';
@@ -1999,9 +2023,9 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
                                     : 'border-[#e2e8f0] bg-white text-[#64748b]'
                                 }`}
                               >
-                                <option value="null">- Kosong</option>
-                                <option value="Lapor">✓ Terlapor</option>
-                                <option value="Belum">✕ Belum</option>
+                                <option value="null">{language === 'en' ? '- Empty' : '- Kosong'}</option>
+                                <option value="Lapor">{language === 'en' ? '✓ Reported' : '✓ Terlapor'}</option>
+                                <option value="Belum">{language === 'en' ? '✕ Pending' : '✕ Belum'}</option>
                               </select>
                               <ChevronDown className="pointer-events-none absolute right-1 top-1/2 -translate-y-1/2 size-2.5 text-[#94a3b8]" />
                             </div>
@@ -2016,7 +2040,7 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
                 <div className="grid grid-cols-2 gap-2.5">
                   <div className="space-y-0.5">
                     <label className="block text-[10.5px] font-semibold text-[#344054]">
-                      Status Sanksi BKPM / Dinas
+                      {language === 'en' ? 'BKPM / Agency Sanctions' : 'Status Sanksi BKPM / Dinas'}
                     </label>
                     <label
                       className={`flex items-center justify-between h-8 px-2.5 rounded-lg border transition-all cursor-pointer select-none shadow-2xs ${
@@ -2027,7 +2051,7 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
                     >
                       <span className="text-xs font-semibold flex items-center gap-1.5">
                         <ShieldAlert className={`size-3.5 ${editSanksi ? 'text-rose-600' : 'text-[#94a3b8]'}`} />
-                        {editSanksi ? 'Menerima Sanksi' : 'Bebas Sanksi'}
+                        {editSanksi ? (language === 'en' ? 'Sanctioned' : 'Menerima Sanksi') : (language === 'en' ? 'No Sanctions' : 'Bebas Sanksi')}
                       </span>
                       <input
                         type="checkbox"
@@ -2040,11 +2064,11 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
 
                   <div className="space-y-0.5">
                     <label className="block text-[10.5px] font-semibold text-[#344054]">
-                      Catatan Tindak Lanjut
+                      {language === 'en' ? 'Follow-Up Notes' : 'Catatan Tindak Lanjut'}
                     </label>
                     <input
                       type="text"
-                      placeholder="Catatan progres / kendala OSS..."
+                      placeholder={language === 'en' ? 'Progress notes / OSS issues...' : 'Catatan progres / kendala OSS...'}
                       value={editNotes}
                       onChange={(e) => setEditNotes(e.target.value)}
                       className="w-full h-8 px-2.5 text-xs font-medium text-[#16233a] bg-white border border-[#d0d5dd] rounded-lg focus:outline-none focus:border-[#0a2540] focus:ring-2 focus:ring-[#0a2540]/5 transition-all placeholder:text-[#98a2b5] shadow-2xs"
@@ -2063,7 +2087,7 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
                   className="h-8 px-3 rounded-lg border-rose-200 bg-white text-rose-600 hover:bg-rose-50 hover:text-rose-700 text-xs font-semibold gap-1.5 shadow-2xs transition-colors"
                 >
                   <Trash2 className="size-3.5" />
-                  Hapus Unit
+                  {language === 'en' ? 'Delete Unit' : 'Hapus Unit'}
                 </Button>
                 <div className="flex items-center gap-2">
                   <Button
@@ -2073,14 +2097,14 @@ export const CSLLkpmTracker: React.FC<CSLLkpmTrackerProps> = ({ currentUser }) =
                     onClick={() => setEditingUnit(null)}
                     className="h-8 px-3 rounded-lg border-[#d0d5dd] bg-white text-[#344054] hover:bg-[#f8f9fa] text-xs font-semibold shadow-2xs transition-colors"
                   >
-                    Batal
+                    {language === 'en' ? 'Cancel' : 'Batal'}
                   </Button>
                   <Button
                     type="submit"
                     size="sm"
                     className="h-8 px-3.5 rounded-lg bg-[#0a2540] hover:bg-[#16375c] text-white text-xs font-bold shadow-xs transition-colors"
                   >
-                    Simpan Perubahan
+                    {language === 'en' ? 'Save Changes' : 'Simpan Perubahan'}
                   </Button>
                 </div>
               </div>

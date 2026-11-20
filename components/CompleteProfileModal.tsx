@@ -4,6 +4,7 @@ import { UserAccount } from '../types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Dialog, DialogContent } from './ui/dialog';
 import { Loader2, Briefcase, UserCircle2, Sparkles } from 'lucide-react';
+import { useLanguage } from '../translations';
 
 interface CompleteProfileModalProps {
   user: UserAccount | null;
@@ -11,6 +12,7 @@ interface CompleteProfileModalProps {
 }
 
 export const CompleteProfileModal: React.FC<CompleteProfileModalProps> = ({ user, onUpdateSuccess }) => {
+  const { language } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -97,13 +99,13 @@ export const CompleteProfileModal: React.FC<CompleteProfileModalProps> = ({ user
               <div className="flex items-center gap-2 mb-1">
                 <Sparkles size={11} style={{ color: '#C9A84C' }} />
                 <span className="text-[10px] font-bold uppercase tracking-widest"
-                  style={{ color: 'rgba(201,168,76,0.8)' }}>Satu Langkah Lagi</span>
+                  style={{ color: 'rgba(201,168,76,0.8)' }}>{language === 'en' ? 'One More Step' : 'Satu Langkah Lagi'}</span>
               </div>
               <h2 className="text-xl font-black text-white leading-tight tracking-tight">
-                Lengkapi Profil Anda
+                {language === 'en' ? 'Complete Your Profile' : 'Lengkapi Profil Anda'}
               </h2>
               <p className="text-xs text-white/50 mt-1 leading-relaxed">
-                Pilih divisi Anda untuk mulai menggunakan CSL System.
+                {language === 'en' ? 'Select your division to start using the CSL System.' : 'Pilih divisi Anda untuk mulai menggunakan CSL System.'}
               </p>
             </div>
           </div>
@@ -116,7 +118,7 @@ export const CompleteProfileModal: React.FC<CompleteProfileModalProps> = ({ user
           <div className="space-y-2">
             <label className="flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-zinc-400 uppercase tracking-wider">
               <Briefcase size={12} style={{ color: '#C9A84C' }} />
-              Divisi
+              {language === 'en' ? 'Division' : 'Divisi'}
             </label>
             <Select value={formData.department} onValueChange={(v) => setFormData({ ...formData, department: v })}>
               <SelectTrigger
@@ -126,7 +128,7 @@ export const CompleteProfileModal: React.FC<CompleteProfileModalProps> = ({ user
                   boxShadow: formData.department ? '0 0 0 3px rgba(201,168,76,0.1)' : undefined
                 }}
               >
-                <SelectValue placeholder="Pilih departemen..." />
+                <SelectValue placeholder={language === 'en' ? 'Select department...' : 'Pilih departemen...'} />
               </SelectTrigger>
               <SelectContent className="rounded-xl border-slate-200 shadow-xl">
                 {departmentList.map(d => (
@@ -167,13 +169,13 @@ export const CompleteProfileModal: React.FC<CompleteProfileModalProps> = ({ user
             onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '1'; }}
           >
             {isSaving
-              ? <><Loader2 size={16} className="animate-spin" /> Menyimpan...</>
-              : <><Sparkles size={15} /> Simpan & Lanjutkan</>
+              ? <><Loader2 size={16} className="animate-spin" /> {language === 'en' ? 'Saving...' : 'Menyimpan...'}</>
+              : <><Sparkles size={15} /> {language === 'en' ? 'Save & Continue' : 'Simpan & Lanjutkan'}</>
             }
           </button>
 
           <p className="text-center text-[11px] text-slate-400">
-            Data ini diperlukan untuk menggunakan fitur CSL System.
+            {language === 'en' ? 'This information is required to use the CSL System features.' : 'Data ini diperlukan untuk menggunakan fitur CSL System.'}
           </p>
         </form>
       </DialogContent>

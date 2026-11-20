@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { UserAccount } from '../types';
+import { useLanguage } from '../translations';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -140,6 +141,7 @@ const INITIAL_ADMGT_DATA: AdMgtRecord[] = [
 const STORAGE_KEY = 'csl_admgt_changes_v2';
 
 export const CSLAdMgtTracker: React.FC<{ currentUser?: UserAccount | null }> = () => {
+  const { language } = useLanguage();
   const [data, setData] = useState<AdMgtRecord[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -425,9 +427,9 @@ export const CSLAdMgtTracker: React.FC<{ currentUser?: UserAccount | null }> = (
     <div className="space-y-6 pb-16 font-sans animate-in fade-in duration-500">
       {/* 1. Header Bar */}
       <PageHeader
-        title="AD - Management Changes"
-        subtitle="ROUTINE ACTIVITY · MANAGEMENT & ARTIKEL PERUBAHAN"
-        description="Monitoring dan pencatatan perubahan Anggaran Dasar dan susunan manajemen entitas Grup Gesit"
+        title={language === 'en' ? 'Articles & Management Changes' : 'AD - Management Changes'}
+        subtitle={language === 'en' ? 'ROUTINE ACTIVITY · ARTICLES & MANAGEMENT AMENDMENTS' : 'ROUTINE ACTIVITY · MANAGEMENT & ARTIKEL PERUBAHAN'}
+        description={language === 'en' ? 'Monitoring and tracking Articles of Association amendments and board/management updates across Gesit Group' : 'Monitoring dan pencatatan perubahan Anggaran Dasar dan susunan manajemen entitas Grup Gesit'}
       >
         <div className="flex items-center gap-2">
           <Button

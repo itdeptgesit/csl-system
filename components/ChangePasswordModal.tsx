@@ -5,6 +5,7 @@ import { Lock, CheckCircle2, AlertCircle, Loader2, Eye, EyeOff, ShieldCheck } fr
 import { supabase } from '../lib/supabaseClient';
 import { Dialog, DialogContent } from './ui/dialog';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLanguage } from '../translations';
 
 interface ChangePasswordModalProps {
     isOpen: boolean;
@@ -12,6 +13,7 @@ interface ChangePasswordModalProps {
 }
 
 export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen, onClose }) => {
+    const { language } = useLanguage();
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [showNew, setShowNew] = useState(false);
@@ -40,7 +42,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen
         return score;
     })();
 
-    const strengthLabel = ['', 'Lemah', 'Cukup', 'Kuat', 'Sangat Kuat'][passwordStrength];
+    const strengthLabel = ['', language === 'en' ? 'Weak' : 'Lemah', language === 'en' ? 'Fair' : 'Cukup', language === 'en' ? 'Strong' : 'Kuat', language === 'en' ? 'Very Strong' : 'Sangat Kuat'][passwordStrength];
     const strengthColor = ['', '#ef4444', '#f59e0b', '#22c55e', '#059669'][passwordStrength];
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -48,11 +50,11 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen
         setError('');
 
         if (newPassword !== confirmPassword) {
-            setError('Password tidak cocok. Periksa kembali.');
+            setError(language === 'en' ? 'Passwords do not match. Please check again.' : 'Password tidak cocok. Periksa kembali.');
             return;
         }
         if (newPassword.length < 8) {
-            setError('Password minimal 8 karakter.');
+            setError(language === 'en' ? 'Password must be at least 8 characters.' : 'Password minimal 8 karakter.');
             return;
         }
 
@@ -64,7 +66,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen
             setSuccess(true);
             setTimeout(() => handleClose(), 2500);
         } catch (err: any) {
-            setError(err.message || 'Gagal mengubah password. Coba lagi.');
+            setError(err.message || (language === 'en' ? 'Failed to change password. Please try again.' : 'Gagal mengubah password. Coba lagi.'));
         } finally {
             setIsLoading(false);
         }
@@ -90,8 +92,8 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen
                             <Lock size={18} style={{ color: GOLD }} />
                         </div>
                         <div>
-                            <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: `${GOLD}AA` }}>Keamanan Akun</p>
-                            <h2 className="text-lg font-black text-white leading-tight">Ubah Password</h2>
+                            <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: `${GOLD}AA` }}>{language === 'en' ? 'Account Security' : 'Keamanan Akun'}</p>
+                            <h2 className="text-lg font-black text-white leading-tight">{language === 'en' ? 'Change Password' : 'Ubah Password'}</h2>
                         </div>
                     </div>
                 </div>
@@ -111,8 +113,8 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen
                                     <CheckCircle2 size={32} className="text-emerald-600" />
                                 </div>
                                 <div>
-                                    <h3 className="text-lg font-black text-slate-900 dark:text-white">Password Berhasil Diubah!</h3>
-                                    <p className="text-sm text-slate-500 mt-1">Gunakan password baru Anda saat login berikutnya.</p>
+                                    <h3 className="text-lg font-black text-slate-900 dark:text-white">{language === 'en' ? 'Password Changed Successfully!' : 'Password Berhasil Diubah!'}</h3>
+                                    <p className="text-sm text-slate-500 mt-1">{language === 'en' ? 'Use your new password the next time you sign in.' : 'Gunakan password baru Anda saat login berikutnya.'}</p>
                                 </div>
                             </motion.div>
                         ) : (
@@ -133,7 +135,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen
 
                                 {/* New Password */}
                                 <div className="space-y-1.5">
-                                    <label className="text-xs font-bold text-slate-600 dark:text-zinc-400">Password Baru</label>
+                                    <label className="text-xs font-bold text-slate-600 dark:text-zinc-400">{language === 'en' ? 'New Password' : 'Password Baru'}</label>
                                     <div className="relative">
                                         <Lock size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                                         <input
@@ -141,7 +143,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen
                                             required
                                             value={newPassword}
                                             onChange={(e) => setNewPassword(e.target.value)}
-                                            placeholder="Minimal 8 karakter"
+                                            placeholder={language === 'en' ? 'Minimum 8 characters' : 'Minimal 8 karakter'}
                                             className="w-full h-12 pl-10 pr-11 rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800 text-sm font-medium text-slate-800 dark:text-zinc-100 placeholder-slate-400 focus:outline-none transition-all"
                                             onFocus={e => e.target.style.borderColor = GOLD}
                                             onBlur={e => e.target.style.borderColor = ''}
@@ -163,7 +165,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen
                                                 ))}
                                             </div>
                                             <p className="text-[11px] font-semibold" style={{ color: strengthColor }}>
-                                                Kekuatan: {strengthLabel}
+                                                {language === 'en' ? 'Strength' : 'Kekuatan'}: {strengthLabel}
                                             </p>
                                         </div>
                                     )}
@@ -171,7 +173,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen
 
                                 {/* Confirm Password */}
                                 <div className="space-y-1.5">
-                                    <label className="text-xs font-bold text-slate-600 dark:text-zinc-400">Konfirmasi Password</label>
+                                    <label className="text-xs font-bold text-slate-600 dark:text-zinc-400">{language === 'en' ? 'Confirm Password' : 'Konfirmasi Password'}</label>
                                     <div className="relative">
                                         <ShieldCheck size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                                         <input
@@ -179,7 +181,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen
                                             required
                                             value={confirmPassword}
                                             onChange={(e) => setConfirmPassword(e.target.value)}
-                                            placeholder="Ulangi password baru"
+                                            placeholder={language === 'en' ? 'Repeat the new password' : 'Ulangi password baru'}
                                             className="w-full h-12 pl-10 pr-11 rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800 text-sm font-medium text-slate-800 dark:text-zinc-100 placeholder-slate-400 focus:outline-none transition-all"
                                             onFocus={e => e.target.style.borderColor = GOLD}
                                             onBlur={e => e.target.style.borderColor = ''}
@@ -194,10 +196,10 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen
                                         </button>
                                     </div>
                                     {confirmPassword && confirmPassword !== newPassword && (
-                                        <p className="text-[11px] font-semibold text-rose-500">Password tidak cocok</p>
+                                        <p className="text-[11px] font-semibold text-rose-500">{language === 'en' ? 'Passwords do not match' : 'Password tidak cocok'}</p>
                                     )}
                                     {confirmPassword && confirmPassword === newPassword && (
-                                        <p className="text-[11px] font-semibold text-emerald-600">✓ Password cocok</p>
+                                        <p className="text-[11px] font-semibold text-emerald-600">{language === 'en' ? '✓ Passwords match' : '✓ Password cocok'}</p>
                                     )}
                                 </div>
 
@@ -209,9 +211,9 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen
                                         className="w-full h-12 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-60 bg-slate-800 dark:bg-slate-600"
                                     >
                                         {isLoading ? (
-                                            <><Loader2 size={16} className="animate-spin" /> Menyimpan...</>
+                                            <><Loader2 size={16} className="animate-spin" /> {language === 'en' ? 'Saving...' : 'Menyimpan...'}</>
                                         ) : (
-                                            <><Lock size={15} /> Simpan Password Baru</>
+                                            <><Lock size={15} /> {language === 'en' ? 'Save New Password' : 'Simpan Password Baru'}</>
                                         )}
                                     </button>
                                     <button
@@ -219,7 +221,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen
                                         onClick={handleClose}
                                         className="w-full h-10 rounded-xl font-semibold text-sm text-slate-500 hover:text-slate-700 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-all"
                                     >
-                                        Batal
+                                        {language === 'en' ? 'Cancel' : 'Batal'}
                                     </button>
                                 </div>
                             </motion.form>

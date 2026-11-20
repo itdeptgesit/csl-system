@@ -61,7 +61,7 @@ interface ActiveSession {
 }
 
 export const ProfileView: React.FC<ProfileViewProps> = ({ onLogout, user, onUpdateSuccess }) => {
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
 
@@ -250,11 +250,11 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onLogout, user, onUpda
         document.body.appendChild(downloadAnchor);
         downloadAnchor.click();
         downloadAnchor.remove();
-        toast.success("Data profil berhasil di-export");
+        toast.success(language === 'en' ? 'Profile data exported successfully' : 'Data profil berhasil di-export');
     };
 
     const handleDeleteAccount = () => {
-        toast.error("Akun dinas perusahaan dikelola terpusat. Hubungi Administrator IT atau Corporate Secretary untuk penonaktifan akun.");
+        toast.error(language === 'en' ? 'Company accounts are centrally managed. Contact the IT Administrator or Corporate Secretary to deactivate an account.' : 'Akun dinas perusahaan dikelola terpusat. Hubungi Administrator IT atau Corporate Secretary untuk penonaktifan akun.');
     };
 
     const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -542,8 +542,8 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onLogout, user, onUpda
                     <Card className="rounded-2xl border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900 shadow-sm overflow-hidden">
                         <div className="p-6 sm:p-8 space-y-6">
                             <div>
-                                <h3 className="text-base font-black text-slate-900 dark:text-white">Keamanan Akun</h3>
-                                <p className="text-slate-400 dark:text-zinc-500 text-xs mt-0.5">Kelola password dan sesi login aktif Anda.</p>
+                                <h3 className="text-base font-black text-slate-900 dark:text-white">{language === 'en' ? 'Account Security' : 'Keamanan Akun'}</h3>
+                                <p className="text-slate-400 dark:text-zinc-500 text-xs mt-0.5">{language === 'en' ? 'Manage your password and active login sessions.' : 'Kelola password dan sesi login aktif Anda.'}</p>
                             </div>
                             <Separator className="bg-slate-100 dark:bg-white/5" />
 
@@ -554,12 +554,12 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onLogout, user, onUpda
                                         <Key size={15} className="text-amber-500" />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-bold text-slate-900 dark:text-white">Ubah Password</p>
-                                        <p className="text-xs text-slate-400 mt-0.5">Perbarui password akun Anda</p>
+                                        <p className="text-sm font-bold text-slate-900 dark:text-white">{language === 'en' ? 'Change Password' : 'Ubah Password'}</p>
+                                        <p className="text-xs text-slate-400 mt-0.5">{language === 'en' ? 'Update your account password' : 'Perbarui password akun Anda'}</p>
                                     </div>
                                 </div>
                                 <Button onClick={() => setIsPasswordModalOpen(true)} variant="outline" className="w-full sm:w-auto font-bold rounded-xl gap-2">
-                                    <Lock size={14} /> Ubah Password
+                                    <Lock size={14} /> {language === 'en' ? 'Change Password' : 'Ubah Password'}
                                 </Button>
                             </div>
 
@@ -572,12 +572,12 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onLogout, user, onUpda
                                         <LogOut size={15} className="text-rose-500" />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-bold text-slate-900 dark:text-white">Keluar Semua Sesi</p>
-                                        <p className="text-xs text-slate-400 mt-0.5">Logout dari semua perangkat yang sedang aktif</p>
+                                        <p className="text-sm font-bold text-slate-900 dark:text-white">{language === 'en' ? 'Sign Out All Sessions' : 'Keluar Semua Sesi'}</p>
+                                        <p className="text-xs text-slate-400 mt-0.5">{language === 'en' ? 'Log out of all currently active devices' : 'Logout dari semua perangkat yang sedang aktif'}</p>
                                     </div>
                                 </div>
                                 <Button onClick={handleTerminateAllSessions} variant="outline" className="w-full sm:w-auto font-bold rounded-xl gap-2 border-rose-200 text-rose-600 hover:bg-rose-50 dark:border-rose-500/20 dark:text-rose-400 dark:hover:bg-rose-500/10">
-                                    <LogOut size={14} /> Logout Semua
+                                    <LogOut size={14} /> {language === 'en' ? 'Log Out All' : 'Logout Semua'}
                                 </Button>
                             </div>
 
@@ -656,21 +656,21 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onLogout, user, onUpda
                         <div className="p-6 sm:p-8 space-y-6">
                             <div>
                                 <h3 className="text-base font-black text-slate-900 dark:text-white">Notification Preferences</h3>
-                                <p className="text-slate-400 dark:text-zinc-500 text-xs mt-0.5">Atur kanal pengingat dan pemberitahuan aktivitas akun Anda.</p>
+                                <p className="text-slate-400 dark:text-zinc-500 text-xs mt-0.5">{language === 'en' ? 'Configure reminders and account activity notification channels.' : 'Atur kanal pengingat dan pemberitahuan aktivitas akun Anda.'}</p>
                             </div>
                             <Separator className="bg-slate-100 dark:bg-white/5" />
 
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm font-bold text-slate-900 dark:text-white">Notifikasi Email Tiket Request</p>
-                                    <p className="text-xs text-slate-400 mt-0.5">Terima update status pengajuan & tiket permohonan via email</p>
+                                    <p className="text-sm font-bold text-slate-900 dark:text-white">{language === 'en' ? 'Request Ticket Email Notifications' : 'Notifikasi Email Tiket Request'}</p>
+                                    <p className="text-xs text-slate-400 mt-0.5">{language === 'en' ? 'Receive submission status updates & request tickets via email' : 'Terima update status pengajuan & tiket permohonan via email'}</p>
                                 </div>
                                 <Switch
                                     checked={notifEmailTickets}
                                     onCheckedChange={(val) => {
                                         setNotifEmailTickets(val);
                                         localStorage.setItem('csl_pref_email_tickets', String(val));
-                                        toast.success('Preferensi notifikasi email diperbarui');
+                                        toast.success(language === 'en' ? 'Email notification preferences updated' : 'Preferensi notifikasi email diperbarui');
                                     }}
                                 />
                             </div>
@@ -679,15 +679,15 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onLogout, user, onUpda
 
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm font-bold text-slate-900 dark:text-white">Pengingat RUPS & Dokumen Legal</p>
-                                    <p className="text-xs text-slate-400 mt-0.5">Peringatan otomatis jatuh tempo RUPS-AR dan akta AHU</p>
+                                    <p className="text-sm font-bold text-slate-900 dark:text-white">{language === 'en' ? 'RUPS & Legal Document Reminders' : 'Pengingat RUPS & Dokumen Legal'}</p>
+                                    <p className="text-xs text-slate-400 mt-0.5">{language === 'en' ? 'Automatic reminders for RUPS-AR deadlines and AHU deeds' : 'Peringatan otomatis jatuh tempo RUPS-AR dan akta AHU'}</p>
                                 </div>
                                 <Switch
                                     checked={notifRupsReminders}
                                     onCheckedChange={(val) => {
                                         setNotifRupsReminders(val);
                                         localStorage.setItem('csl_pref_rups_reminders', String(val));
-                                        toast.success('Preferensi pengingat RUPS diperbarui');
+                                        toast.success(language === 'en' ? 'RUPS reminder preferences updated' : 'Preferensi pengingat RUPS diperbarui');
                                     }}
                                 />
                             </div>
@@ -696,15 +696,15 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onLogout, user, onUpda
 
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm font-bold text-slate-900 dark:text-white">Broadcast Sistem & Pembaruan Fitur</p>
-                                    <p className="text-xs text-slate-400 mt-0.5">Pengumuman pemeliharaan sistem dan fitur baru aplikasi</p>
+                                    <p className="text-sm font-bold text-slate-900 dark:text-white">{language === 'en' ? 'System Broadcasts & Feature Updates' : 'Broadcast Sistem & Pembaruan Fitur'}</p>
+                                    <p className="text-xs text-slate-400 mt-0.5">{language === 'en' ? 'Announcements about system maintenance and new app features' : 'Pengumuman pemeliharaan sistem dan fitur baru aplikasi'}</p>
                                 </div>
                                 <Switch
                                     checked={notifSystemBroadcasts}
                                     onCheckedChange={(val) => {
                                         setNotifSystemBroadcasts(val);
                                         localStorage.setItem('csl_pref_broadcasts', String(val));
-                                        toast.success('Preferensi broadcast sistem diperbarui');
+                                        toast.success(language === 'en' ? 'System broadcast preferences updated' : 'Preferensi broadcast sistem diperbarui');
                                     }}
                                 />
                             </div>

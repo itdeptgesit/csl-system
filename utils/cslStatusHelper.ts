@@ -8,8 +8,9 @@ export interface StatusConfig {
  * Standardize status colors and labels across all CSL-LINK modules
  * Follows design-csl-link.md & analisa.md (one status = one consistent color)
  */
-export function getUnifiedStatusBadge(statusRaw: string): StatusConfig {
+export function getUnifiedStatusBadge(statusRaw: string, lang: string = 'id'): StatusConfig {
   const s = (statusRaw || '').toUpperCase().trim();
+  const isEn = lang === 'en';
 
   // 1. COMPLETED / APPROVED / SELESAI / DONE / CLOSED -> EMERALD (Green)
   if (
@@ -21,11 +22,11 @@ export function getUnifiedStatusBadge(statusRaw: string): StatusConfig {
     s.includes('CLOSED')
   ) {
     let lbl = statusRaw;
-    if (s === 'COMPLETED' || s === 'CLOSED') lbl = 'Selesai';
-    else if (s === 'APPROVED') lbl = 'Disetujui';
-    else if (s === 'DISBURSED') lbl = 'Dicairkan';
-    else if (s.includes('COMPLETED ON TIME')) lbl = 'Selesai Tepat Waktu';
-    else if (s.includes('COMPLETED LATE')) lbl = 'Selesai Terlambat';
+    if (s === 'COMPLETED' || s === 'CLOSED') lbl = isEn ? 'Completed' : 'Selesai';
+    else if (s === 'APPROVED') lbl = isEn ? 'Approved' : 'Disetujui';
+    else if (s === 'DISBURSED') lbl = isEn ? 'Disbursed' : 'Dicairkan';
+    else if (s.includes('COMPLETED ON TIME')) lbl = isEn ? 'Completed on Time' : 'Selesai Tepat Waktu';
+    else if (s.includes('COMPLETED LATE')) lbl = isEn ? 'Completed Late' : 'Selesai Terlambat';
 
     return {
       label: lbl,
@@ -43,9 +44,9 @@ export function getUnifiedStatusBadge(statusRaw: string): StatusConfig {
     s.includes('RESPONDED')
   ) {
     let lbl = statusRaw;
-    if (s === 'PROCESSING' || s === 'DIPROSES') lbl = 'Diproses';
-    else if (s === 'IN PROGRESS') lbl = 'Sedang Dikerjakan';
-    else if (s === 'REVIEW_USER' || s.includes('REVIEW')) lbl = 'Review Pemohon';
+    if (s === 'PROCESSING' || s === 'DIPROSES') lbl = isEn ? 'Processing' : 'Diproses';
+    else if (s === 'IN PROGRESS') lbl = isEn ? 'In Progress' : 'Sedang Dikerjakan';
+    else if (s === 'REVIEW_USER' || s.includes('REVIEW')) lbl = isEn ? 'User Review' : 'Review Pemohon';
 
     return {
       label: lbl,
@@ -65,12 +66,12 @@ export function getUnifiedStatusBadge(statusRaw: string): StatusConfig {
     s.includes('DUE TODAY')
   ) {
     let lbl = statusRaw;
-    if (s === 'SUBMITTED' || s === 'DIAJUKAN') lbl = 'Diajukan';
-    else if (s === 'NOT STARTED') lbl = 'Belum Dimulai';
-    else if (s === 'PENDING') lbl = 'Menunggu';
-    else if (s === 'DRAFT') lbl = 'Draf';
-    else if (s.includes('DUE SOON')) lbl = 'Mendekati Tenggat';
-    else if (s.includes('DUE TODAY')) lbl = 'Jatuh Tempo Hari Ini';
+    if (s === 'SUBMITTED' || s === 'DIAJUKAN') lbl = isEn ? 'Submitted' : 'Diajukan';
+    else if (s === 'NOT STARTED') lbl = isEn ? 'Not Started' : 'Belum Dimulai';
+    else if (s === 'PENDING') lbl = isEn ? 'Pending' : 'Menunggu';
+    else if (s === 'DRAFT') lbl = isEn ? 'Draft' : 'Draf';
+    else if (s.includes('DUE SOON')) lbl = isEn ? 'Due Soon' : 'Mendekati Tenggat';
+    else if (s.includes('DUE TODAY')) lbl = isEn ? 'Due Today' : 'Jatuh Tempo Hari Ini';
 
     return {
       label: lbl,
@@ -91,9 +92,9 @@ export function getUnifiedStatusBadge(statusRaw: string): StatusConfig {
     s.includes('SANKSI')
   ) {
     let lbl = statusRaw;
-    if (s === 'BLOCKED' || s === 'TERKENDALA') lbl = 'Terkendala';
-    else if (s === 'OVERDUE') lbl = 'Lewat Tenggat';
-    else if (s === 'REJECTED' || s === 'DITOLAK') lbl = 'Ditolak';
+    if (s === 'BLOCKED' || s === 'TERKENDALA') lbl = isEn ? 'Blocked' : 'Terkendala';
+    else if (s === 'OVERDUE') lbl = isEn ? 'Overdue' : 'Lewat Tenggat';
+    else if (s === 'REJECTED' || s === 'DITOLAK') lbl = isEn ? 'Rejected' : 'Ditolak';
 
     return {
       label: lbl,
@@ -104,7 +105,7 @@ export function getUnifiedStatusBadge(statusRaw: string): StatusConfig {
 
   // 5. DEFAULT / OTHERS -> SLATE (Gray)
   return {
-    label: statusRaw || 'Belum Ditentukan',
+    label: statusRaw || (isEn ? 'Unassigned' : 'Belum Ditentukan'),
     className: 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 font-medium',
     dotColor: 'bg-slate-400',
   };
@@ -169,7 +170,10 @@ export function formatCslNumber(num: number, decimals: number = 0): string {
  * Universal Range Formatter per design.md §14.2:
  * E.g. `1–10 dari 69 entri`
  */
-export function formatCslRange(start: number, end: number, total: number): string {
+export function formatCslRange(start: number, end: number, total: number, lang: string = 'id'): string {
+  if (lang === 'en') {
+    return `${start}–${end} of ${total} entries`;
+  }
   return `${start}–${end} dari ${total} entri`;
 }
 
